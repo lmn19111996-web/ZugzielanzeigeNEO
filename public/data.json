@@ -1,0 +1,3388 @@
+{
+  "fixedSchedule": [
+    {
+      "linie": "S6",
+      "ziel": "Einführung i.d. Physik",
+      "stops": "PWR 53 - V53.01",
+      "plan": "07:45",
+      "dauer": 45,
+      "canceled": false,
+      "weekday": "monday",
+      "zwischenhalte": [
+        "PWR 53 - V53.01"
+      ],
+      "_uniqueId": "train_s9bcv3it9_1762683030038",
+      "actual": "07:45"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "stops": "Einsatzort: Zuhause\n\nDieser Termin is für die folgenden Aufgaben vorgesehen\n\n- Mathe: Übungen zu Kapitel 1 bis einschließlich komplexen Zahlen. (2h)\n\n- Technische Mechanik I: Übungen bis einschließlich Kapitel 4: Schwerpunkt. (45m)",
+      "plan": "09:00",
+      "dauer": 135,
+      "canceled": false,
+      "weekday": "monday",
+      "zwischenhalte": [
+        "Einsatzort: Zuhause",
+        "",
+        "Dieser Termin is für die folgenden Aufgaben vorgesehen",
+        "1. Alle wichtige Formen und Eigenschaften von Sondergleichungen notieren.",
+        "2. Präsens- und Hausübungen."
+      ],
+      "_uniqueId": "train_qrz1x0tyu_1762683030038",
+      "actual": "09:00"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Werkstoffkunde",
+      "stops": "PWR 07 - V 7.02",
+      "plan": "11:30",
+      "actual": "11:30",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "monday",
+      "_uniqueId": "train_1oebkzvmg_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Mittagspause",
+      "stops": "",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": "60",
+      "canceled": false,
+      "weekday": "monday",
+      "_uniqueId": "train_e8gq8wh1q_1762683030038",
+      "zwischenhalte": [
+        "Einsatzort: Zuhause"
+      ]
+    },
+    {
+      "linie": "S62",
+      "ziel": "TM1 Tutorium ",
+      "stops": "PWR 47 - V47.02",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "monday",
+      "zwischenhalte": [
+        "PWR 47 - V47.02",
+        "",
+        "Its really boring seriously."
+      ],
+      "_uniqueId": "train_99gxoh7s0_1762683030038"
+    },
+    {
+      "linie": "S60",
+      "ziel": "Technische Mechanik",
+      "stops": "PWR 57 - V57.03\n\nDieser Termin ist als Vortragsübung angeboten.",
+      "plan": "15:45",
+      "actual": "15:45",
+      "dauer": 90,
+      "canceled": false,
+      "weekday": "monday",
+      "_uniqueId": "train_xk5fjo7up_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "FLURUS Fachschaftssitzung",
+      "stops": "PWR 27 - V27.03\n\nDer Termin findet ab nächste Woche (W44) statt.",
+      "plan": "17:30",
+      "actual": "17:30",
+      "dauer": 30,
+      "canceled": false,
+      "weekday": "monday",
+      "_uniqueId": "train_ckcbzslrz_1762683030038"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Volleyball",
+      "stops": "",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "monday",
+      "_uniqueId": "train_pwqxmxanm_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Room Decor",
+      "stops": "",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": "120",
+      "canceled": false,
+      "weekday": "monday",
+      "zwischenhalte": [
+        "Wahrscheinlichkeitsgrad niedrig, fällt bei Nachholterminsbedarf aus."
+      ],
+      "_uniqueId": "train_b6enjnekl_1762683030038"
+    },
+    {
+      "linie": "S60",
+      "ziel": "Seminar zur Softwaretechnik",
+      "stops": "",
+      "plan": "08:00",
+      "actual": "08:00",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "tuesday",
+      "zwischenhalte": [
+        "PWR 27 - V27.03"
+      ],
+      "_uniqueId": "train_fyd7o8sqe_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TZ Aufgabe 2 Anfangen",
+      "stops": "",
+      "plan": "09:45",
+      "actual": "09:45",
+      "dauer": 180,
+      "canceled": false,
+      "weekday": "tuesday",
+      "zwischenhalte": [
+        ""
+      ],
+      "_uniqueId": "train_x17mvdduj_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Mittagspause",
+      "stops": "",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 30,
+      "canceled": false,
+      "weekday": "tuesday",
+      "_uniqueId": "train_7n7y17okd_1762683030038",
+      "zwischenhalte": [
+        "DRINGEND: Kauf dir was zum Abend. Keine Zeit zum Kochen vorgesehen für heute.",
+        ""
+      ]
+    },
+    {
+      "linie": "S62",
+      "ziel": "HM1 - Gruppenübung",
+      "stops": "PWR 09 - V 0.208 (PF09EGV 0.208)\n\nGruppe: Gruppe 43\nLehrveranstaltung: 010500104 Gruppenübung D zu Höhere Mathematik 1 für Ingenieurstudiengänge (2SSt UE, WS 2025/26)\nStudium: 1590 82 057 1 Luft- und Raumfahrttechnik\nStudienplankontext: Keine Zuordnung\n\n\nFÄLLT DIESE WOCHE AUS. ÜBERLAPPUNG MIT CAD KURS:",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "tuesday",
+      "_uniqueId": "train_yx8l64idv_1762683030038",
+      "zwischenhalte": [
+        "PWR 09 - V 0.208 (PF09EGV 0.208)",
+        "",
+        "Gruppe: Gruppe 43",
+        "Lehrveranstaltung: 010500104 Gruppenübung D zu Höhere Mathematik 1 für Ingenieurstudiengänge (2SSt UE, WS 2025/26)",
+        "Studium: 1590 82 057 1 Luft- und Raumfahrttechnik",
+        "Studienplankontext: Keine Zuordnung"
+      ]
+    },
+    {
+      "linie": "S6",
+      "ziel": "Darstellungstechnik",
+      "stops": "PWR 47 - V47. 01",
+      "plan": "15:45",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "tuesday",
+      "_uniqueId": "train_60w1taad2_1762683030038",
+      "actual": "16:35"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Fitness Studio",
+      "stops": "Achtung: Anmeldung noch nicht erfolgt.",
+      "plan": "17:45",
+      "actual": "17:45",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "tuesday",
+      "_uniqueId": "train_l7zj70p8s_1762683030038",
+      "zwischenhalte": [
+        "STADTMITTE. ANMELDUNG NOCH NICHT ERFOLGT"
+      ]
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "stops": "",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": "120",
+      "canceled": false,
+      "weekday": "tuesday",
+      "_uniqueId": "train_e78tx3na3_1763197206779"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Room Decor",
+      "stops": "",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": 50,
+      "canceled": true,
+      "weekday": "tuesday",
+      "_uniqueId": "train_6ldvb2jj5_1762683030038"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Fitness Studio",
+      "stops": "Achtung: Anmeldung noch nicht abgeschlossen!\n\nAb diese Woche um 17 Uhr, falls [HM1] Vortragsübung stattfindet, sonst als [Zusatzfahrt] um 7:30 Uhr angeboten. Dieser Termin fällt demzufolge aus.",
+      "plan": "17:00",
+      "actual": "07:30",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "wednesday",
+      "_uniqueId": "train_vx729bqey_1762683030038",
+      "zwischenhalte": [
+        "Achtung: Anmeldung noch nicht abgeschlossen!",
+        "PROBETRAINING BAD CANNSTATT",
+        "",
+        "Ab diese Woche um 17 Uhr, falls [HM1] Vortragsübung stattfindet, sonst als [Zusatzfahrt] um 7:30 Uhr angeboten. Dieser Termin fällt demzufolge aus."
+      ]
+    },
+    {
+      "linie": "S60",
+      "ziel": "HM1 Vortragsübung",
+      "stops": "Vortragsübung zu Höhere Mathematik 1 für bewe, geod, lrt, mach, verk ZV, Standardgruppe\n\nPWR 53 - V 53.01 (PF5301V 53.01)",
+      "plan": "08:00",
+      "actual": "08:00",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "wednesday",
+      "_uniqueId": "train_che4gqu2r_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Höhere Mathematik I",
+      "stops": "PWR 53 - V 53.01",
+      "plan": "09:45",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "wednesday",
+      "_uniqueId": "train_wv2d8u64j_1762683030038",
+      "actual": "09:45",
+      "zwischenhalte": [
+        "PWR 53 - V 53.01",
+        "",
+        "FÄLLT HEUTE (19.11.2025) AUS."
+      ]
+    },
+    {
+      "linie": "S1",
+      "ziel": "Mittagspause",
+      "stops": "",
+      "plan": "11:30",
+      "actual": "11:30",
+      "dauer": "60",
+      "canceled": true,
+      "weekday": "wednesday",
+      "_uniqueId": "train_duxjo2aw9_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "stops": "Einsatzort: Zuhause\n\nAufgaben:\n- Mathe: Übungsblatt (circa 2 Stunden)\n- Faserverbundlabor: Notizen vervollständigen\n- Physik: Skript für die nächste Vorlesung lesen\n\nHeute um 30 Minuten verlängert.",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 150,
+      "canceled": true,
+      "weekday": "wednesday",
+      "_uniqueId": "train_q9wkaloze_1762683030038",
+      "zwischenhalte": [
+        "Einsatzort: Zuhause",
+        "",
+        "Aufgabe: ISD Labor vorbereiten"
+      ]
+    },
+    {
+      "linie": "S7",
+      "ziel": "",
+      "stops": "",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": 150,
+      "canceled": true,
+      "weekday": "wednesday",
+      "_uniqueId": "train_fbddlhtlu_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Room Decor",
+      "stops": "",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": "120",
+      "canceled": true,
+      "weekday": "wednesday",
+      "_uniqueId": "train_ue9tebvjw_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Einführung i.d. Physik",
+      "stops": "PWR 53 - V 53.01",
+      "plan": "08:00",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "thursday",
+      "_uniqueId": "train_quvjx2q79_1762683030038",
+      "actual": "08:00"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Softwarewerkzeuge",
+      "stops": "PWR 57 - V 57.03",
+      "plan": "09:45",
+      "actual": "09:45",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "thursday",
+      "_uniqueId": "train_vnh5iejgf_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Fertigungstechnik",
+      "stops": "PWR 47 - V 47.02",
+      "plan": "11:30",
+      "actual": "11:30",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "thursday",
+      "_uniqueId": "train_1j9efydtg_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Mittagspause",
+      "stops": "",
+      "plan": "13:00",
+      "actual": "11:30",
+      "dauer": "60",
+      "canceled": false,
+      "weekday": "thursday",
+      "_uniqueId": "train_iairv1kh1_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "stops": "Mengen, Gruppe, Ringe und Körper\n\nKomplexe Zahlen",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "thursday",
+      "_uniqueId": "train_w79bt10rn_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Technische Mechanik I",
+      "stops": "PWR 07 - V 07.02",
+      "plan": "15:45",
+      "dauer": "90",
+      "canceled": false,
+      "weekday": "thursday",
+      "_uniqueId": "train_yw3lsuoqe_1762683030038",
+      "actual": "15:45"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Technische Mechanik I (Übung)",
+      "stops": "",
+      "plan": "20:00",
+      "actual": "20:30",
+      "dauer": 180,
+      "canceled": false,
+      "weekday": "thursday",
+      "_uniqueId": "train_maj7457l9_1763375944915"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Movie Night Prep",
+      "stops": "",
+      "plan": "22:00",
+      "actual": "23:00",
+      "dauer": 60,
+      "canceled": false,
+      "weekday": "thursday",
+      "_uniqueId": "train_bwly6108t_1762683030038",
+      "zwischenhalte": [
+        "Aufgaben:",
+        "1. Zimmer aufräumen"
+      ]
+    },
+    {
+      "linie": "S5",
+      "ziel": "Fitness Studio",
+      "stops": "",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "friday",
+      "_uniqueId": "train_r1k1re5k8_1762683030038",
+      "zwischenhalte": [
+        "Stuttgart Bad Cannstatt"
+      ]
+    },
+    {
+      "linie": "S6",
+      "ziel": "Höhere Mathematik I",
+      "stops": "PWR 53 - V 53.01",
+      "plan": "09:45",
+      "actual": "09:45",
+      "dauer": "90",
+      "canceled": true,
+      "weekday": "friday",
+      "_uniqueId": "train_dzwld6gt9_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Mittagspause",
+      "stops": "Heute kein Mittagsschlaf.",
+      "plan": "12:00",
+      "actual": "12:00",
+      "dauer": "60",
+      "canceled": false,
+      "weekday": "friday",
+      "_uniqueId": "train_u2mkzz6d1_1762683030038",
+      "zwischenhalte": [
+        "Heute JA Mittagsschlaf."
+      ]
+    },
+    {
+      "linie": "S7",
+      "ziel": "Technische Mechanik I (Übung)",
+      "stops": "Einsatzort: WG\n\nDieser Termin ist zur Vorbereitung für das Faserverbundlabor vorgesehen.",
+      "plan": "13:00",
+      "actual": "14:00",
+      "dauer": 220,
+      "canceled": false,
+      "weekday": "friday",
+      "_uniqueId": "train_ld7cldm8m_1762683030038"
+    },
+    {
+      "linie": "S4",
+      "ziel": "",
+      "stops": "Kein Termin zum Ausgehen eingetragen....leider.",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": "480",
+      "canceled": true,
+      "weekday": "friday",
+      "_uniqueId": "train_yq8qnn2fn_1762683030038"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Fitness Studio",
+      "stops": "Anmeldung noch nicht erfolgt!",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": 90,
+      "canceled": false,
+      "weekday": "saturday",
+      "zwischenhalte": [
+        ""
+      ],
+      "_uniqueId": "train_2hivjqkve_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "",
+      "stops": "",
+      "plan": "10:00",
+      "actual": "10:00",
+      "dauer": "120",
+      "canceled": true,
+      "weekday": "saturday",
+      "_uniqueId": "train_iv114mf8o_1763154342994"
+    },
+    {
+      "linie": "S3",
+      "ziel": "",
+      "stops": "",
+      "plan": "14:00",
+      "dauer": "180",
+      "canceled": true,
+      "weekday": "saturday",
+      "zwischenhalte": [
+        "ToDo-Liste und Eingabeoberfläche für Kurznotizen"
+      ],
+      "actual": "14:00",
+      "_uniqueId": "train_v4p502eyt_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "stops": "",
+      "plan": "20:00",
+      "actual": "19:00",
+      "dauer": 180,
+      "canceled": false,
+      "weekday": "saturday",
+      "_uniqueId": "train_asjtwjen6_1763154959661",
+      "zwischenhalte": [
+        "Aufgaben",
+        "1. Präsensübung + Hausübungen",
+        "2. Siehe Anmerkungen"
+      ]
+    },
+    {
+      "linie": "S3",
+      "ziel": "Movie Night Prep",
+      "stops": "",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": "120",
+      "canceled": false,
+      "weekday": "saturday",
+      "_uniqueId": "train_n97exkpf5_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathe: Folgen, Reihen, Grenzwert",
+      "stops": "",
+      "plan": "10:00",
+      "actual": "10:00",
+      "dauer": 210,
+      "canceled": true,
+      "weekday": "sunday",
+      "zwischenhalte": [
+        "Aufgaben:",
+        "1. Alle wichtige Formen und Eigenschaften von Sondergleichungen notieren.",
+        "2. Präsens- und Hausübungen."
+      ],
+      "_uniqueId": "train_pcxi5fm7d_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Technische Mechanik (Übung)",
+      "stops": "Dieser Termin ist für das Selbststudium TM1 vorgesehen.\nLiteratur: TM1",
+      "plan": "14:00",
+      "dauer": "180",
+      "canceled": true,
+      "weekday": "sunday",
+      "_uniqueId": "train_0qb5u1qjv_1762683030038",
+      "actual": "14:00"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "stops": "",
+      "plan": "19:00",
+      "dauer": 240,
+      "canceled": true,
+      "weekday": "sunday",
+      "actual": "19:00",
+      "_uniqueId": "train_g8kenyqlk_1762683030038"
+    }
+  ],
+  "spontaneousEntries": [
+    {
+      "linie": "S1",
+      "ziel": "Toilettenpause",
+      "stops": "Meh",
+      "plan": "16:58",
+      "actual": "16:58",
+      "dauer": "3",
+      "canceled": false,
+      "date": "2025-02-22",
+      "_uniqueId": "train_yj7egg1l0_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[Zusatzfahrt] Übungsblatt HM1",
+      "stops": "[Zusatzfahrt] Übungsblatt HM1",
+      "plan": "20:00",
+      "actual": "21:00",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-10-21",
+      "_uniqueId": "train_toemmf7bh_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "stops": "StutCAD: PWR 9, 0.229\n\nLehrveranstaltung: StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE",
+      "plan": "13:30",
+      "actual": "13:30",
+      "dauer": "180",
+      "canceled": true,
+      "date": "2025-10-22",
+      "_uniqueId": "train_z4q0ut437_1762683030038"
+    },
+    {
+      "linie": "S4",
+      "ziel": "KSat Einführungsevent",
+      "stops": "",
+      "plan": "15:00",
+      "actual": "15:00",
+      "dauer": "60",
+      "canceled": true,
+      "date": "2025-10-22",
+      "_uniqueId": "train_4vzan3xxf_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "Es ist empfohlen, dass du jetzt eine kleine Pause machen. Kein Druck, mach weiter wenn es dir lieber.",
+      "plan": "15:00",
+      "actual": "15:25",
+      "dauer": "10",
+      "canceled": false,
+      "date": "2025-10-22",
+      "_uniqueId": "train_d9545mkhf_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "Diese Pause musst du ernst nehmen, weil du jetzt bestimmt schon fertig mit dem Übungsblatt bist.",
+      "plan": "16:00",
+      "actual": "16:20",
+      "dauer": "10",
+      "canceled": false,
+      "date": "2025-10-22",
+      "_uniqueId": "train_190moztud_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "[Zusatzfahrt] Boarding Light Installation",
+      "stops": "[Zusatzfahrt] Boarding Light Installation",
+      "plan": "19:00",
+      "actual": "19:00",
+      "dauer": "180",
+      "canceled": true,
+      "date": "2025-10-22",
+      "_uniqueId": "train_24j1j8wu4_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[Zusatzfahrt] Selbststudium",
+      "stops": "Mathe. ",
+      "plan": "21:00",
+      "actual": "21:00",
+      "dauer": "30",
+      "canceled": false,
+      "date": "2025-10-22",
+      "_uniqueId": "train_3rrh9sdcs_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "stops": "StutCAD: PWR 9, 0.229\n\nLehrveranstaltung: StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE",
+      "plan": "13:30",
+      "actual": "13:30",
+      "dauer": "1801",
+      "canceled": true,
+      "date": "2025-10-23",
+      "_uniqueId": "train_l2cf703t5_1762683030038"
+    },
+    {
+      "linie": "S5",
+      "ziel": "[Zusatzfahrt] Fitness Studio",
+      "stops": "DIESER TERMIN WURDE INSGESAMT 5 MAL VERSCHOBEN. \n\nAnmeldung noch nicht abgeschlossen!",
+      "plan": "17:30",
+      "actual": "17:30",
+      "dauer": "90",
+      "canceled": true,
+      "date": "2025-10-23",
+      "_uniqueId": "train_9xa90dumq_1762683030038"
+    },
+    {
+      "linie": "S4",
+      "ziel": "FLURUS IT Einführung",
+      "stops": "V27.Base\n\nHi,\n\nDu hast Interesse an IT und kannst dir vorstellen bei der FLURUS IT\nmitzumachen, dann komm morgen zur Einführung!\n\nWann? Morgen, 23. Oktober, ab 17:45 Uhr\n\nFür wen? Alle Interessierten – Ihr braucht keinerlei Vorwissen!\n\nWo? In den FLURUS Räumen (V27 im UG)\n\n\nWir freuen uns auf euch!\n\nMarek",
+      "plan": "17:45",
+      "actual": "17:45",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-10-23",
+      "_uniqueId": "train_kvm9x1v0h_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "[Zusatzfahrt] Boarding Light Installation",
+      "stops": "[Zusatzfahrt] Boarding Light Installation",
+      "plan": "19:00",
+      "actual": "20:30",
+      "dauer": "180",
+      "canceled": true,
+      "date": "2025-10-23",
+      "_uniqueId": "train_ffpj1miit_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "stops": "StutCAD: PWR 9, 0.229\n\nLehrveranstaltung: StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE",
+      "plan": "13:30",
+      "actual": "13:30",
+      "dauer": "180",
+      "canceled": true,
+      "date": "2025-10-24",
+      "_uniqueId": "train_uukcddvz8_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Allg. Aufräumen",
+      "stops": "Clean ur room big queen",
+      "plan": "13:50",
+      "actual": "13:50",
+      "dauer": "70",
+      "canceled": false,
+      "date": "2025-10-24",
+      "_uniqueId": "train_i4vlklxf0_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "AkaModell Anmeldung",
+      "stops": "Mach es bevor es zu spät ist. ",
+      "plan": "17:00",
+      "actual": "17:00",
+      "dauer": "15",
+      "canceled": true,
+      "date": "2025-10-24",
+      "_uniqueId": "train_8t7icnuhi_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Einkaufen",
+      "stops": "",
+      "plan": "17:00",
+      "actual": "17:00",
+      "dauer": "60",
+      "canceled": true,
+      "date": "2025-10-24",
+      "_uniqueId": "train_0krhp2h48_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "[Zusatzfahrt] Boarding Light Installation",
+      "stops": "[Zusatzfahrt] Boarding Light Installation",
+      "plan": "19:00",
+      "actual": "19:00",
+      "dauer": "180",
+      "canceled": false,
+      "date": "2025-10-24",
+      "_uniqueId": "train_sjl7ue86w_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[Zusatzfahrt] SLS - Faserverbundlabor",
+      "stops": "Dieser Termin ist zur Vorbereitung für das Faserverbundlabor vorgesehen.",
+      "plan": "09:00",
+      "actual": "10:00",
+      "dauer": "120",
+      "canceled": true,
+      "date": "2025-10-25",
+      "_uniqueId": "train_qi27gukwp_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Einkaufen",
+      "stops": "",
+      "plan": "12:00",
+      "actual": "13:00",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-10-25",
+      "_uniqueId": "train_zma6uwysw_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[Zusatzfahrt] Selbstlernen",
+      "stops": "Einsatzort: Zuhause\n\nInhalt:\n\n- Faserverbundlabor - Notizen vervollständigen\n\n- HM 1: Komplexe Zahlen + Übungen.\n\nGrund für die Verspätung: The coffein is not working yall ",
+      "plan": "15:00",
+      "actual": "15:10",
+      "dauer": "120",
+      "canceled": true,
+      "date": "2025-10-25",
+      "_uniqueId": "train_agjd06cav_1762683030038"
+    },
+    {
+      "linie": "S5",
+      "ziel": "[Zusatzfahrt] Fitness Studio",
+      "stops": "DIESER TERMIN WURDE INSGESAMT 7 MAL VERSCHOBEN !!!!",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": "90",
+      "canceled": true,
+      "date": "2025-10-26",
+      "_uniqueId": "train_kvqso929q_1762683030038"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Space Night Kick Off",
+      "stops": "",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-10-29",
+      "_uniqueId": "train_sl6qepj91_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "FLURUS IT Sitzung",
+      "stops": "PWR 27 - V27.Base",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": "360",
+      "canceled": false,
+      "date": "2025-10-30",
+      "_uniqueId": "train_ot69kc1u0_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "IFB Faserverbundlabor ",
+      "stops": "",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "180",
+      "canceled": false,
+      "date": "2025-11-07",
+      "_uniqueId": "train_ed77mnby7_1762683030038"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "[PRÜ] TZ-Aufgabe 1",
+      "stops": "V31.51",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-11-13",
+      "_uniqueId": "train_npe9j69n0_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "ISD Labor",
+      "stops": "Zur Vertiefung ausgewählter Inhalte aus der Vorlesung „Werkstoffkunde und Funktionswerk\nstoffe“ findet das Labor Werkstoffkunde am ISD statt. Der Leistungsnachweis erfolgt durch An\nwesenheit und das protokolieren der durchgeführten Versuche in kleinen Gruppen. \nFolgende Versuche und Themen werden behandelt: \n• Härteprüfung und Statistik \n• Zugversuch und die schwingende Beanspruchung \nJeder Student/in muss das Labor Werkstoffkunde (Dauer: 3 Stunden) durchgeführt haben. Die \nTeilnahme am Labor ist Voraussetzung für die Zulassung zur Prüfung! \nFür dir Teilnahme am Labor Werkstoffkunde (ISD) müssen die Studierenden einen schriftlichen \nZulassungstest (Dauer ca.: 10 min) bestehen. Dafür benötigen Sie mindestens 11 Richtige Ant\nworten aus 17 Fragen. Die dafür benötigten Unterlagen befinden sich im Ordner „Unterlagen \nWerkstoffkunde und Funktionswerkstoffe (Labor ISD) WS 2025-2026“ \nBeispiel Musterlösung Test \nFalls Sie den Test nicht bestanden haben wird das Labor abgebrochen und Sie müssen/sollten den \nTest in einer anderen Gruppe nachholen. \nDas Labor zu unterbrechen und an einem anderen Termin weiterzuführen ist nicht gestattet. \nAblauf \nFür die Teilnahme am Labor Werkstoffkunde (ISD) ist eine vorherige Anmeldung im ILIAS Uni \nStuttgart mit ST-Account und Passwort erforderlich. \nBeispiel \nIn der Datei „Anmeldetermine Werkstoffkunde und Funktionswerkstoffe (Labor ISD) WS 2025\n2026“ finden Sie alle Termine und Gruppen. Wählen Sie ein Termin aus und tragen Sie sich in die \nzugeordnete Gruppe (max.: 12 Mitglieder) ein. Ist die Gruppe voll belegt, haben Sie noch immer \ndie Möglichkeit sich in eine andere Gruppe einzutragen. \nTreffpunkt für das Labor Werkstoffkunde (ISD) ist die Eingangshalle im Gebäude Pfaffenwald\nring 27. Dort werden Sie von 2 Tutoren in Empfang genommen und zu den Laborräumen geführt. \nBitte pünktlich kommen! \nMerke! \nDie Teilnahme am Labor Werkstoffkunde (ISD) ist Voraussetzung für die schriftliche Zulassung \nzur Prüfung „Werkstoffkunde und Funktionswerkstoffe“! \nFür Fragen steht Ihnen Herr Mellinger zur Verfügung. \nTelefon: +49-711/685-63608 \nE-Mail: mellinger@isd.uni-stuttgart.de",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "180",
+      "canceled": false,
+      "date": "2025-11-19",
+      "_uniqueId": "train_gycux2pjy_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] TZ-Aufgabe 2",
+      "stops": "V31.51",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-12-11",
+      "_uniqueId": "train_0hceinkec_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Scheinklausur HM I ",
+      "stops": "Die Scheinklausuren finden statt am Samstag, den 13. Dezember 2025 und am Samstag, den 31. Januar 2026, jeweils um 9:00 Uhr.\nZugelassene Hilfsmittel sind auch hier zwei eigenhändig handbeschriebene Seiten DIN A4. Elektronische Hilfsmittel sind nicht zugelassen. Darunter fallen jegliche Arten von Taschenrechnern, Organizern, Laptops, Mobiltelefonen und ähnliches.\nDie Teilnahme an der Scheinklausur ist notwendig zum Erwerb eines Übungsscheins, Ausweichtermine wird es nur in begründeten Ausnahmen (Krankheit) geben.",
+      "plan": "09:00",
+      "actual": "09:00",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-12-13",
+      "_uniqueId": "train_8uknisr8e_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Physik",
+      "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+      "plan": "09:00",
+      "actual": "15:00",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-12-13",
+      "_uniqueId": "train_szrgvzelx_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] WK + FT",
+      "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+      "plan": "09:00",
+      "actual": "09:00",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2026-01-24",
+      "_uniqueId": "train_0e9887itu_1762683030038",
+      "weekday": "saturday"
+    },
+    {
+      "linie": "S85",
+      "ziel": "HEIMKEHR",
+      "stops": "Frohe Weihnachten!",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 30240,
+      "canceled": false,
+      "date": "2025-12-24",
+      "_uniqueId": "train_qgidssu1l_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Technische Mechanik",
+      "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+      "plan": "09:00",
+      "actual": "15:00",
+      "dauer": 90,
+      "canceled": false,
+      "date": "2026-01-24",
+      "_uniqueId": "train_w6hth446b_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] TZ-Vortestat",
+      "stops": "ILIAS",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 1439,
+      "canceled": false,
+      "date": "2026-01-28",
+      "_uniqueId": "train_g1mpkmimw_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] TZ Endabgabe",
+      "stops": "ILIAS + Persönliche Abgabe",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 1439,
+      "canceled": false,
+      "date": "2026-02-04",
+      "_uniqueId": "train_3kbqhmy47_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Physik",
+      "stops": "Prüfung",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2026-02-11",
+      "_uniqueId": "train_78l0rsbmf_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] HM 1",
+      "stops": "Prüfung",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "canceled": false,
+      "date": "2026-02-23",
+      "_uniqueId": "train_iqa8r9vn6_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] WK + FT",
+      "stops": "Prüfung",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2026-03-11",
+      "_uniqueId": "train_15bt5q87h_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Technische Mechanik",
+      "stops": "Prüfung",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2026-03-26",
+      "_uniqueId": "train_j09vmq5uy_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche entnehmen",
+      "stops": "",
+      "plan": "15:40",
+      "actual": "15:41",
+      "dauer": "20",
+      "canceled": false,
+      "date": "2025-10-25",
+      "_uniqueId": "train_asb75p2lx_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[Zusatzfahrt] Abendpause",
+      "stops": "Zeit zum Kochen und Essen.\n\nFahrplanänderung: Wegen fehlendem Werkzeug verspätet sich das Abendessen um 60 Minuten. ",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": "15",
+      "canceled": false,
+      "date": "2025-10-25",
+      "_uniqueId": "train_sauch27fw_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "",
+      "plan": "10:40",
+      "actual": "10:40",
+      "dauer": "15",
+      "canceled": false,
+      "date": "2025-10-26",
+      "_uniqueId": "train_zbc6907uk_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche abholen",
+      "stops": "",
+      "plan": "21:00",
+      "actual": "21:00",
+      "dauer": "5",
+      "canceled": false,
+      "date": "2025-10-26",
+      "_uniqueId": "train_i2971akxr_1762683030038"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "Midterm 25 Start",
+      "stops": "",
+      "plan": "00:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2025-11-23",
+      "_uniqueId": "train_5qlluwvmn_1762683030038",
+      "actual": "00:00",
+      "weekday": "sunday"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "Final 25 Start",
+      "stops": "",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2025-12-13",
+      "_uniqueId": "train_xlg3c62eh_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Physik + HM1",
+      "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+      "plan": "09:00",
+      "actual": "10:00",
+      "dauer": 120,
+      "canceled": false,
+      "date": "2025-11-23",
+      "_uniqueId": "train_hww7zwa47_1762683030038",
+      "weekday": "sunday"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Technische Mechanik",
+      "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+      "plan": "09:00",
+      "actual": "09:00",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-11-22",
+      "_uniqueId": "train_y0d2mj3qi_1762683030038",
+      "weekday": "saturday"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ][Vortrag] WK + FT ",
+      "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+      "plan": "15:00",
+      "actual": "15:00",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-11-23",
+      "_uniqueId": "train_uc57osgqw_1762683030038",
+      "zwischenhalte": [
+        "Qualitätsprüfung // +++FINDET HEUTE NICHT STATT+++",
+        "",
+        "Zeit: 120 Minuten",
+        "",
+        " Form: ̶M̶̶u̶̶l̶̶t̶̶i̶̶p̶̶l̶̶e̶ ̶C̶̶h̶̶o̶̶i̶̶c̶̶e̶    Vortrag.",
+        "",
+        "Inhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
+        "",
+        "TERMINVERSCHIEBUNG: Wegen ISD Labor verschiebt sich diese Termin nach nächster Woche.",
+        "Neuer Termin: 15.00 Uhr 23.11.2025",
+        "",
+        "NEUE FORMAT: Wird als Vortrag gehalten. Es ergibt keinen Sinn, die Stoffe einmalig auswendig zu lernen für einen Test ohne wirklich zu verstehen, worüber wir reden."
+      ],
+      "weekday": "sunday"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - Technische Mechanik (Ü)",
+      "stops": "Dieser ist ein Nachholtermin für die S7 - Technische Mechanik (Übung) am 26.10.2025 um 14:00, verschoben und verkürzt nach 17:11 Uhr. ",
+      "plan": "22:30",
+      "actual": "22:30",
+      "dauer": "75",
+      "canceled": false,
+      "date": "2025-10-27",
+      "_uniqueId": "train_g170rnpq4_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - DT und IFB Labor",
+      "stops": "Nachholtermin - DT und IFB Labor\n\nDieser ist ein Nachholtermin für die S7 - DT (Ü) + IFB Labor am 26.10.2025 um 19:00, verschoben und verkürzt nach 21:00 Uhr. ",
+      "plan": "11:30",
+      "actual": "11:30",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-10-27",
+      "_uniqueId": "train_x1ughr8ym_1762683030038"
+    },
+    {
+      "linie": "S46",
+      "ziel": "FLURUS IT",
+      "stops": "Zur Vorbereitung für die nächste Sitzung: OpenSense in VM Installieren, Wireguard einrichten, Videos anschauen. Viel Spaß!",
+      "plan": "11:45",
+      "actual": "23:45",
+      "dauer": "75",
+      "canceled": true,
+      "date": "2025-10-28",
+      "_uniqueId": "train_uvqtirj2k_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Ergänzungskauf",
+      "stops": "",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": "30",
+      "canceled": false,
+      "date": "2025-10-27",
+      "_uniqueId": "train_2t20jl2pq_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - Technische Mechanik",
+      "stops": "Nachholtermin - Technische Mechanik\n\nDieser ist ein Nachholtermin für die S7 - Technische Mechanik (Übung) am 29.10.2025 um 14:00 Uhr, ausgefallen wegen Space Night Kick Off",
+      "plan": "22:00",
+      "actual": "25:30",
+      "dauer": "120",
+      "canceled": true,
+      "date": "2025-10-29",
+      "_uniqueId": "train_jxit9zwrm_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ALL-NIGHTER!!!",
+      "stops": "Dieser Termin wurde aus freien Willen beantragt und vergeben. Because warum nicht?\n\nPlaylist zum Start: midnights chill (till the dawn)",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": "480",
+      "canceled": true,
+      "date": "2025-10-31",
+      "_uniqueId": "train_i23np1fno_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "30",
+      "canceled": true,
+      "date": "2025-11-01",
+      "_uniqueId": "train_gbbnlphne_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "",
+      "plan": "02:30",
+      "actual": "02:30",
+      "dauer": "30",
+      "canceled": true,
+      "date": "2025-11-01",
+      "_uniqueId": "train_bfh6lhv5u_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "",
+      "plan": "04:00",
+      "actual": "04:00",
+      "dauer": "20",
+      "canceled": true,
+      "date": "2025-11-01",
+      "_uniqueId": "train_fxids61q7_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "stops": "",
+      "plan": "05:00",
+      "actual": "05:00",
+      "dauer": "20",
+      "canceled": true,
+      "date": "2025-11-01",
+      "_uniqueId": "train_cudkd5yic_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Ergänzungskauf",
+      "stops": "Kaufliste:\n\n- Auflaufform fürs Backen.\n- Papier und ggf. Bleistif fürs TZ",
+      "plan": "17:45",
+      "actual": "17:45",
+      "dauer": "30",
+      "canceled": false,
+      "date": "2025-10-28",
+      "_uniqueId": "train_ukbwrw9hg_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Aufräumen",
+      "stops": "",
+      "plan": "19:00",
+      "actual": "19:00",
+      "dauer": "30",
+      "canceled": true,
+      "date": "2025-10-28",
+      "_uniqueId": "train_y4xk94cj2_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - Technisches Zeichnen",
+      "stops": "Nachholtermin - Technisches Zeichnen",
+      "plan": "22:40",
+      "actual": "22:40",
+      "dauer": "60",
+      "canceled": true,
+      "date": "2025-10-28",
+      "_uniqueId": "train_w97l4wlxk_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - Darstellungstechnik",
+      "stops": "",
+      "plan": "22:10",
+      "actual": "22:10",
+      "dauer": "120",
+      "canceled": true,
+      "date": "2025-10-29",
+      "_uniqueId": "train_rfc1jk10h_1762683030038"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Nachholtermin - FLURUS IT",
+      "stops": "",
+      "plan": "00:30",
+      "actual": "22:09",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-10-29",
+      "_uniqueId": "train_d1qemhi9b_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Nachholtermin - Aufräumen",
+      "stops": "Seriously clean ur room big queen",
+      "plan": "12:07",
+      "actual": "17:32",
+      "dauer": "30",
+      "canceled": false,
+      "date": "2025-10-29",
+      "_uniqueId": "train_0b1zvsxej_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - Darstellungstechnik",
+      "stops": "",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": "110",
+      "canceled": true,
+      "date": "2025-10-31",
+      "_uniqueId": "train_oxqynhixo_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Nachholtermin - Darstellungstechnik",
+      "stops": "",
+      "plan": "10:00",
+      "actual": "10:00",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-11-01",
+      "_uniqueId": "train_r6nv88cqq_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "[Zusatzfahrt] FLURUS IT",
+      "stops": "PWR 27 - 27.Base",
+      "plan": "17:00",
+      "actual": "17:00",
+      "dauer": "540",
+      "canceled": false,
+      "date": "2025-10-31",
+      "_uniqueId": "train_6jd4po89n_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Halbwocheneinkauf",
+      "stops": "",
+      "plan": "13:00",
+      "actual": "13:30",
+      "dauer": "60",
+      "canceled": true,
+      "date": "2025-10-31",
+      "_uniqueId": "train_rouhycfdu_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Alles Putzen",
+      "stops": "",
+      "plan": "06:00",
+      "actual": "11:00",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-10-02",
+      "_uniqueId": "train_mvsc7jjog_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Halbwocheneinkauf",
+      "stops": "[Zusatzfahrt] Halbwocheneinkauf",
+      "plan": "09:10",
+      "actual": "09:35",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-11-03",
+      "_uniqueId": "train_8oreudmqj_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "[ZF] Schlafen",
+      "stops": "Girl u dead how are you still awake",
+      "plan": "10:10",
+      "actual": "10:35",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-11-03",
+      "_uniqueId": "train_jop2qkbst_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Kochen",
+      "stops": "",
+      "plan": "17:45",
+      "actual": "17:45",
+      "dauer": "100",
+      "canceled": false,
+      "date": "2025-11-04",
+      "_uniqueId": "train_yaxk6ucny_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] TZ - Fertig!!!!!!",
+      "stops": " ",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": "240",
+      "canceled": false,
+      "date": "2025-11-04",
+      "_uniqueId": "train_g1up2kurd_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] TZ - Fertigg bitte!!!!",
+      "stops": "",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-11-05",
+      "_uniqueId": "train_gyiwm7biq_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] TZ - Anfangen",
+      "stops": "Einsatzort: Zuhause",
+      "plan": "13:45",
+      "actual": "22:00",
+      "dauer": "105",
+      "canceled": false,
+      "date": "2025-11-03",
+      "_uniqueId": "train_ks31ezbu1_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] TZ - Weiter",
+      "stops": "Einsatzort: Zuhause",
+      "plan": "22:00",
+      "actual": "23:59",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-11-03",
+      "_uniqueId": "train_y0e1cgqm2_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "[ZF] Schlafen",
+      "stops": "",
+      "plan": "13:58",
+      "actual": "13:58",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-11-03",
+      "_uniqueId": "train_r5vhwxxie_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[Nachholtermin] Werkstoffkunde",
+      "stops": "",
+      "plan": "12:00",
+      "actual": "12:10",
+      "dauer": "105",
+      "canceled": false,
+      "date": "2025-11-04",
+      "_uniqueId": "train_nmdt5bmd5_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "FLURUS IT",
+      "stops": "",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": "500",
+      "canceled": false,
+      "date": "2025-11-06",
+      "_uniqueId": "train_kdshlgclm_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Mathe",
+      "stops": "",
+      "plan": "14:00",
+      "dauer": 120,
+      "canceled": false,
+      "date": "2025-11-08",
+      "actual": "16:40",
+      "_uniqueId": "train_852utazts_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Mathe",
+      "stops": "",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": "120",
+      "canceled": false,
+      "date": "2025-11-03",
+      "_uniqueId": "train_tv60i0anc_1762683030038"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "Prüfungsphase WiSe25/26",
+      "stops": "",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "0",
+      "canceled": false,
+      "date": "2026-02-04",
+      "_uniqueId": "train_llly57qzl_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Mathematik I",
+      "stops": "",
+      "plan": "10:30",
+      "actual": "10:30",
+      "dauer": "90",
+      "canceled": false,
+      "date": "2025-11-04",
+      "_uniqueId": "train_rwrbldedy_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "Puffer FLURUS IT",
+      "stops": "Das Fortsetzen dieses Termins führt zur Ausfall folgender nächstliegenden Termine:\nS5 - Fitness Studio\nS6 - Lehrversanstaltung: HM 1 (!)\n\nNächste Möglichkeit zum Nachholen: Freitag, 07.11.2025, 18.00 - 21.00 Uhr.\n\nEin 6 Std. Tagesschlaf zur Vorbereitung für das Faserverbundlabor um 14.00 Uhr ist in diesem Zeitfenster inbegriffen. ",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "700",
+      "canceled": true,
+      "date": "2025-11-07",
+      "_uniqueId": "train_znwe8muo2_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Bootstrap",
+      "stops": "",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": "840",
+      "canceled": false,
+      "date": "2025-11-05",
+      "_uniqueId": "train_j9u9596rs_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Test",
+      "stops": "",
+      "plan": "16:00",
+      "actual": "16:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2025-11-05",
+      "_uniqueId": "train_14nqxi8ij_1762683030038"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Frankfurt am Main  ✈ Flughafen Fernbahnhof",
+      "stops": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.\nLorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.\nLorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.\n",
+      "plan": "19:40",
+      "actual": "21:59",
+      "dauer": "500",
+      "canceled": false,
+      "date": "2025-11-05",
+      "_uniqueId": "train_qox8uu86i_1762683030038"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Movie Night - Interstellar",
+      "stops": "",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": "360",
+      "canceled": false,
+      "date": "2025-11-06",
+      "_uniqueId": "train_vhnddbqu2_1762683030038"
+    },
+    {
+      "linie": "S45",
+      "ziel": "Orga-Treffen / FLURUS IT",
+      "stops": "PWR 27 - V27.03",
+      "plan": "17:30",
+      "actual": "17:30",
+      "dauer": 90,
+      "canceled": false,
+      "date": "2025-11-13",
+      "_uniqueId": "train_5ylzyjlu7_1762683030038",
+      "zwischenhalte": [
+        "PWR 27 - V27.03",
+        "",
+        "Frühzeitig beendet (18:50 Uhr)"
+      ]
+    },
+    {
+      "linie": "RE 1",
+      "ziel": "Bremerhaven-Lehe",
+      "stops": "",
+      "plan": "13:30",
+      "actual": "13:30",
+      "dauer": "",
+      "canceled": true,
+      "date": "2025-11-06",
+      "_uniqueId": "train_yigsqzaie_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Fertigungstechnik",
+      "stops": "",
+      "plan": "19:00",
+      "actual": "20:20",
+      "dauer": "60",
+      "canceled": true,
+      "date": "2025-11-07",
+      "_uniqueId": "train_00p554a7m_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Werkstoffkunde",
+      "stops": "",
+      "plan": "20:10",
+      "actual": "21:30",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-11-07",
+      "zwischenhalte": [
+        "Freitag",
+        "7. November 2025"
+      ],
+      "_uniqueId": "train_1odnc58r0_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Mathematik I",
+      "stops": "",
+      "plan": "21:20",
+      "actual": "22:30",
+      "dauer": 180,
+      "canceled": false,
+      "date": "2025-11-07",
+      "zwischenhalte": [
+        "Freitag",
+        "7. November 2025"
+      ],
+      "_uniqueId": "train_sctgb6qew_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TZ FERTIG!!!",
+      "stops": "",
+      "plan": "20:30",
+      "actual": "21:20",
+      "dauer": "60",
+      "canceled": false,
+      "date": "2025-11-09",
+      "_uniqueId": "train_rlzc4w41t_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Aufräumen",
+      "stops": "CLEAN UR ROOM BITCH",
+      "plan": "17:40",
+      "actual": "17:40",
+      "dauer": "75",
+      "canceled": false,
+      "date": "2025-11-07",
+      "_uniqueId": "train_x7j9mso2k_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Ur meat is cooking",
+      "stops": "",
+      "plan": "19:50",
+      "actual": "19:50",
+      "dauer": "23",
+      "canceled": false,
+      "date": "2025-11-07",
+      "_uniqueId": "train_5kg03uk6n_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Mittag",
+      "plan": "12:00",
+      "actual": "14:20",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-08",
+      "weekday": "saturday",
+      "_uniqueId": "train_ia1vjuqff_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Werkstoffkunde + Fertigungstechnik",
+      "plan": "21:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        "Teilausfall Fertigungstechnik.",
+        "Nachholtermin noch nicht bestimmt!"
+      ],
+      "canceled": false,
+      "date": "2025-11-08",
+      "weekday": "saturday",
+      "actual": "22:30",
+      "_uniqueId": "train_6me9dll4x_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Duschen",
+      "plan": "18:40",
+      "actual": "18:55",
+      "dauer": 20,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-08",
+      "weekday": "saturday",
+      "_uniqueId": "train_4xr8w5lfq_1762683030038"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Abendessen",
+      "plan": "19:00",
+      "dauer": 60,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-08",
+      "weekday": "saturday",
+      "actual": "19:00",
+      "_uniqueId": "train_cj8s1fnkc_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "plan": "13:30",
+      "dauer": 180,
+      "zwischenhalte": [
+        "PWR 9, 0.229",
+        "StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE"
+      ],
+      "canceled": false,
+      "date": "2025-11-25",
+      "weekday": "tuesday",
+      "actual": "13:30",
+      "_uniqueId": "train_uzuslval2_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "plan": "13:30",
+      "dauer": 180,
+      "zwischenhalte": [
+        "PWR 9, 0.229",
+        "StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE"
+      ],
+      "canceled": false,
+      "date": "2025-11-26",
+      "weekday": "wednesday",
+      "actual": "13:30",
+      "_uniqueId": "train_c791mq6d3_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "plan": "13:30",
+      "dauer": 180,
+      "zwischenhalte": [
+        "PWR 9, 0.229",
+        "StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE"
+      ],
+      "canceled": false,
+      "date": "2025-11-27",
+      "weekday": "thursday",
+      "actual": "13:30",
+      "_uniqueId": "train_3cmz9hhbc_1762683030038"
+    },
+    {
+      "linie": "S6",
+      "ziel": "CAD Crashkurs",
+      "plan": "13:30",
+      "dauer": 180,
+      "zwischenhalte": [
+        "PWR 9, 0.229",
+        "StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE"
+      ],
+      "canceled": false,
+      "date": "2025-11-28",
+      "weekday": "friday",
+      "actual": "13:30",
+      "_uniqueId": "train_tdjzkm070_1762683030038"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Spotify Tracking Ends",
+      "plan": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        "Endlich wird's Zeit!!!"
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "actual": "00:00",
+      "_uniqueId": "train_v9eu2eh8q_1762683030038"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TM1 Selbststudium",
+      "plan": "14:00",
+      "dauer": 30,
+      "zwischenhalte": [
+        "Ersatzfahrt für die TM1 Tutorium."
+      ],
+      "canceled": true,
+      "date": "2025-11-10",
+      "weekday": "monday",
+      "_uniqueId": "train_mmyhdsntl_1762683030038",
+      "actual": "14:45"
+    },
+    {
+      "linie": "17",
+      "ziel": "SPACENIGHT 2026",
+      "plan": "20:00",
+      "dauer": 480,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-05-08",
+      "weekday": "friday",
+      "_uniqueId": "train_t0ybz5qo7_1762683030038",
+      "actual": "20:00"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Test",
+      "plan": "08:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-09",
+      "weekday": "sunday",
+      "_uniqueId": "train_sqpxmomjr_1762683030038",
+      "actual": "08:00"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Vorbereitung",
+      "plan": "12:20",
+      "dauer": 15,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-09",
+      "weekday": "sunday",
+      "_uniqueId": "train_326sfbe5r_1762687212782",
+      "actual": "12:20"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Mittag",
+      "plan": "12:35",
+      "actual": "12:30",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-09",
+      "weekday": "sunday",
+      "_uniqueId": "train_dcnhf1n84_1762687240251"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "10:55",
+      "actual": "10:55",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_nz28wm0kr_1762719547652"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "20:30",
+      "actual": "20:30",
+      "dauer": 150,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_b3gwlya15_1762719877830"
+    },
+    {
+      "linie": "1",
+      "ziel": "Cheap ahh To Do List",
+      "stops": "1. Rundfunkbeitrag\n\n4. Dein Ladekabel liegt (hoffentlich) noch in der Fachschaft\n\n6. Viết thư cho Ngọc\n\n\nEdit nur in Legacy-App möglich :3",
+      "plan": "",
+      "dauer": "",
+      "canceled": false,
+      "date": "2025-11-10",
+      "_uniqueId": "train_oi4t450go_1762765793505",
+      "weekday": "monday",
+      "zwischenhalte": [
+        "^^6. Viết thư cho Ngọc",
+        "17. VORPRAKTIKUM FÜR FEBRUAR - MÄRZ (1 WOCHE)",
+        "18. Rủ chị Hanna đi chơi chít mớt",
+        "19. TM1 Vortragsübung nacharbeiten",
+        "",
+        "14. FS Vertrag abschließen",
+        "15. Lohnabrechnung????",
+        "3. monatliche Amazonkauf",
+        "16. Technik treffen erwünscht?",
+        "20. Nacharbeiten ExPhys bis Rotation !!!!!!!!!!!",
+        "8. Präsenzübungen HM1 noch nicht - fertig. - Nachholtermin !",
+        "16. Hausübungen 4",
+        "20. Praktikumswochenbericht umformulieren"
+      ]
+    },
+    {
+      "linie": "S7",
+      "ziel": "Werkstoffkunde + ExPhys",
+      "plan": "09:45",
+      "dauer": 75,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-10",
+      "weekday": "monday",
+      "_uniqueId": "train_zher46tzm_1762765812482",
+      "actual": "09:45"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Technische Mechanik (Übung)",
+      "plan": "22:30",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-10",
+      "weekday": "monday",
+      "_uniqueId": "train_n3o9h200e_1762765854916",
+      "actual": "22:40"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Viết thư cho Ngọc",
+      "plan": "22:00",
+      "actual": "23:16",
+      "dauer": 44,
+      "zwischenhalte": [
+        "Literally, if you care abt this friendship"
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_hmji60kh1_1762766174784"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I + Orga",
+      "plan": "14:45",
+      "actual": "14:45",
+      "dauer": 30,
+      "zwischenhalte": [
+        "Heute abgeschlossen: ",
+        "- Blatt 3",
+        "- Termin Wocheneinkauf",
+        "- Lohnabrechnung",
+        "- Termin Wäsche"
+      ],
+      "canceled": false,
+      "date": "2025-11-10",
+      "weekday": "monday",
+      "_uniqueId": "train_i4xjhvpcj_1762782448629"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Wocheneinkauf (Innenstadt)",
+      "plan": "18:00",
+      "actual": "18:25",
+      "dauer": 95,
+      "zwischenhalte": [
+        "Nach Möglichkeit gerne der Einkauf schon jetzt machen"
+      ],
+      "canceled": false,
+      "date": "2025-11-10",
+      "weekday": "monday",
+      "_uniqueId": "train_et7hdcl8a_1762784218199"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche",
+      "plan": "08:00",
+      "actual": "08:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_17hg1955g_1762784294970"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche entnehmen",
+      "plan": "08:45",
+      "actual": "08:45",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "monday",
+      "_uniqueId": "train_4gv18golu_1762784315480"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche holen",
+      "plan": "10:20",
+      "dauer": 30,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "monday",
+      "_uniqueId": "train_nm19gi6gg_1762784326639",
+      "actual": "10:20"
+    },
+    {
+      "linie": "6",
+      "ziel": "Anmerkungen",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [
+        "- Lotus Biscoff ist richtig lecker ",
+        "- Mathe: Vollständige Induktion immer IA, IH, IS klar schreiben",
+        "- Nachholtermine: Mathe (2x180m) fürs Häufungspunkte, Präsenzübung, Vortragsübung",
+        "- Die TM1 Tutorien 2 und 3 dienen als Prüfungsmaterialen",
+        "- Inhalt Musterklausuren",
+        " + Mathe: Bis Häufungspunkte",
+        " + TM: Bis Allgemeine Kräftesystem in 3D",
+        " + Werkstoffkunde: Bis ???",
+        " + Fertigungstechnik: Bis Metalllegierung",
+        "",
+        "- 19.11: HM1 Vorlesung fällt aus",
+        "",
+        "- ABSCHÄTZUNG GRENZWERTE ist interessant",
+        "-Grenzwertssätze, Sandwichsatz. usw....",
+        "- Cauchysche Konvergenzkriterium",
+        "",
+        "COMMERZBANK",
+        "DE51 2504 0066 0490 1724 00",
+        "DE51250400660490172400",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_086wyy7in_1762792429588"
+    },
+    {
+      "linie": "S4",
+      "ziel": "AlllumniFest",
+      "plan": "15:00",
+      "actual": "15:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_7cczt7801_1762793009326"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Kochen",
+      "plan": "18:00",
+      "actual": "18:30",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_smg9x9uj1_1762808689820"
+    },
+    {
+      "linie": "S8",
+      "ziel": "Heimkehr (Hannover)",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 2880,
+      "zwischenhalte": [
+        "Im gonna be hungover. Im gonna drink a bunch of different drinks and im gonna be hungover 🎶🎶",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-20",
+      "weekday": "saturday",
+      "_uniqueId": "train_vddfym62a_1762809573093"
+    },
+    {
+      "linie": "S9",
+      "ziel": "Prüfungsanmeldung",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_aax0z6ec2_1762872883184"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_kjrmxlb2e_1762873277964"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TZ - CAD Anfangen",
+      "plan": "20:30",
+      "actual": "20:30",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-25",
+      "weekday": "tuesday",
+      "_uniqueId": "train_4xbl6uwp1_1762874081013"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Duschen",
+      "plan": "18:15",
+      "actual": "18:25",
+      "dauer": 20,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_uz2d0b0om_1762881133615"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Kochen",
+      "plan": "18:35",
+      "actual": "18:45",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_35bcfghs1_1762881154993"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Mathematik I",
+      "plan": "19:40",
+      "actual": "19:40",
+      "dauer": 50,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-11",
+      "weekday": "tuesday",
+      "_uniqueId": "train_avwebxomy_1762881255784"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Sprechstunde DT",
+      "plan": "11:30",
+      "actual": "11:30",
+      "dauer": 20,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_xx4d2wdok_1762935310317"
+    },
+    {
+      "linie": "S8",
+      "ziel": "FRANKFURT",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-19",
+      "weekday": "friday",
+      "_uniqueId": "train_wrjbbmj4i_1762940607327"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Stadteinfahrt",
+      "plan": "17:00",
+      "actual": "17:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        "Aufgaben:",
+        "",
+        "1. dm besuchen",
+        "2. sojabohne finden",
+        "3. Hallenschuhe kaufen"
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_43je3gare_1762955004583"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wäsche holen",
+      "plan": "15:20",
+      "actual": "15:20",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_z586d5np5_1762955124972"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] TZ Fertig",
+      "plan": "22:00",
+      "actual": "23:00",
+      "dauer": 8,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-12",
+      "weekday": "wednesday",
+      "_uniqueId": "train_n0oc9m286_1762955511023"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Ersties Treffen",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": 100,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-17",
+      "weekday": "monday",
+      "_uniqueId": "train_cb2px9h24_1762976794841"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "14:00",
+      "actual": "15:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_fksyidjmr_1762976993283"
+    },
+    {
+      "linie": "1",
+      "ziel": "Sarstedt",
+      "plan": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_4shoxoeia_1762989726025",
+      "actual": "00:00"
+    },
+    {
+      "linie": "2",
+      "ziel": "Gleidingen",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_ctsbiu7jp_1762989791538"
+    },
+    {
+      "linie": "3",
+      "ziel": "Altwarmbüchen",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_1kjdppj5h_1762989808471"
+    },
+    {
+      "linie": "4",
+      "ziel": "Roderbruch über Kröpcke",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_nhjj77zt8_1762989823131"
+    },
+    {
+      "linie": "5",
+      "ziel": "Anderten",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 5,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_clcvoeh9l_1762989831454"
+    },
+    {
+      "linie": "6",
+      "ziel": "Messe/Ost (EXPO-Plaza)",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 1,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_g2xg5apzh_1762989840194"
+    },
+    {
+      "linie": "8",
+      "ziel": "Messe/Nord",
+      "plan": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_rwf7o7lep_1762989917923",
+      "actual": "00:00"
+    },
+    {
+      "linie": "7",
+      "ziel": "Misburg",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_deu58ff3o_1762990011326"
+    },
+    {
+      "linie": "9",
+      "ziel": "Hauptbahnhof",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_u4wwwtwdy_1762990028371"
+    },
+    {
+      "linie": "10",
+      "ziel": "Ahlem",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_6yrspdpjp_1762990051535"
+    },
+    {
+      "linie": "12",
+      "ziel": "Ahlem",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_wbk5qe2vm_1762990101092"
+    },
+    {
+      "linie": "13",
+      "ziel": "Fasanenkrug",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_yrorp7hir_1762990142030"
+    },
+    {
+      "linie": "17",
+      "ziel": "Hauptbahnhof/ZOB",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_b8937glcl_1762990238337"
+    },
+    {
+      "linie": "11",
+      "ziel": "Zoo",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_0lti3mwlp_1762990379601"
+    },
+    {
+      "linie": "S2",
+      "ziel": "[ZF] Aufräumen",
+      "plan": "10:30",
+      "actual": "10:30",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-13",
+      "weekday": "thursday",
+      "_uniqueId": "train_8q6neen3r_1763027038125"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": 220,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_cjkuzyt3j_1763031163277"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] ISD Labor",
+      "plan": "20:00",
+      "actual": "20:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-13",
+      "weekday": "thursday",
+      "_uniqueId": "train_byu9n1mrt_1763056329663"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Softwaretechnik",
+      "plan": "09:00",
+      "actual": "10:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_sa0mzumrr_1763064564525"
+    },
+    {
+      "linie": "1",
+      "ziel": "Wuthering Heights Release",
+      "plan": "18:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-13",
+      "weekday": "friday",
+      "_uniqueId": "train_4o154pbop_1763067156677",
+      "actual": "18:00"
+    },
+    {
+      "linie": "3",
+      "ziel": "Mathe Prüfung",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [
+        "Arten von Reihen und ihre Konvergenz, Divergenz",
+        " ",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_q46a1fljo_1763115326667"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "10:00",
+      "actual": "08:00",
+      "dauer": 180,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_evc47pdnq_1763154986168"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Nấu bún ốc",
+      "plan": "11:00",
+      "actual": "13:45",
+      "dauer": 180,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_ni8gu2f2n_1763155000786"
+    },
+    {
+      "linie": "12",
+      "ziel": "Orga",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        "FS Vertrag abschließen für morgen",
+        "Amazon",
+        "Zugticket",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-14",
+      "weekday": "friday",
+      "_uniqueId": "train_274p1q846_1763155064910"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Geburtstagsfeier???",
+      "plan": "19:00",
+      "actual": "18:00",
+      "dauer": 240,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-19",
+      "weekday": "wednesday",
+      "_uniqueId": "train_i4caxgaqh_1763156147693"
+    },
+    {
+      "linie": "13",
+      "ziel": "Eras Tour Documentary",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-13",
+      "weekday": "saturday",
+      "_uniqueId": "train_llfojdjrn_1763156175946"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Wocheneinkauf",
+      "plan": "09:00",
+      "actual": "09:00",
+      "dauer": 45,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-19",
+      "weekday": "wednesday",
+      "_uniqueId": "train_k3q9lmwwh_1763156289135"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "10:00",
+      "actual": "10:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-19",
+      "weekday": "wednesday",
+      "_uniqueId": "train_j12t3zeva_1763156319510"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Stadteinfahrt",
+      "plan": "10:00",
+      "actual": "10:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        "Einkaufen"
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_kqcpopqjv_1763196155742"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] ISD Labor",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": 150,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-16",
+      "weekday": "sunday",
+      "_uniqueId": "train_h5c09cmhf_1763196178690"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Mittag",
+      "plan": "13:45",
+      "actual": "13:45",
+      "dauer": 30,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_6t5g9xwcu_1763210612794"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] ISD Labor",
+      "plan": "22:00",
+      "actual": "21:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        "Nachholtermin"
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_4gr2gs48t_1763210661893"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Your broth is cooking",
+      "plan": "16:30",
+      "actual": "17:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_led0fi9km_1763215051844"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Anfragen PA-Equipment",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-31",
+      "weekday": "wednesday",
+      "_uniqueId": "train_pjosuece6_1763221769805"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Angebote PA-Equipment",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-15",
+      "weekday": "sunday",
+      "_uniqueId": "train_25l4xbooa_1763221796052"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Kostenvoranschlag",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-15",
+      "weekday": "sunday",
+      "_uniqueId": "train_1wpfz27vu_1763221811548"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Werkzeugbestände prüfen",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-28",
+      "weekday": "saturday",
+      "_uniqueId": "train_v09w9j3a5_1763221832521"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Technikbedarf Bars",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-03-15",
+      "weekday": "sunday",
+      "_uniqueId": "train_38gk6s2rg_1763221848152"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Helferausrüstung planen",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-03-15",
+      "weekday": "sunday",
+      "_uniqueId": "train_xwa45xwgm_1763221870079"
+    },
+    {
+      "linie": "S46",
+      "ziel": "DJ-Verträge",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-03-30",
+      "weekday": "monday",
+      "_uniqueId": "train_h5qha7gch_1763221894545"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Organisieren Technik-Bedarf",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-04-15",
+      "weekday": "wednesday",
+      "_uniqueId": "train_71jlk2r8l_1763221913298"
+    },
+    {
+      "linie": "S46",
+      "ziel": "Probeaufbau begleiten",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-04-30",
+      "weekday": "thursday",
+      "_uniqueId": "train_sfq2b3bx8_1763221935790"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Nấu bún ốc",
+      "plan": "19:30",
+      "actual": "19:30",
+      "dauer": 30,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-15",
+      "weekday": "saturday",
+      "_uniqueId": "train_7sth1u45j_1763225510179"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-17",
+      "weekday": "monday",
+      "_uniqueId": "train_lp55hx64q_1763372737662"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "plan": "08:00",
+      "actual": "08:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-18",
+      "weekday": "tuesday",
+      "_uniqueId": "train_3sr2gs3pq_1763372749774"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Kochen",
+      "plan": "17:45",
+      "actual": "17:45",
+      "dauer": 60,
+      "zwischenhalte": [
+        "ABWEICHUNG: Kein Fried Chicken wegen fehlende Kartoffelmehl"
+      ],
+      "canceled": false,
+      "date": "2025-11-18",
+      "weekday": "tuesday",
+      "_uniqueId": "train_71hzhk228_1763372776399"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Fitness Studio",
+      "plan": "17:30",
+      "actual": "17:30",
+      "dauer": 110,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-20",
+      "weekday": "thursday",
+      "_uniqueId": "train_we8up2y5v_1763372815091"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] ISD Labor",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-17",
+      "weekday": "monday",
+      "_uniqueId": "train_9pfsd2zn6_1763383584697"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Ski Kurs",
+      "plan": "06:00",
+      "actual": "06:00",
+      "dauer": 720,
+      "zwischenhalte": [
+        "ERINNERUNG: TZ auf ILIAS hochladen"
+      ],
+      "canceled": false,
+      "date": "2026-01-28",
+      "weekday": "wednesday",
+      "_uniqueId": "train_xa1c84zk6_1763460770623"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Ski Kurs",
+      "plan": "06:00",
+      "actual": "06:00",
+      "dauer": 720,
+      "zwischenhalte": [
+        "ERINNERUNG: HEUTE IST ENDABGABE !!!!!!!"
+      ],
+      "canceled": false,
+      "date": "2026-02-04",
+      "weekday": "wednesday",
+      "_uniqueId": "train_7qfwj33al_1763461290550"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "Ausländerbehörde",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": 240,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-19",
+      "weekday": "wednesday",
+      "_uniqueId": "train_v735gbzj9_1763463613862"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "Unterlagen ausdrucken",
+      "plan": "17:30",
+      "actual": "17:30",
+      "dauer": 0,
+      "zwischenhalte": [
+        "Benötigte Unterlagen für den Termin bei der Ausländerbehörde:",
+        "1. Reisepass und Fiktionsbescheinigung",
+        "2. Merkblatt Beendigung der studienvorbereitenden Maßnahme",
+        "3. Kopie Flugticket",
+        "4. Kopie Immatrikulationsbescheinigung",
+        "5. Kopie Sperrkontosbetrag",
+        "6. Zeugnis der Feststellungsprüfung (Original)",
+        "7. Nachweis über Krankenversicherungsschutz",
+        "8. Nachweis über Deutschkenntnisse",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-18",
+      "weekday": "tuesday",
+      "_uniqueId": "train_ld0tlh365_1763463774467"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ISD Labor",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-18",
+      "weekday": "tuesday",
+      "_uniqueId": "train_zhybd2cxs_1763464410227"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Your chicken is baking",
+      "plan": "18:50",
+      "actual": "18:50",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-18",
+      "weekday": "tuesday",
+      "_uniqueId": "train_ppdize1pt_1763486781962"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Mathematik I",
+      "plan": "18:27",
+      "actual": "18:27",
+      "dauer": 20,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-18",
+      "weekday": "tuesday",
+      "_uniqueId": "train_qtgnmrwaa_1763486844732"
+    },
+    {
+      "linie": "S4",
+      "ziel": "MOVIE NIGHTTT",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": 360,
+      "zwischenhalte": [
+        "and i mean a real movie night in CLEAN SHEETS, with CANDLES, BIG SCREEN, POP CORN, CLEAN ROOM, and shits",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_6cxxyvsgh_1763498859257"
+    },
+    {
+      "linie": "S1",
+      "ziel": "EVERYTHING SHOWER",
+      "plan": "16:00",
+      "actual": "17:00",
+      "dauer": 60,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_zia185fd0_1763499010327"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Prüfungsvorbereitung: Softwaretechnik",
+      "plan": "19:00",
+      "actual": "19:30",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_mfhwj5a0o_1763499092894"
+    },
+    {
+      "linie": "S9",
+      "ziel": "CARDIGAN DROP TODAY!!",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 1440,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-19",
+      "weekday": "wednesday",
+      "_uniqueId": "train_9g6rikzzp_1763501662975"
+    },
+    {
+      "linie": "S9",
+      "ziel": "AUSLÄNDERBEHÖRDE",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-20",
+      "weekday": "thursday",
+      "_uniqueId": "train_e7m81lol0_1763570837034"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "plan": "21:00",
+      "actual": "23:40",
+      "dauer": 60,
+      "zwischenhalte": [],
+      "canceled": true,
+      "date": "2025-11-20",
+      "weekday": "thursday",
+      "_uniqueId": "train_k5pfr537t_1763650934247"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "14:50",
+      "actual": "14:54",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_ss0m4l79c_1763661168228"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "16:40",
+      "actual": "16:40",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_ixrgltzos_1763661199339"
+    },
+    {
+      "linie": "S7",
+      "ziel": "ExPhys",
+      "plan": "20:00",
+      "actual": "20:30",
+      "dauer": 220,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_o88tyry6v_1763661357836"
+    },
+    {
+      "linie": "S6",
+      "ziel": "TM1 Hörsaaltest",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-25",
+      "weekday": "tuesday",
+      "_uniqueId": "train_b53wskaf5_1763666876410"
+    },
+    {
+      "linie": "S6",
+      "ziel": "ExPhys Test",
+      "stops": "",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": "",
+      "canceled": false,
+      "date": "2025-11-25",
+      "_uniqueId": "train_qmqfjg0r1_1763674522806"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Technische Mechanik I (Übung)",
+      "plan": "07:30",
+      "actual": "07:30",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_8fr49f0uc_1763677829006"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "21:00",
+      "actual": "21:00",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_81lxvh7y7_1763677867556"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "21:50",
+      "actual": "21:50",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_48m53pcsp_1763677884127"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "22:40",
+      "actual": "22:40",
+      "dauer": 15,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_2fpkg8dzq_1763677897052"
+    },
+    {
+      "linie": "S3",
+      "ziel": "Movie Night Prep",
+      "plan": "23:40",
+      "actual": "23:40",
+      "dauer": 20,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_l2d78w5b9_1763677948128"
+    },
+    {
+      "linie": "S4",
+      "ziel": "USCHI Party",
+      "plan": "18:00",
+      "actual": "18:00",
+      "dauer": 360,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-26",
+      "weekday": "wednesday",
+      "_uniqueId": "train_59wtysqer_1763678015153"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Technische Mechanik I (Übung)",
+      "plan": "10:30",
+      "actual": "10:30",
+      "dauer": 90,
+      "zwischenhalte": [
+        "Kapitel I FERTIG"
+      ],
+      "canceled": false,
+      "date": "2025-11-21",
+      "weekday": "friday",
+      "_uniqueId": "train_ijs1nx5w5_1763717687720"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Kochen",
+      "plan": "11:00",
+      "actual": "11:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_c5g6q0y7e_1763734148957"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Technische Mechanik I (Übung)",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 240,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_2271g8jan_1763734165805"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_nz1kxbcol_1763734185017"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "14:50",
+      "actual": "14:50",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_szgoxzav7_1763734193767"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "15:40",
+      "actual": "15:40",
+      "dauer": 15,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_oqwz8idfp_1763734208407"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathematik I",
+      "plan": "13:00",
+      "actual": "15:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_8zzhky2xc_1763741687737"
+    },
+    {
+      "linie": "S7",
+      "ziel": "WK + FT Vorbereitung",
+      "plan": "13:00",
+      "actual": "13:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_sb88ql2ga_1763741809422"
+    }
+  ],
+  "trains": []
+}

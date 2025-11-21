@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Zugzielanzeige</title>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#161B75">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #161B75;
+      color: white;
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
+      font-stretch: condensed;
+      width: 100%;
+      overflow: hidden;
+    }
+    #container {
+      /* use fixed heights for rows so unused space remains empty */
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+    }
+    .row {
+      height: 20vh; /* exactly 20% of viewport height */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2vw;
+      font-size: 4w;
+      box-sizing: border-box;
+    }
+    .focused {
+      /* occupies two standard rows visually */
+      height: 40vh; /* 2 * 20vh */
+      font-size: 5vw;
+      position: relative;
+      border-bottom: 3px solid white;
+      background: #161B75;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2vw;
+      box-sizing: border-box;
+    }
+    .train-info {
+      display: flex;
+      align-items: center;
+      flex: 1; /* take the space between symbol-slot and right-block */
+      min-width: 0; /* allow children to shrink
+                     so text-overflow works */
+    }
+    .zugziel {
+      font-weight: 300; /* less bold */
+      font-stretch: condensed;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      display: block;
+      font-size: clamp(18px, 5vw, 7vw);
+    }
+    .symbol-slot {
+      width: 15vw; /* reserve space so destination aligns even when focused symbol is large */
+      
+          display: flex;
+      
+          align-items: center;
+      
+          justify-content: flex-start;
+    
+          box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .train-symbol {
+      /* default symbol size inside slot */
+      width: 10vw;
+      height: 10vw;
+    }
+
+    .focused-symbol {
+      /* larger symbol in focused view */
+      width: 13vw;
+      height: 13vw;
+      flex-shrink: 0; 
+      padding-top: 1vw;
+    }
+
+    /* Non S-Bahn line rendered as a text badge */
+    .line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 6vw;
+      padding: 0.4vw 0.8vw;
+      border-radius: 0.6vw;
+      font-weight: 500;
+      font-size: clamp(12px, 3.2vw, 5vw);
+      font-stretch: condensed;
+      color: white;
+      background: transparent;
+      text-transform: none;
+      letter-spacing: -0.01em;
+    }
+
+    /* Focused destination container: ensure left alignment and proper flex sizing */
+    .focused-destination { 
+      display: flex; 
+      flex-direction: column; 
+      flex: 1; 
+      min-width: 0;
+      padding-top: 1vw; }
+
+    .carriage-slot {
+      width: 12vw;
+    }
+
+    .carriage-slot-bottom {
+      width: 15vw;
+    }
+
+    .carriage-symbol {
+      width: 12vw;
+      height: 12vw;
+    }
+
+    .carriage-symbol-bottom {
+      width: 13vw;
+      height: 13vw;
+    }
+    
+    .delayed {
+      background: white;
+      color: #161B75;
+      font-weight: bold;
+    }
+    
+    /* FEX train highlighting */
+    .fex-row {
+      background: white;
+      color: #161B75;
+    }
+    /* Departure time styling: keep on one line and limit font size so it's not too large */
+    .departure {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      /* clamp between a reasonable px minimum and a vw-based size */
+      font-size: clamp(12px, 3vw, 6vw);
+      font-stretch: condensed;
+      letter-spacing: -0.01em;
+      color: inherit;
+      display: inline-block;
+    }
+    /* Slightly larger departure in focused (top) rows, but still clamped */
+    .focused-departure{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      /* clamp between a reasonable px minimum and a vw-based size */
+      font-size: clamp(12px, 4vw, 6vw);
+      font-stretch: condensed;
+      letter-spacing: -0.01em;
+      color: inherit;
+      display: inline-block;
+    }
+    .zwischenhalt {
+      font-size: 3vw;
+      color: #e0dfdf;
+      margin-top: 0vw;
+      margin-left: 0.5vw;
+      text-align: left;
+      font-weight: 200;
+      font-stretch: condensed;
+      letter-spacing: -0.01em;
+    }
+    /* Spanning container for focused stops (covers two rows) */
+    .focused-stops-container {
+      pointer-events: auto; /* allow interaction with scrollable content */
+      color: #e0dfdf;
+      font-size: 3vw;
+      line-height: 1.2;
+    }
+    .focused-stops-container .zwischenhalt {
+      pointer-events: auto;
+      white-space: normal;
+      overflow: auto;
+      max-height: 100%;
+      /* Hide scrollbar while keeping scroll functionality */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+    .focused-stops-container .zwischenhalt::-webkit-scrollbar {
+      display: none; /* Safari and Chrome */
+    }
+    .focused-details {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      flex: 1;
+    }
+    .hidden { display: none; }
+    
+    /* User Focus Mode Styles */
+    .user-focus-row {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .user-focus-row:last-child {
+      border-bottom: none;
+    }
+    
+    /* Clickable destination styling */
+    .zugziel:hover, span:hover {
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+    
+    /* Page indicator styling */
+    .page-indicator {
+      position: fixed;
+      bottom: 10px;
+      right: 20px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.3);
+      padding: 4px 8px;
+      border-radius: 10px;
+      z-index: 1000;
+    }
+    
+    /* Back button styling for user focus mode */
+    .back-button {
+      position: fixed;
+      bottom: 5px;
+      left: 5px;
+      font-size: 2vw;
+      color: rgba(255,255,255,0.4);
+      background: none;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+      z-index: 1000;
+      transition: opacity 0.2s ease;
+    }
+    
+    .back-button:hover {
+      color: rgba(255,255,255,0.8);
+    }
+    
+    /* Explicit rules for JS-created classes so every element has a CSS ruleset
+       This makes it easier to customize from the outside and avoids surprises
+       when elements are added dynamically. */
+
+    .focused-zugziel {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      display: block;
+      font-weight: 500;
+      font-stretch: condensed;
+      letter-spacing: -0.02em;
+      font-size: clamp(20px, 6vw, 9vw);
+    }
+
+    /* Focused row: ensure zwischenhalt is left-aligned and doesn't get centered */
+    .row.focused-top .zwischenhalt,
+    .row.focused-bottom .zwischenhalt {
+      text-align: left;
+      align-self: flex-start;
+      margin-left: 0.5vw;
+      width: 100%;
+    }
+
+    /* Carriage icon in focused top row should sit higher to appear under the bottom slot margin */
+    .carriage-symbol-top {
+      width: 8vw;
+      height: 8vw;
+      align-self: flex-start; /* push to top of the row's content box */
+      transform: translateY(-2vh); /* nudge upward so it sits near the slot boundary */
+    }
+
+    .departure-slot {
+      width: 15vw; 
+      display: flex; 
+      align-items: center; 
+      justify-content: flex-end; 
+    }
+    
+  .symbol-slot img, .right-block img { max-width: 100%; height: auto; display: block; }
+  /* Right-side split: keep carriage and departure in separate lanes so they align vertically */
+  .right-block { display: flex; align-items: center; justify-content: flex-end; gap: 1vw; box-sizing: border-box; }
+
+  /* Separator between focused block (top two rows) and the rest of the list */
+  .focused-separator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40vh; /* directly under the two focused rows (2 * 20vh) */
+    height: 1px;
+    background: white;
+    z-index: 20;
+  }
+
+ 
+  /* Station selection overlay */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+  .overlay.hidden { display: none; }
+  .overlay-card { width: min(92vw, 680px); background: #161B75; color: white; padding: 3vw; border-radius: 1vw; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+  .overlay-title { font-size: clamp(18px, 4.2vw, 28px); margin: 0 0 1vw 0; }
+  .overlay-sub { font-size: clamp(14px, 3vw, 18px); opacity: 0.85; margin-bottom: 2vw; }
+  .station-input-wrap { position: relative; }
+  .station-input { width: 100%; padding: 1vw 1.2vw; font-size: clamp(14px, 3.5vw, 22px); border-radius: 0.6vw; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.2); color: white; outline: none; }
+  .suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #0e1254; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.6vw; margin-top: 0.5vw; max-height: 40vh; overflow: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  .suggestion-item { padding: 0.8vw 1vw; cursor: pointer; font-size: clamp(14px, 3.2vw, 20px); }
+  .suggestion-item:hover { background: rgba(255,255,255,0.08); }
+  .overlay-hint { margin-top: 1vw; font-size: clamp(12px, 2.8vw, 16px); color: rgba(255,255,255,0.8); }
+  .overlay-actions { margin-top: 2vw; display: flex; gap: 1vw; }
+  .btn { background: white; color: #161B75; border: none; padding: 0.8vw 1.4vw; font-size: clamp(14px, 3.2vw, 18px); border-radius: 0.6vw; cursor: pointer; }
+  .btn.secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.35); }
+  .mode-pill { display: inline-block; margin-left: 0.5vw; padding: 0.2vw 0.6vw; border-radius: 999px; background: rgba(255,255,255,0.15); font-size: 0.9em; }
+  .change-station-btn { position: fixed; top: 8px; right: 8px; font-size: 12px; padding: 6px 10px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; cursor: pointer; z-index: 2100; }
+
+
+  </style>
+</head>
+<body>
+  <!-- Station selection overlay (full screen, keyboard-invoked) -->
+  <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true" style="position:fixed;inset:0;z-index:2000;background:#161B75;">
+    <div class="overlay-card" style="width:100%;height:100%;margin:0;border-radius:0;background:transparent;padding:4vw;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;">
+      <h2 class="overlay-title">Bahnhof auswählen</h2>
+      <div class="overlay-sub">Fun Fact: Die Farbe von den Linien entspricht der der S-Bahn-Hannover.</div>
+      <div class="station-input-wrap">
+        <input id="station-input" class="station-input" type="text" placeholder="Leer lassen für den aktuellen Uni-Stundenplan." autocomplete="off" />
+        <div id="station-suggestions" class="suggestions" style="display:none"></div>
+      </div>
+      <div id="overlay-hint" class="overlay-hint"></div>
+      <div class="overlay-actions">
+        <button id="overlay-cancel" class="btn secondary">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+  <div id="container"></div>
+  <script>
+    // Train line templates - edit these destination and stops as needed
+    const trainTemplates = {
+      'S1': {
+        destination: '[LEER] Pause',
+        stops: 'Dieser Zeitfenster ist für eine Pause vorgesehen.'
+      },
+      'S2': {
+        destination: '[LEER] Haushalt/Vorbereitung',
+        stops: 'Details zur Aufgabe werden hier angezeigt.'
+      },
+      'S3': {
+        destination: '[LEER] Kreativität',
+        stops: 'Details zur kreativen Aufgabe werden hier angezeigt.'
+      },
+      'S4': {
+        destination: '[LEER] Girls Night Out',
+        stops: 'Kein Detail eingetragen. Geh rausss. Treffe neue Leute, oder hol dir das Ticket für das nächste Konzert idk...'
+      },
+      'S5': {
+        destination: '[LEER] Sport',
+        stops: 'Details zur Aktivität werden hier angezeigt.'
+      },
+      'S6': {
+        destination: '[LEER] Lehrveranstaltung',
+        stops: 'Details zur Lehrveranstaltung werden hier angezeigt.\n\nZurzeit ist noch kein Detail eingetragen.'
+      },
+      'S7': {
+        destination: '[LEER] Selbststudium',
+        stops: 'Dieser Zeitfenster dient dem Lernen.\n\nZurzeit ist noch kein Detail eingetragen.'
+      },
+      'S45': {
+        destination: '[LEER] FLURUS',
+        stops: 'Details zur Fachschaftsveranstaltung werden hier angezeigt.'
+      },
+      'S46': {
+        destination: '[LEER] FLURUS Fachschaftsarbeit',
+        stops: 'Details zur Fachschaftsarbeit werden hier angezeigt.'
+      },
+      'S9': {
+        destination: 'Flughafen BER',
+        stops: 'Die Linie S9 fährt tatsächlich zum Flughafen BER.'
+      },
+      'S8': {
+        destination: 'Grünau',
+        stops: 'Die Linie S8 fährt tatsächlich nach Grünau.'
+      },
+      'S42': {
+        destination: 'Ring ↺',
+        stops: ''
+      },
+      'S41': {
+        destination: 'Ring ↻',
+        stops: ''
+      }
+    };
+
+    // Apply template defaults for trains with missing destination or stops
+    function applyTrainTemplate(train) {
+      if (!train.linie) return train;
+      
+      const template = trainTemplates[train.linie.toUpperCase()];
+      if (!template) return train;
+      
+      // Apply template destination if not provided or empty
+      if (!train.ziel || train.ziel.trim() === '') {
+        train.ziel = template.destination;
+      }
+      
+      // Apply template stops if not provided or empty
+      if (!train.stops || train.stops.trim() === '') {
+        train.stops = template.stops;
+      }
+      
+      return train;
+    }
+
+    // Helper functions for SVG paths
+    function getTrainSVG(line) {
+      return `./${line.toLowerCase()}.svg`;
+    }
+    function getCarriageSVG(dauer, isFEX = false) {
+      const n = Number(dauer);
+      const prefix = isFEX ? 'cb' : 'c'; // cb = carriage blue
+      // Default to c3/cb3 when duration is missing/invalid for a more pleasant look
+      if (!Number.isFinite(n) || n <= 0) return `./${prefix}3.svg`;
+      if (n <= 30) return `./${prefix}1.svg`;
+      if (n <= 60) return `./${prefix}2.svg`;
+      if (n <= 90) return `./${prefix}3.svg`;
+      return `./${prefix}4.svg`;
+    }
+  // In-memory state for lightweight updates and selection
+  let lastSchedule = null;
+  let currentMode = 'general';
+  let displayMode = localStorage.getItem('displayMode'); // 'offline' | 'live'
+  let selectedEva = localStorage.getItem('selectedEva');
+  let selectedStationName = localStorage.getItem('selectedStationName') || '';
+  let stationsIndex = null; // loaded from /stations.json
+    
+    // Pagination state
+    let currentPage = 0;
+    let trainsPerPage = 5;
+
+    // Helper: format clock HH:MM
+    function formatClock(date) {
+      if (!date) return '';
+      const h = String(date.getHours()).padStart(2, '0');
+      const m = String(date.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    }
+    function getOccupancyEnd(train, now = new Date()) {
+      if (!train || !train.actual || train.canceled) return null; // Cancelled trains don't occupy
+      const actualDate = parseTime(train.actual, now, train.date);
+      const dur = Number(train.dauer);
+      if (!actualDate || !dur || isNaN(dur) || dur <= 0) return null;
+      return new Date(actualDate.getTime() + dur * 60000);
+    }
+    function formatDeparture(plan, actual, now, delay, dauer, trainDate = null) {
+      // Return a safe DOM Node (Text or DocumentFragment) instead of raw HTML
+      const planDate = parseTime(plan, now, trainDate);
+      const actualDate = actual ? parseTime(actual, now, trainDate) : planDate;
+      
+      // Calculate day difference for future dates
+      function addDayIndicator(frag, date, now) {
+        if (!date) return;
+        const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const trainDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayDiff = Math.round((trainDay - nowDay) / (24 * 60 * 60 * 1000));
+        
+        if (dayDiff > 0) {
+          const sup = document.createElement('sup');
+          sup.textContent = `+${dayDiff}`;
+          sup.style.fontSize = '0.6em';
+          sup.style.marginLeft = '0px';
+          frag.appendChild(sup);
+        }
+      }
+      
+      // If train has arrived and has duration, show occupancy end clock while occupying
+      if (actualDate && dauer) {
+        const occEnd = new Date(actualDate.getTime() + Number(dauer) * 60000);
+        if (actualDate <= now && occEnd > now) {
+          // Train is currently occupying - show "bis HH:MM"
+          const frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode('bis '));
+          const clock = document.createElement('span');
+          clock.className = 'departure-clock';
+          clock.textContent = formatClock(occEnd);
+          frag.appendChild(clock);
+          addDayIndicator(frag, occEnd, now);
+          return frag;
+        }
+      }
+      const diffMin = Math.round((actualDate - now) / 60000);
+      // If departure is now or in the past
+        if (diffMin === 0) return document.createTextNode('jetzt');
+        if (diffMin > 0 && diffMin < 60) {
+          const frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode(`in ${diffMin} Min`));
+          addDayIndicator(frag, actualDate, now);
+          return frag;
+        }
+      if (delay !== 0) {
+        const frag = document.createDocumentFragment();
+        const planSpan = document.createElement('span');
+        planSpan.textContent = plan || '';
+        const spacer = document.createTextNode(' ');
+        const actualSpan = document.createElement('span');
+        actualSpan.className = 'delayed';
+        actualSpan.textContent = actual || '';
+        frag.appendChild(planSpan);
+        frag.appendChild(spacer);
+        frag.appendChild(actualSpan);
+        addDayIndicator(frag, actualDate, now);
+        return frag;
+      }
+      const frag = document.createDocumentFragment();
+      frag.appendChild(document.createTextNode(plan || ''));
+      addDayIndicator(frag, actualDate, now);
+      return frag;
+    }
+    function parseTime(str, now = new Date(), trainDate = null) {
+      // str: "hh:mm" — returns a Date on the specified trainDate or same day as `now`
+      if (!str) return null;
+      const [h, m] = String(str).split(":").map(Number);
+      if (Number.isNaN(h) || Number.isNaN(m)) return null;
+      
+      // Use train date if provided, otherwise use current date
+      const d = trainDate ? new Date(trainDate) : new Date(now);
+      d.setHours(h, m, 0, 0);
+      
+      // Only apply next-day logic if no specific date was provided
+      if (!trainDate) {
+        const diffMs = d - now;
+        if (diffMs < -12 * 60 * 60 * 1000) d.setDate(d.getDate() + 1);
+      }
+      
+      return d;
+    }
+    function getDelay(plan, actual, now = new Date(), trainDate = null) {
+      if (!actual || !plan) return 0;
+      const planDate = parseTime(plan, now, trainDate);
+      const actualDate = parseTime(actual, now, trainDate);
+      if (!planDate || !actualDate) return 0;
+      return Math.round((actualDate - planDate) / 60000);
+    }
+    // Fetch schedule according to selected mode and station
+    async function fetchSchedule() {
+      try {
+        if (displayMode === 'offline') {
+          const localRes = await fetch('/api/schedule');
+          if (localRes.ok) {
+            const localData = await localRes.json();
+            if (localData.fixedSchedule || localData.spontaneousEntries) {
+              const combined = await fetchLegacySchedule();
+              console.log('📄 Offline (Editor-Daten):', combined.trains?.length || 0);
+              return combined;
+            }
+            if (localData.trains) {
+              console.log('📄 Offline (legacy trains):', localData.trains.length);
+              return { trains: localData.trains };
+            }
+          }
+          console.warn('Offline: Keine lokalen Daten gefunden.');
+          return { trains: [] };
+        } else {
+          // Live mode: avoid wasting an API call if no station (EVA) selected yet
+          if (!selectedEva) {
+            return { trains: [] };
+          }
+          const query = selectedEva ? `?eva=${encodeURIComponent(selectedEva)}` : '';
+          const res = await fetch(`/api/db-departures${query}`);
+          if (res.ok) {
+            const data = await res.json();
+            console.log('✅ Live-Daten:', data.trains?.length || 0, 'Züge', selectedStationName ? `(Station: ${selectedStationName})` : '');
+            return data;
+          }
+          return { trains: [] };
+        }
+      } catch (error) {
+        console.error('❌ Error fetching schedule:', error);
+        return { trains: [] };
+      }
+    }
+    
+    // Legacy function for backward compatibility - now redirects to real-time data
+    async function fetchLegacySchedule() {
+      const res = await fetch('/api/schedule');
+      if (!res.ok) return { trains: [] };
+      const data = await res.json();
+      
+      // Handle both new and legacy formats
+      if (data.fixedSchedule || data.spontaneousEntries) {
+        // New format - combine fixed schedule (for up to 7 days) with spontaneous entries (within 6 days)
+        const now = new Date();
+        const today = now.toLocaleDateString('sv-SE'); // YYYY-MM-DD format
+        const todayWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+        
+        // Generate dates for the next 6 days (today + 6 more days = 7 days total)
+        const validDates = [];
+        const fixedTrainsForDays = [];
+        
+        for (let i = 0; i < 7; i++) {
+          const targetDate = new Date(now);
+          targetDate.setDate(targetDate.getDate() + i);
+          const dateStr = targetDate.toLocaleDateString('sv-SE');
+          const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][targetDate.getDay()];
+          
+          validDates.push(dateStr);
+          
+          // Get fixed schedule entries for this weekday
+          const fixedForDay = (data.fixedSchedule || []).filter(t => t.weekday === weekday && t.plan && t.linie);
+          const fixedAsTrains = fixedForDay.map(t => ({
+            ...t,
+            date: dateStr
+          }));
+          fixedTrainsForDays.push(...fixedAsTrains);
+        }
+        
+  // Show ALL spontaneous entries (no 7-day window). Output filtering will hide past ones.
+  const spontaneousAll = (data.spontaneousEntries || []).filter(t => t.plan && t.linie);
+        
+        return {
+          trains: [...fixedTrainsForDays, ...spontaneousAll],
+          fixedSchedule: data.fixedSchedule || [],
+          spontaneousEntries: data.spontaneousEntries || []
+        };
+      } else {
+        // Legacy format
+        return { trains: data.trains || [] };
+      }
+    }
+    function render(schedule) {
+      const now = new Date();
+      // Keep canceled trains in the queue (they are displayed differently)
+      const trains = (schedule.trains || []).slice()
+        .map(train => applyTrainTemplate(train)) // Apply templates for missing destination/stops
+        .sort((a, b) => {
+          const ta = parseTime(a.actual || a.plan, now, a.date);
+          const tb = parseTime(b.actual || b.plan, now, b.date);
+          return ta - tb;
+        });
+      // Only future trains, but include occupying trains
+      const futureTrains = trains.filter(t => {
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        
+        // For cancelled trains, remove them completely after their scheduled time
+        if (t.canceled) {
+          return tTime > now;
+        }
+        
+        // For non-cancelled trains, include if they're in the future or currently occupying
+        const occEnd = getOccupancyEnd(t, now);
+        if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
+        return tTime > now;
+      });
+      const nextTrain = futureTrains[0];
+      // detect occupying train (cancelled trains never occupy)
+      const occupyingTrain = trains.find(t => {
+        if (!t.actual || t.canceled) return false; // Cancelled trains don't occupy
+        const actualDate = parseTime(t.actual, now, t.date);
+        const occEnd = getOccupancyEnd(t, now);
+        return actualDate && occEnd && actualDate <= now && occEnd > now;
+      });
+      let mode = "general";
+      
+      // Force general mode for pages > 1
+      if (currentPage > 0) {
+        mode = "general";
+      } else if (nextTrain) {
+        // Only allow focused mode on page 1
+        // If any canceled train is scheduled within the next 5 minutes, do not enter focused mode
+        const fiveMinLater = new Date(now.getTime() + 5 * 60000);
+        const anyCanceledSoon = futureTrains.some(t => t.canceled && parseTime(t.actual || t.plan, now, t.date) <= fiveMinLater);
+        const nextTime = parseTime(nextTrain.actual || nextTrain.plan, now, nextTrain.date);
+        const diffMin = Math.round((nextTime - now) / 60000);
+        // Focus only when the next train is not canceled, within 5 minutes, and there's no canceled train soon
+        if (occupyingTrain) mode = 'focused';
+        else if (!nextTrain.canceled && !anyCanceledSoon && diffMin <= 5) mode = 'focused';
+      }
+      currentMode = mode;
+
+      const container = document.getElementById('container');
+      container.innerHTML = "";
+      // create 5 empty slots of 20vh each; we'll absolutely position rows into these slots
+      // container is positioned relative in CSS
+      for (let slot = 0; slot < 5; slot++) {
+        const slotEl = document.createElement('div');
+        slotEl.style.position = 'absolute';
+        slotEl.style.top = `${slot * 20}vh`;
+        slotEl.style.left = '0';
+        slotEl.style.right = '0';
+        slotEl.style.height = '20vh';
+        slotEl.style.overflow = 'hidden';
+        slotEl.dataset.slot = slot;
+        container.appendChild(slotEl);
+      }
+
+  if (mode === 'general') {
+        // Calculate start index based on whether page 1 was focused or general
+        let startIndex;
+        if (currentPage === 0) {
+          startIndex = 0;  // Page 1 general mode: trains 1-5
+        } else {
+          // Check if page 1 would have been in focused mode
+          let page1WasFocused = false;
+          if (nextTrain) {
+            const fiveMinLater = new Date(now.getTime() + 5 * 60000);
+            const anyCanceledSoon = futureTrains.some(t => t.canceled && parseTime(t.actual || t.plan, now, t.date) <= fiveMinLater);
+            const nextTime = parseTime(nextTrain.actual || nextTrain.plan, now, nextTrain.date);
+            const diffMin = Math.round((nextTime - now) / 60000);
+            if (occupyingTrain) page1WasFocused = true;
+            else if (!nextTrain.canceled && !anyCanceledSoon && diffMin <= 5) page1WasFocused = true;
+          }
+          
+          if (page1WasFocused) {
+            // Page 1 was focused (trains 1-3), so page 2+ starts from train 4
+            startIndex = 3 + (currentPage - 1) * trainsPerPage;
+          } else {
+            // Page 1 was general (trains 1-5), so page 2+ continues sequentially
+            startIndex = trainsPerPage + (currentPage - 1) * trainsPerPage;
+          }
+        }
+        const endIndex = Math.min(startIndex + trainsPerPage, futureTrains.length);
+        
+        let i = 0;
+        for (let trainIndex = startIndex; trainIndex < endIndex && i < 5; trainIndex++, i++) {
+          const el = trainRow(futureTrains[trainIndex], now);
+          el.style.position = 'absolute';
+          el.style.top = '0';
+          el.style.left = '0';
+          el.style.right = '0';
+          el.style.bottom = '0';
+          
+          // Check if this is the last train of the day and add day separator
+          const currentTrain = futureTrains[trainIndex];
+          const nextTrain = futureTrains[trainIndex + 1];
+          const isLastTrainOfDay = !nextTrain || currentTrain.date !== nextTrain.date;
+          
+          if (isLastTrainOfDay && trainIndex < futureTrains.length - 1) {
+            // Add a thin line at the bottom to separate days
+            const dayLine = document.createElement('div');
+            dayLine.style.position = 'absolute';
+            dayLine.style.bottom = '0';
+            dayLine.style.left = '2vw';
+            dayLine.style.right = '2vw';
+            dayLine.style.height = '2px';
+            dayLine.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            dayLine.style.zIndex = '10';
+            el.appendChild(dayLine);
+          }
+          
+          container.children[i].appendChild(el);
+        }
+      } else {
+        // Focused mode: nextTrain takes two slots (40vh) at slot 0; following trains fill subsequent slots
+  const mainTrain = occupyingTrain || nextTrain;
+  if (mainTrain) {
+          // Focused view uses two stacked rows inside the first slot container
+          const topRow = document.createElement('div');
+          topRow.style.position = 'absolute';
+          topRow.style.top = '0';
+          topRow.style.left = '0';
+          topRow.style.right = '0';
+          topRow.style.bottom = '0';
+          topRow.className = 'row focused-top';
+
+          const bottomRow = document.createElement('div');
+          bottomRow.style.position = 'absolute';
+          bottomRow.style.top = '0';
+          bottomRow.style.left = '0';
+          bottomRow.style.right = '0';
+          bottomRow.style.bottom = '0';
+          bottomRow.className = 'row focused-bottom';
+
+          // Additional row for stops so focused train can occupy 3 slots (60vh)
+          const stopsRow = document.createElement('div');
+          stopsRow.style.position = 'absolute';
+          stopsRow.style.top = '0';
+          stopsRow.style.left = '0';
+          stopsRow.style.right = '0';
+          stopsRow.style.bottom = '0';
+          stopsRow.className = 'row focused-stops';
+
+          // build focused top: trainSymbol (left), big destination (center-left), departure (right-most)
+          let trainSymbol;
+          if (typeof mainTrain.linie === 'string' && (/^S\d+/i.test(mainTrain.linie) || mainTrain.linie === 'FEX')) {
+            const img = document.createElement('img');
+            img.className = 'focused-symbol';
+            img.src = getTrainSVG(mainTrain.linie);
+            img.alt = mainTrain.linie;
+            img.onerror = () => {
+              const badge = document.createElement('div');
+              badge.className = 'line-badge';
+              badge.style.fontSize = 'clamp(14px, 4vw, 7vw)';
+              badge.textContent = mainTrain.linie || '';
+              if (img.parentNode) img.parentNode.replaceChild(badge, img);
+            };
+            trainSymbol = img;
+          } else {
+            trainSymbol = document.createElement('div');
+            trainSymbol.className = 'line-badge';
+            trainSymbol.style.fontSize = 'clamp(14px, 4vw, 7vw)';
+            trainSymbol.textContent = mainTrain.linie || '';
+          }
+
+          const symbolSlotTop = document.createElement('div');
+          symbolSlotTop.className = 'symbol-slot';
+          symbolSlotTop.appendChild(trainSymbol);
+
+          const dest = document.createElement('div');
+          dest.className = 'focused-destination';
+          const destText = document.createElement('div');
+          destText.className = 'focused-zugziel';
+          destText.textContent = mainTrain.ziel || '';
+          
+          // Add click handler for user focus mode
+          destText.style.cursor = 'pointer';
+          destText.addEventListener('click', () => {
+            enterUserFocus(mainTrain);
+          });
+          
+          dest.appendChild(destText);
+
+          const rightBlockTop = document.createElement('div');
+          rightBlockTop.className = 'focused-right-block';
+          const delayTop = getDelay(mainTrain.plan, mainTrain.actual, now, mainTrain.date);
+          const depTop = document.createElement('div');
+          depTop.className = 'focused-departure';
+          // include duration so occupancy clock is shown when appropriate
+          const depTopNode = formatDeparture(mainTrain.plan, mainTrain.actual, now, delayTop, mainTrain.dauer, mainTrain.date);
+          // formatDeparture now handles "bis" prefix automatically for occupying trains
+          depTop.appendChild(depTopNode);
+
+          rightBlockTop.appendChild(depTop);
+          topRow.appendChild(symbolSlotTop);
+          topRow.appendChild(dest);
+          topRow.appendChild(rightBlockTop);
+
+          // build focused bottom: stops under destination; symbol slot kept for alignment
+          const symbolSlotBottom = document.createElement('div');
+          symbolSlotBottom.className = 'symbol-slot';
+          const carriageBottomImg = document.createElement('img');
+          carriageBottomImg.className = 'carriage-symbol-bottom';
+          carriageBottomImg.src = getCarriageSVG(mainTrain.dauer);
+          carriageBottomImg.alt = 'Carriage';
+          symbolSlotBottom.appendChild(carriageBottomImg);
+
+          const stopsUnder = document.createElement('div');
+          stopsUnder.className = 'zwischenhalt';
+          // Format stops text to handle line breaks properly
+          const stopsText = mainTrain.stops || '';
+          stopsUnder.innerHTML = stopsText.replace(/\n/g, '<br>');
+          // fail-safe: ensure left alignment if CSS specificity is overridden
+          stopsUnder.style.textAlign = 'left';
+
+          const rightBlockBottom = document.createElement('div');
+          rightBlockBottom.className = 'right-block';
+
+          // bottomRow keeps the carriage/icon and any right-block content
+          bottomRow.appendChild(symbolSlotBottom);
+          bottomRow.appendChild(rightBlockBottom);
+
+          // stopsRow holds side placeholders; actual stops text lives in a container
+          const symbolSlotForStops = document.createElement('div');
+          symbolSlotForStops.className = 'symbol-slot';
+          stopsRow.appendChild(symbolSlotForStops);
+
+          // reserve right-side slot in stops row so text doesn't overlap the departure area
+          const rightBlockForStops = document.createElement('div');
+          rightBlockForStops.className = 'right-block';
+          stopsRow.appendChild(rightBlockForStops);
+
+          // Create a container that spans both the 2nd and 3rd rows (20vh..60vh)
+          const stopsContainer = document.createElement('div');
+          stopsContainer.className = 'focused-stops-container';
+          stopsContainer.style.position = 'absolute';
+          // top at 20vh (second row), height 40vh to cover two rows
+          stopsContainer.style.top = '20vh';
+          stopsContainer.style.height = '40vh';
+          // leave space for symbol-slot (15vw) on left and right-block (36vw) on right
+          stopsContainer.style.left = '15vw';
+          stopsContainer.style.right = '17vw';
+          stopsContainer.style.boxSizing = 'border-box';
+          stopsContainer.style.padding = '1vw';
+          stopsContainer.style.overflow = 'hidden';
+
+          // Move stopsUnder into the spanning container so it can occupy both rows
+          stopsUnder.style.whiteSpace = 'normal';
+          stopsUnder.style.overflow = 'auto';
+          stopsUnder.style.height = '100%';
+          stopsUnder.style.display = 'block';
+          stopsContainer.appendChild(stopsUnder);
+          // append the spanning container to the main container (not inside a slot)
+          container.appendChild(stopsContainer);
+
+          // Append topRow into slot 0 and bottomRow into slot 1 so they are separate rows
+          container.children[0].appendChild(topRow);
+          container.children[1].appendChild(bottomRow);
+          container.children[2].appendChild(stopsRow);
+          // Add a white separator under the focused block to visually separate it
+          const sep = document.createElement('div');
+          sep.className = 'focused-separator';
+          // move separator to 60vh since focused block now occupies 3 * 20vh
+          sep.style.top = '60vh';
+          container.appendChild(sep);
+        }
+  let slotIndex = 3; // following trains start after the focused 3 slots (index 3)
+        // Use pagination for following trains in focused mode
+        const startIndex = currentPage * trainsPerPage + 1; // +1 to skip the main focused train
+        const endIndex = Math.min(startIndex + (trainsPerPage - 1), futureTrains.length); // -1 because first slot is main train
+        
+        for (let trainIndex = startIndex; trainIndex < endIndex && slotIndex < 5; trainIndex++, slotIndex++) {
+          const el = trainRow(futureTrains[trainIndex], now);
+          el.style.position = 'absolute';
+          el.style.top = '0';
+          el.style.left = '0';
+          el.style.right = '0';
+          el.style.bottom = '0';
+          container.children[slotIndex].appendChild(el);
+        }
+      }
+      
+      // Add or update page indicator (only show if multiple pages exist)
+      updatePageIndicator(futureTrains.length);
+    }
+
+    // Shrink text inside element until it fits one line. maxFontVw is in vw units.
+    function fitTextToWidth(el, maxFontVw) {
+      // prefer vw units; compute px from viewport width
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0) / 100;
+      let fontSizePx = maxFontVw * vw;
+      el.style.whiteSpace = 'nowrap';
+      el.style.overflow = 'hidden';
+      el.style.textOverflow = 'ellipsis';
+      el.style.fontSize = `${fontSizePx}px`;
+      // keep reducing until fits in one line
+      while (el.scrollWidth > el.clientWidth && fontSizePx > 8) {
+        fontSizePx -= 1; // reduce by 1px
+        el.style.fontSize = `${fontSizePx}px`;
+      }
+    }
+    function trainRow(train, now) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      
+      // Check if this is a FEX train and apply highlighting
+      if (train.linie === 'FEX') {
+        row.classList.add('fex-row');
+      }
+      
+      // Train line symbol
+  let trainSymbol;
+  if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX')) {
+    const img = document.createElement('img');
+    img.className = 'train-symbol';
+    img.src = getTrainSVG(train.linie);
+    img.alt = train.linie;
+    img.onerror = () => {
+      const badge = document.createElement('div');
+      badge.className = 'line-badge';
+      badge.textContent = train.linie || '';
+      if (img.parentNode) img.parentNode.replaceChild(badge, img);
+    };
+    trainSymbol = img;
+  } else {
+    trainSymbol = document.createElement('div');
+    trainSymbol.className = 'line-badge';
+    trainSymbol.textContent = train.linie || '';
+  }
+  // symbol slot to reserve left alignment space
+  const symbolSlot = document.createElement('div');
+  symbolSlot.className = 'symbol-slot';
+  symbolSlot.appendChild(trainSymbol);
+  // Right-side split: carriage in its own slot, departure in its own slot
+  const rightBlock = document.createElement('div');
+  rightBlock.className = 'right-block';
+  const carriageSlot = document.createElement('div');
+  carriageSlot.className = 'carriage-slot';
+  const carriageSymbol = document.createElement('img');
+  carriageSymbol.className = 'carriage-symbol';
+  carriageSymbol.src = getCarriageSVG(train.dauer, train.linie === 'FEX');
+  carriageSymbol.alt = 'Carriage';
+  carriageSlot.appendChild(carriageSymbol);
+
+  const departureSlot = document.createElement('div');
+  departureSlot.className = 'departure-slot';
+  // Departure time
+  // For cancelled trains we still display departure but we do not highlight delays
+  const delay = train.canceled ? 0 : getDelay(train.plan, train.actual, now, train.date);
+  const departure = document.createElement('div');
+  departure.className = 'departure';
+  // annotate for lightweight interval updates
+  departure.dataset.departure = '1';
+  if (train.plan) departure.dataset.plan = train.plan;
+  if (train.actual) departure.dataset.actual = train.actual;
+  if (train.dauer != null) departure.dataset.dauer = String(train.dauer);
+  if (train.date) departure.dataset.date = train.date;
+  departure.dataset.canceled = train.canceled ? 'true' : 'false';
+  // Use safe DOM nodes returned by formatDeparture
+  const depNode = formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date);
+  departure.appendChild(depNode);
+  departureSlot.appendChild(departure);
+  if (!train.canceled) {
+    rightBlock.appendChild(carriageSlot);
+  }
+  rightBlock.appendChild(departureSlot);
+    // Zugziel (destination) — constrained between symbol-slot and right-block
+    const ziel = document.createElement('div');
+    ziel.className = 'zugziel';
+    // If canceled, show a clear message and remove carriage
+    if (train.canceled) {
+      ziel.textContent = 'Zug fällt aus';
+      // remove carriage visual by keeping carriageSlot empty
+      carriageSlot.innerHTML = '';
+    } else {
+      ziel.textContent = train.ziel || '';
+    }
+    
+    // Add click handler only to destination text
+    ziel.style.cursor = 'pointer';
+    ziel.addEventListener('click', () => {
+      enterUserFocus(train);
+    });
+    // Layout
+    const info = document.createElement('div');
+    info.className = 'train-info';
+    info.appendChild(symbolSlot);
+    info.appendChild(ziel);
+    row.appendChild(info);
+    row.appendChild(rightBlock);
+    
+      return row;
+  }
+    function focusedRow(train, now) {
+      const row = document.createElement('div');
+      row.className = 'focused';
+      // Train line symbol and carriage symbol vertically
+      const symbolCol = document.createElement('div');
+      symbolCol.className = 'focused-symbol';
+      let trainSymbol;
+      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX')) {
+        const img = document.createElement('img');
+        img.className = 'train-symbol';
+        img.src = getTrainSVG(train.linie);
+        img.alt = train.linie;
+        img.onerror = () => {
+          const badge = document.createElement('div');
+          badge.className = 'line-badge';
+          badge.textContent = train.linie || '';
+          if (img.parentNode) img.parentNode.replaceChild(badge, img);
+        };
+        trainSymbol = img;
+      } else {
+        trainSymbol = document.createElement('div');
+        trainSymbol.className = 'line-badge';
+        trainSymbol.textContent = train.linie || '';
+      }
+
+      const carriageSymbol = document.createElement('img');
+      carriageSymbol.className = 'carriage-symbol';
+  carriageSymbol.src = getCarriageSVG(train.dauer);
+      carriageSymbol.alt = 'Carriage';
+      symbolCol.appendChild(trainSymbol);
+      symbolCol.appendChild(carriageSymbol);
+      // Details
+      const detailsCol = document.createElement('div');
+      detailsCol.className = 'zwischenhalt';
+      const ziel = document.createElement('span');
+      ziel.textContent = train.ziel;
+      ziel.style.fontWeight = 'bold';
+      ziel.style.fontSize = '4vw';
+      
+      // Add click handler only to destination text
+      ziel.style.cursor = 'pointer';
+      ziel.addEventListener('click', () => {
+        enterUserFocus(train);
+      });
+      
+      detailsCol.appendChild(ziel);
+      if (train.stops && train.stops.trim() !== "") {
+        const zwischenhalt = document.createElement('div');
+        zwischenhalt.className = 'zwischenhalt';
+        // Format stops text to handle line breaks properly
+        zwischenhalt.innerHTML = train.stops.replace(/\n/g, '<br>');
+        detailsCol.appendChild(zwischenhalt);
+      }
+      // Departure
+      const delay = getDelay(train.plan, train.actual, now, train.date);
+  const departure = document.createElement('div');
+  departure.className = 'departure';
+  departure.dataset.departure = '1';
+  if (train.plan) departure.dataset.plan = train.plan;
+  if (train.actual) departure.dataset.actual = train.actual;
+  if (train.dauer != null) departure.dataset.dauer = String(train.dauer);
+  if (train.date) departure.dataset.date = train.date;
+  departure.dataset.canceled = train.canceled ? 'true' : 'false';
+  const depNode = formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date);
+  departure.appendChild(depNode);
+      detailsCol.appendChild(departure);
+      row.appendChild(symbolCol);
+      row.appendChild(detailsCol);
+      
+      return row;
+    }
+    // Selection overlay (local stations.json)
+    function showStationOverlay() {
+      const overlay = document.getElementById('station-overlay');
+      const input = document.getElementById('station-input');
+      const sugg = document.getElementById('station-suggestions');
+      const hint = document.getElementById('overlay-hint');
+  const cancelBtn = document.getElementById('overlay-cancel');
+      overlay.classList.remove('hidden');
+      input.value = '';
+      // Start fresh: clear suggestions and reset hint every time overlay opens
+      try {
+        sugg.innerHTML = '';
+        sugg.style.display = 'none';
+      } catch {}
+      //if (hint) hint.textContent = 'Leer lassen + Enter: Offline-Modus.';
+      input.focus();
+
+      let timer = null;
+      const minLen = 1;
+      let activeIndex = -1; // keyboard selection for suggestions
+      let lastMatches = []; // cache of last suggestion results
+
+      // Allowed rail product tags/synonyms. We also fall back to DS100/EVA to recognize rail stations.
+      const ALLOWED_TRAIN_TAGS = new Set([
+        'HIGH_SPEED_TRAIN',
+        'INTERCITY_TRAIN',
+        'INTER_REGIONAL_TRAIN',
+        'REGIONAL_TRAIN',
+        'CITY_TRAIN',
+        // Common synonyms seen in different datasets
+        'HIGH_SPEED', 'INTERCITY', 'INTERREGIONAL', 'REGIONAL', 'CITY', 'SUBURBAN_TRAIN', 'SUBURBAN',
+        'S-BAHN', 'S_BAHN', 'SBAHN', 'S-TRAIN', 'TRAIN', 'RAIL', 'RAILWAY'
+      ]);
+
+      function getStationTags(st) {
+        const fields = [
+          'tags', 'productTags', 'product_types', 'transportTags', 'categories', 'products', 'productTypes'
+        ];
+        const out = [];
+        for (const f of fields) {
+          const v = st && st[f];
+          if (!v) continue;
+          if (Array.isArray(v)) {
+            v.forEach(x => { if (x != null) out.push(String(x)); });
+          } else if (typeof v === 'string') {
+            out.push(v);
+          }
+        }
+        return out.map(s => s.toUpperCase().trim());
+      }
+
+      function stationHasAllowedTags(st) {
+        // Fast-path: DS100 or valid EVA strongly indicates rail
+        const hasDs100 = typeof st?.ds100 === 'string' && st.ds100.trim().length > 0;
+        const evaStr = st?.eva != null ? String(st.eva) : '';
+        const hasEva = /^\d{6,8}$/.test(evaStr);
+
+        const tags = getStationTags(st);
+        if (tags.length) {
+          // If tags present, accept when any allowed token appears and explicitly reject BUS-only
+          const hasAllowed = tags.some(t => ALLOWED_TRAIN_TAGS.has(t));
+          const isBusOnly = tags.every(t => t === 'BUS' || t === 'BUS_STOP' || t === 'BUSSTATION');
+          if (isBusOnly) return false;
+          if (hasAllowed) return true;
+          // If tags exist but none matched, still allow if rail indicators present
+          if (hasDs100 || hasEva) return true;
+          return false;
+        }
+        // No tags available: use rail indicators
+        if (hasDs100 || hasEva) return true;
+        return false;
+      }
+
+      function normalizeStr(s) {
+        try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+        catch { return (s || '').toLowerCase(); }
+      }
+
+      async function ensureStationsIndex() {
+        if (stationsIndex) return stationsIndex;
+        try {
+          const res = await fetch('/stations.json');
+          if (!res.ok) throw new Error('stations.json not found');
+          const json = await res.json();
+          // Expect array of objects { name, eva, ds100 } (adapt if format differs)
+          stationsIndex = Array.isArray(json) ? json : (json.stations || []);
+          return stationsIndex;
+        } catch (e) {
+          console.warn('Failed loading stations.json', e);
+          stationsIndex = [];
+          return stationsIndex;
+        }
+      }
+
+      function updateActiveSuggestion() {
+        const items = Array.from(sugg.children);
+        items.forEach((el, idx) => {
+          if (idx === activeIndex) {
+            el.classList.add('active');
+            el.style.background = 'rgba(255,255,255,0.2)';
+            el.setAttribute('aria-selected', 'true');
+            try { el.scrollIntoView({ block: 'nearest' }); } catch {}
+          } else {
+            el.classList.remove('active');
+            el.style.background = '';
+            el.removeAttribute('aria-selected');
+          }
+        });
+      }
+
+      function renderSuggestions(list) {
+        sugg.innerHTML = '';
+        lastMatches = Array.isArray(list) ? list : [];
+        activeIndex = -1; // reset selection each render
+        if (!lastMatches.length) { sugg.style.display = 'none'; return; }
+        lastMatches.slice(0, 20).forEach((st, idx) => {
+          const item = document.createElement('div');
+          item.className = 'suggestion-item';
+          const label = st.ds100 ? `${st.name} (${st.ds100})` : st.name;
+          item.textContent = label;
+          item.title = label;
+          item.addEventListener('click', () => chooseLive(st));
+          sugg.appendChild(item);
+        });
+        sugg.style.display = 'block';
+        updateActiveSuggestion();
+      }
+
+      function chooseOffline() {
+        displayMode = 'offline';
+        localStorage.setItem('displayMode', 'offline');
+        localStorage.removeItem('selectedEva');
+        localStorage.removeItem('selectedStationName');
+        input.value = '';
+        overlay.classList.add('hidden');
+        (async () => {
+          const schedule = await fetchSchedule();
+          lastSchedule = schedule;
+          render(schedule);
+        })();
+      }
+
+      function chooseLive(station) {
+        displayMode = 'live';
+        selectedEva = station.eva;
+        selectedStationName = station.name;
+        localStorage.setItem('displayMode', 'live');
+        localStorage.setItem('selectedEva', selectedEva);
+        localStorage.setItem('selectedStationName', selectedStationName);
+        input.value = '';
+        overlay.classList.add('hidden');
+        (async () => {
+          const schedule = await fetchSchedule();
+          lastSchedule = schedule;
+          render(schedule);
+        })();
+      }
+
+      // Bind handlers only once per page load to avoid duplicates
+      if (!overlay._bound) {
+
+        input.addEventListener('input', async () => {
+        const val = input.value.trim();
+        sugg.style.display = 'none';
+        sugg.innerHTML = '';
+        if (!val) { hint.textContent = 'Leer lassen + Enter: Offline-Modus.'; return; }
+        if (val.toLowerCase() === 'lrt') { hint.textContent = 'Offline-Modus erkannt. Enter drücken.'; return; }
+        hint.textContent = 'Suche…';
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(async () => {
+          if (val.length < minLen) { hint.textContent = 'Bitte mehr eingeben…'; return; }
+          const idx = await ensureStationsIndex();
+          const qn = normalizeStr(val);
+          const rawMatches = idx.filter((s) => normalizeStr(s.name).includes(qn) || (s.ds100 && normalizeStr(s.ds100).includes(qn)));
+          const matches = rawMatches.filter(stationHasAllowedTags);
+          hint.textContent = matches.length ? 'Bitte auswählen:' : 'Keine passenden Bahnhöfe gefunden.';
+          renderSuggestions(matches);
+        }, 150);
+        });
+
+        input.addEventListener('keydown', async (e) => {
+          const itemsCount = sugg.children.length;
+          if (e.key === 'ArrowDown') {
+            if (!itemsCount) return;
+            e.preventDefault();
+            activeIndex = (activeIndex + 1) % itemsCount;
+            updateActiveSuggestion();
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            if (!itemsCount) return;
+            e.preventDefault();
+            activeIndex = activeIndex <= 0 ? itemsCount - 1 : activeIndex - 1;
+            updateActiveSuggestion();
+            return;
+          }
+          if (e.key === 'Enter') {
+            const val = input.value.trim();
+            if (!val) { chooseOffline(); return; }
+            if (val.toLowerCase() === 'lrt') { chooseOffline(); return; }
+            // If a suggestion is highlighted, choose it
+            if (activeIndex >= 0 && activeIndex < lastMatches.length) {
+              chooseLive(lastMatches[activeIndex]);
+              return;
+            }
+            // Fallback: best-effort match by name
+            const idx = await ensureStationsIndex();
+            const qn = normalizeStr(val);
+            const match = idx.find((s) => (normalizeStr(s.name) === qn || normalizeStr(s.name).includes(qn)) && stationHasAllowedTags(s));
+            if (match) chooseLive(match);
+          }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+          if (displayMode) overlay.classList.add('hidden'); else input.focus();
+        });
+
+        // ESC to close when overlay is visible
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+            e.preventDefault();
+            overlay.classList.add('hidden');
+          }
+        });
+
+        overlay._bound = true;
+      }
+    }
+
+    async function ensureSelection() {
+      displayMode = localStorage.getItem('displayMode');
+      selectedEva = localStorage.getItem('selectedEva');
+      selectedStationName = localStorage.getItem('selectedStationName') || '';
+      // Do not auto-open the selection screen on start.
+    }
+
+    // Initial load
+    (async () => {
+      await ensureSelection();
+      // If selection done immediately, attempt fetch; otherwise overlay will fetch after selection
+      if (displayMode) {
+        const schedule = await fetchSchedule();
+        lastSchedule = schedule;
+        render(schedule);
+      }
+    })();
+
+    // Use Server-Sent Events to update only when data.json changes
+    if (window.EventSource) {
+      const evt = new EventSource('/events');
+      evt.addEventListener('update', async () => {
+        const schedule = await fetchSchedule();
+        lastSchedule = schedule;
+        render(schedule);
+      });
+      evt.addEventListener('error', (e) => {
+        console.warn('SSE connection error', e);
+      });
+    } else {
+      // Fallback to polling if SSE isn't supported
+      setInterval(async () => {
+        const schedule = await fetchSchedule();
+        lastSchedule = schedule;
+        render(schedule);
+      }, 60000);
+    }
+
+    // User focus mode functionality
+    let userFocusedTrain = null;
+
+    function enterUserFocus(train) {
+      userFocusedTrain = train;
+      
+      // Remove page indicator when entering user focus mode
+      const existingIndicator = document.querySelector('.page-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      renderUserFocus(train);
+    }
+
+    function exitUserFocus() {
+      userFocusedTrain = null;
+      
+      // Remove back button when exiting user focus mode
+      const backButton = document.querySelector('.back-button');
+      if (backButton) {
+        backButton.remove();
+      }
+      
+      if (lastSchedule) {
+        render(lastSchedule);
+      }
+    }
+
+    function renderUserFocus(train) {
+      const now = new Date();
+      const container = document.getElementById('container');
+      container.innerHTML = '';
+
+      // Create 5 rows for user focus mode (100vh total)
+      for (let i = 0; i < 5; i++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.style.height = '20vh';
+        container.appendChild(row);
+      }
+
+      // User focused view uses stacked rows with zwischenhalt spanning 4 rows
+      const topRow = document.createElement('div');
+      topRow.style.position = 'absolute';
+      topRow.style.top = '0';
+      topRow.style.left = '0';
+      topRow.style.right = '0';
+      topRow.style.height = '20vh';
+      topRow.className = 'row focused-top';
+
+      const bottomRow = document.createElement('div');
+      bottomRow.style.position = 'absolute';
+      bottomRow.style.top = '80vh';
+      bottomRow.style.left = '0';
+      bottomRow.style.right = '0';
+      bottomRow.style.height = '20vh';
+      bottomRow.className = 'row focused-bottom';
+
+      // Rows for zwischenhalt spanning (row 2, 3, 4, 5)
+      const stopsRow2 = document.createElement('div');
+      stopsRow2.style.position = 'absolute';
+      stopsRow2.style.top = '20vh';
+      stopsRow2.style.left = '0';
+      stopsRow2.style.right = '0';
+      stopsRow2.style.height = '20vh';
+      stopsRow2.className = 'row focused-stops';
+
+      const stopsRow3 = document.createElement('div');
+      stopsRow3.style.position = 'absolute';
+      stopsRow3.style.top = '40vh';
+      stopsRow3.style.left = '0';
+      stopsRow3.style.right = '0';
+      stopsRow3.style.height = '20vh';
+      stopsRow3.className = 'row focused-stops';
+
+      const stopsRow4 = document.createElement('div');
+      stopsRow4.style.position = 'absolute';
+      stopsRow4.style.top = '60vh';
+      stopsRow4.style.left = '0';
+      stopsRow4.style.right = '0';
+      stopsRow4.style.height = '20vh';
+      stopsRow4.className = 'row focused-stops';
+
+      const stopsRow5 = document.createElement('div');
+      stopsRow5.style.position = 'absolute';
+      stopsRow5.style.top = '80vh';
+      stopsRow5.style.left = '0';
+      stopsRow5.style.right = '0';
+      stopsRow5.style.height = '20vh';
+      stopsRow5.className = 'row focused-stops';
+
+      // build focused top: trainSymbol (left), big destination (center-left), arrival time (right-most)
+      let trainSymbol;
+      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX')) {
+        const img = document.createElement('img');
+        img.className = 'focused-symbol';
+        img.src = getTrainSVG(train.linie);
+        img.alt = train.linie;
+        img.onerror = () => {
+          const badge = document.createElement('div');
+          badge.className = 'line-badge';
+          badge.style.fontSize = 'clamp(14px, 4vw, 7vw)';
+          badge.textContent = train.linie || '';
+          if (img.parentNode) img.parentNode.replaceChild(badge, img);
+        };
+        trainSymbol = img;
+      } else {
+        const badge = document.createElement('div');
+        badge.className = 'line-badge';
+        badge.style.fontSize = 'clamp(14px, 4vw, 7vw)';
+        badge.textContent = train.linie || '';
+        trainSymbol = badge;
+      }
+
+      const symbolSlotTop = document.createElement('div');
+      symbolSlotTop.className = 'symbol-slot';
+      symbolSlotTop.appendChild(trainSymbol);
+
+      const dest = document.createElement('div');
+      dest.className = 'focused-destination';
+      const destText = document.createElement('div');
+      destText.className = 'focused-zugziel';
+      destText.textContent = train.ziel || '';
+      
+      // Add strikethrough for canceled trains
+      if (train.canceled) {
+        destText.style.textDecoration = 'line-through';
+      }
+      
+      dest.appendChild(destText);
+
+      const rightBlockTop = document.createElement('div');
+      rightBlockTop.className = 'focused-right-block';
+      const arrivalTime = document.createElement('div');
+      arrivalTime.className = 'focused-departure';
+      arrivalTime.style.cursor = 'default';
+      
+      // Helper function to add day indicator for arrival time
+      function addArrivalDayIndicator(date, now) {
+        const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const trainDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayDiff = Math.round((trainDay - nowDay) / (24 * 60 * 60 * 1000));
+        
+        if (dayDiff > 0) {
+          const sup = document.createElement('sup');
+          sup.textContent = `+${dayDiff}`;
+          sup.style.fontSize = '0.6em';
+          return sup;
+        }
+        return null;
+      }
+      
+      // Always show arrival time in HH:MM format
+      const planSpan = document.createElement('span');
+      planSpan.textContent = train.plan || '';
+      
+      // Add strikethrough for canceled trains
+      if (train.canceled) {
+        planSpan.style.textDecoration = 'line-through';
+      }
+      
+      arrivalTime.appendChild(planSpan);
+      
+      const hasDelay = train.actual && train.actual !== train.plan;
+      
+      // Add day indicator for planned arrival only if no delay
+      if (!hasDelay) {
+        const planArrivalDate = parseTime(train.plan, now, train.date);
+        const planArrivalDayIndicator = addArrivalDayIndicator(planArrivalDate, now);
+        if (planArrivalDayIndicator) {
+          arrivalTime.appendChild(planArrivalDayIndicator);
+        }
+      }
+      
+      if (hasDelay) {
+        const actualSpan = document.createElement('span');
+        actualSpan.textContent = train.actual;
+        actualSpan.style.background = 'white';
+        actualSpan.style.color = '#161B75';
+        actualSpan.style.padding = '2px 4px';
+        actualSpan.style.borderRadius = '3px';
+        actualSpan.style.marginLeft = '8px';
+        
+        // Add strikethrough for canceled trains
+        if (train.canceled) {
+          actualSpan.style.textDecoration = 'line-through';
+        }
+        
+        arrivalTime.appendChild(actualSpan);
+        
+        // Add day indicator for actual arrival
+        const actualArrivalDate = parseTime(train.actual, now, train.date);
+        const actualArrivalDayIndicator = addArrivalDayIndicator(actualArrivalDate, now);
+        if (actualArrivalDayIndicator) {
+          arrivalTime.appendChild(actualArrivalDayIndicator);
+        }
+      }
+
+      rightBlockTop.appendChild(arrivalTime);
+      topRow.appendChild(symbolSlotTop);
+      topRow.appendChild(dest);
+      topRow.appendChild(rightBlockTop);
+
+      // build focused bottom (row 5): departure time only
+      const symbolSlotBottom = document.createElement('div');
+      symbolSlotBottom.className = 'symbol-slot';
+      // No carriage symbol here anymore
+
+      const rightBlockBottom = document.createElement('div');
+      rightBlockBottom.className = 'focused-right-block';
+      
+      // Calculate and display departure time in HH:MM format
+      const departureTime = document.createElement('div');
+      departureTime.className = 'focused-departure';
+      departureTime.style.cursor = 'default';
+      
+      // Helper function to add day indicator
+      function addDayIndicator(date, now) {
+        const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const trainDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayDiff = Math.round((trainDay - nowDay) / (24 * 60 * 60 * 1000));
+        
+        if (dayDiff > 0) {
+          const sup = document.createElement('sup');
+          sup.textContent = `+${dayDiff}`;
+          sup.style.fontSize = '0.6em';
+          return sup;
+        }
+        return null;
+      }
+      
+      if (train.plan && train.dauer) {
+        const arrivalDate = parseTime(train.plan, now, train.date);
+        const depDate = new Date(arrivalDate.getTime() + Number(train.dauer) * 60000);
+        const depPlan = formatClock(depDate);
+        
+        const planSpan = document.createElement('span');
+        planSpan.textContent = depPlan;
+        
+        // Add strikethrough for canceled trains
+        if (train.canceled) {
+          planSpan.style.textDecoration = 'line-through';
+        }
+        
+        departureTime.appendChild(planSpan);
+        
+        const hasDepDelay = train.actual && train.actual !== train.plan;
+        
+        // Add day indicator for planned departure only if no delay
+        if (!hasDepDelay) {
+          const planDayIndicator = addDayIndicator(depDate, now);
+          if (planDayIndicator) {
+            departureTime.appendChild(planDayIndicator);
+          }
+        }
+        
+        if (hasDepDelay) {
+          const actualArrivalDate = parseTime(train.actual, now, train.date);
+          const actualDepDate = new Date(actualArrivalDate.getTime() + Number(train.dauer) * 60000);
+          const depActual = formatClock(actualDepDate);
+          
+          const actualSpan = document.createElement('span');
+          actualSpan.textContent = depActual;
+          actualSpan.style.background = 'white';
+          actualSpan.style.color = '#161B75';
+          actualSpan.style.padding = '2px 4px';
+          actualSpan.style.borderRadius = '3px';
+          actualSpan.style.marginLeft = '8px';
+          
+          // Add strikethrough for canceled trains
+          if (train.canceled) {
+            actualSpan.style.textDecoration = 'line-through';
+          }
+          
+          departureTime.appendChild(actualSpan);
+          
+          // Add day indicator for actual departure
+          const actualDayIndicator = addDayIndicator(actualDepDate, now);
+          if (actualDayIndicator) {
+            departureTime.appendChild(actualDayIndicator);
+          }
+        }
+      }
+
+      rightBlockBottom.appendChild(departureTime);
+      bottomRow.appendChild(symbolSlotBottom);
+      bottomRow.appendChild(rightBlockBottom);
+
+      // Create placeholder rows for stops alignment with carriage and duration
+      // Row 2: Carriage symbol
+      const symbolSlotForStops2 = document.createElement('div');
+      symbolSlotForStops2.className = 'symbol-slot';
+      const carriageImg = document.createElement('img');
+      carriageImg.className = 'carriage-symbol-bottom';
+  carriageImg.src = getCarriageSVG(train.dauer);
+      carriageImg.alt = 'Carriage';
+      symbolSlotForStops2.appendChild(carriageImg);
+      stopsRow2.appendChild(symbolSlotForStops2);
+
+      const rightBlockForStops2 = document.createElement('div');
+      rightBlockForStops2.className = 'right-block';
+      stopsRow2.appendChild(rightBlockForStops2);
+
+      // Row 3: Duration info under carriage
+      const symbolSlotForStops3 = document.createElement('div');
+      symbolSlotForStops3.className = 'symbol-slot';
+      if (train.dauer) {
+        const durationInfo = document.createElement('div');
+        durationInfo.style.fontSize = '2.5vw';
+        durationInfo.style.color = 'white';
+        durationInfo.style.textAlign = 'left';
+        durationInfo.textContent = `${train.dauer} Minuten`;
+        
+        // Add strikethrough for canceled trains
+        if (train.canceled) {
+          durationInfo.style.textDecoration = 'line-through';
+        }
+        
+        symbolSlotForStops3.appendChild(durationInfo);
+      }
+      stopsRow3.appendChild(symbolSlotForStops3);
+
+      const rightBlockForStops3 = document.createElement('div');
+      rightBlockForStops3.className = 'right-block';
+      stopsRow3.appendChild(rightBlockForStops3);
+
+      // Row 4 and 5: Empty placeholders
+      [stopsRow4, stopsRow5].forEach(row => {
+        const symbolSlotForStops = document.createElement('div');
+        symbolSlotForStops.className = 'symbol-slot';
+        row.appendChild(symbolSlotForStops);
+
+        const rightBlockForStops = document.createElement('div');
+        rightBlockForStops.className = 'right-block';
+        row.appendChild(rightBlockForStops);
+      });
+
+      // Create a container that spans 4 rows for zwischenhalt (20vh..100vh)
+      const stopsContainer = document.createElement('div');
+      stopsContainer.className = 'focused-stops-container';
+      stopsContainer.style.position = 'absolute';
+      // top at 20vh (second row), height 80vh to cover four rows
+      stopsContainer.style.top = '20vh';
+      stopsContainer.style.height = '80vh';
+      // leave space for symbol-slot (15vw) on left and right-block (36vw) on right
+      stopsContainer.style.left = '15vw';
+      stopsContainer.style.right = '17vw';
+      stopsContainer.style.boxSizing = 'border-box';
+      stopsContainer.style.padding = '1vw';
+      stopsContainer.style.overflow = 'hidden';
+      stopsContainer.style.zIndex = '100'; // Ensure it's above the background rows
+
+      // Create zwischenhalt content
+      const stopsUnder = document.createElement('div');
+      stopsUnder.className = 'zwischenhalt';
+      
+      if (train.canceled) {
+        // For canceled trains, show only the date and cancellation message
+        const trainDate = new Date(train.date || new Date()).toLocaleDateString('de-DE', {
+          weekday: 'long',
+          year: 'numeric', 
+          month: 'long',
+          day: 'numeric'
+        });
+        const contentWithDate = trainDate + '<br><br>Zug fällt aus';
+        stopsUnder.innerHTML = contentWithDate;
+      } else {
+        // For normal trains, show date and stops
+        const trainDate = new Date(train.date || new Date()).toLocaleDateString('de-DE', {
+          weekday: 'long',
+          year: 'numeric', 
+          month: 'long',
+          day: 'numeric'
+        });
+        const stopsText = train.stops || '';
+        const contentWithDate = trainDate + (stopsText ? '<br><br>' + stopsText : '');
+        stopsUnder.innerHTML = contentWithDate.replace(/\n/g, '<br>');
+      }
+      
+      // fail-safe: ensure left alignment if CSS specificity is overridden
+      stopsUnder.style.textAlign = 'left';
+      stopsUnder.style.whiteSpace = 'normal';
+      stopsUnder.style.overflow = 'auto';
+      stopsUnder.style.height = '100%';
+      stopsUnder.style.display = 'block';
+      
+      stopsContainer.appendChild(stopsUnder);
+      
+      // Add connection line - positioned more naturally between times
+      const connectionLine = document.createElement('div');
+      connectionLine.style.position = 'absolute';
+      connectionLine.style.right = '8.5vw'; // Center of right block
+      connectionLine.style.top = '25vh';    // Start slightly below arrival time
+      connectionLine.style.height = '50vh';  // End slightly above departure time
+      connectionLine.style.borderLeft = '1px solid white'; // Thinner line
+      connectionLine.style.width = '1px';
+      container.appendChild(connectionLine);
+      
+      // append the spanning container to the main container
+      container.appendChild(stopsContainer);
+
+      // Append rows directly to main container with proper positioning
+      container.appendChild(topRow);
+      container.appendChild(stopsRow2);
+      container.appendChild(stopsRow3);
+      container.appendChild(stopsRow4);
+      container.appendChild(bottomRow);
+      
+      // Add back button for user focus mode
+      const backButton = document.createElement('div');
+      backButton.className = 'back-button';
+      backButton.textContent = '← Zurück';
+      backButton.addEventListener('click', exitUserFocus);
+      document.body.appendChild(backButton);
+    }
+
+    // Pagination functions
+    function nextPage() {
+      if (!lastSchedule || userFocusedTrain) return;
+      
+      const now = new Date();
+      const trains = (lastSchedule.trains || []).slice().sort((a, b) => {
+        const ta = parseTime(a.actual || a.plan, now, a.date);
+        const tb = parseTime(b.actual || b.plan, now, b.date);
+        return ta - tb;
+      });
+      
+      const futureTrains = trains.filter(t => {
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        const occEnd = getOccupancyEnd(t, now);
+        if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
+        return tTime > now;
+      });
+      
+      // Calculate max pages based on whether page 1 is focused or general
+      let maxPage;
+      
+      // Check if page 1 would be in focused mode
+      let page1IsFocused = false;
+      if (futureTrains[0]) {
+        const fiveMinLater = new Date(now.getTime() + 5 * 60000);
+        const anyCanceledSoon = futureTrains.some(t => t.canceled && parseTime(t.actual || t.plan, now, t.date) <= fiveMinLater);
+        const nextTime = parseTime(futureTrains[0].actual || futureTrains[0].plan, now, futureTrains[0].date);
+        const diffMin = Math.round((nextTime - now) / 60000);
+        const occupying = trains.find(t => {
+          if (!t.actual || t.canceled) return false;
+          const actualDate = parseTime(t.actual, now, t.date);
+          const occEnd = getOccupancyEnd(t, now);
+          return actualDate && occEnd && actualDate <= now && occEnd > now;
+        });
+        if (occupying) page1IsFocused = true;
+        else if (!futureTrains[0].canceled && !anyCanceledSoon && diffMin <= 5) page1IsFocused = true;
+      }
+      
+      if (page1IsFocused) {
+        // Page 1 shows 3 trains in focused mode
+        if (futureTrains.length <= 3) {
+          maxPage = 0;  // Only page 1 needed
+        } else {
+          const remainingTrains = futureTrains.length - 3;
+          maxPage = Math.ceil(remainingTrains / trainsPerPage);
+        }
+      } else {
+        // Page 1 shows 5 trains in general mode
+        if (futureTrains.length <= trainsPerPage) {
+          maxPage = 0;  // Only page 1 needed
+        } else {
+          const remainingTrains = futureTrains.length - trainsPerPage;
+          maxPage = Math.ceil(remainingTrains / trainsPerPage);
+        }
+      }
+      
+      if (currentPage < maxPage) {
+        currentPage++;
+        render(lastSchedule);
+      }
+    }
+
+    function prevPage() {
+      if (!lastSchedule || userFocusedTrain) return;
+      
+      if (currentPage > 0) {
+        currentPage--;
+        render(lastSchedule);
+      }
+    }
+
+    function resetToFirstPage() {
+      currentPage = 0;
+    }
+
+    function updatePageIndicator(totalTrains) {
+      // Remove existing page indicator
+      const existingIndicator = document.querySelector('.page-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      // Only show indicator when scrolling through pages (currentPage > 0) and not in user focus mode
+      if (userFocusedTrain || currentPage === 0) return;
+      
+      // Calculate total pages based on whether page 1 is focused or general
+      let totalPages;
+      const nextTrain = totalTrains > 0 ? 1 : 0; // Simple check if there are trains
+      
+      // For simplicity, assume page 1 could be focused, so calculate conservatively
+      if (totalTrains <= 3) {
+        totalPages = 1;
+      } else {
+        const remainingTrains = totalTrains - 3;
+        totalPages = 1 + Math.ceil(remainingTrains / trainsPerPage);
+      }
+      
+      if (totalPages > 1) {
+        const indicator = document.createElement('div');
+        indicator.className = 'page-indicator';
+        indicator.textContent = `${currentPage + 1} / ${totalPages}`;
+        document.body.appendChild(indicator);
+      }
+    }
+
+    // Enhanced keyboard and mouse controls
+    document.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('station-overlay');
+      // First priority: close overlay on Esc
+      if (e.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) {
+        e.preventDefault();
+        overlay.classList.add('hidden');
+        return;
+      }
+      // Open selection with Shift+F (keyboard only)
+      if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+        e.preventDefault();
+        showStationOverlay();
+        return;
+      }
+      if (e.key === 'Escape' && userFocusedTrain) {
+        exitUserFocus();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextPage();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevPage();
+      }
+    });
+
+    // Mouse wheel scrolling for page navigation
+    document.addEventListener('wheel', (e) => {
+      // Check if scrolling within a zwischenhalt area in any mode
+      let element = e.target;
+      while (element && element !== document.body) {
+        if (element.classList && element.classList.contains('zwischenhalt')) {
+          // Allow natural scrolling within zwischenhalt text areas
+          return;
+        }
+        element = element.parentElement;
+      }
+      
+      // Only handle wheel events for page navigation when not in user focus mode
+      if (userFocusedTrain) return;
+      
+      e.preventDefault();
+      
+      if (e.deltaY > 0) {
+        // Scrolling down - next page
+        nextPage();
+      } else if (e.deltaY < 0) {
+        // Scrolling up - previous page
+        prevPage();
+      }
+    });
+
+    // Lightweight interval: every 1s update departures and check mode  
+    setInterval(() => {
+      // Skip updates when in user focus mode
+      if (userFocusedTrain) return;
+      
+      const now = new Date();
+      if (!lastSchedule) return;
+      const trains = (lastSchedule.trains || []).slice().sort((a, b) => {
+        const ta = parseTime(a.actual || a.plan, now, a.date);
+        const tb = parseTime(b.actual || b.plan, now, b.date);
+        return ta - tb;
+      });
+      
+      // Check if any trains have transitioned from visible to past since last check
+      const currentVisibleTrains = trains.filter(t => {
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        const occEnd = getOccupancyEnd(t, now);
+        // Train is visible if: 1) future departure OR 2) currently occupying platform
+        if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
+        return tTime > now;
+      });
+      
+      // Store train states to detect occupancy transitions
+      if (typeof window.lastTrainStates === 'undefined') {
+        window.lastTrainStates = new Map();
+      }
+      
+      // Check for train state changes (approaching → occupying → departed)
+      let needsFullRerender = false;
+      const currentTrainStates = new Map();
+      
+      trains.forEach(t => {
+        if (!t.actual || t.canceled) return;
+        const trainKey = `${t.linie}_${t.ziel}_${t.plan}_${t.date || 'today'}`;
+        const actualDate = parseTime(t.actual, now, t.date);
+        const occEnd = getOccupancyEnd(t, now);
+        const diffMin = Math.round((actualDate - now) / 60000);
+        
+        let state = 'future';
+        if (actualDate <= now && occEnd && occEnd > now) {
+          state = 'occupying'; // Currently on platform
+        } else if (diffMin <= 3) {
+          state = 'approaching'; // "in Kürze" 
+        } else if (actualDate <= now) {
+          state = 'departed'; // Gone
+        }
+        
+        currentTrainStates.set(trainKey, state);
+        const lastState = window.lastTrainStates.get(trainKey);
+        
+        // Detect transitions that require re-render
+        if (lastState !== state) {
+          if ((lastState === 'approaching' && state === 'occupying') ||
+              (lastState === 'occupying' && state === 'departed') ||
+              (lastState === 'future' && state === 'approaching')) {
+            needsFullRerender = true;
+          }
+        }
+      });
+      
+      window.lastTrainStates = currentTrainStates;
+      
+      // Check visible train count changes  
+      const visibleTrains = trains.filter(t => {
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        const occEnd = getOccupancyEnd(t, now);
+        if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
+        return tTime > now;
+      });
+      
+      if (typeof window.lastVisibleTrainCount === 'undefined') {
+        window.lastVisibleTrainCount = currentVisibleTrains.length;
+      }
+      
+      if (visibleTrains.length !== window.lastVisibleTrainCount) {
+        needsFullRerender = true;
+        window.lastVisibleTrainCount = visibleTrains.length;
+      }
+      
+      const nextTrain = visibleTrains[0];
+      const occupyingTrain = trains.find(t => {
+        if (!t.actual || t.canceled) return false;
+        const actualDate = parseTime(t.actual, now, t.date);
+        const occEnd = getOccupancyEnd(t, now);
+        return actualDate && occEnd && actualDate <= now && occEnd > now;
+      });
+      
+      let wantedMode = 'general';
+      if (nextTrain && currentPage === 0) {  // Only allow focused mode on page 1
+        const fiveMinLater = new Date(now.getTime() + 5 * 60000);
+        const anyCanceledSoon = visibleTrains.some(t => t.canceled && parseTime(t.actual || t.plan, now, t.date) <= fiveMinLater);
+        if (occupyingTrain) wantedMode = 'focused';
+        else {
+          const nextTime = parseTime(nextTrain.actual || nextTrain.plan, now, nextTrain.date);
+          const diffMin = Math.round((nextTime - now) / 60000);
+          if (!nextTrain.canceled && !anyCanceledSoon && diffMin <= 5) wantedMode = 'focused';
+        }
+      }
+      // Force general mode for pages 2+
+      if (currentPage > 0) wantedMode = 'general';
+      
+      // Full re-render needed if mode changed OR train states changed
+      if (wantedMode !== currentMode || needsFullRerender) {
+        // Reset pagination when switching modes or when trains significantly change
+        resetToFirstPage();
+        (async () => {
+          const schedule = await fetchSchedule();
+          lastSchedule = schedule;
+          render(schedule);
+        })();
+        return;
+      }
+      
+      // Smart in-place update for performance
+      document.querySelectorAll('[data-departure]').forEach(el => {
+        const plan = el.dataset.plan || null;
+        const actual = el.dataset.actual || null;
+        const dauer = el.dataset.dauer ? Number(el.dataset.dauer) : 0;
+        const trainDate = el.dataset.date || null;
+        const canceled = el.dataset.canceled === 'true';
+        const delay = canceled ? 0 : getDelay(plan, actual, now, trainDate);
+        el.innerHTML = '';
+        el.appendChild(formatDeparture(plan, actual, now, delay, dauer, trainDate));
+      });
+    }, 5000);
+    if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log('Service Worker registered'))
+    .catch(err => console.error('Service Worker failed:', err));
+}
+  </script>
+</body>
+</html>

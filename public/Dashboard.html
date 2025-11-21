@@ -1,0 +1,4481 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#161B75">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #161B75;
+      color: white;
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
+      font-stretch: condensed;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Empty editable fields - show a visible box only for line number */
+    [data-editable="true"][data-field="linie"]:empty,
+    [data-editable="true"][data-field="linie"][data-value=""] {
+      min-width: 8vw;
+      min-height: 3vh;
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      display: inline-block;
+    }
+
+    #container {
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: row; /* Split vertically into 2 halves */
+    }
+
+    /* Top ribbon with clock and title - now part of left column */
+    .top-ribbon {
+      height: 9vh;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 1.5vw;
+      padding-right: 1.5vw;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.64);
+      box-sizing: border-box;
+    }
+
+    #first-train-container {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    #first-train-container .train-entry {
+      width: 100%;
+      max-width: 100%;
+      padding-right: 0;
+    }
+
+    .clock {
+      font-size: 4.5vh;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .clockSlot {
+          display: flex;
+          align-items: center;
+          justify-content: start;
+          width: 22.5vh;
+          flex-shrink: 0;
+      }
+    
+    .aclock {
+          position: relative;
+          width: 3.75vh;
+          height: 3.75vh;
+          border: 0.375vh solid  white;
+          border-radius: 50%;
+          position: relative;
+          margin-right: 2.25vh;
+      }
+
+    .center {
+        position: absolute;
+        width: 0.45vh;
+        height: 0.45vh;
+        background: #fff;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+
+    .hand {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform-origin: bottom center;
+        transform: translateX(-50%);
+    }
+
+    .hour {
+        width: 0.3vh;
+        height: 1.35vh;
+        background: white;
+        z-index: 3;
+    }
+
+    .minute {
+        width: 0.3vh;
+        height: 1.65vh;
+        background: white;
+        z-index: 2; 
+    }  
+
+    /* Left column - contains clock ribbon and train list */
+    .left-column {
+      width: 50%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-right: 0.5px solid rgba(255, 255, 255, 0.64);
+      box-sizing: border-box;
+    }
+
+
+
+    .container-task-panel {
+      display: flex;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .taskbar {
+      width: 5vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      background: #2e3273;
+      border-right: 0.5px solid rgba(255, 255, 255, 0.64);
+      border-color: rgba(255, 255, 255, 0.64);
+    }
+
+    .task-button {
+      width: 100%;
+      height: 5vh;
+      font-size: 4vh;
+      font-style: normal;
+      font-weight: 300;
+      font-family: inherit;
+      color: rgba(255, 255, 255, 0.8);
+      background: #2e3273;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    .task-button:hover {
+      background: #1f2478;
+    }
+
+    .task-icon-button {
+      width: 100%;
+      height: 5vh;
+      padding: 1.2vh;
+      background: #2e3273;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    .task-icon-button:hover {
+      background: #1f2478;
+    }
+
+    .task-icon-button img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: brightness(0) invert(1) opacity(0.7);
+    }
+
+    .task-icon-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.5vh;
+      padding-bottom: 1.5vh;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.64);
+    }
+
+    /* Left panel - scrollable train list (now inside left column) */
+    .left-panel {
+      width: 100%; /* Full width of left column */
+      height: 91vh; /* Remaining height after smaller clock ribbon */
+      overflow-y: scroll;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      /* Hide scrollbar while keeping scroll functionality */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE 10+ */
+      position: relative;
+    }
+
+    .left-panel::-webkit-scrollbar {
+      display: none; /* Safari and Chrome */
+    }
+
+    /* Belegungsplan (Occupancy Plan) - vertical timeline view */
+    .belegungsplan {
+      position: relative;
+      width: 100%;
+      min-height: 100%;
+      padding: 0;
+    }
+
+    .belegungsplan-train-block {
+      position: absolute;
+      width: 100%;
+      left: 1.5vw;
+      border-radius: 4px;
+      padding: 0.3vh 0.5vw;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Overlap indentation levels */
+    .belegungsplan-train-block.overlap-0 {
+      width: 100%;
+      left: 2.5vw;
+      z-index: 1;
+    }
+
+    .belegungsplan-train-block.overlap-1 {
+      width: 100%;
+      left: 4vw;
+      z-index: 2;
+    }
+
+    .belegungsplan-train-block.overlap-2 {
+      width: 100%;
+      left: 5.5vw;
+      z-index: 3;
+    }
+
+    .belegungsplan-train-block.overlap-3 {
+      width: 100%;
+      left: 7vw;
+      z-index: 4;
+    }
+
+    .belegungsplan-train-block:hover {      
+      border: 2px solid rgba(255, 255, 255, 0.531) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .belegungsplan-train-block.fex-entry {
+      background: white;
+      color: #161B75;
+    }
+
+    .belegungsplan-train-block.fex-entry:hover {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+
+    .belegungsplan-train-block.selected {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .belegungsplan-train-block.cancelled {
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+
+    .belegungsplan-train-block.short .belegungsplan-line-icon {
+      width: 2vh;
+      height: 2vh;
+    }
+
+    .belegungsplan-train-block.short .belegungsplan-destination {
+      font-size: 1.3vh;
+      line-height: 1;
+    }
+
+
+    .belegungsplan-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5vw;
+      width: 100%;
+    }
+
+    .belegungsplan-line-icon {
+      width: 3.5vh;
+      height: 3.5vh;
+      flex-shrink: 0;
+    }
+
+    .belegungsplan-destination {
+      font-size: 3vh;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+
+    }
+
+    .belegungsplan-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 2.5vh;
+      margin-top: auto;
+    }
+
+    .belegungsplan-times {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3vh;
+    }
+
+    .belegungsplan-time {
+      white-space: nowrap;
+    }
+
+    .belegungsplan-time .delayed {
+      background: white;
+      color: #161B75;
+      padding: 0.1vh 0.3vw;
+      border-radius: 2px;
+      margin-left: 0.5vw;
+    }
+
+    /* S-Bahn line colors - exact colors from SVG files with transparency */
+    .belegungsplan-train-block.s-bahn-s1 { background: rgba(125, 102, 173, 0.6); border-color: #7D66AD; }
+    .belegungsplan-train-block.s-bahn-s2 { background: rgba(0, 121, 59, 0.6); border-color: #00793B; }
+    .belegungsplan-train-block.s-bahn-s25 { background: rgba(28, 118, 59, 0.6); border-color: #1c763b; }
+    .belegungsplan-train-block.s-bahn-s3 { background: rgba(199, 106, 162, 0.6); border-color: #C76AA2; }
+    .belegungsplan-train-block.s-bahn-s4 { background: rgba(153, 41, 70, 0.6); border-color: #992946; }
+    .belegungsplan-train-block.s-bahn-s41 { background: rgba(170, 92, 58, 0.6); border-color: #aa5c3a; }
+    .belegungsplan-train-block.s-bahn-s42 { background: rgba(200, 103, 34, 0.6); border-color: #c86722; }
+    .belegungsplan-train-block.s-bahn-s45 { background: rgba(204, 157, 90, 0.6); border-color: #cc9d5a; }
+    .belegungsplan-train-block.s-bahn-s46 { background: rgba(204, 157, 90, 0.6); border-color: #cc9d5a; }
+    .belegungsplan-train-block.s-bahn-s47 { background: rgba(204, 157, 90, 0.6); border-color: #cc9d5a; }
+    .belegungsplan-train-block.s-bahn-s5 { background: rgba(240, 136, 0, 0.548); border-color: #F08600; }
+    .belegungsplan-train-block.s-bahn-s6 { background: rgba(0, 78, 157, 0.6); border-color: #004E9D; }
+    .belegungsplan-train-block.s-bahn-s60 { background: rgba(139, 141, 38, 0.6); border-color: #8b8d26; }
+    .belegungsplan-train-block.s-bahn-s62 { background: rgba(193, 123, 54, 0.6); border-color: #c17b36; }
+    .belegungsplan-train-block.s-bahn-s7 { background: rgba(174, 201, 38, 0.5); border-color: #AEC926; }
+    .belegungsplan-train-block.s-bahn-s75 { background: rgba(127, 110, 163, 0.6); border-color: #7f6ea3; }
+    .belegungsplan-train-block.s-bahn-s8 { background: rgba(109, 169, 57, 0.6); border-color: #6da939; }
+    .belegungsplan-train-block.s-bahn-s85 { background: rgba(109, 169, 57, 0.6); border-color: #6da939; }
+    .belegungsplan-train-block.s-bahn-s9 { background: rgba(150, 45, 68, 0.6); border-color: #962d44; }
+
+    /* Time markers on the left */
+    .belegungsplan-time-marker {
+      position: absolute;
+      left: 0.5vw;
+      font-size: 2vh;
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .belegungsplan-hour-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.2);
+      pointer-events: none;
+    }
+
+    .belegungsplan-hour-line.midnight {
+      background: rgba(255, 255, 255, 0.774);
+      height: 1.5px;
+    }
+
+    .belegungsplan-current-time-line {
+      position: absolute;
+      left: 6.5vh;
+      right: 0;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.719);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .belegungsplan-date-separator {
+      position: absolute;
+      left: 0;
+      right: 0;
+      font-size: 2vh;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 300;
+      pointer-events: none;
+      padding-left: 0.5vw;
+      transform: translateY(-100%);
+    }
+
+    /* Right half - split horizontally */
+    .right-panel {
+      width: 50%;
+      height: 100vh; /* Full viewport height */
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+
+    /* Top section of right panel */
+    .right-panel-top {
+      height: 50%;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.64);
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Bottom section of right panel */
+    .right-panel-bottom {
+      height: 50%;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    /* Train entry styling - compact for dashboard */
+    .train-entry {
+      height: 7.5vh; /* More entries visible */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5vw;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* Hide indicator dot for first train in ribbon */
+    .train-entry.first-train .indicator-dot {
+      display: none;
+    }
+
+    /* Status indicator */
+    .indicator-dot {
+      width: 0.9vh;
+      height: 0.9vh;
+      margin-right: 2.25vh;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.7vh;
+      font-weight: bold;
+      box-sizing: border-box;
+    }
+
+    /* Solid dot for current train */
+    .indicator-dot.current {
+      border-radius: 50%;
+      background: white;
+    }
+
+    /* X symbol for cancelled train */
+    .indicator-dot.cancelled::before {
+      content: '✕';
+      color: white;
+    }
+
+    /* Train info container */
+    .train-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Symbol slot */
+    .symbol-slot {
+      width: 7.5vh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .train-symbol {
+      width: 7.5vh;
+      height: 7.5vh;
+    }
+
+    .line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 4.5vh;
+      padding: 0.45vh 1.2vh;
+      border-radius: 0.6vh;
+      font-weight: 500;
+      font-size: 3vh;
+      font-stretch: condensed;
+      color: white;
+      background: transparent;
+      text-transform: none;
+      letter-spacing: -0.01em;
+    }
+
+    /* Destination */
+    .zugziel {
+      font-weight: 300;
+      font-stretch: condensed;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      font-size: 4.2vh;
+      flex: 1;
+      padding-left: 1.2vw;
+    }
+
+    /* Right block - departure only */
+    .right-block {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      box-sizing: border-box;
+      min-width: 12vw;
+    }
+
+    .departure-slot {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .departure {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 3.75vh;
+      color: inherit;
+      display: inline-block;
+    }
+
+    .delayed {
+      background: white;
+      color: #161B75;
+      font-weight: bold;
+      padding: 0.15vh 0.45vh;
+      border-radius: 0.1vh;
+    }
+
+    /* FEX train highlighting */
+    .fex-entry {
+      background: white;
+      color: #161B75;
+    }
+
+    /* Train entry hover effect */
+    .train-entry {
+      cursor: pointer;
+    }
+
+    .train-entry:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Day separator */
+    .day-separator {
+      height: 4.5vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0 1.5vw;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .day-separator-date {
+      font-size: 2.7vh;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+
+    .day-separator-line {
+      height: 0.1px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Focus mode template styles - from focus.html */
+    .focus-container {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .focus-first-row {
+      height: 30%;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .focus-line-destination-slot {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+    }
+
+    .focus-line-icon {
+      width: clamp(8vh, 15vh, 7vw);
+      height: clamp(8vh, 15vh, 7vw);
+      margin-left: 1vw;
+      margin-right: 1vw;
+    }
+
+    .focus-destination {
+      font-size: clamp(3.5vh, 7vh, 3.5vw);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-left: 1vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.5vh 0.5vw;
+      border-radius: 2px;
+    }
+
+    .focus-destination:hover:not(:has(input)):not(:has(textarea)) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .focus-time-slot {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      font-size: clamp(2.5vh, 5vh, 2.5vw);
+      font-weight: 400;
+      margin-right: 1.5vw;
+      margin-left: 1vw;
+      letter-spacing: -0.02em;
+    }
+
+    .focus-plan {
+      margin-right: 0.5vw;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.25vh 0;
+      border-radius: 2px;
+    }
+
+    .focus-plan:hover:not(:has(input)):not(:has(textarea)) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .focus-delayed {
+      background: white;
+      color: #161B75;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 2px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .focus-delayed:hover:not(:has(input)):not(:has(textarea)) {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+
+
+    .focus-content-panel {
+      height: 70%;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .focus-left-column {
+      height: 100%;
+      width: clamp(10vh, 15vh, 7vw);
+      margin: 0 1vw;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .focus-carriage-slot {
+      width: 100%;
+      height: auto;
+      max-height: 20%;
+    }
+
+    .focus-duration {
+      width: 100%;
+      text-align: center;
+      font-size: clamp(1.75vh, 3.5vh, 2vw);
+      font-weight: 400;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 2px;
+      margin-top: vh;
+      box-sizing: border-box;
+    }
+
+    .focus-duration:hover:not(:has(input)):not(:has(textarea)) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .focus-buttons {
+      margin-top: 1vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5vh;
+      box-sizing: border-box;
+    }
+
+    .focus-btn {
+      
+      width: 100%;
+      padding: 0.5vh 0;
+      background: rgba(255, 255, 255, 0.05);
+      border:none;  
+      color: rgba(255, 255, 255, 0.18);
+      font-family: inherit;
+      font-size: clamp(1.2vh, 2vh, 1.2vw);
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .focus-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .focus-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .focus-btn-cancel {
+      background: rgba(255, 165, 0, 0.3);
+      border-color: rgba(255, 165, 0, 0.5);
+    }
+
+    .focus-btn-cancel:hover {
+      background: rgba(255, 165, 0, 0.5);
+    }
+
+    .focus-btn-cancel.reactivate {
+      background: rgba(0, 200, 100, 0.3);
+      border-color: rgba(0, 200, 100, 0.5);
+    }
+
+    .focus-btn-cancel.reactivate:hover {
+      background: rgba(0, 200, 100, 0.5);
+    }
+
+    .focus-btn-delete {
+      background: rgba(255, 50, 50, 0.3);
+      border-color: rgba(255, 100, 100, 0.5);
+    }
+
+    .focus-btn-delete:hover {
+      background: rgba(255, 50, 50, 0.5);
+    }
+
+    .focus-middle-column {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1vh;
+      margin-left: 1vw;
+      min-width: 0;
+      height: 100%;
+    }
+
+    .focus-date {
+      font-size: 3vh;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 300;
+      padding: 0.5vh 0.5vw;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .focus-inter-stops {
+      flex: 1 1 0;
+      font-size: clamp(14px, 2.5vh, 24px);
+      color: #e0dfdf;
+      font-weight: 200;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      min-width: 0;
+      min-height: 0;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.5vh 0.5vw;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+
+    .focus-inter-stops::-webkit-scrollbar {
+      display: none;
+    }
+
+    .focus-right-column {
+      position: relative;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 2vh;
+    }
+
+    .focus-timeline-placeholder {
+      height: 60%;
+      width: 1px;
+      margin-bottom: clamp(1.5vh, 3vh, 1.5vw);
+      visibility: hidden; /* Takes up space but invisible */
+    }
+
+    .focus-timeline {
+      position: fixed;
+      top: 15vh;
+      bottom: 65vh;
+      right: 4vw; /* Fixed distance from right edge */
+      width: 1px;
+      background-color: white;
+      pointer-events: none;
+    }
+
+    .focus-bottom-time {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      font-size: clamp(2.5vh, 5vh, 2.5vw);
+      font-weight: 400;
+      margin-right: 1.5vw;
+      margin-left: 1vw;
+      letter-spacing: -0.02em;
+      margin-bottom: clamp(1vh, 2vh, 1vw);
+    }
+
+    .train-entry.selected {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Announcement panel styles */
+    .announcement-container {
+      width: 100%;
+      height: 100%;
+      background: white;
+      color: rgb(0, 0, 50);
+      position: relative;
+      opacity: 1;
+      transition: opacity 0.5s ease-in-out;
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 0.5px solid #161B75;
+    }
+
+    .announcement-container:last-child {
+      border-right: none;
+    }
+
+    .announcement-container.fade-out {
+      opacity: 0;
+    }
+
+    .announcement-panel {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      flex: 1 1 0;
+      min-width: 0;
+      position: relative;
+    }
+
+    .announcement-headline {
+      width: 100%;
+      height: 4vh;
+      font-size: 2.5vh;
+      font-weight: 400;
+      padding-left: 0.5vh;
+      display: flex;
+      align-items: center;
+      flex-direction: row;
+      justify-content: space-between;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+    }
+
+    .announcement-headline.cancelled {
+      background: #8a0303;
+      color: white;
+    }
+
+    .announcement-headline.late {
+      background: #e06602;
+      color: white;
+    }
+
+    .announcement-headline.ersatzfahrt {
+      background: #f4b942;
+      color: rgb(0, 0, 50);
+    }
+
+    .announcement-headline.announce {
+      background: #1549b0;
+      color: white;
+    }
+
+    .announcement-headline.konflikt {
+      background: #8a0303;
+      color: white;
+    }
+
+    /* Konflikt-specific styles */
+    .konflikt-block {
+      width: 100%;
+      height: 31%;
+      display: flex;
+      flex-direction: column;
+      padding-top: 1vh;
+      box-sizing: border-box;
+    }
+
+    .konflikt-main-block {
+      background: rgb(240, 240, 240);
+      z-index: 1;
+    }
+
+    .konflikt-main-half-block {
+      height: 11%;
+      background: rgb(240, 240, 240);
+      z-index: 1;
+    }
+
+    .konflikt-block-middle {
+      height: 40%;
+      background: rgb(241, 205, 205);
+      margin-left: 10%;
+      border-top-left-radius: 15px;
+      border-bottom-left-radius: 15px;
+      position: absolute;
+      top: 40%;
+      width: 90%;
+      z-index: 2;
+    }
+
+    .konflikt-block-nested {
+      height: 72%;
+      background: rgba(255, 166, 166, 0.349);
+      margin-left: 10%;
+      border-top-left-radius: 15px;
+      border-bottom-left-radius: 15px;
+      position: absolute;
+      top: 40%;
+      width: 90%;
+      z-index: 2;
+    }
+
+    .konflikt-line-icon {
+      width: 5vh;
+      height: 3.5vh;
+      padding-left: 1vh;
+    }
+
+    .konflikt-destination {
+      flex: 0 0 auto;
+      width: 100%;
+      font-size: 4vh;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      padding: 0 1vh;
+      box-sizing: border-box;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+    }
+
+    .konflikt-panel {
+      max-height: 7vh;
+      flex: 1 1 auto;
+      font-size: 1.8vh;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      padding-left: 1vh;
+      padding-right: 8vh;
+      overflow-y: scroll;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      min-width: 0;
+    }
+
+    .konflikt-time-slot {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      font-size: 3.5vh;
+      font-weight: 400;
+      padding: 1vh;
+      letter-spacing: -0.02em;
+      position: absolute;
+      left: 100%;
+      transform: translateX(-100%);
+      height: auto;
+      z-index: 3;
+    }
+
+    .konflikt-time-slot-1 {
+      top: 7%;
+    }
+
+    .konflikt-time-slot-2 {
+      top: 40%;
+    }
+
+    .konflikt-time-slot-3 {
+      top: 70%;
+    }
+
+    .konflikt-time-slot-4 {
+      top: 89%;
+    }
+
+    .konflikt-plan {
+      padding-right: 1vh;
+    }
+
+    .konflikt-delayed {
+      background: rgb(36, 36, 36);
+      color: white;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 1px;
+    }
+
+    .delayed-main {
+      background: rgb(36, 36, 36);
+      color: white;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 1px;
+    }
+
+    .delayed-konflikt {
+      background: #590000;
+      color: white;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 1px;
+    }
+
+    .konflikt-color {
+      color: #590000;
+    }
+
+    .konflikt-resolve-button {
+      background: rgba(252, 246, 246, 0.202);
+      color: rgb(255, 255, 255);
+      font-family: inherit;
+      padding: 0.5vh 1.5vh;
+      border: 1px solid rgba(255, 255, 255, 0.582);
+      letter-spacing: normal;
+      font-size: 2.5vh;
+      font-weight: 400;
+      cursor: pointer;
+      margin-left: 2vh; 
+    }
+
+    .konflikt-resolve-button:hover {
+      background: rgba(255, 255, 255, 0.151);
+    }
+
+    .konflikt-resolve-button:active {
+      background: rgba(130, 130, 130, 0.226);
+    }
+
+    .announcement-group-icon-type {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    .announcement-line-icon {
+      width: 8vh;
+      height: 8vh;
+      padding-left: 0.5vh;
+    }
+
+    .announcement-time-slot {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      font-size: 5.5vh;
+      font-weight: 400;
+      padding-right: 0.5vh;
+      padding-left: 0.5vh;
+      letter-spacing: -0.02em;
+      padding-bottom: 0.2vh;
+      box-sizing: border-box;
+    }
+
+    .announcement-plan {
+      padding-right: 0.3vh;
+    }
+
+    .announcement-delayed {
+      background: rgb(0, 0, 50);
+      color: white;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 1px;
+    }
+
+    .announcement-destination {
+      width: 100%;
+      font-size: 5.5vh;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      padding: 0 0.5vh;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+    }
+
+    .announcement-content-panel {
+      flex: 1 1 auto;
+      width: 100%;
+      font-size: 2.5vh;
+      padding: 0.3vh 0.5vh;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      min-width: 0;
+    }
+
+    .announcement-content-panel::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Pagination dots for announcement panels */
+    .pagination-dots {
+      position: absolute;
+      bottom: 1vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.8vh;
+      z-index: 10;
+    }
+
+    .pagination-dot {
+      width: 0.6vh;
+      height: 0.6vh;
+      border-radius: 50%;
+      background: rgba(0, 0, 50, 0.099);
+      transition: all 0.3s ease;
+    }
+
+    .pagination-dot.active {
+      background: rgba(0, 0, 50, 0.39);
+      transform: scale(1.3);
+    }
+
+    /* Station selection overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.401);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay-card {
+      width: 30vw;
+      height: auto;
+      background: #161B75;
+      color: white;
+      padding: 1vw;
+      border-radius: 5px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .overlay-title {
+      font-size: 2vw;
+      margin: 0 0 0.3vw 0;
+      font-weight: 4bfst00;
+    }
+
+    .overlay-sub {
+      font-size: 1vw;
+      opacity: 0.85;
+      margin-bottom: 2vw;
+    }
+
+    .station-input-wrap {
+      position: relative;
+    }
+
+    .station-input {
+      width: 100%;
+      padding: 1vw 1.2vw;
+      font-size: 1vw;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #0e1254;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.6vw;
+      margin-top: 0.5vw;
+      max-height: 40vh;
+      overflow: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      z-index: 10;
+      scrollbar-width: none;
+    }
+
+    .suggestion::-webkit-scrollbar {
+      display: none;
+    }
+
+    .suggestion-item {
+      padding: 1vw 1.2vw;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+
+
+
+    .btn {
+      padding: 1vw 2vw;
+      font-size: clamp(14px, 3vw, 18px);
+      border: none;
+      border-radius: 0.6vw;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .btn:hover {
+      opacity: 0.8;
+    }
+
+  
+  </style>
+</head>
+<body>
+  <!-- Focus mode template -->
+  <template id="focus-template">
+    <div class="focus-container">
+      <div class="focus-first-row">
+        <div class="focus-line-destination-slot">
+          <img src="" alt="Line" class="focus-line-icon" data-focus="line-icon">
+          <div class="focus-destination" data-focus="destination"></div>
+        </div>
+        <div class="focus-time-slot">
+          <div class="focus-plan" data-focus="arrival-plan"></div>
+          <div class="focus-delayed" data-focus="arrival-delayed" style="display: none;"></div>
+        </div>
+      </div>
+      <div class="focus-content-panel">
+        <div class="focus-left-column">
+          <img src="" alt="Carriage" class="focus-carriage-slot" data-focus="carriage">
+          <div class="focus-duration" data-focus="duration"></div>
+          <div class="focus-buttons">
+            <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">Cancel</button>
+            <button class="focus-btn focus-btn-minus5" data-focus-action="minus5">-5</button>
+            <button class="focus-btn focus-btn-plus5" data-focus-action="plus5">+5</button>
+            <button class="focus-btn focus-btn-plus10" data-focus-action="plus10">+10</button>
+            <button class="focus-btn focus-btn-plus30" data-focus-action="plus30">+30</button>
+            <button class="focus-btn focus-btn-delete" data-focus-action="delete">✕</button>
+          </div>
+        </div>
+        <div class="focus-middle-column">
+          <div class="focus-date" data-focus="date"></div>
+          <div class="focus-inter-stops" data-focus="stops"></div>
+        </div>
+        <div class="focus-right-column">
+          <div class="focus-timeline-placeholder"></div>
+          <div class="focus-timeline"></div>
+          <div class="focus-bottom-time">
+            <div class="focus-plan" data-focus="departure-plan"></div>
+            <div class="focus-delayed" data-focus="departure-delayed" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- End of focus mode template-->
+
+  <!-- Announcement template -->
+  <template id="announcement-template">
+    <div class="announcement-container">
+      <div class="announcement-panel">
+        <div class="announcement-headline late" data-announcement="headline"> ✕ Zug fällt aus </div>
+        <div class="announcement-group-icon-type">
+          <img class="announcement-line-icon" src="" alt="Train Icon" data-announcement="line-icon">
+        </div>
+        <div class="announcement-time-slot">
+          <div class="announcement-plan" data-announcement="plan"></div>
+          <div class="announcement-delayed" data-announcement="delayed" style="display: none;"></div>
+        </div>
+        <div class="announcement-destination" data-announcement="destination"></div>
+        <div class="announcement-content-panel" data-announcement="content"></div>
+      </div>
+    </div>
+  </template>
+  <!-- End of announcement template -->
+
+  <!-- Konflikt announcement template -->
+  <template id="konflikt-template">
+    <div class="announcement-container">
+      <div class="announcement-panel konflikt-announcement-panel">
+        <div class="announcement-headline cancelled">
+          <span>⚠︎ Konflikt</span>
+          <button class="konflikt-resolve-button" data-konflikt="resolve-button">Lösen</button>
+        </div>
+        
+        <!-- Main train block 1 -->
+        <div class="konflikt-block konflikt-main-block">
+          <img class="konflikt-line-icon" src="" alt="Train Icon" data-konflikt="main-icon">
+          <div class="konflikt-destination" data-konflikt="main-destination"></div>
+          <div class="konflikt-panel" data-konflikt="main-stops"></div>
+        </div>
+
+        <!-- Main train block 2 (empty) -->
+        <div class="konflikt-block konflikt-main-block"></div>
+        
+        <!-- Main train block 3 (full height for train-in-train, half height for nested) -->
+        <div class="konflikt-block konflikt-main-block" data-konflikt="main-block-3"></div>
+
+        <!-- Conflict train block (middle position for train-in-train, nested position for overlap) -->
+        <div class="konflikt-block konflikt-color" data-konflikt="conflict-block">
+          <img class="konflikt-line-icon" src="" alt="Train Icon" data-konflikt="conflict-icon">
+          <div class="konflikt-destination" data-konflikt="conflict-destination"></div>
+          <div class="konflikt-panel" data-konflikt="conflict-stops"></div>
+        </div>
+
+        <!-- Time slot 1: Main train departure -->
+        <div class="konflikt-time-slot konflikt-time-slot-1" data-konflikt="time-1">
+          <div class="konflikt-plan" data-konflikt="time-1-plan"></div>
+          <div class="konflikt-delayed delayed-main" data-konflikt="time-1-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 2: Conflict arrival (always red) -->
+        <div class="konflikt-time-slot konflikt-time-slot-2" data-konflikt="time-2">
+          <div class="konflikt-plan" data-konflikt="time-2-plan"></div>
+          <div class="konflikt-delayed delayed-konflikt" data-konflikt="time-2-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 3: Conflict end (train-in-train) OR Main end (nested) -->
+        <div class="konflikt-time-slot konflikt-time-slot-3" data-konflikt="time-3">
+          <div class="konflikt-plan" data-konflikt="time-3-plan"></div>
+          <div class="konflikt-delayed" data-konflikt="time-3-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 4: Main end (train-in-train) OR Conflict end (nested) -->
+        <div class="konflikt-time-slot konflikt-time-slot-4" data-konflikt="time-4">
+          <div class="konflikt-plan" data-konflikt="time-4-plan"></div>
+          <div class="konflikt-delayed" data-konflikt="time-4-delayed" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <!-- End of konflikt template -->
+
+  <!-- Main display area -->
+
+  <div id="container">
+    <!-- Left column: clock + train list -->
+    <div class="left-column">
+      <!-- Top ribbon with clock -->
+      <div class="top-ribbon">
+        <div class="clockSlot">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="hour"></div>
+            <div class="hand minute" id="minute"></div>
+          </div>
+          <div class="clock" id="clock">--:--</div>
+        </div>
+        <!-- First train entry will be rendered here by updateClock() -->
+        <div id="first-train-container"></div>
+      </div>
+      
+      <!--Taskbar-->
+      <div class="container-task-panel">
+        <div class="taskbar">
+          <div class="task-icon-group">
+            <button class="task-button" id="add-train-button">+</button>
+            <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
+            <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
+          </div>
+        </div>
+        <!-- Train list -->
+        <div class="left-panel" id="train-list">
+          <!-- Train entries will be inserted here -->
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Right column: split horizontally -->
+    <div class="right-panel">
+      <!-- Top section - focus mode -->
+      <div class="right-panel-top" id="focus-panel">
+        <div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">
+          Klicken Sie auf einen Zug<br>für weitere Details
+        </div>
+      </div>
+      
+      <!-- Bottom section -->
+      <div class="right-panel-bottom" id="announcement-panel">
+      </div>
+    </div>
+  </div>
+
+  <!-- Station selection overlay -->
+  <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlay-card">
+      <h2 class="overlay-title">Bahnhof auswählen</h2>
+      <div class="overlay-sub">Leer lassen für den aktuellen Uni-Stundenplan.</div>
+      <div class="station-input-wrap">
+        <input id="station-input" class="station-input" type="text" placeholder="Stationsnamen eingeben..." autocomplete="off" />
+        <div id="station-suggestions" class="suggestions" style="display:none"></div>
+      </div>
+      <div id="overlay-hint" class="overlay-hint"></div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables for station
+    let stationsIndex = null;
+    let currentEva = null;
+    let currentStationName = null;
+    
+    // View mode: 'belegungsplan' or 'list'
+    let currentViewMode = 'belegungsplan';
+    
+    // Global refresh interval tracking
+    let refreshIntervalId = null;
+    let isEditingTrain = false;
+    
+    // Global schedule object (like InputEnhanced)
+    let schedule = {
+      fixedSchedule: [],
+      spontaneousEntries: [],
+      trains: []
+    };
+
+    // Centralized train processing - creates categorized train lists used by all panels
+    let processedTrainData = {
+      allTrains: [],           // All trains from schedule
+      localTrains: [],         // Local personal schedule trains only
+      noteTrains: [],          // Trains without plan time (announcements/notes)
+      scheduledTrains: [],     // Trains with plan time
+      futureTrains: [],        // Scheduled trains in the future or currently occupying
+      currentTrain: null,      // First future/occupying train from PERSONAL SCHEDULE
+      remainingTrains: []      // Future trains after the current one
+    };
+
+    function processTrainData(schedule) {
+      const now = new Date();
+      
+      // Reset data structure
+      processedTrainData = {
+        allTrains: [],
+        localTrains: [],
+        noteTrains: [],
+        scheduledTrains: [],
+        futureTrains: [],
+        currentTrain: null,
+        remainingTrains: []
+      };
+      
+      // Get all trains (IDs already assigned at load time)
+      processedTrainData.allTrains = (schedule.trains || []).slice();
+      processedTrainData.localTrains = (schedule.localTrains || []).slice();
+      
+      // Separate notes from scheduled trains
+      processedTrainData.noteTrains = processedTrainData.allTrains.filter(t => !t.plan || t.plan.trim() === '');
+      
+      processedTrainData.scheduledTrains = processedTrainData.allTrains
+        .filter(t => t.plan && t.plan.trim() !== '')
+        .sort((a, b) => {
+          const ta = parseTime(a.actual || a.plan, now, a.date);
+          const tb = parseTime(b.actual || b.plan, now, b.date);
+          return ta - tb;
+        });
+      
+      // Filter for future and currently occupying trains
+      processedTrainData.futureTrains = processedTrainData.scheduledTrains.filter(t => {
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        
+        if (t.canceled) {
+          return tTime > now;
+        }
+        
+        const occEnd = getOccupancyEnd(t, now);
+        if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
+        return tTime > now;
+      });
+      
+      // IMPORTANT: Current train must ALWAYS be from local personal schedule
+      const localScheduledTrains = processedTrainData.localTrains
+        .filter(t => t.plan && t.plan.trim() !== '')
+        .sort((a, b) => {
+          const ta = parseTime(a.actual || a.plan, now, a.date);
+          const tb = parseTime(b.actual || b.plan, now, b.date);
+          return ta - tb;
+        });
+      
+      const localFutureTrains = localScheduledTrains.filter(t => {
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        
+        if (t.canceled) {
+          return tTime > now;
+        }
+        
+        const occEnd = getOccupancyEnd(t, now);
+        if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
+        return tTime > now;
+      });
+      
+      // Set current train from local schedule only
+      // If there are overlaps, choose the train that starts LATEST
+      if (localFutureTrains.length > 0) {
+        // Find all trains that are currently occupying (overlapping with now)
+        const currentlyOccupying = localFutureTrains.filter(t => {
+          const tTime = parseTime(t.actual || t.plan, now, t.date);
+          const occEnd = getOccupancyEnd(t, now);
+          return tTime <= now && occEnd > now;
+        });
+        
+        if (currentlyOccupying.length > 0) {
+          // Multiple trains occupying - choose the one that started latest
+          processedTrainData.currentTrain = currentlyOccupying.reduce((latest, train) => {
+            const latestTime = parseTime(latest.actual || latest.plan, now, latest.date);
+            const trainTime = parseTime(train.actual || train.plan, now, train.date);
+            return trainTime > latestTime ? train : latest;
+          });
+        } else {
+          // No overlaps, just use the first future train
+          processedTrainData.currentTrain = localFutureTrains[0];
+        }
+      } else {
+        processedTrainData.currentTrain = null;
+      }
+      
+      // Remaining trains (all future trains)
+      processedTrainData.remainingTrains = processedTrainData.futureTrains;
+      
+      console.log('Processed train data:', {
+        total: processedTrainData.allTrains.length,
+        local: processedTrainData.localTrains.length,
+        notes: processedTrainData.noteTrains.length,
+        scheduled: processedTrainData.scheduledTrains.length,
+        future: processedTrainData.futureTrains.length,
+        currentFromLocal: processedTrainData.currentTrain ? processedTrainData.currentTrain.linie : 'none'
+      });
+      
+      return processedTrainData;
+    }
+    // Helper functions
+    //S1 to s1 weil s1.svg
+    function getTrainSVG(line) {
+      return `./${line.toLowerCase()}.svg`;
+    }
+
+    function getCarriageSVG(dauer, isFEX = false) {
+      const n = Number(dauer);
+      const prefix = isFEX ? 'cb' : 'c';
+      if (!Number.isFinite(n) || n <= 0) return `./${prefix}3.svg`;
+      if (n <= 30) return `./${prefix}1.svg`;
+      if (n <= 60) return `./${prefix}2.svg`;
+      if (n <= 90) return `./${prefix}3.svg`;
+      return `./${prefix}4.svg`;
+    }
+
+    function formatClock(date) {
+      if (!date) return '';
+      const h = String(date.getHours()).padStart(2, '0');
+      const m = String(date.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function parseTime(str, now = new Date(), trainDate = null) {
+      if (!str) return null;
+      const [h, m] = String(str).split(":").map(Number);
+      if (Number.isNaN(h) || Number.isNaN(m)) return null;
+      
+      const d = trainDate ? new Date(trainDate) : new Date(now);
+      d.setHours(h, m, 0, 0);
+      
+      if (!trainDate) {
+        const diffMs = d - now;
+        if (diffMs < -12 * 60 * 60 * 1000) d.setDate(d.getDate() + 1);
+      }
+      
+      return d;
+    }
+
+    function getDelay(plan, actual, now = new Date(), trainDate = null) {
+      if (!actual || !plan) return 0;
+      const planDate = parseTime(plan, now, trainDate);
+      const actualDate = parseTime(actual, now, trainDate);
+      if (!planDate || !actualDate) return 0;
+      return Math.round((actualDate - planDate) / 60000);
+    }
+
+    function getOccupancyEnd(train, now = new Date()) {
+      if (!train || train.canceled) return null;
+      // Use actual time if available, otherwise use plan time
+      const startTime = parseTime(train.actual || train.plan, now, train.date);
+      const dur = Number(train.dauer);
+      if (!startTime || !dur || isNaN(dur) || dur <= 0) return null;
+      return new Date(startTime.getTime() + dur * 60000);
+    }
+
+    function formatDeparture(plan, actual, now, delay, dauer, trainDate = null) {
+      const planDate = parseTime(plan, now, trainDate);
+      const actualDate = actual ? parseTime(actual, now, trainDate) : planDate;
+      
+      function addDayIndicator(frag, date, now) {
+        if (!date) return;
+        const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const trainDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayDiff = Math.round((trainDay - nowDay) / (24 * 60 * 60 * 1000));
+        
+        if (dayDiff > 0) {
+          const sup = document.createElement('sup');
+          sup.textContent = `+${dayDiff}`;
+          sup.style.fontSize = '0.6em';
+          sup.style.marginLeft = '0px';
+          frag.appendChild(sup);
+        }
+      }
+      
+      // Check if train is occupying
+      if (actualDate && dauer) {
+        const occEnd = new Date(actualDate.getTime() + Number(dauer) * 60000);
+        if (actualDate <= now && occEnd > now) {
+          const frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode('bis '));
+          const clock = document.createElement('span');
+          clock.className = 'departure-clock';
+          clock.textContent = formatClock(occEnd);
+          frag.appendChild(clock);
+          addDayIndicator(frag, occEnd, now);
+          return frag;
+        }
+      }
+
+      const diffMin = Math.round((actualDate - now) / 60000);
+
+      if (diffMin === 0) return document.createTextNode('Zug fährt ab');
+
+      if (diffMin > 0 && diffMin < 60) {
+        const frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode(`in ${diffMin} Min`));
+        addDayIndicator(frag, actualDate, now);
+        return frag;
+      }
+
+      if (delay !== 0) {
+        const frag = document.createDocumentFragment();
+        const planSpan = document.createElement('span');
+        planSpan.textContent = plan || '';
+        const spacer = document.createTextNode(' ');
+        const actualSpan = document.createElement('span');
+        actualSpan.className = 'delayed';
+        actualSpan.textContent = actual || '';
+        frag.appendChild(planSpan);
+        frag.appendChild(spacer);
+        frag.appendChild(actualSpan);
+        addDayIndicator(frag, actualDate, now);
+        return frag;
+      }
+
+      const frag = document.createDocumentFragment();
+      frag.appendChild(document.createTextNode(plan || ''));
+      addDayIndicator(frag, actualDate, now);
+      return frag;
+    }
+
+    // Format countdown for headline train
+    function formatCountdown(train, now) {
+      if (train.canceled) {
+        return document.createTextNode('');
+      }
+
+      const actualTime = parseTime(train.actual || train.plan, now, train.date);
+      if (!actualTime) {
+        return document.createTextNode('--:--:--');
+      }
+
+      // Check if currently occupying
+      if (train.dauer) {
+        const occEnd = getOccupancyEnd(train, now);
+        if (train.actual && occEnd && parseTime(train.actual, now, train.date) <= now && occEnd > now) {
+          // Currently occupying - show time until end
+          const diffSec = Math.round((occEnd - now) / 1000);
+          const hours = Math.floor(diffSec / 3600);
+          const minutes = Math.floor((diffSec % 3600) / 60);
+          const seconds = diffSec % 60;
+          
+          const frag = document.createDocumentFragment();
+          const countdownSpan = document.createElement('span');
+          countdownSpan.className = 'countdown-time';
+          countdownSpan.textContent = `Abfahrt in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+          frag.appendChild(countdownSpan);
+          return frag;
+        }
+      }
+
+      // Show countdown to departure
+      const diffSec = Math.round((actualTime - now) / 1000);
+      
+      if (diffSec <= 0) {
+        return document.createTextNode('Zug fährt ab');
+      }
+
+      const hours = Math.floor(diffSec / 3600);
+      const minutes = Math.floor((diffSec % 3600) / 60);
+      const seconds = diffSec % 60;
+
+      const frag = document.createDocumentFragment();
+      const countdownSpan = document.createElement('span');
+      countdownSpan.className = 'countdown-time';
+      countdownSpan.textContent = `Ankunft in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      frag.appendChild(countdownSpan);
+      return frag;
+    }
+
+    // Fetch data from server API
+    async function fetchSchedule() {
+      try {
+        // Always fetch local schedule
+        const fetchPromises = [
+          fetch('/api/schedule').catch(() => null)
+        ];
+        
+        // Also fetch DB API if a station is explicitly selected
+        if (currentEva) {
+          fetchPromises.push(fetch(`/api/db-departures?eva=${currentEva}`).catch(() => null));
+        }
+        
+        const responses = await Promise.all(fetchPromises);
+        const scheduleRes = responses[0];
+        const dbRes = responses[1] || null;
+        
+        let localTrains = [];
+        let dbTrains = [];
+        
+        // Always process local schedule
+        if (scheduleRes && scheduleRes.ok) {
+          const data = await scheduleRes.json();
+          
+          // Helper to assign unique IDs
+          const assignId = (train) => {
+            if (!train._uniqueId) {
+              train._uniqueId = 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            }
+            return train;
+          };
+          
+          // Store global schedule object (like InputEnhanced) with unique IDs
+          schedule.fixedSchedule = (data.fixedSchedule || []).map(assignId);
+          schedule.spontaneousEntries = (data.spontaneousEntries || []).map(assignId);
+          schedule.trains = (data.trains || []).map(assignId);
+          
+          // Handle both new and legacy formats
+          if (data.fixedSchedule || data.spontaneousEntries) {
+            const now = new Date();
+            const fixedTrainsForDays = [];
+            
+            for (let i = 0; i < 7; i++) {
+              const targetDate = new Date(now);
+              targetDate.setDate(targetDate.getDate() + i);
+              const dateStr = targetDate.toLocaleDateString('sv-SE');
+              const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][targetDate.getDay()];
+              
+              const fixedForDay = (data.fixedSchedule || []).filter(t => t.weekday === weekday && t.linie);
+              const fixedAsTrains = fixedForDay.map(t => {
+                const normalized = {
+                  ...t,
+                  date: dateStr,
+                  source: 'local',
+                  _uniqueId: t._uniqueId // Preserve unique ID
+                };
+                // Normalize stops to zwischenhalte
+                if (t.stops && !t.zwischenhalte) {
+                  normalized.zwischenhalte = t.stops;
+                  delete normalized.stops;
+                }
+                return normalized;
+              });
+              fixedTrainsForDays.push(...fixedAsTrains);
+            }
+            
+            const spontaneousAll = (data.spontaneousEntries || []).filter(t => t.linie).map(t => {
+              const normalized = {
+                ...t,
+                source: 'local',
+                _uniqueId: t._uniqueId // Preserve unique ID
+              };
+              // Normalize stops to zwischenhalte
+              if (t.stops && !t.zwischenhalte) {
+                normalized.zwischenhalte = t.stops;
+                delete normalized.stops;
+              }
+              return normalized;
+            });
+            
+            localTrains = [...fixedTrainsForDays, ...spontaneousAll];
+          } else {
+            localTrains = (data.trains || []).map(t => {
+              const normalized = {
+                ...t,
+                source: 'local'
+              };
+              // Normalize stops to zwischenhalte
+              if (t.stops && !t.zwischenhalte) {
+                normalized.zwischenhalte = t.stops;
+                delete normalized.stops;
+              }
+              return normalized;
+            });
+          }
+        }
+        
+        // Process DB API data if station selected
+        if (dbRes && dbRes.ok) {
+          const dbData = await dbRes.json();
+          dbTrains = (dbData.trains || []).map(t => {
+            // Normalize property names: use zwischenhalte consistently
+            const normalized = {
+              ...t,
+              source: 'db-api'
+            };
+            // If train has 'stops' property, rename to 'zwischenhalte'
+            if (t.stops && !t.zwischenhalte) {
+              normalized.zwischenhalte = t.stops;
+              delete normalized.stops;
+            }
+            return normalized;
+          });
+        }
+        
+        // If station is selected, use ONLY DB API trains for display
+        // Local trains are kept separate only for the first train in top ribbon
+        let trainsToDisplay = [];
+        
+        if (currentEva && dbTrains.length > 0) {
+          // Station selected: use only DB API trains
+          trainsToDisplay = dbTrains;
+          console.log(`Station selected: Using ${dbTrains.length} DB API trains from ${currentStationName} (${localTrains.length} local trains available for headline)`);
+        } else {
+          // No station: use only local schedule
+          trainsToDisplay = localTrains;
+          console.log(`No station selected: Using ${localTrains.length} local trains`);
+        }
+        
+        return { trains: trainsToDisplay, localTrains };
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+        return { trains: [], localTrains: [] };
+      }
+    }
+
+    // Render headline train (first train in top ribbon)
+    function renderHeadlineTrain() {
+      const now = new Date();
+      const firstTrainContainer = document.getElementById('first-train-container');
+      const currentTrain = processedTrainData.currentTrain;
+      
+      if (currentTrain) {
+        const existingEntry = firstTrainContainer.querySelector('.train-entry');
+        
+        // Check if the train has changed (different linie or plan)
+        const existingDeparture = existingEntry ? existingEntry.querySelector('[data-departure]') : null;
+        const trainChanged = !existingDeparture || 
+                           existingDeparture.dataset.plan !== currentTrain.plan ||
+                           existingDeparture.dataset.actual !== (currentTrain.actual || '') ||
+                           !existingEntry.querySelector('.zugziel') ||
+                           existingEntry.querySelector('.zugziel').textContent !== (currentTrain.canceled ? 'Zug fällt aus' : currentTrain.ziel);
+        
+        if (trainChanged || !existingEntry) {
+          // Only recreate if train changed or doesn't exist
+          const firstEntry = createTrainEntry(currentTrain, now, true);
+          firstTrainContainer.innerHTML = '';
+          firstTrainContainer.appendChild(firstEntry);
+        }
+        // If train hasn't changed, updateClock() will handle the countdown update
+      } else {
+        firstTrainContainer.innerHTML = '';
+      }
+    }
+
+    // Toggle between Belegungsplan and legacy list view
+    function toggleViewMode() {
+      currentViewMode = currentViewMode === 'belegungsplan' ? 'list' : 'belegungsplan';
+      localStorage.setItem('viewMode', currentViewMode);
+      renderTrains();
+    }
+
+    // Unified render function that calls the appropriate view
+    function renderTrains() {
+      if (currentViewMode === 'belegungsplan') {
+        renderBelegungsplan();
+      } else {
+        renderTrainList();
+      }
+    }
+
+    // Render Belegungsplan (Occupancy Plan) - vertical timeline view
+    function renderBelegungsplan() {
+      const now = new Date();
+      const trainListEl = document.getElementById('train-list');
+      
+      // Save scroll position
+      const savedScrollPosition = trainListEl.scrollTop;
+      
+      trainListEl.innerHTML = '';
+
+      // Update headline train
+      renderHeadlineTrain();
+
+      // Create belegungsplan container
+      const belegungsplan = document.createElement('div');
+      belegungsplan.className = 'belegungsplan';
+
+      // Get all scheduled trains and FILTER OUT CANCELLED TRAINS
+      const allScheduledTrains = processedTrainData.scheduledTrains.filter(t => !t.canceled);
+      
+      if (allScheduledTrains.length === 0) {
+        trainListEl.appendChild(belegungsplan);
+        return;
+      }
+
+      // Find time range: start from the earlier of (current hour OR current train's hour)
+      const currentHour = new Date(now);
+      currentHour.setMinutes(0, 0, 0);
+      
+      let startHour = currentHour;
+      
+      // Check if there's a current train
+      const currentTrain = processedTrainData.currentTrain;
+      if (currentTrain) {
+        const currentTrainTime = parseTime(currentTrain.actual || currentTrain.plan, now, currentTrain.date);
+        if (currentTrainTime) {
+          const currentTrainHour = new Date(currentTrainTime);
+          currentTrainHour.setMinutes(0, 0, 0);
+          // Use whichever is earlier
+          if (currentTrainHour < startHour) {
+            startHour = currentTrainHour;
+          }
+        }
+      }
+      
+      // Find the latest train end time
+      let latestTime = startHour;
+      allScheduledTrains.forEach(train => {
+        const trainStart = parseTime(train.actual || train.plan, now, train.date);
+        const trainEnd = getOccupancyEnd(train, now);
+        if (trainEnd && trainEnd > latestTime) {
+          latestTime = trainEnd;
+        }
+      });
+      
+      // Add 2 hours buffer
+      const endTime = new Date(latestTime.getTime() + 2 * 60 * 60 * 1000);
+      
+      // Calculate total hours and height (1 hour = 7vh)
+      const totalHours = Math.ceil((endTime - startHour) / (60 * 60 * 1000));
+      const totalHeight = totalHours * 7; // vh units
+      belegungsplan.style.minHeight = `${totalHeight}vh`;
+
+      // Track dates for separators
+      let lastDate = null;
+
+      // Add hour markers, lines, and date separators
+      for (let i = 0; i <= totalHours; i++) {
+        const markerTime = new Date(startHour.getTime() + i * 60 * 60 * 1000);
+        const markerY = i * 7; // vh
+        
+        // Check if this is midnight (00:00) for a new day
+        const isNewDay = markerTime.getHours() === 0;
+        const currentDate = markerTime.toLocaleDateString('sv-SE');
+        
+        if (isNewDay && currentDate !== lastDate) {
+          // Add date separator
+          const dateSeparator = document.createElement('div');
+          dateSeparator.className = 'belegungsplan-date-separator';
+          dateSeparator.style.top = `${markerY}vh`;
+          const dateObj = new Date(markerTime);
+          dateSeparator.textContent = dateObj.toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+          });
+          belegungsplan.appendChild(dateSeparator);
+          lastDate = currentDate;
+        }
+        
+        // Hour line
+        const hourLine = document.createElement('div');
+        hourLine.className = 'belegungsplan-hour-line';
+        if (isNewDay) {
+          hourLine.classList.add('midnight');
+        }
+        hourLine.style.top = `${markerY}vh`;
+        belegungsplan.appendChild(hourLine);
+        
+        // Time marker
+        const marker = document.createElement('div');
+        marker.className = 'belegungsplan-time-marker';
+        marker.style.top = `${markerY}vh`;
+        marker.textContent = formatClock(markerTime);
+        belegungsplan.appendChild(marker);
+      }
+
+      // Add current time indicator line
+      const currentTimeOffsetMs = now - startHour;
+      const currentTimeOffsetHours = currentTimeOffsetMs / (60 * 60 * 1000);
+      const currentTimeY = currentTimeOffsetHours * 7;
+      
+      if (currentTimeY >= 0 && currentTimeY <= totalHeight) {
+        const currentTimeLine = document.createElement('div');
+        currentTimeLine.className = 'belegungsplan-current-time-line';
+        currentTimeLine.style.top = `${currentTimeY}vh`;
+        belegungsplan.appendChild(currentTimeLine);
+      }
+
+      // Helper to calculate position and height
+      const getBlockPosition = (train) => {
+        const trainStart = parseTime(train.actual || train.plan, now, train.date);
+        if (!trainStart) return null;
+        
+        const duration = Number(train.dauer) || 0;
+        if (duration <= 0) return null;
+        
+        // Calculate offset from start in hours
+        const offsetMs = trainStart - startHour;
+        const offsetHours = offsetMs / (60 * 60 * 1000);
+        const topVh = offsetHours * 7; // 1 hour = 7vh
+        
+        // Calculate height
+        const durationHours = duration / 60;
+        const heightVh = durationHours * 7;
+        
+        return { top: topVh, height: heightVh, start: trainStart, end: new Date(trainStart.getTime() + duration * 60000) };
+      };
+
+      // Calculate positions for all trains
+      const trainData = allScheduledTrains.map(train => {
+        const pos = getBlockPosition(train);
+        return { train, pos };
+      }).filter(item => item.pos && item.pos.top + item.pos.height >= 0);
+
+      // Detect overlaps and assign indent levels
+      trainData.forEach((item, index) => {
+        let overlapLevel = 0;
+        
+        // Check against all previous trains to find overlaps
+        for (let i = 0; i < index; i++) {
+          const other = trainData[i];
+          
+          // Check if time ranges overlap
+          if (item.pos.start < other.pos.end && item.pos.end > other.pos.start) {
+            // This train overlaps with the other, check the other's level
+            const otherLevel = other.overlapLevel || 0;
+            if (otherLevel >= overlapLevel) {
+              overlapLevel = otherLevel + 1;
+            }
+          }
+        }
+        
+        item.overlapLevel = Math.min(overlapLevel, 3); // Max 4 levels (0-3)
+      });
+
+      // Render train blocks
+      trainData.forEach(({ train, pos, overlapLevel }) => {
+        const block = document.createElement('div');
+        block.className = 'belegungsplan-train-block';
+        block.style.top = `${pos.top}vh`;
+        block.style.height = `${pos.height}vh`;
+        
+        // Add overlap class for indentation
+        block.classList.add(`overlap-${overlapLevel}`);
+        
+        // Add data attributes
+        block.dataset.uniqueId = train._uniqueId || '';
+        block.dataset.linie = train.linie || '';
+        block.dataset.plan = train.plan || '';
+        
+        // Add state classes
+        if (train.linie === 'FEX') {
+          block.classList.add('fex-entry');
+        } else if (typeof train.linie === 'string' && /^S\d+/i.test(train.linie)) {
+          // Add S-Bahn color class
+          const lineClass = `s-bahn-${train.linie.toLowerCase()}`;
+          block.classList.add(lineClass);
+        }
+        
+        // Check if currently occupying
+        const trainStart = parseTime(train.actual || train.plan, now, train.date);
+        const trainEnd = getOccupancyEnd(train, now);
+        if (trainStart && trainEnd && trainStart <= now && trainEnd > now) {
+          block.classList.add('current');
+        }
+        
+        // Only show header content for blocks 30 minutes or longer
+        const duration = Number(train.dauer) || 0;
+        if (duration >= 30) {
+          // Header: icon + destination
+          const header = document.createElement('div');
+          header.className = 'belegungsplan-header';
+          
+          // Line icon
+          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+            const img = document.createElement('img');
+            img.className = 'belegungsplan-line-icon';
+            img.src = getTrainSVG(train.linie);
+            img.alt = train.linie;
+            img.onerror = () => {
+              const badge = document.createElement('div');
+              badge.className = 'line-badge';
+              badge.style.fontSize = '2.5vh';
+              badge.textContent = train.linie || '';
+              img.parentNode.replaceChild(badge, img);
+            };
+            header.appendChild(img);
+          } else {
+            const badge = document.createElement('div');
+            badge.className = 'line-badge';
+            badge.style.fontSize = '2.5vh';
+            badge.textContent = train.linie || '';
+            header.appendChild(badge);
+          }
+          
+          // Destination
+          const dest = document.createElement('div');
+          dest.className = 'belegungsplan-destination';
+          dest.textContent = train.ziel || '';
+          header.appendChild(dest);
+          
+          block.appendChild(header);
+        }
+        // For blocks under 30 minutes, just leave it as a colored block with no content
+        
+        // Click handler
+        block.addEventListener('click', () => {
+          renderFocusMode(train);
+          document.querySelectorAll('.belegungsplan-train-block').forEach(b => b.classList.remove('selected'));
+          block.classList.add('selected');
+        });
+        
+        belegungsplan.appendChild(block);
+      });
+
+      trainListEl.appendChild(belegungsplan);
+      
+      // Restore scroll position
+      if (savedScrollPosition > 0) {
+        requestAnimationFrame(() => {
+          trainListEl.scrollTop = savedScrollPosition;
+        });
+      }
+    }
+
+    // Legacy render function for reference
+    function renderTrainList() {
+      const now = new Date();
+      const trainListEl = document.getElementById('train-list');
+      
+      // Save scroll position BEFORE any DOM manipulation
+      const savedScrollPosition = trainListEl.scrollTop;
+      const oldScrollHeight = trainListEl.scrollHeight;
+      
+      console.log('🔍 Before render - scrollTop:', savedScrollPosition, 'scrollHeight:', oldScrollHeight, 'clientHeight:', trainListEl.clientHeight); // Debug
+      
+      trainListEl.innerHTML = '';
+
+      // Update headline train
+      renderHeadlineTrain();
+
+      // Use processed data
+      const remainingTrains = processedTrainData.remainingTrains;
+
+      // Render remaining trains (skip first) with day separators
+      remainingTrains.forEach((train, index) => {
+        // Check if this is the first train of a new day
+        const prevTrain = index === 0 ? processedTrainData.currentTrain : remainingTrains[index - 1];
+        if (prevTrain && train.date !== prevTrain.date && train.date) {
+          // Create day separator element
+          const separator = document.createElement('div');
+          separator.className = 'day-separator';
+          
+          const dateSpan = document.createElement('span');
+          dateSpan.className = 'day-separator-date';
+          const trainDate = new Date(train.date);
+          dateSpan.textContent = trainDate.toLocaleDateString('de-DE', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit'
+          });
+          
+          const line = document.createElement('div');
+          line.className = 'day-separator-line';
+          
+          separator.appendChild(dateSpan);
+          separator.appendChild(line);
+          trainListEl.appendChild(separator);
+        }
+        
+        const entry = createTrainEntry(train, now, false);
+        trainListEl.appendChild(entry);
+      });
+      
+      // Restore scroll position after rendering - use longer delay to ensure DOM is ready
+      if (savedScrollPosition > 0) {
+        // Triple RAF for more reliable timing
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const newScrollHeight = trainListEl.scrollHeight;
+              const maxScroll = newScrollHeight - trainListEl.clientHeight;
+              
+              console.log('🔍 After render - newScrollHeight:', newScrollHeight, 'maxScroll:', maxScroll, 'trying to restore:', savedScrollPosition); // Debug
+              
+              trainListEl.scrollTop = savedScrollPosition;
+              
+              // Verify it worked
+              const actualScrollTop = trainListEl.scrollTop;
+              console.log('✅ Scroll restored - actual scrollTop:', actualScrollTop, 'requested:', savedScrollPosition, 'difference:', savedScrollPosition - actualScrollTop); // Debug
+              
+              if (actualScrollTop === 0 && savedScrollPosition > 0) {
+                console.error('❌ SCROLL FAILED - position reset to 0!');
+              }
+            });
+          });
+        });
+      }
+    }
+
+    // Format stops with date for display
+    function formatStopsWithDate(train) {
+      // Format date display - always use long format for announcements
+      let dateText = '';
+      
+      if (train.date) {
+        const trainDate = new Date(train.date);
+        dateText = trainDate.toLocaleDateString('de-DE', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      
+      // Use zwischenhalte (standardized property name)
+      let stopsText = '';
+      if (train.zwischenhalte) {
+        if (Array.isArray(train.zwischenhalte)) {
+          stopsText = train.zwischenhalte.join('<br>');
+        } else if (typeof train.zwischenhalte === 'string') {
+          stopsText = train.zwischenhalte.replace(/\n/g, '<br>');
+        }
+      }
+      
+      const contentWithDate = dateText + (stopsText ? '<br><br>' + stopsText : (train.canceled ? '<br><br>Zug fällt aus' : ''));
+      return contentWithDate;
+    }
+
+    // Create a single train entry
+    function createTrainEntry(train, now, isFirstTrain = false) {
+      const entry = document.createElement('div');
+      entry.className = 'train-entry';
+      if (isFirstTrain) entry.classList.add('first-train');
+      
+      // Add data attributes for identification
+      entry.dataset.linie = train.linie || '';
+      entry.dataset.plan = train.plan || '';
+      entry.dataset.date = train.date || '';
+      entry.dataset.uniqueId = train._uniqueId || '';
+      
+      if (train.linie === 'FEX') {
+        entry.classList.add('fex-entry');
+      }
+
+      // Add click handler to show focus mode
+      entry.addEventListener('click', () => {
+        renderFocusMode(train);
+        // Update selected state
+        document.querySelectorAll('.train-entry').forEach(e => e.classList.remove('selected'));
+        entry.classList.add('selected');
+      });
+
+      // Status indicator
+      const indicator = document.createElement('div');
+      indicator.className = 'indicator-dot';
+      
+      if (train.canceled) {
+        // Show X for cancelled trains
+        indicator.classList.add('cancelled');
+      } else {
+        // Check if train is currently occupying (arrived but not departed)
+        const tTime = parseTime(train.actual || train.plan, now, train.date);
+        const occEnd = getOccupancyEnd(train, now);
+        if (train.actual && occEnd && parseTime(train.actual, now, train.date) <= now && occEnd > now) {
+          // Current train - show solid dot
+          indicator.classList.add('current');
+        }
+      }
+
+      // Train info container
+      const trainInfo = document.createElement('div');
+      trainInfo.className = 'train-info';
+
+      // Symbol slot
+      const symbolSlot = document.createElement('div');
+      symbolSlot.className = 'symbol-slot';
+
+      let trainSymbol;
+      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+        const img = document.createElement('img');
+        img.className = 'train-symbol';
+        img.src = getTrainSVG(train.linie);
+        img.alt = train.linie;
+        img.onerror = () => {
+          const badge = document.createElement('div');
+          badge.className = 'line-badge';
+          badge.textContent = train.linie || '';
+          if (img.parentNode) img.parentNode.replaceChild(badge, img);
+        };
+        trainSymbol = img;
+      } else {
+        trainSymbol = document.createElement('div');
+        trainSymbol.className = 'line-badge';
+        trainSymbol.textContent = train.linie || '';
+      }
+
+      symbolSlot.appendChild(trainSymbol);
+
+      // Destination
+      const zugziel = document.createElement('div');
+      zugziel.className = 'zugziel';
+      
+      if (train.canceled) {
+        zugziel.textContent = 'Zug fällt aus';
+      } else {
+        zugziel.textContent = train.ziel || '';
+      }
+
+      trainInfo.appendChild(indicator);
+      trainInfo.appendChild(symbolSlot);
+      trainInfo.appendChild(zugziel);
+
+      // Right block
+      const rightBlock = document.createElement('div');
+      rightBlock.className = 'right-block';
+
+      // Departure time (no carriage symbol)
+      const departureSlot = document.createElement('div');
+      departureSlot.className = 'departure-slot';
+      const departure = document.createElement('div');
+      departure.className = 'departure';
+      departure.dataset.departure = '1';
+      if (train.plan) departure.dataset.plan = train.plan;
+      if (train.actual) departure.dataset.actual = train.actual;
+      if (train.dauer != null) departure.dataset.dauer = String(train.dauer);
+      if (train.date) departure.dataset.date = train.date;
+      departure.dataset.canceled = train.canceled ? 'true' : 'false';
+      
+      // For headline train, show countdown; for others, show formatted time
+      if (isFirstTrain) {
+        departure.dataset.isHeadline = 'true';
+        const depNode = formatCountdown(train, now);
+        departure.appendChild(depNode);
+      } else {
+        const delay = train.canceled ? 0 : getDelay(train.plan, train.actual, now, train.date);
+        const depNode = formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date);
+        departure.appendChild(depNode);
+      }
+      
+      departureSlot.appendChild(departure);
+      rightBlock.appendChild(departureSlot);
+
+      entry.appendChild(trainInfo);
+      entry.appendChild(rightBlock);
+
+      return entry;
+    }
+
+    // Render focus mode by cloning template and populating with train data
+    // Helper function to convert ALL fields to editable inputs at once
+    function makeAllFieldsEditable(train, panel, focusFieldName) {
+      const editableFields = panel.querySelectorAll('[data-editable="true"]');
+      const inputs = {};
+      
+      // Define tab order: date(1) → line(2) → destination(3) → stops(4) → plan(5) → duration(6) → actual(7)
+      const tabOrder = ['date', 'linie', 'ziel', 'zwischenhalte', 'plan', 'dauer', 'actual'];
+      
+      // Update train object from input values - MUST update the original schedule object!
+      const updateValue = (field, value) => {
+        // Find the actual train in the schedule using unique ID
+        const trainId = panel.dataset.trainId;
+        let scheduleTrain = null;
+        let sourceArray = null;
+        
+        // Try fixedSchedule first
+        const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
+        
+        if (fixedIndex >= 0) {
+          scheduleTrain = schedule.fixedSchedule[fixedIndex];
+          sourceArray = 'fixedSchedule';
+          console.log('✅ Found train in fixedSchedule:', scheduleTrain);
+        } else {
+          // Try spontaneousEntries (trains with specific dates)
+          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+          
+          if (spontIndex >= 0) {
+            scheduleTrain = schedule.spontaneousEntries[spontIndex];
+            sourceArray = 'spontaneousEntries';
+            console.log('✅ Found train in spontaneousEntries:', scheduleTrain);
+          }
+        }
+        
+        if (!scheduleTrain) {
+          console.error('❌ Could not find train in schedule!', {
+            trainId: trainId,
+            linie: train.linie,
+            plan: train.plan,
+            weekday: train.weekday,
+            date: train.date
+          });
+        }
+        
+        // Update both the display train AND the schedule source
+        if (field === 'date') {
+          // Only update date for spontaneous entries, not fixed schedules
+          const isFixedSchedule = scheduleTrain && scheduleTrain.weekday && !scheduleTrain.date;
+          if (!isFixedSchedule) {
+            train.date = value;
+            const dateObj = new Date(train.date);
+            const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+            train.weekday = newWeekday;
+            if (scheduleTrain) {
+              scheduleTrain.date = value;
+              scheduleTrain.weekday = newWeekday;
+            }
+          }
+        } else if (field === 'dauer') {
+          train.dauer = Number(value) || 0;
+          if (scheduleTrain) scheduleTrain.dauer = Number(value) || 0;
+        } else if (field === 'zwischenhalte') {
+          // Preserve all line breaks, including empty lines
+          train.zwischenhalte = value.split('\n');
+          if (scheduleTrain) scheduleTrain.zwischenhalte = value.split('\n');
+        } else if (field === 'actual') {
+          train.actual = value || undefined;
+          if (scheduleTrain) scheduleTrain.actual = value || undefined;
+        } else {
+          train[field] = value;
+          if (scheduleTrain) scheduleTrain[field] = value;
+        }
+        
+        panel.dataset.currentTrain = JSON.stringify(train);
+      };
+      
+      // Check if this is a fixed schedule (repeating) train
+      const isFixedScheduleTrain = train.weekday && !train.date;
+      
+      // Convert each field to input
+      editableFields.forEach(field => {
+        const fieldName = field.getAttribute('data-field');
+        const inputType = field.getAttribute('data-input-type');
+        const currentValue = field.getAttribute('data-value');
+        const placeholder = field.getAttribute('data-placeholder') || '';
+        
+        // Skip date field for fixed schedule trains - keep it as display-only
+        if (fieldName === 'date' && isFixedScheduleTrain) {
+          return; // Don't create input element
+        }
+        
+        // Create input element (or textarea for stops)
+        const input = inputType === 'textarea' 
+          ? document.createElement('textarea') 
+          : document.createElement('input');
+        
+        if (inputType !== 'textarea') {
+          input.type = inputType;
+        }
+        input.value = currentValue;
+        if (placeholder) input.placeholder = placeholder;
+        
+        // Match parent field styling exactly
+        input.style.background = 'rgba(255, 255, 255, 0.1)';
+        input.style.border = 'none';
+        input.style.outline = 'none';
+        input.style.borderRadius = '2px';
+        input.style.color = 'white';
+        input.style.fontSize = 'inherit'; // Match parent font size exactly
+        input.style.fontWeight = 'inherit';
+        input.style.textAlign = field.style.textAlign || 'inherit';
+        input.style.width = '100%';
+        input.style.height = '100%';
+        input.style.fontFamily = 'inherit';
+        input.style.resize = 'none';
+        input.style.padding = '0';
+        input.style.margin = '0';
+        input.style.boxSizing = 'border-box';
+        input.style.letterSpacing = 'inherit';
+        input.style.lineHeight = 'inherit';
+        
+        // Special styling for actual time field - black text
+        if (fieldName === 'actual') {
+          input.style.color = 'black';
+        }
+        
+        // Special styling for textarea (stops)
+        if (inputType === 'textarea') {
+          input.style.minHeight = '8vh';
+          input.style.whiteSpace = 'pre-wrap';
+        }
+        
+        // Special styling for line field
+        if (fieldName === 'linie') {
+          input.style.fontWeight = 'bold';
+          input.style.textAlign = 'center';
+          input.style.width = 'auto';
+          input.style.maxWidth = '6vw'; // Smaller width
+          input.style.marginLeft = '3vh';
+        }
+        
+        // Special styling for duration field
+        if (fieldName === 'dauer') {
+          input.style.fontSize = 'clamp(14px, 2vh, 24px)'; // Smaller
+          const wrapper = document.createElement('div');
+          wrapper.style.display = 'flex';
+          wrapper.style.alignItems = 'center';
+          wrapper.style.gap = '0.3vw';
+          wrapper.appendChild(input);
+          const minLabel = document.createElement('span');
+          minLabel.textContent = 'Min';
+          minLabel.style.color = 'rgba(255, 255, 255, 0.7)';
+          minLabel.style.fontSize = 'clamp(12px, 1.6vh, 20px)'; // Smaller label
+          wrapper.appendChild(minLabel);
+          field.innerHTML = '';
+          field.appendChild(wrapper);
+        } else {
+          field.innerHTML = '';
+          field.appendChild(input);
+        }
+        
+        // Remove the data attributes that trigger the empty box styling
+        field.removeAttribute('data-editable');
+        field.removeAttribute('data-value');
+        
+        inputs[fieldName] = input;
+        
+        // Pause refresh when editing
+        input.addEventListener('focus', () => {
+          isEditingTrain = true;
+        });
+        
+        // Update train object on change
+        input.addEventListener('change', () => updateValue(fieldName, input.value));
+        input.addEventListener('input', () => updateValue(fieldName, input.value));
+        
+        // Handle Tab key for navigation
+        input.addEventListener('keydown', (e) => {
+          // For textarea (stops), allow Enter for new lines, use Ctrl+Enter to close
+          if (inputType === 'textarea' && e.key === 'Enter' && !e.ctrlKey) {
+            return; // Allow default behavior (new line)
+          }
+          
+          if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            updateValue(fieldName, input.value); // Save current value
+            
+            if (e.key === 'Tab') {
+              // Find next field in tab order
+              const currentIndex = tabOrder.indexOf(fieldName);
+              let nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
+              
+              // Wrap around
+              if (nextIndex >= tabOrder.length) nextIndex = 0;
+              if (nextIndex < 0) nextIndex = tabOrder.length - 1;
+              
+              const nextFieldName = tabOrder[nextIndex];
+              const nextInput = inputs[nextFieldName];
+              if (nextInput) {
+                nextInput.focus();
+                // Don't select all for better cursor control
+                if (nextInput.setSelectionRange && nextInput.type === 'text') {
+                  nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+                }
+              }
+            } else if (e.key === 'Enter') {
+              // Just Enter key - close edit mode (Ctrl+Enter for textarea)
+              renderFocusMode(train);
+            }
+          } else if (e.key === 'Escape') {
+            // Cancel edit and revert
+            renderFocusMode(train);
+          }
+        });
+      });
+      
+      // Global blur handler - only revert when clicking outside all inputs
+      let blurTimeout;
+      const handleBlur = () => {
+        clearTimeout(blurTimeout);
+        blurTimeout = setTimeout(async () => {
+          const newFocus = document.activeElement;
+          const isStillInInputs = newFocus && (
+            newFocus.tagName === 'INPUT' || 
+            newFocus.tagName === 'TEXTAREA'
+          );
+          
+          // Only save and exit if focus left all input fields
+          if (!isStillInInputs) {
+            isEditingTrain = false; // Resume refresh
+            // Auto-save
+            await saveSchedule();
+            // Immediately re-process and re-render with the updated schedule data
+            processTrainData(schedule);
+            renderTrains(); // Use unified render function
+            // Re-render focus panel with the updated train from schedule using unique ID
+            const trainId = train._uniqueId;
+            const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
+              t._uniqueId === trainId
+            );
+            if (updatedTrain) {
+              renderFocusMode(updatedTrain);
+            }
+          }
+        }, 50);
+      };
+      
+      Object.values(inputs).forEach(input => {
+        input.addEventListener('blur', handleBlur);
+      });
+      
+      // Don't explicitly focus - let the click event naturally focus and position cursor
+      // The browser will handle cursor positioning based on where the user clicked
+    }
+
+    function renderFocusMode(train) {
+      const now = new Date();
+      const panel = document.getElementById('focus-panel');
+      const template = document.getElementById('focus-template');
+      
+      // Only allow editing for local schedule trains
+      const isEditable = train.source === 'local';
+      
+      // Check if this is a fixed schedule train (has weekday but no date in original schedule)
+      const isFixedSchedule = train.weekday && !train.date;
+      
+      // Clear panel and clone template
+      panel.innerHTML = '';
+      const clone = template.content.cloneNode(true);
+
+      const lineIcon = clone.querySelector('[data-focus="line-icon"]');
+      const lineIconParent = lineIcon.parentNode;
+      
+      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+        lineIcon.src = getTrainSVG(train.linie);
+        lineIcon.alt = train.linie;        
+        lineIcon.onerror = () => {
+          const badge = document.createElement('div');
+          badge.className = 'line-badge';
+          badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
+          badge.textContent = train.linie || '';
+          badge.setAttribute('data-field', 'linie');
+          badge.setAttribute('data-value', train.linie || '');
+          badge.setAttribute('data-input-type', 'text');
+          badge.setAttribute('data-placeholder', 'Linie');
+          if (isEditable) {
+            badge.style.cursor = 'pointer';
+            badge.setAttribute('data-editable', 'true');
+          }
+          lineIcon.parentNode.replaceChild(badge, lineIcon);
+        };
+      } else {
+        const badge = document.createElement('div');
+        badge.className = 'line-badge';
+        badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
+        badge.textContent = train.linie || '';
+        badge.setAttribute('data-field', 'linie');
+        badge.setAttribute('data-value', train.linie || '');
+        badge.setAttribute('data-input-type', 'text');
+        badge.setAttribute('data-placeholder', 'Linie');
+        if (isEditable) {
+          badge.style.cursor = 'pointer';
+          badge.setAttribute('data-editable', 'true');
+        }
+        lineIcon.parentNode.replaceChild(badge, lineIcon);
+      }
+
+      // Populate destination
+      const destination = clone.querySelector('[data-focus="destination"]');
+      destination.textContent = train.ziel || '';
+      destination.setAttribute('data-field', 'ziel');
+      destination.setAttribute('data-value', train.ziel || '');
+      destination.setAttribute('data-input-type', 'text');
+      destination.setAttribute('data-placeholder', 'Ziel');
+      if (isEditable) {
+        destination.style.cursor = 'pointer';
+        destination.setAttribute('data-editable', 'true');
+      }
+      if (train.canceled) {
+        destination.style.textDecoration = 'line-through';
+      }
+
+      // Populate date field (NEW - Tab position 1) - Long format display
+      const dateField = clone.querySelector('[data-focus="date"]');
+      const trainDate = train.date ? new Date(train.date) : now;
+      
+      // Format date display
+      const dateDisplay = trainDate.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      dateField.textContent = dateDisplay;
+      dateField.setAttribute('data-field', 'date');
+      dateField.setAttribute('data-value', train.date || now.toISOString().split('T')[0]);
+      dateField.setAttribute('data-input-type', 'date');
+      
+      // Only make date editable for spontaneous entries
+      if (isEditable && !isFixedSchedule) {
+        dateField.style.cursor = 'pointer';
+        dateField.setAttribute('data-editable', 'true');
+      } else {
+        dateField.style.cursor = 'default';
+      }
+
+      // Populate arrival time
+      const arrivalPlan = clone.querySelector('[data-focus="arrival-plan"]');
+      arrivalPlan.textContent = train.plan || '';
+      arrivalPlan.setAttribute('data-field', 'plan');
+      arrivalPlan.setAttribute('data-value', train.plan || '');
+      arrivalPlan.setAttribute('data-input-type', 'time');
+      if (isEditable) {
+        arrivalPlan.style.cursor = 'pointer';
+        arrivalPlan.setAttribute('data-editable', 'true');
+      }
+      if (train.canceled) {
+        arrivalPlan.style.textDecoration = 'line-through';
+      }
+
+      const arrivalDelayed = clone.querySelector('[data-focus="arrival-delayed"]');
+      // Always set up the actual time field as editable, even without delay
+      arrivalDelayed.textContent = train.actual || train.plan || '';
+      arrivalDelayed.setAttribute('data-field', 'actual');
+      arrivalDelayed.setAttribute('data-value', train.actual || '');
+      arrivalDelayed.setAttribute('data-input-type', 'time');
+      
+      const hasDelay = train.actual && train.actual !== train.plan;
+      if (hasDelay) {
+        arrivalDelayed.style.display = 'block';
+        if (train.canceled) {
+          arrivalDelayed.style.textDecoration = 'line-through';
+        }
+      } else if (isEditable) {
+        // In edit mode, show it even without delay (it will become input field)
+        arrivalDelayed.style.display = 'block';
+        arrivalDelayed.style.opacity = '0.5'; // Show faded when no delay
+      } else {
+        arrivalDelayed.style.display = 'none';
+      }
+      
+      if (isEditable) {
+        arrivalDelayed.style.cursor = 'pointer';
+        arrivalDelayed.setAttribute('data-editable', 'true');
+      }
+
+      // Populate carriage
+      const carriage = clone.querySelector('[data-focus="carriage"]');
+      carriage.src = getCarriageSVG(train.dauer, train.linie === 'FEX');
+
+      // Populate duration
+      const duration = clone.querySelector('[data-focus="duration"]');
+      if (train.dauer) {
+        duration.textContent = `${train.dauer} Min`;
+        if (train.canceled) {
+          duration.style.textDecoration = 'line-through';
+        }
+      } else {
+        duration.textContent = '';
+      }
+      duration.setAttribute('data-field', 'dauer');
+      duration.setAttribute('data-value', train.dauer || '0');
+      duration.setAttribute('data-input-type', 'number');
+      if (isEditable) {
+        duration.style.cursor = 'pointer';
+        duration.setAttribute('data-editable', 'true');
+      }
+
+      // Populate stops - with line breaks
+      const stops = clone.querySelector('[data-focus="stops"]');
+      
+      // Handle both array and string formats for zwischenhalte
+      let stopsArray = [];
+      
+      if (train.zwischenhalte) {
+        if (Array.isArray(train.zwischenhalte)) {
+          stopsArray = train.zwischenhalte;
+        } else if (typeof train.zwischenhalte === 'string') {
+          // Split by newline only, preserving empty lines
+          stopsArray = train.zwischenhalte.split('\n');
+        }
+      }
+      
+      // Normalize train.zwischenhalte to always be an array
+      train.zwischenhalte = stopsArray;
+      
+      if (stopsArray.length > 0) {
+        stops.textContent = stopsArray.join('\n');
+        stops.setAttribute('data-value', stopsArray.join('\n'));
+        stops.style.display = 'block'; // Ensure visible
+      } else {
+        stops.textContent = '';
+        stops.setAttribute('data-value', '');
+      }
+      
+      stops.setAttribute('data-field', 'zwischenhalte');
+      stops.setAttribute('data-input-type', 'textarea');
+      stops.setAttribute('data-placeholder', 'Zwischenhalte (eine pro Zeile)...');
+      if (isEditable) {
+        stops.style.cursor = 'pointer';
+        stops.setAttribute('data-editable', 'true');
+      }
+
+      // Populate departure time and timeline
+      const timeline = clone.querySelector('.focus-timeline');
+      if (train.plan && train.dauer) {
+        const arrivalDate = parseTime(train.plan, now, train.date);
+        const depDate = new Date(arrivalDate.getTime() + Number(train.dauer) * 60000);
+        const depPlan = formatClock(depDate);
+
+        const departurePlan = clone.querySelector('[data-focus="departure-plan"]');
+        departurePlan.textContent = depPlan;
+        if (train.canceled) {
+          departurePlan.style.textDecoration = 'line-through';
+        }
+
+        const departureDelayed = clone.querySelector('[data-focus="departure-delayed"]');
+        const hasDepDelay = train.actual && train.actual !== train.plan;
+        if (hasDepDelay) {
+          const actualArrivalDate = parseTime(train.actual, now, train.date);
+          const actualDepDate = new Date(actualArrivalDate.getTime() + Number(train.dauer) * 60000);
+          const depActual = formatClock(actualDepDate);
+
+          departureDelayed.textContent = depActual;
+          departureDelayed.style.display = 'block';
+          if (train.canceled) {
+            departureDelayed.style.textDecoration = 'line-through';
+          }
+        }
+      } else {
+        // Hide timeline if no departure time
+        if (timeline) {
+          timeline.style.display = 'none';
+        }
+      }
+
+      // Append cloned template to panel
+      panel.appendChild(clone);
+
+      // Update cancel button based on train state
+      const cancelBtn = panel.querySelector('[data-focus-action="cancel"]');
+      const deleteBtn = panel.querySelector('[data-focus-action="delete"]');
+      if (cancelBtn) {
+        if (train.canceled) {
+          cancelBtn.classList.add('reactivate');
+          cancelBtn.textContent = '✓'; // Green checkmark for reactivate
+        } else {
+          cancelBtn.classList.remove('reactivate');
+          cancelBtn.textContent = '✕'; // Orange X for cancel
+        }
+      }
+      if (deleteBtn) {
+        deleteBtn.textContent = 'Löschen'; // Red delete button
+      }
+
+      // Store reference to current train for editing using unique ID
+      panel.dataset.trainId = train._uniqueId;
+      panel.dataset.isEditable = isEditable;
+
+      // Show badge for DB API trains (read-only)
+      if (!isEditable && train.source === 'db-api') {
+        const indicator = document.createElement('div');
+        indicator.style.cssText = 'position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.3); padding: 0.5vh 1vw; border-radius: 2px;';
+        indicator.textContent = 'DB API - Nur Lesen';
+        panel.style.position = 'relative';
+        panel.appendChild(indicator);
+      }
+      
+      // Show badge for fixed schedule trains (date not editable)
+      if (isEditable && isFixedSchedule) {
+        const fixedIndicator = document.createElement('div');
+        fixedIndicator.style.cssText = 'position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,200,100,0.8); background: rgba(100,60,0,0.4); padding: 0.5vh 1vw; border-radius: 2px; border: 1px solid rgba(255,200,100,0.3);';
+        fixedIndicator.textContent = '🔒 Wiederholender Termin';
+        fixedIndicator.title = 'Datum kann nicht bearbeitet werden - dieser Termin wiederholt sich wöchentlich';
+        panel.style.position = 'relative';
+        panel.appendChild(fixedIndicator);
+      }
+
+      // Only add editing functionality for local trains
+      if (!isEditable) {
+        return; // Don't add event listeners for non-editable trains
+      }
+
+      // Add click-to-edit functionality for editable fields
+      const editableFields = panel.querySelectorAll('[data-editable="true"]');
+      editableFields.forEach(field => {
+        field.addEventListener('mousedown', function(e) {
+          // Check if already in edit mode
+          const isAlreadyInput = field.querySelector('input, textarea');
+          if (isAlreadyInput) {
+            return; // Already editing, let click work normally
+          }
+          
+          const fieldName = field.getAttribute('data-field');
+          
+          // Calculate click position for cursor placement
+          const rect = field.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const fieldWidth = rect.width;
+          const text = field.textContent || '';
+          
+          // Estimate character position based on click location
+          const clickRatio = clickX / fieldWidth;
+          const estimatedPosition = Math.round(text.length * clickRatio);
+          
+          // Convert ALL fields to inputs at once
+          makeAllFieldsEditable(train, panel, fieldName);
+          
+          // Focus and position cursor in the clicked field
+          setTimeout(() => {
+            const input = field.querySelector('input, textarea');
+            if (input) {
+              input.focus();
+              
+              // Set cursor position for text inputs
+              if (input.setSelectionRange) {
+                try {
+                  const safePosition = Math.min(estimatedPosition, input.value.length);
+                  input.setSelectionRange(safePosition, safePosition);
+                } catch (e) {
+                  // For date/time inputs that don't support setSelectionRange
+                  if (input.select) input.select();
+                }
+              } else if (input.select) {
+                input.select();
+              }
+            }
+          }, 0);
+          
+          e.preventDefault(); // Prevent text selection during conversion
+        });
+      });
+
+      // Add button event listeners
+      const buttonsContainer = panel.querySelector('.focus-buttons');
+      if (buttonsContainer) {
+        buttonsContainer.addEventListener('click', async (e) => {
+          const button = e.target.closest('[data-focus-action]');
+          if (!button) return;
+
+          const action = button.dataset.focusAction;
+          
+          // Find the actual train in schedule using unique ID
+          const trainId = panel.dataset.trainId;
+          let scheduleTrain = null;
+          
+          // Try fixedSchedule first (original trains without date property)
+          const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
+          
+          if (fixedIndex >= 0) {
+            scheduleTrain = schedule.fixedSchedule[fixedIndex];
+            console.log('✅ Found train in fixedSchedule for button action:', scheduleTrain);
+          } else {
+            // Try spontaneousEntries (trains with specific dates)
+            const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+            
+            if (spontIndex >= 0) {
+              scheduleTrain = schedule.spontaneousEntries[spontIndex];
+              console.log('✅ Found train in spontaneousEntries for button action:', scheduleTrain);
+            }
+          }
+          
+          if (!scheduleTrain) {
+            console.error('❌ Could not find train in schedule to modify!', {
+              linie: train.linie,
+              plan: train.plan,
+              weekday: train.weekday,
+              date: train.date,
+              fixedSchedule: schedule.fixedSchedule,
+              spontaneousEntries: schedule.spontaneousEntries
+            });
+            alert('Fehler: Zug nicht im Stundenplan gefunden');
+            return;
+          }
+          
+          switch(action) {
+            case 'cancel':
+              train.canceled = !train.canceled;
+              scheduleTrain.canceled = train.canceled;
+              renderFocusMode(train);
+              await saveSchedule(); // Auto-save
+              break;
+              
+            case 'minus5':
+              // Subtract 5 minutes from delay (actual time) - can make train earlier than planned
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay - 5; // Allow negative (earlier than planned)
+                if (newDelay === 0) {
+                  train.actual = undefined; // Remove delay (on time)
+                  scheduleTrain.actual = undefined;
+                } else {
+                  const planDate = parseTime(train.plan, now, train.date);
+                  const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                  train.actual = formatClock(newActualDate);
+                  scheduleTrain.actual = train.actual;
+                }
+              }
+              renderFocusMode(train);
+              await saveSchedule(); // Auto-save
+              break;
+              
+            case 'plus5':
+              // Add 5 minutes to delay (actual time)
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + 5;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+              }
+              renderFocusMode(train);
+              await saveSchedule(); // Auto-save
+              break;
+              
+            case 'plus10':
+              // Add 10 minutes to delay (actual time)
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + 10;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+              }
+              renderFocusMode(train);
+              await saveSchedule(); // Auto-save
+              break;
+              
+            case 'plus30':
+              // Add 30 minutes to delay (actual time)
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + 30;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+              }
+              renderFocusMode(train);
+              await saveSchedule(); // Auto-save
+              break;
+              
+            case 'delete':
+              if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                await deleteTrainFromSchedule(train);
+                panel.innerHTML = '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center; padding: 2vh;">Zug gelöscht</div>';
+              }
+              break;
+          }
+        });
+      }
+
+      // Store current train in panel for Shift+S save
+      panel.dataset.currentTrain = JSON.stringify(train);
+    }
+
+    // Save train to schedule (simplified like InputEnhanced - just save entire schedule)
+    // Save entire schedule (like InputEnhanced saveJSON)
+    async function saveSchedule() {
+      try {
+        // Auto-fill any empty actual times with plan times before saving
+        const autoFillActual = (train) => {
+          if (train.plan && !train.actual) {
+            train.actual = train.plan;
+          }
+          return train;
+        };
+        
+        schedule.fixedSchedule.forEach(autoFillActual);
+        schedule.spontaneousEntries.forEach(autoFillActual);
+        schedule.trains.forEach(autoFillActual);
+        
+        // Filter: Only save trains that have a line number
+        // AND ensure proper data format: fixed schedules have weekday only, spontaneous have date only
+        const dataToSave = {
+          fixedSchedule: schedule.fixedSchedule
+            .filter(t => t.linie && t.linie.trim() !== '')
+            .map(t => {
+              // Fixed schedule: remove date property, keep only weekday
+              const { date, source, ...cleanTrain } = t;
+              return cleanTrain;
+            }),
+          spontaneousEntries: schedule.spontaneousEntries
+            .filter(t => t.linie && t.linie.trim() !== '')
+            .map(t => {
+              // Spontaneous: keep date, can have weekday for reference but ensure date is primary
+              const { source, ...cleanTrain } = t;
+              return cleanTrain;
+            }),
+          trains: schedule.trains
+            .filter(t => t.linie && t.linie.trim() !== '')
+            .map(t => {
+              const { source, ...cleanTrain } = t;
+              return cleanTrain;
+            })
+        };
+        
+        console.log('💾 Saving schedule:', {
+          fixedSchedule: dataToSave.fixedSchedule.length,
+          spontaneousEntries: dataToSave.spontaneousEntries.length,
+          trains: dataToSave.trains.length
+        });
+        
+        const res = await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSave)
+        });
+
+        if (!res.ok) throw new Error('Failed to save schedule');
+
+        console.log('✅ Schedule saved successfully');
+        // Server will broadcast update event via SSE, which will trigger auto re-render
+
+      } catch (error) {
+        console.error('❌ Error saving schedule:', error);
+        alert('Fehler beim Speichern: ' + error.message);
+      }
+    }
+
+    // Delete train from schedule
+    async function deleteTrainFromSchedule(train) {
+      try {
+        // Fetch current schedule
+        const res = await fetch('/api/schedule');
+        if (!res.ok) throw new Error('Failed to fetch schedule');
+        const schedule = await res.json();
+
+        // Remove from fixed schedule
+        if (schedule.fixedSchedule) {
+          schedule.fixedSchedule = schedule.fixedSchedule.filter(t => 
+            !(t.linie === train.linie && t.plan === train.plan && t.weekday === train.weekday)
+          );
+        }
+
+        // Remove from spontaneous entries
+        if (schedule.spontaneousEntries) {
+          schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => 
+            !(t.linie === train.linie && t.plan === train.plan && t.date === train.date)
+          );
+        }
+
+        // Remove from legacy trains
+        if (schedule.trains) {
+          schedule.trains = schedule.trains.filter(t => 
+            !(t.linie === train.linie && t.plan === train.plan && t.date === train.date)
+          );
+        }
+
+        // Save back to server
+        const saveRes = await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(schedule)
+        });
+
+        if (!saveRes.ok) throw new Error('Failed to save schedule');
+
+        console.log('✅ Train deleted successfully');
+
+        // Refresh the display
+        const newSchedule = await fetchSchedule();
+        processTrainData(newSchedule);
+        renderTrains(); // Use unified render function
+        renderComprehensiveAnnouncementPanel();
+
+      } catch (error) {
+        console.error('❌ Error deleting train:', error);
+        alert('Fehler beim Löschen: ' + error.message);
+      }
+    }
+
+    // Comprehensive announcements panel pagination state
+    let comprehensiveAnnouncementCurrentPage = 0;
+    let comprehensiveAnnouncementInterval = null;
+
+    // Render comprehensive announcement panel with all announcement types
+    function renderComprehensiveAnnouncementPanel() {
+      const now = new Date();
+      const panel = document.getElementById('announcement-panel'); // MOVED to bottom panel
+      const template = document.getElementById('announcement-template');
+      
+      if (!template) {
+        console.error('Announcement template not found');
+        return;
+      }
+
+      const allAnnouncements = [];
+
+      // Helper function to check if a train is today
+      const todayDateStr = now.toLocaleDateString('sv-SE'); // YYYY-MM-DD format
+      const isToday = (train) => {
+        if (!train.date) return false;
+        const trainDateStr = train.date.split('T')[0]; // Handle ISO format
+        return trainDateStr === todayDateStr;
+      };
+
+      // 1. Ankündigung: Notes without departure time (from processed data) - persist forever, no date filter
+      const noteTrains = processedTrainData.noteTrains
+        .map(t => ({ ...t, announcementType: 'note' }));
+      allAnnouncements.push(...noteTrains);
+
+      // 2. Use processed future trains for other announcement types - filter to today only
+      const futureTrains = processedTrainData.futureTrains.filter(isToday);
+
+      // 3. Zug fällt aus: Upcoming cancelled trains
+      const cancelledTrains = futureTrains
+        .filter(t => t.canceled)
+        .map(t => ({ ...t, announcementType: 'cancelled' }));
+      allAnnouncements.push(...cancelledTrains);
+
+      // 4. Verspätung: Upcoming trains that are late (delay > 0)
+      const delayedTrains = futureTrains
+        .filter(t => !t.canceled && t.actual && t.actual !== t.plan)
+        .filter(t => {
+          const delay = getDelay(t.plan, t.actual, now, t.date);
+          return delay > 0;
+        })
+        .map(t => ({ ...t, announcementType: 'delayed' }));
+      allAnnouncements.push(...delayedTrains);
+
+      // 5. Zusatzfahrt: Trains with [ZF] prefix in destination
+      const zusatzfahrtTrains = futureTrains
+        .filter(t => !t.canceled && t.ziel && t.ziel.trim().startsWith('[ZF]'))
+        .map(t => ({ ...t, announcementType: 'zusatzfahrt' }));
+      allAnnouncements.push(...zusatzfahrtTrains);
+
+      console.log('Zusatzfahrt debug:', {
+        futureTrainsCount: futureTrains.length,
+        trainsWithZiel: futureTrains.filter(t => t.ziel).length,
+        trainsWithZF: futureTrains.filter(t => t.ziel && t.ziel.includes('[ZF]')).map(t => ({ linie: t.linie, ziel: t.ziel })),
+        zusatzfahrtCount: zusatzfahrtTrains.length
+      });
+
+      // 6. Ersatzfahrt: Trains that overlap with cancelled trains
+      const cancelledTrainsList = futureTrains.filter(t => t.canceled);
+      
+      const ersatzfahrtTrains = futureTrains.filter(activeTrain => {
+        if (activeTrain.canceled) return false;
+        
+        const activeStart = parseTime(activeTrain.actual || activeTrain.plan, now, activeTrain.date);
+        const activeEnd = getOccupancyEnd(activeTrain, now);
+        if (!activeStart || !activeEnd) return false;
+
+        // Check if this train overlaps with any cancelled train
+        return cancelledTrainsList.some(cancelledTrain => {
+          const cancelledStart = parseTime(cancelledTrain.plan, now, cancelledTrain.date);
+          const cancelledDauer = Number(cancelledTrain.dauer);
+          if (!cancelledStart || !cancelledDauer || isNaN(cancelledDauer)) return false;
+          
+          const cancelledEnd = new Date(cancelledStart.getTime() + cancelledDauer * 60000);
+          
+          // Check for overlap
+          return (activeStart < cancelledEnd && activeEnd > cancelledStart);
+        });
+      }).map(t => ({ ...t, announcementType: 'ersatzfahrt' }));
+      allAnnouncements.push(...ersatzfahrtTrains);
+
+      console.log('Ersatzfahrt debug:', {
+        cancelledCount: cancelledTrainsList.length,
+        activeTrainsCount: futureTrains.filter(t => !t.canceled).length,
+        ersatzfahrtCount: ersatzfahrtTrains.length,
+        ersatzfahrtTrains: ersatzfahrtTrains.map(t => ({ linie: t.linie, ziel: t.ziel, plan: t.plan }))
+      });
+
+      // 7. Konflikt: Active trains that overlap with each other (not cancelled) - CHECK ALL FUTURE, NOT JUST TODAY
+      const allActiveTrains = processedTrainData.futureTrains.filter(t => !t.canceled);
+      const konfliktTrains = [];
+      
+      console.log('🔍 Konflikt check - Active trains:', allActiveTrains.map(t => ({ 
+        linie: t.linie, 
+        plan: t.plan, 
+        date: t.date, 
+        dauer: t.dauer,
+        source: t.source 
+      })));
+      
+      for (let i = 0; i < allActiveTrains.length; i++) {
+        const train1 = allActiveTrains[i];
+        const start1 = parseTime(train1.actual || train1.plan, now, train1.date);
+        const end1 = getOccupancyEnd(train1, now);
+        if (!start1 || !end1) {
+          console.log('⚠️ Train missing time/duration:', { linie: train1.linie, plan: train1.plan, date: train1.date, dauer: train1.dauer });
+          continue;
+        }
+
+        for (let j = i + 1; j < allActiveTrains.length; j++) {
+          const train2 = allActiveTrains[j];
+          const start2 = parseTime(train2.actual || train2.plan, now, train2.date);
+          const end2 = getOccupancyEnd(train2, now);
+          if (!start2 || !end2) {
+            console.log('⚠️ Train missing time/duration:', { linie: train2.linie, plan: train2.plan, date: train2.date, dauer: train2.dauer });
+            continue;
+          }
+
+          // Check for overlap
+          if (start1 < end2 && end1 > start2) {
+            console.log('✅ KONFLIKT FOUND:', {
+              train1: { linie: train1.linie, plan: train1.plan, date: train1.date, start: start1, end: end1 },
+              train2: { linie: train2.linie, plan: train2.plan, date: train2.date, start: start2, end: end2 }
+            });
+            
+            // Determine conflict type:
+            // - 'complete': train2 is completely within train1's duration (start2 >= start1 && end2 <= end1)
+            // - 'nested': trains partially overlap
+            const isComplete = start2 >= start1 && end2 <= end1;
+            const conflictType = isComplete ? 'complete' : 'nested';
+
+            // Add conflict announcement (train1 is the main train, train2 is the conflicting train)
+            konfliktTrains.push({
+              ...train1,
+              announcementType: 'konflikt',
+              conflictWith: train2,
+              conflictType: conflictType
+            });
+          }
+        }
+      }
+      allAnnouncements.push(...konfliktTrains);
+
+      console.log('Konflikt debug:', {
+        allActiveTrainsCount: allActiveTrains.length,
+        konfliktCount: konfliktTrains.length,
+        konfliktTrains: konfliktTrains.map(t => ({ 
+          main: `${t.linie} ${t.plan}`,
+          conflict: `${t.conflictWith.linie} ${t.conflictWith.plan}`,
+          type: t.conflictType,
+          date: t.date
+        }))
+      });
+
+      // Sort all announcements chronologically
+      // Notes without times go first, then everything else by departure time
+      allAnnouncements.sort((a, b) => {
+        // Notes without plan time come first
+        const aHasTime = a.plan && a.plan.trim() !== '';
+        const bHasTime = b.plan && b.plan.trim() !== '';
+        
+        if (!aHasTime && bHasTime) return -1;
+        if (aHasTime && !bHasTime) return 1;
+        if (!aHasTime && !bHasTime) return 0;
+        
+        // Both have times, sort chronologically
+        const aTime = parseTime(a.actual || a.plan, now, a.date);
+        const bTime = parseTime(b.actual || b.plan, now, b.date);
+        return aTime - bTime;
+      });
+
+      console.log('Comprehensive announcements:', {
+        notes: noteTrains.length,
+        cancelled: cancelledTrains.length,
+        delayed: delayedTrains.length,
+        zusatzfahrt: zusatzfahrtTrains.length,
+        ersatzfahrt: ersatzfahrtTrains.length,
+        konflikt: konfliktTrains.length,
+        total: allAnnouncements.length
+      });
+      console.log('All announcements sorted:', allAnnouncements.map(t => ({
+        type: t.announcementType,
+        linie: t.linie,
+        ziel: t.ziel,
+        plan: t.plan,
+        actual: t.actual
+      })));
+
+      if (allAnnouncements.length === 0) {
+        panel.innerHTML = '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">Keine Ankündigungen</div>';
+        if (comprehensiveAnnouncementInterval) {
+          clearInterval(comprehensiveAnnouncementInterval);
+          comprehensiveAnnouncementInterval = null;
+        }
+        return;
+      }
+
+      // Calculate pagination
+      const itemsPerPage = 3;
+      const totalPages = Math.ceil(allAnnouncements.length / itemsPerPage);
+      
+      if (comprehensiveAnnouncementCurrentPage >= totalPages) {
+        comprehensiveAnnouncementCurrentPage = 0;
+      }
+
+      const startIndex = comprehensiveAnnouncementCurrentPage * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, allAnnouncements.length);
+      const pageAnnouncements = allAnnouncements.slice(startIndex, endIndex);
+
+      panel.innerHTML = '';
+
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'width: 100%; height: 100%; background: white; position: relative;';
+
+      const container = document.createElement('div');
+      container.className = 'announcement-content-wrapper';
+      container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: row; align-items: flex-start; justify-content: space-evenly; opacity: 0; transition: opacity 1s ease-in-out;';
+
+      pageAnnouncements.forEach(train => {
+        // Use konflikt template for konflikt announcements
+        if (train.announcementType === 'konflikt') {
+          const konfliktTemplate = document.getElementById('konflikt-template');
+          if (!konfliktTemplate) {
+            console.error('Konflikt template not found');
+            return;
+          }
+          const clone = konfliktTemplate.content.cloneNode(true);
+          const now = new Date();
+          const conflictTrain = train.conflictWith;
+
+          // Main train icon
+          const mainIcon = clone.querySelector('[data-konflikt="main-icon"]');
+          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+            mainIcon.src = getTrainSVG(train.linie);
+            mainIcon.alt = train.linie;
+            mainIcon.onerror = () => {
+              const badge = document.createElement('div');
+              badge.className = 'line-badge';
+              badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
+              badge.textContent = train.linie || '';
+              if (mainIcon.parentNode) {
+                mainIcon.parentNode.replaceChild(badge, mainIcon);
+              }
+            };
+          } else {
+            const badge = document.createElement('div');
+            badge.className = 'line-badge';
+            badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
+            badge.textContent = train.linie || '';
+            mainIcon.parentNode.replaceChild(badge, mainIcon);
+          }
+
+          // Main train destination and stops
+          clone.querySelector('[data-konflikt="main-destination"]').textContent = train.ziel || '';
+          clone.querySelector('[data-konflikt="main-stops"]').innerHTML = formatStopsWithDate(train);
+
+          // Conflict train icon
+          const conflictIcon = clone.querySelector('[data-konflikt="conflict-icon"]');
+          if (typeof conflictTrain.linie === 'string' && (/^S\d+/i.test(conflictTrain.linie) || conflictTrain.linie === 'FEX' || /^\d+$/.test(conflictTrain.linie))) {
+            conflictIcon.src = getTrainSVG(conflictTrain.linie);
+            conflictIcon.alt = conflictTrain.linie;
+            conflictIcon.onerror = () => {
+              const badge = document.createElement('div');
+              badge.className = 'line-badge';
+              badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
+              badge.textContent = conflictTrain.linie || '';
+              if (conflictIcon.parentNode) {
+                conflictIcon.parentNode.replaceChild(badge, conflictIcon);
+              }
+            };
+          } else {
+            const badge = document.createElement('div');
+            badge.className = 'line-badge';
+            badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
+            badge.textContent = conflictTrain.linie || '';
+            conflictIcon.parentNode.replaceChild(badge, conflictIcon);
+          }
+
+          // Conflict train destination and stops
+          clone.querySelector('[data-konflikt="conflict-destination"]').textContent = conflictTrain.ziel || '';
+          clone.querySelector('[data-konflikt="conflict-stops"]').innerHTML = formatStopsWithDate(conflictTrain);
+
+          // Configure blocks and time slots based on conflict type
+          const conflictBlock = clone.querySelector('[data-konflikt="conflict-block"]');
+          const mainBlock3 = clone.querySelector('[data-konflikt="main-block-3"]');
+          const time2Slot = clone.querySelector('[data-konflikt="time-2"]');
+          const time3Slot = clone.querySelector('[data-konflikt="time-3"]');
+          const time4Slot = clone.querySelector('[data-konflikt="time-4"]');
+
+          if (train.conflictType === 'complete') {
+            // Train in train: conflict train completely within main train
+            conflictBlock.classList.add('konflikt-block-middle');
+            
+            // Time 2: Conflict arrival (red)
+            time2Slot.classList.add('konflikt-color');
+            
+            // Time 3: Conflict end (red)
+            time3Slot.classList.add('konflikt-color');
+          } else {
+            // Nested: classic overlap
+            conflictBlock.classList.add('konflikt-block-nested');
+            mainBlock3.classList.remove('konflikt-main-block');
+            mainBlock3.classList.add('konflikt-main-half-block');
+            
+            // Time 2: Conflict arrival (red)
+            time2Slot.classList.add('konflikt-color');
+            
+            // Time 4: Conflict end (red)
+            time4Slot.classList.add('konflikt-color');
+          }
+
+          // Time 1: Main train departure
+          clone.querySelector('[data-konflikt="time-1-plan"]').textContent = train.plan || '';
+          const time1Delayed = clone.querySelector('[data-konflikt="time-1-delayed"]');
+          if (train.actual && train.actual !== train.plan) {
+            time1Delayed.textContent = train.actual;
+            time1Delayed.style.display = 'block';
+          }
+
+          // Time 2: Conflict train arrival (always red)
+          clone.querySelector('[data-konflikt="time-2-plan"]').textContent = conflictTrain.plan || '';
+          const time2Delayed = clone.querySelector('[data-konflikt="time-2-delayed"]');
+          if (conflictTrain.actual && conflictTrain.actual !== conflictTrain.plan) {
+            time2Delayed.textContent = conflictTrain.actual;
+            time2Delayed.style.display = 'block';
+          }
+
+          // Time 3 & 4 depend on conflict type
+          if (train.conflictType === 'complete') {
+            // Train in train:
+            // Time 3: Conflict end (red)
+            const conflictEndTime = getOccupancyEnd(conflictTrain, now);
+            if (conflictEndTime) {
+              const hours = String(conflictEndTime.getHours()).padStart(2, '0');
+              const minutes = String(conflictEndTime.getMinutes()).padStart(2, '0');
+              clone.querySelector('[data-konflikt="time-3-plan"]').textContent = `${hours}:${minutes}`;
+            }
+            const time3Delayed = clone.querySelector('[data-konflikt="time-3-delayed"]');
+            if (conflictTrain.actual && conflictTrain.actual !== conflictTrain.plan && conflictTrain.dauer) {
+              const actualEnd = new Date(parseTime(conflictTrain.actual, now, conflictTrain.date).getTime() + Number(conflictTrain.dauer) * 60000);
+              const hours = String(actualEnd.getHours()).padStart(2, '0');
+              const minutes = String(actualEnd.getMinutes()).padStart(2, '0');
+              time3Delayed.textContent = `${hours}:${minutes}`;
+              time3Delayed.style.display = 'block';
+              time3Delayed.classList.add('delayed-konflikt');
+            }
+            
+            // Time 4: Main train end
+            const mainEndTime = getOccupancyEnd(train, now);
+            if (mainEndTime) {
+              const hours = String(mainEndTime.getHours()).padStart(2, '0');
+              const minutes = String(mainEndTime.getMinutes()).padStart(2, '0');
+              clone.querySelector('[data-konflikt="time-4-plan"]').textContent = `${hours}:${minutes}`;
+            }
+            const time4Delayed = clone.querySelector('[data-konflikt="time-4-delayed"]');
+            if (train.actual && train.actual !== train.plan && train.dauer) {
+              const actualEnd = new Date(parseTime(train.actual, now, train.date).getTime() + Number(train.dauer) * 60000);
+              const hours = String(actualEnd.getHours()).padStart(2, '0');
+              const minutes = String(actualEnd.getMinutes()).padStart(2, '0');
+              time4Delayed.textContent = `${hours}:${minutes}`;
+              time4Delayed.style.display = 'block';
+              time4Delayed.classList.add('delayed-main');
+            }
+          } else {
+            // Nested:
+            // Time 3: Main train end
+            const mainEndTime = getOccupancyEnd(train, now);
+            if (mainEndTime) {
+              const hours = String(mainEndTime.getHours()).padStart(2, '0');
+              const minutes = String(mainEndTime.getMinutes()).padStart(2, '0');
+              clone.querySelector('[data-konflikt="time-3-plan"]').textContent = `${hours}:${minutes}`;
+            }
+            const time3Delayed = clone.querySelector('[data-konflikt="time-3-delayed"]');
+            if (train.actual && train.actual !== train.plan && train.dauer) {
+              const actualEnd = new Date(parseTime(train.actual, now, train.date).getTime() + Number(train.dauer) * 60000);
+              const hours = String(actualEnd.getHours()).padStart(2, '0');
+              const minutes = String(actualEnd.getMinutes()).padStart(2, '0');
+              time3Delayed.textContent = `${hours}:${minutes}`;
+              time3Delayed.style.display = 'block';
+              time3Delayed.classList.add('delayed-main');
+            }
+            
+            // Time 4: Conflict end (red)
+            const conflictEndTime = getOccupancyEnd(conflictTrain, now);
+            if (conflictEndTime) {
+              const hours = String(conflictEndTime.getHours()).padStart(2, '0');
+              const minutes = String(conflictEndTime.getMinutes()).padStart(2, '0');
+              clone.querySelector('[data-konflikt="time-4-plan"]').textContent = `${hours}:${minutes}`;
+            }
+            const time4Delayed = clone.querySelector('[data-konflikt="time-4-delayed"]');
+            if (conflictTrain.actual && conflictTrain.actual !== conflictTrain.plan && conflictTrain.dauer) {
+              const actualEnd = new Date(parseTime(conflictTrain.actual, now, conflictTrain.date).getTime() + Number(conflictTrain.dauer) * 60000);
+              const hours = String(actualEnd.getHours()).padStart(2, '0');
+              const minutes = String(actualEnd.getMinutes()).padStart(2, '0');
+              time4Delayed.textContent = `${hours}:${minutes}`;
+              time4Delayed.style.display = 'block';
+              time4Delayed.classList.add('delayed-konflikt');
+            }
+          }
+
+          // Add resolve button click handler
+          const resolveButton = clone.querySelector('[data-konflikt="resolve-button"]');
+          if (resolveButton) {
+            resolveButton.addEventListener('click', () => {
+              // 1. Bring conflicting train to focus mode
+              renderFocusMode(conflictTrain);
+              
+              // 2. Scroll train list to the conflicting train's position
+              const trainListEl = document.getElementById('train-list');
+              const allEntries = Array.from(trainListEl.querySelectorAll('.train-entry'));
+              
+              // Find the train entry that matches the conflicting train using unique ID
+              const conflictEntry = allEntries.find(entry => {
+                return entry.dataset.uniqueId === conflictTrain._uniqueId;
+              });
+              
+              if (conflictEntry) {
+                // Scroll the train list to show this entry
+                const entryTop = conflictEntry.offsetTop;
+                const listHeight = trainListEl.clientHeight;
+                const entryHeight = conflictEntry.clientHeight;
+                
+                // Center the entry in the viewport
+                const scrollTo = entryTop - (listHeight / 2) + (entryHeight / 2);
+                trainListEl.scrollTo({
+                  top: scrollTo,
+                  behavior: 'smooth'
+                });
+                
+                // Highlight the entry briefly
+                conflictEntry.classList.add('selected');
+                setTimeout(() => {
+                  conflictEntry.classList.remove('selected');
+                }, 2000);
+              }
+            });
+          }
+
+          container.appendChild(clone);
+          return;
+        }
+
+        // Regular announcement rendering
+        const clone = template.content.cloneNode(true);
+
+        // Set headline based on announcement type
+        const headline = clone.querySelector('[data-announcement="headline"]');
+        if (train.announcementType === 'note') {
+          headline.className = 'announcement-headline announce';
+          headline.textContent = ' ⓘ Ankündigung ';
+        } else if (train.announcementType === 'cancelled') {
+          headline.className = 'announcement-headline cancelled';
+          headline.textContent = ' ✕ Zug fällt aus ';
+        } else if (train.announcementType === 'ersatzfahrt') {
+          headline.className = 'announcement-headline ersatzfahrt';
+          headline.textContent = ' ⇄ Ersatzfahrt ';
+        } else if (train.announcementType === 'zusatzfahrt') {
+          headline.className = 'announcement-headline announce';
+          headline.textContent = ' ⓘ Zusatzfahrt ';
+        } else if (train.announcementType === 'delayed') {
+          headline.className = 'announcement-headline late';
+          headline.textContent = ' ⚠︎ Verspätung ';
+        }
+
+        // Hide or show line icon and type
+        const lineIconTypeGroup = clone.querySelector('.announcement-group-icon-type');
+        if (train.announcementType === 'note') {
+          lineIconTypeGroup.style.display = 'none';
+        } else {
+          const lineIcon = clone.querySelector('[data-announcement="line-icon"]');
+          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+            lineIcon.src = getTrainSVG(train.linie);
+            lineIcon.alt = train.linie;
+            lineIcon.onerror = () => {
+              const badge = document.createElement('div');
+              badge.className = 'line-badge';
+              badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
+              badge.textContent = train.linie || '';
+              if (lineIcon.parentNode) {
+                lineIcon.parentNode.replaceChild(badge, lineIcon);
+              }
+            };
+          } else {
+            const badge = document.createElement('div');
+            badge.className = 'line-badge';
+            badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
+            badge.textContent = train.linie || '';
+            lineIcon.parentNode.replaceChild(badge, lineIcon);
+          }
+        }
+
+        // Populate times
+        const timeSlot = clone.querySelector('.announcement-time-slot');
+        if (train.announcementType === 'note') {
+          timeSlot.style.display = 'none';
+        } else {
+          const planEl = clone.querySelector('[data-announcement="plan"]');
+          if (train.canceled || train.announcementType === 'cancelled') {
+            planEl.innerHTML = `<s>${train.plan || ''}</s>`;
+          } else {
+            planEl.textContent = train.plan || '';
+          }
+
+          const delayedEl = clone.querySelector('[data-announcement="delayed"]');
+          if (train.actual && train.actual !== train.plan) {
+            if (train.canceled || train.announcementType === 'cancelled') {
+              delayedEl.innerHTML = `<s>${train.actual}</s>`;
+            } else {
+              delayedEl.textContent = train.actual;
+            }
+            delayedEl.style.display = 'block';
+          }
+        }
+
+        // Populate destination
+        const destination = clone.querySelector('[data-announcement="destination"]');
+        let destinationText = train.ziel || '';
+        if (train.announcementType === 'zusatzfahrt' || train.announcementType === 'ersatzfahrt') {
+          destinationText = destinationText.replace(/^\[ZF\]\s*/, '');
+        }
+        
+        if (train.canceled || train.announcementType === 'cancelled') {
+          destination.innerHTML = `<s>${destinationText}</s>`;
+        } else {
+          destination.textContent = destinationText;
+        }
+
+        // Populate content
+        const content = clone.querySelector('[data-announcement="content"]');
+        content.innerHTML = formatStopsWithDate(train);
+
+        // Add click-to-edit functionality for local trains
+        const announcementPanel = clone.querySelector('.announcement-panel');
+        if (train.source === 'local' && train.announcementType === 'note') {
+          announcementPanel.style.cursor = 'pointer';
+          announcementPanel.addEventListener('click', () => {
+            renderFocusMode(train);
+          });
+        }
+
+        container.appendChild(clone);
+      });
+
+      wrapper.appendChild(container);
+      
+      // Add pagination dots if there are multiple pages
+      if (totalPages > 1) {
+        const paginationDots = document.createElement('div');
+        paginationDots.className = 'pagination-dots';
+        
+        for (let i = 0; i < totalPages; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'pagination-dot';
+          if (i === comprehensiveAnnouncementCurrentPage) {
+            dot.classList.add('active');
+          }
+          paginationDots.appendChild(dot);
+        }
+        
+        wrapper.appendChild(paginationDots);
+      }
+      
+      panel.appendChild(wrapper);
+
+      setTimeout(() => {
+        container.style.opacity = '1';
+      }, 50);
+
+      // ALWAYS clear existing interval first
+      if (comprehensiveAnnouncementInterval) {
+        clearInterval(comprehensiveAnnouncementInterval);
+        comprehensiveAnnouncementInterval = null;
+      }
+
+      // Set up NEW pagination interval if needed
+      if (allAnnouncements.length > itemsPerPage) {
+        comprehensiveAnnouncementInterval = setInterval(() => {
+          const contentWrapper = panel.querySelector('.announcement-content-wrapper');
+          if (!contentWrapper) return;
+          
+          // Fade out current content
+          contentWrapper.style.opacity = '0';
+          
+          // Wait for fade out, then render new content
+          setTimeout(() => {
+            comprehensiveAnnouncementCurrentPage = (comprehensiveAnnouncementCurrentPage + 1) % totalPages;
+            renderComprehensiveAnnouncementPanel();
+          }, 1000); // Match the CSS transition time
+        }, 16000); // 15 seconds visible + 1 second transition
+      }
+    }
+
+    // Render announcement panel with cancelled trains
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = formatClock(now);
+      const min = now.getMinutes();
+      const hour = now.getHours() % 12;
+
+      const minDeg = min *6;
+      const hourDeg = hour * 30 + min*0.5;
+
+      document.getElementById("minute").style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
+      document.getElementById("hour").style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+
+      // Update headline train countdown every second
+      const firstTrainContainer = document.getElementById('first-train-container');
+      const existingEntry = firstTrainContainer.querySelector('.train-entry');
+      if (existingEntry) {
+        const departure = existingEntry.querySelector('[data-departure]');
+        if (departure && departure.dataset.isHeadline === 'true') {
+          // For headline train, show countdown
+          const plan = departure.dataset.plan || null;
+          const actual = departure.dataset.actual || null;
+          const dauer = departure.dataset.dauer ? Number(departure.dataset.dauer) : 0;
+          const trainDate = departure.dataset.date || null;
+          const canceled = departure.dataset.canceled === 'true';
+          
+          // Reconstruct train object for formatCountdown
+          const train = {
+            plan: plan,
+            actual: actual,
+            dauer: dauer,
+            date: trainDate,
+            canceled: canceled
+          };
+          
+          departure.innerHTML = '';
+          departure.appendChild(formatCountdown(train, now));
+        }
+      }
+    }
+
+    // Load saved station BEFORE initial load
+    (function loadSavedStation() {
+      const savedEva = localStorage.getItem('selectedEva');
+      const savedName = localStorage.getItem('selectedStationName');
+      if (savedEva && savedName) {
+        currentEva = savedEva;
+        currentStationName = savedName;
+        console.log(`Loaded saved station: ${savedName} (EVA: ${savedEva})`);
+      }
+      
+      // Load saved view mode
+      const savedViewMode = localStorage.getItem('viewMode');
+      if (savedViewMode === 'list' || savedViewMode === 'belegungsplan') {
+        currentViewMode = savedViewMode;
+      }
+    })();
+
+    // Initial load
+    (async () => {
+      const schedule = await fetchSchedule();
+      processTrainData(schedule);
+      renderTrains(); // Use unified render function
+      renderComprehensiveAnnouncementPanel(); // Debug: render to upper right panel
+      updateClock();
+      
+      // Add train button event listener (after DOM is ready)
+      const addTrainBtn = document.getElementById('add-train-button');
+      if (addTrainBtn) {
+        addTrainBtn.addEventListener('click', () => {
+          createNewTrainEntry();
+        });
+      }
+
+      // Station selection button event listener
+      const stationSelectBtn = document.getElementById('station-select-button');
+      if (stationSelectBtn) {
+        stationSelectBtn.addEventListener('click', () => {
+          showStationOverlay();
+        });
+      }
+
+      // Toggle view button event listener
+      const toggleViewBtn = document.getElementById('toggle-view-button');
+      if (toggleViewBtn) {
+        toggleViewBtn.addEventListener('click', () => {
+          toggleViewMode();
+        });
+      }
+    })();
+
+    // Update clock every second
+    setInterval(() => {
+      updateClock();
+    }, 1000);
+
+    // Update departure times every 5 seconds
+    setInterval(() => {
+      const now = new Date();
+      document.querySelectorAll('[data-departure]').forEach(el => {
+        // Skip headline train - it's updated by updateClock()
+        if (el.dataset.isHeadline === 'true') {
+          return;
+        }
+        
+        const plan = el.dataset.plan || null;
+        const actual = el.dataset.actual || null;
+        const dauer = el.dataset.dauer ? Number(el.dataset.dauer) : 0;
+        const trainDate = el.dataset.date || null;
+        const canceled = el.dataset.canceled === 'true';
+        const delay = canceled ? 0 : getDelay(plan, actual, now, trainDate);
+        el.innerHTML = '';
+        el.appendChild(formatDeparture(plan, actual, now, delay, dauer, trainDate));
+      });
+
+      // Update status indicators
+      document.querySelectorAll('.indicator-dot').forEach((dot) => {
+        const entry = dot.closest('.train-entry');
+        const departure = entry.querySelector('[data-departure]');
+        const plan = departure.dataset.plan || null;
+        const actual = departure.dataset.actual || null;
+        const trainDate = departure.dataset.date || null;
+        const canceled = departure.dataset.canceled === 'true';
+        const dauer = departure.dataset.dauer ? Number(departure.dataset.dauer) : 0;
+        
+        // Clear all classes
+        dot.classList.remove('current', 'cancelled');
+        
+        if (canceled) {
+          // Show X for cancelled trains
+          dot.classList.add('cancelled');
+        } else {
+          // Check if train is currently occupying
+          const actualTime = parseTime(actual || plan, now, trainDate);
+          if (actualTime && dauer > 0) {
+            const occEnd = new Date(actualTime.getTime() + dauer * 60000);
+            if (actualTime <= now && occEnd > now) {
+              // Current train - show solid dot
+              dot.classList.add('current');
+            }
+          }
+        }
+      });
+    }, 5000);
+
+    // Refresh full schedule every minute (unless editing)
+    refreshIntervalId = setInterval(async () => {
+      if (isEditingTrain) {
+        console.log('Skipping refresh - train is being edited');
+        return;
+      }
+      const schedule = await fetchSchedule();
+      processTrainData(schedule);
+      renderTrains(); // Use unified render function
+      renderComprehensiveAnnouncementPanel(); // Debug: render to upper right panel
+    }, 60000);
+
+    // Set up Server-Sent Events for real-time updates
+    const eventSource = new EventSource('/events');
+    
+    eventSource.addEventListener('update', async (event) => {
+      console.log('Received server update event, refreshing data...');
+      
+      // Skip refresh if editing
+      if (isEditingTrain) {
+        console.log('Skipping SSE refresh - train is being edited');
+        return;
+      }
+      
+      // Store currently focused train info before refresh
+      const panel = document.getElementById('focus-panel');
+      let focusedTrainInfo = null;
+      if (panel && panel.dataset.currentTrain) {
+        try {
+          focusedTrainInfo = JSON.parse(panel.dataset.currentTrain);
+        } catch (e) {
+          console.error('Failed to parse focused train');
+        }
+      }
+      
+      // Fetch and update the GLOBAL schedule object
+      const freshSchedule = await fetchSchedule();
+      processTrainData(freshSchedule);
+      renderTrains(); // Use unified render function
+      renderComprehensiveAnnouncementPanel();
+      
+      // Re-render focus panel if a train was focused
+      if (focusedTrainInfo && processedTrainData.allTrains) {
+        // Find the updated train in the refreshed data
+        const updatedTrain = processedTrainData.allTrains.find(t => 
+          t.linie === focusedTrainInfo.linie && 
+          t.plan === focusedTrainInfo.plan && 
+          (t.date === focusedTrainInfo.date || t.weekday === focusedTrainInfo.weekday)
+        );
+        
+        if (updatedTrain) {
+          renderFocusMode(updatedTrain);
+        }
+      }
+    });
+    
+    eventSource.addEventListener('error', (error) => {
+      console.warn('SSE connection error:', error);
+      // Connection will automatically reconnect
+    });
+    
+    console.log('✅ Connected to server for real-time updates');
+
+    // Station selection overlay functionality
+    function showStationOverlay() {
+      const overlay = document.getElementById('station-overlay');
+      const input = document.getElementById('station-input');
+      const sugg = document.getElementById('station-suggestions');
+      const hint = document.getElementById('overlay-hint');
+      
+      overlay.classList.remove('hidden');
+      input.value = '';
+      sugg.innerHTML = '';
+      sugg.style.display = 'none';
+      hint.textContent = 'Leer lassen + Enter: Persönlicher Stundenplan';
+      input.focus();
+
+      let timer = null;
+      let activeIndex = -1;
+      let lastMatches = [];
+
+      const ALLOWED_TRAIN_TAGS = new Set([
+        'HIGH_SPEED_TRAIN', 'INTERCITY_TRAIN', 'INTER_REGIONAL_TRAIN', 'REGIONAL_TRAIN', 'CITY_TRAIN',
+        'HIGH_SPEED', 'INTERCITY', 'INTERREGIONAL', 'REGIONAL', 'CITY', 'SUBURBAN_TRAIN', 'SUBURBAN',
+        'S-BAHN', 'S_BAHN', 'SBAHN', 'S-TRAIN', 'TRAIN', 'RAIL', 'RAILWAY'
+      ]);
+
+      function getStationTags(st) {
+        const fields = ['tags', 'productTags', 'product_types', 'transportTags', 'categories', 'products', 'productTypes'];
+        const out = [];
+        for (const f of fields) {
+          const v = st && st[f];
+          if (!v) continue;
+          if (Array.isArray(v)) {
+            v.forEach(x => { if (x != null) out.push(String(x)); });
+          } else if (typeof v === 'string') {
+            out.push(v);
+          }
+        }
+        return out.map(s => s.toUpperCase().trim());
+      }
+
+      function stationHasAllowedTags(st) {
+        const hasDs100 = typeof st?.ds100 === 'string' && st.ds100.trim().length > 0;
+        const evaStr = st?.eva != null ? String(st.eva) : '';
+        const hasEva = /^\d{6,8}$/.test(evaStr);
+
+        const tags = getStationTags(st);
+        if (tags.length) {
+          const hasAllowed = tags.some(t => ALLOWED_TRAIN_TAGS.has(t));
+          const isBusOnly = tags.every(t => t === 'BUS' || t === 'BUS_STOP' || t === 'BUSSTATION');
+          if (isBusOnly) return false;
+          if (hasAllowed) return true;
+          if (hasDs100 || hasEva) return true;
+          return false;
+        }
+        if (hasDs100 || hasEva) return true;
+        return false;
+      }
+
+      function normalizeStr(s) {
+        try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+        catch { return (s || '').toLowerCase(); }
+      }
+
+      async function ensureStationsIndex() {
+        if (stationsIndex) return stationsIndex;
+        try {
+          const res = await fetch('/stations.json');
+          if (!res.ok) throw new Error('stations.json not found');
+          const json = await res.json();
+          stationsIndex = Array.isArray(json) ? json : (json.stations || []);
+          return stationsIndex;
+        } catch (e) {
+          console.warn('Failed loading stations.json', e);
+          stationsIndex = [];
+          return stationsIndex;
+        }
+      }
+
+      function updateActiveSuggestion() {
+        const items = Array.from(sugg.children);
+        items.forEach((el, idx) => {
+          if (idx === activeIndex) {
+            el.classList.add('active');
+            el.style.background = 'rgba(255,255,255,0.2)';
+            try { el.scrollIntoView({ block: 'nearest' }); } catch {}
+          } else {
+            el.classList.remove('active');
+            el.style.background = '';
+          }
+        });
+      }
+
+      function renderSuggestions(list) {
+        sugg.innerHTML = '';
+        lastMatches = Array.isArray(list) ? list : [];
+        activeIndex = -1;
+        if (!lastMatches.length) { sugg.style.display = 'none'; return; }
+        lastMatches.slice(0, 20).forEach((st) => {
+          const item = document.createElement('div');
+          item.className = 'suggestion-item';
+          const label = st.ds100 ? `${st.name} (${st.ds100})` : st.name;
+          item.textContent = label;
+          item.title = label;
+          item.addEventListener('click', () => chooseLive(st));
+          sugg.appendChild(item);
+        });
+        sugg.style.display = 'block';
+        updateActiveSuggestion();
+      }
+
+      function choosePersonal() {
+        currentEva = null;
+        currentStationName = null;
+        localStorage.removeItem('selectedEva');
+        localStorage.removeItem('selectedStationName');
+        overlay.classList.add('hidden');
+        (async () => {
+          const schedule = await fetchSchedule();
+          processTrainData(schedule);
+          renderTrains(); // Use unified render function
+          renderComprehensiveAnnouncementPanel();
+          updateClock();
+        })();
+      }
+
+      function chooseLive(station) {
+        currentEva = station.eva;
+        currentStationName = station.name;
+        localStorage.setItem('selectedEva', currentEva);
+        localStorage.setItem('selectedStationName', currentStationName);
+        overlay.classList.add('hidden');
+        (async () => {
+          const schedule = await fetchSchedule();
+          processTrainData(schedule);
+          renderTrains(); // Use unified render function
+          renderComprehensiveAnnouncementPanel();
+          updateClock();
+        })();
+      }
+
+      // Input handler
+      input.addEventListener('input', async () => {
+        const val = input.value.trim();
+        sugg.style.display = 'none';
+        sugg.innerHTML = '';
+        if (!val) { hint.textContent = 'Leer lassen + Enter: Persönlicher Stundenplan'; return; }
+        hint.textContent = 'Suche…';
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(async () => {
+          if (val.length < 1) { hint.textContent = 'Bitte mehr eingeben…'; return; }
+          const idx = await ensureStationsIndex();
+          const qn = normalizeStr(val);
+          const rawMatches = idx.filter((s) => normalizeStr(s.name).includes(qn) || (s.ds100 && normalizeStr(s.ds100).includes(qn)));
+          const matches = rawMatches.filter(stationHasAllowedTags);
+          hint.textContent = matches.length ? 'Bitte auswählen:' : 'Keine passenden Bahnhöfe gefunden.';
+          renderSuggestions(matches);
+        }, 150);
+      });
+
+      // Keyboard navigation
+      input.addEventListener('keydown', async (e) => {
+        const itemsCount = sugg.children.length;
+        if (e.key === 'ArrowDown') {
+          if (!itemsCount) return;
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % itemsCount;
+          updateActiveSuggestion();
+        } else if (e.key === 'ArrowUp') {
+          if (!itemsCount) return;
+          e.preventDefault();
+          activeIndex = activeIndex <= 0 ? itemsCount - 1 : activeIndex - 1;
+          updateActiveSuggestion();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (activeIndex >= 0 && activeIndex < lastMatches.length) {
+            chooseLive(lastMatches[activeIndex]);
+          } else if (!input.value.trim()) {
+            choosePersonal();
+          }
+        } else if (e.key === 'Escape') {
+          overlay.classList.add('hidden');
+        }
+      });
+
+      // Cancel button
+      document.getElementById('overlay-cancel').addEventListener('click', () => {
+        overlay.classList.add('hidden');
+      });
+
+      // Close on overlay click
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.add('hidden');
+        }
+      });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Escape to exit focus mode
+      if (e.key === 'Escape') {
+        const focusPanel = document.getElementById('focus-panel');
+        if (focusPanel && focusPanel.innerHTML.trim() !== '') {
+          e.preventDefault();
+          focusPanel.innerHTML = '';
+          // Remove selection from all train entries
+          document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+        }
+      }
+      
+      // Left/Right arrow keys to change announcement page - but NOT when editing
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isEditingTrain) {
+        e.preventDefault();
+        
+        // Calculate total pages
+        const panel = document.getElementById('announcement-panel');
+        if (!panel) return;
+        
+        const allAnnouncements = [];
+        const now = new Date();
+        
+        // Collect all announcements (same logic as renderComprehensiveAnnouncementPanel)
+        const noteTrains = processedTrainData.noteTrains.map(t => ({ ...t, announcementType: 'note' }));
+        allAnnouncements.push(...noteTrains);
+        
+        const todayDateStr = now.toLocaleDateString('sv-SE');
+        const isToday = (train) => {
+          if (!train.date) return false;
+          const trainDateStr = train.date.split('T')[0];
+          return trainDateStr === todayDateStr;
+        };
+        
+        const futureTrains = processedTrainData.futureTrains.filter(isToday);
+        const cancelledTrains = futureTrains.filter(t => t.canceled).map(t => ({ ...t, announcementType: 'cancelled' }));
+        allAnnouncements.push(...cancelledTrains);
+        
+        const delayedTrains = futureTrains.filter(t => !t.canceled && t.actual && t.actual !== t.plan)
+          .filter(t => getDelay(t.plan, t.actual, now, t.date) > 0)
+          .map(t => ({ ...t, announcementType: 'delayed' }));
+        allAnnouncements.push(...delayedTrains);
+        
+        const zusatzfahrtTrains = futureTrains.filter(t => !t.canceled && t.ziel && t.ziel.trim().startsWith('[ZF]'))
+          .map(t => ({ ...t, announcementType: 'zusatzfahrt' }));
+        allAnnouncements.push(...zusatzfahrtTrains);
+        
+        const cancelledTrainsList = futureTrains.filter(t => t.canceled);
+        const ersatzfahrtTrains = futureTrains.filter(activeTrain => {
+          if (activeTrain.canceled) return false;
+          const activeStart = parseTime(activeTrain.actual || activeTrain.plan, now, activeTrain.date);
+          const activeEnd = getOccupancyEnd(activeTrain, now);
+          if (!activeStart || !activeEnd) return false;
+          return cancelledTrainsList.some(cancelledTrain => {
+            const cancelledStart = parseTime(cancelledTrain.actual || cancelledTrain.plan, now, cancelledTrain.date);
+            const cancelledEnd = getOccupancyEnd(cancelledTrain, now);
+            if (!cancelledStart || !cancelledEnd) return false;
+            return (activeStart < cancelledEnd && activeEnd > cancelledStart);
+          });
+        }).map(t => ({ ...t, announcementType: 'ersatzfahrt' }));
+        allAnnouncements.push(...ersatzfahrtTrains);
+        
+        const allActiveTrains = processedTrainData.futureTrains.filter(t => !t.canceled);
+        const konfliktTrains = [];
+        for (let i = 0; i < allActiveTrains.length; i++) {
+          const train1 = allActiveTrains[i];
+          const start1 = parseTime(train1.actual || train1.plan, now, train1.date);
+          const end1 = getOccupancyEnd(train1, now);
+          if (!start1 || !end1) continue;
+          for (let j = i + 1; j < allActiveTrains.length; j++) {
+            const train2 = allActiveTrains[j];
+            const start2 = parseTime(train2.actual || train2.plan, now, train2.date);
+            const end2 = getOccupancyEnd(train2, now);
+            if (!start2 || !end2) continue;
+            if (start1 < end2 && end1 > start2) {
+              const isComplete = start2 >= start1 && end2 <= end1;
+              const conflictType = isComplete ? 'complete' : 'nested';
+              konfliktTrains.push({ ...train1, announcementType: 'konflikt', conflictWith: train2, conflictType: conflictType });
+            }
+          }
+        }
+        allAnnouncements.push(...konfliktTrains);
+        
+        if (allAnnouncements.length === 0) return;
+        
+        const itemsPerPage = 3;
+        const totalPages = Math.ceil(allAnnouncements.length / itemsPerPage);
+        
+        // Change page
+        if (e.key === 'ArrowLeft') {
+          comprehensiveAnnouncementCurrentPage = (comprehensiveAnnouncementCurrentPage - 1 + totalPages) % totalPages;
+        } else {
+          comprehensiveAnnouncementCurrentPage = (comprehensiveAnnouncementCurrentPage + 1) % totalPages;
+        }
+        
+        // Re-render
+        renderComprehensiveAnnouncementPanel();
+      }
+      
+      // Ctrl+F to open station selection
+      if (e.ctrlKey && (e.key === 'F' || e.key === 'f')) {
+        e.preventDefault();
+        showStationOverlay();
+      }
+      
+      // Ctrl+G to create new train entry
+      if (e.ctrlKey && (e.key === 'G' || e.key === 'g')) {
+        e.preventDefault();
+        createNewTrainEntry();
+      }
+      
+      // Ctrl+S to save current train in focus panel
+      if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        saveFocusPanelTrain();
+      }
+    });
+
+    // Save the current train displayed in focus panel
+    async function saveFocusPanelTrain() {
+      // Save entire schedule (like InputEnhanced)
+      await saveSchedule();
+    }
+
+
+    // Function to create a new blank train entry
+    function createNewTrainEntry() {
+      // Create a blank train object with current date but NO auto-filled time
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+      
+      const newTrain = {
+        linie: '',
+        ziel: '',
+        plan: '',  // Empty - user must fill
+        actual: undefined,
+        dauer: 0,
+        zwischenhalte: [],
+        canceled: false,
+        date: currentDate,
+        weekday: weekday,
+        source: 'local',
+        _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
+      };
+      
+      // Add to spontaneousEntries (like InputEnhanced does)
+      schedule.spontaneousEntries.push(newTrain);
+      
+      // Render in focus mode
+      renderFocusMode(newTrain);
+      
+      // Auto-click on the line field to enter edit mode
+      setTimeout(() => {
+        const lineField = document.querySelector('[data-field="linie"]');
+        if (lineField) {
+          lineField.click();
+        }
+      }, 100);
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 80">
+  <!-- Hexagonal background -->
+  <polygon points="20,0 160,0 180,40 160,80 20,80 0,40" fill="#ff0000"/>
+  
+  <!-- Text -->
+  <text x="49%" y="85%" text-anchor="middle"
+        font-family="Bahnschrift, sans-serif"
+        font-size="75" fill="white" font-weight="700">
+    FEX
+  </text>
+</svg>

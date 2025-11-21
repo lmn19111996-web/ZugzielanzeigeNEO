@@ -1,0 +1,54 @@
+{"trainKey":"fex|[prü] tz-aufgabe 1|14:00|2025-11-13","linie":"FEX","ziel":"[PRÜ] TZ-Aufgabe 1","plan":"14:00","actual":"14:00","dauer":"90","stops":"V31.51","date":"2025-11-13","canceled":false}
+{"trainKey":"s45|orga-treffen / flurus it|17:30|2025-11-13","linie":"S45","ziel":"Orga-Treffen / FLURUS IT","plan":"17:30","actual":"17:30","dauer":90,"stops":"PWR 27 - V27.03","date":"2025-11-13","canceled":false}
+{"trainKey":"s3|spotify tracking ends|00:00|2025-11-15","linie":"S3","ziel":"Spotify Tracking Ends","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"s7|tm1 selbststudium|14:00|2025-11-10","linie":"S7","ziel":"TM1 Selbststudium","plan":"14:00","actual":"14:45","dauer":30,"stops":"","date":"2025-11-10","canceled":true}
+{"trainKey":"s7|isd labor|10:55|2025-11-11","linie":"S7","ziel":"ISD Labor","plan":"10:55","actual":"10:55","dauer":120,"stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s7|isd labor|20:30|2025-11-11","linie":"S7","ziel":"ISD Labor","plan":"20:30","actual":"20:30","dauer":150,"stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"1|cheap ahh to do list|unknown|2025-11-10","linie":"1","ziel":"Cheap ahh To Do List","plan":"","actual":"","dauer":"","stops":"1. Rundfunkbeitrag\n\n4. Dein Ladekabel liegt (hoffentlich) noch in der Fachschaft\n\n6. Viết thư cho Ngọc\n\n\nEdit nur in Legacy-App möglich :3","date":"2025-11-10","canceled":false}
+{"trainKey":"s7|werkstoffkunde + exphys|09:45|2025-11-10","linie":"S7","ziel":"Werkstoffkunde + ExPhys","plan":"09:45","actual":"09:45","dauer":75,"stops":"","date":"2025-11-10","canceled":false}
+{"trainKey":"s7|[zf] technische mechanik (übung)|22:30|2025-11-10","linie":"S7","ziel":"[ZF] Technische Mechanik (Übung)","plan":"22:30","actual":"22:40","dauer":90,"stops":"","date":"2025-11-10","canceled":true}
+{"trainKey":"s3|viết thư cho ngọc|22:00|2025-11-12","linie":"S3","ziel":"Viết thư cho Ngọc","plan":"22:00","actual":"23:16","dauer":44,"stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s7|mathematik i + orga|14:45|2025-11-10","linie":"S7","ziel":"Mathematik I + Orga","plan":"14:45","actual":"14:45","dauer":30,"stops":"","date":"2025-11-10","canceled":false}
+{"trainKey":"s2|[zf] wocheneinkauf (innenstadt)|18:00|2025-11-10","linie":"S2","ziel":"[ZF] Wocheneinkauf (Innenstadt)","plan":"18:00","actual":"18:25","dauer":95,"stops":"","date":"2025-11-10","canceled":false}
+{"trainKey":"s2|wäsche|08:00|2025-11-11","linie":"S2","ziel":"Wäsche","plan":"08:00","actual":"08:00","dauer":"","stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s2|wäsche entnehmen|08:45|2025-11-11","linie":"S2","ziel":"Wäsche entnehmen","plan":"08:45","actual":"08:45","dauer":"","stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s2|wäsche holen|10:20|2025-11-11","linie":"S2","ziel":"Wäsche holen","plan":"10:20","actual":"10:20","dauer":30,"stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"6|anmerkungen|unknown|2025-11-11","linie":"6","ziel":"Anmerkungen","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s2|kochen|18:00|2025-11-12","linie":"S2","ziel":"Kochen","plan":"18:00","actual":"18:30","dauer":60,"stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s9|prüfungsanmeldung|00:00|2025-11-12","linie":"S9","ziel":"Prüfungsanmeldung","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s2|wäsche|13:00|2025-11-12","linie":"S2","ziel":"Wäsche","plan":"13:00","actual":"13:00","dauer":"","stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s2|[zf] duschen|18:15|2025-11-11","linie":"S2","ziel":"[ZF] Duschen","plan":"18:15","actual":"18:25","dauer":20,"stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s2|kochen|18:35|2025-11-11","linie":"S2","ziel":"Kochen","plan":"18:35","actual":"18:45","dauer":60,"stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s7|[zf] mathematik i|19:40|2025-11-11","linie":"S7","ziel":"[ZF] Mathematik I","plan":"19:40","actual":"19:40","dauer":50,"stops":"","date":"2025-11-11","canceled":false}
+{"trainKey":"s6|sprechstunde dt|11:30|2025-11-12","linie":"S6","ziel":"Sprechstunde DT","plan":"11:30","actual":"11:30","dauer":20,"stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s2|[zf] stadteinfahrt|17:00|2025-11-12","linie":"S2","ziel":"[ZF] Stadteinfahrt","plan":"17:00","actual":"17:00","dauer":60,"stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s2|wäsche holen|15:20|2025-11-12","linie":"S2","ziel":"Wäsche holen","plan":"15:20","actual":"15:20","dauer":"","stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s7|[zf] tz fertig|22:00|2025-11-12","linie":"S7","ziel":"[ZF] TZ Fertig","plan":"22:00","actual":"23:00","dauer":8,"stops":"","date":"2025-11-12","canceled":false}
+{"trainKey":"s7|isd labor|14:00|2025-11-15","linie":"S7","ziel":"ISD Labor","plan":"14:00","actual":"15:00","dauer":120,"stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"1|sarstedt|00:00|2025-11-14","linie":"1","ziel":"Sarstedt","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"2|gleidingen|00:00|2025-11-14","linie":"2","ziel":"Gleidingen","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"3|altwarmbüchen|00:00|2025-11-14","linie":"3","ziel":"Altwarmbüchen","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"4|roderbruch über kröpcke|00:00|2025-11-14","linie":"4","ziel":"Roderbruch über Kröpcke","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"5|anderten|00:00|2025-11-14","linie":"5","ziel":"Anderten","plan":"00:00","actual":"00:00","dauer":5,"stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"6|messe/ost (expo-plaza)|00:00|2025-11-14","linie":"6","ziel":"Messe/Ost (EXPO-Plaza)","plan":"00:00","actual":"00:00","dauer":1,"stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"8|messe/nord|00:00|2025-11-14","linie":"8","ziel":"Messe/Nord","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"7|misburg|00:00|2025-11-14","linie":"7","ziel":"Misburg","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"9|hauptbahnhof|00:00|2025-11-14","linie":"9","ziel":"Hauptbahnhof","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"10|ahlem|00:00|2025-11-14","linie":"10","ziel":"Ahlem","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"12|ahlem|00:00|2025-11-14","linie":"12","ziel":"Ahlem","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"13|fasanenkrug|00:00|2025-11-14","linie":"13","ziel":"Fasanenkrug","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"17|hauptbahnhof/zob|00:00|2025-11-14","linie":"17","ziel":"Hauptbahnhof/ZOB","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"11|zoo|00:00|2025-11-14","linie":"11","ziel":"Zoo","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"s2|[zf] aufräumen|10:30|2025-11-13","linie":"S2","ziel":"[ZF] Aufräumen","plan":"10:30","actual":"10:30","dauer":60,"stops":"","date":"2025-11-13","canceled":false}
+{"trainKey":"s7|isd labor|20:00|2025-11-14","linie":"S7","ziel":"ISD Labor","plan":"20:00","actual":"20:00","dauer":220,"stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"s7|[zf] isd labor|20:00|2025-11-13","linie":"S7","ziel":"[ZF] ISD Labor","plan":"20:00","actual":"20:00","dauer":120,"stops":"","date":"2025-11-13","canceled":false}
+{"trainKey":"3|mathe prüfung|unknown|2025-11-14","linie":"3","ziel":"Mathe Prüfung","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"s7|isd labor|10:00|2025-11-15","linie":"S7","ziel":"ISD Labor","plan":"10:00","actual":"08:00","dauer":180,"stops":"","date":"2025-11-15","canceled":true}
+{"trainKey":"s2|nấu bún ốc|11:00|2025-11-15","linie":"S2","ziel":"Nấu bún ốc","plan":"11:00","actual":"13:45","dauer":180,"stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"12|orga|23:59|2025-11-14","linie":"12","ziel":"Orga","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2025-11-14","canceled":false}
+{"trainKey":"s2|stadteinfahrt|10:00|2025-11-15","linie":"S2","ziel":"Stadteinfahrt","plan":"10:00","actual":"10:00","dauer":60,"stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"s7|[zf] isd labor|07:30|2025-11-16","linie":"S7","ziel":"[ZF] ISD Labor","plan":"07:30","actual":"07:30","dauer":150,"stops":"","date":"2025-11-16","canceled":true}
+{"trainKey":"s2|mittag|13:45|2025-11-15","linie":"S2","ziel":"Mittag","plan":"13:45","actual":"13:45","dauer":30,"stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"s7|[zf] isd labor|22:00|2025-11-15","linie":"S7","ziel":"[ZF] ISD Labor","plan":"22:00","actual":"21:00","dauer":90,"stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"s2|your broth is cooking|16:30|2025-11-15","linie":"S2","ziel":"Your broth is cooking","plan":"16:30","actual":"17:00","dauer":"","stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"s2|nấu bún ốc|19:30|2025-11-15","linie":"S2","ziel":"Nấu bún ốc","plan":"19:30","actual":"19:30","dauer":30,"stops":"","date":"2025-11-15","canceled":false}

@@ -1,0 +1,9 @@
+<svg viewBox="0 0 16 8" xmlns="http://www.w3.org/2000/svg">
+            <!-- pill background -->
+            <rect x="0" y="0" width="16" height="8" rx="4" ry="4" fill="#d66f9f" />
+            <!-- text -->
+            <text x="48%" y="60%" text-anchor="middle" dominant-baseline="middle"
+                font-family="Bahnschrift, sans-serif" font-size="7" fill="white" font-weight="600">
+                S1
+            </text>
+        </svg>

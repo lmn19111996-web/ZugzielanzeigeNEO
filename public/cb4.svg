@@ -1,0 +1,12 @@
+<svg viewBox="0 0 1540 383" xmlns="http://www.w3.org/2000/svg">
+  <!-- White trapezoids -->
+  <polygon points="69,274 69,243 218,78 402,78 402,274" fill="#161B75"/>
+  <polygon points="424,274 424,243 570,78 756,78 756,274" fill="#161B75"/>
+  <polygon points="783,274 783,243 929,78 1115,78 1115,274" fill="#161B75"/>
+  <polygon points="1140,274 1140,243 1286,78 1472,78 1472,274" fill="#161B75"/>
+  <!-- White rectangles at bottom -->
+  <rect x="69" y="284" width="333" height="31" fill="#161B75"/>
+  <rect x="424" y="284" width="333" height="31" fill="#161B75"/>
+  <rect x="783" y="284" width="333" height="31" fill="#161B75"/>
+  <rect x="1140" y="284" width="333" height="31" fill="#161B75"/>
+</svg>

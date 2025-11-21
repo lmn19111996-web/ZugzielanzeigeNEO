@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- white square with red border -->
+
+  <rect x="20" y="20" width="60" height="60" fill="white" stroke="#0071bb" stroke-width="8" />
+  <!-- centered black number -->
+  <text x="50" y="55" font-size="50" text-anchor="middle" dominant-baseline="middle" fill="black" font-family="Bahnschrift, sans-serif">9</text>
+</svg>
+  
