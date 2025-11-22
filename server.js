@@ -809,8 +809,8 @@ setInterval(periodicRefresh, 30000);
 setTimeout(periodicRefresh, 2000);
 
 // Start server
-app.listen(PORT, '127.0.0.1',() => {
-  console.log(`Server listening on http://127.0.0.1:${PORT}`);
+app.listen(PORT, '0.0.0.0',() => {
+  console.log(`Server listening on http://0.0.0.0:${PORT}`);
   console.log('📊 Weekly train logging enabled - creates separate log file for each week');
   console.log(`📁 Log directory: ${TRAIN_LOG_DIR}`);
   console.log(`📅 Current week: ${getWeekIdentifier()}`);

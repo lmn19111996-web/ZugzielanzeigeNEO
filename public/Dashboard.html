@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#161B75">
@@ -1236,83 +1237,120 @@
       transform: scale(1.3);
     }
 
-    /* Station selection overlay */
+    /* Station selection sidebar */
     .overlay {
       position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.401);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
       z-index: 3000;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+      pointer-events: all;
     }
 
     .overlay.hidden {
-      display: none;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .overlay-card {
-      width: 30vw;
-      height: auto;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 35vw;
+      height: 100vh;
       background: #161B75;
       color: white;
-      padding: 1vw;
-      border-radius: 5px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      padding: 3vh 2vw;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    .overlay.hidden .overlay-card {
+      transform: translateX(-100%);
     }
 
     .overlay-title {
-      font-size: 2vw;
-      margin: 0 0 0.3vw 0;
-      font-weight: 4bfst00;
+      font-size: 3.5vh;
+      margin: 0 0 1vh 0;
+      font-weight: 500;
+      flex-shrink: 0;
     }
 
     .overlay-sub {
-      font-size: 1vw;
+      font-size: 2vh;
       opacity: 0.85;
-      margin-bottom: 2vw;
+      margin-bottom: 3vh;
+      flex-shrink: 0;
     }
 
     .station-input-wrap {
       position: relative;
+      flex-shrink: 0;
+      margin-bottom: 2vh;
     }
 
     .station-input {
       width: 100%;
-      padding: 1vw 1.2vw;
-      font-size: 1vw;
+      padding: 1.5vh 1.5vw;
+      font-size: 2.2vh;
       border-radius: 5px;
       border: 1px solid rgba(255, 255, 255, 0.3);
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.3);
       color: white;
       outline: none;
       box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    .station-input:focus {
+      border-color: rgba(255, 255, 255, 0.6);
+      background: rgba(0, 0, 0, 0.4);
     }
 
     .suggestions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
+      flex: 1 1 auto;
       background: #0e1254;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 0.6vw;
-      margin-top: 0.5vw;
-      max-height: 40vh;
-      overflow: auto;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      z-index: 10;
-      scrollbar-width: none;
+      border-radius: 5px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+      display: block;
     }
 
-    .suggestion::-webkit-scrollbar {
-      display: none;
+    .suggestions::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .suggestions::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .suggestions::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+    }
+
+    .suggestions::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
     }
 
     .suggestion-item {
-      padding: 1vw 1.2vw;
+      padding: 1.5vh 1.5vw;
       cursor: pointer;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 2vh;
+      transition: background 0.15s ease;
     }
 
     .suggestion-item:hover,
@@ -1322,6 +1360,13 @@
 
     .suggestion-item:last-child {
       border-bottom: none;
+    }
+
+    .overlay-hint {
+      font-size: 2vh;
+      opacity: 0.7;
+      margin-bottom: 1.5vh;
+      flex-shrink: 0;
     }
 
 
@@ -1344,6 +1389,112 @@
       opacity: 0.8;
     }
 
+    /* Mobile responsive styles */
+    @media screen and (max-width: 768px) {
+      /* Hide the clock section on mobile */
+      .top-ribbon {
+        display: none;
+      }
+
+      /* Hide the right panel (focus and announcements) */
+      .right-panel {
+        display: none;
+      }
+
+      /* Make left column full width */
+      .left-column {
+        width: 100%;
+        height: 100vh;
+        border-right: none;
+      }
+
+      /* Reorient container for taskbar on top */
+      .container-task-panel {
+        flex-direction: column;
+      }
+
+      /* Horizontal taskbar at the top */
+      .taskbar {
+        width: 100%;
+        height: 7vh;
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 0.5px solid rgba(255, 255, 255, 0.64);
+      }
+
+      .task-button {
+        width: 7vh;
+        height: 100%;
+      }
+
+      .task-icon-button {
+        width: 7vh;
+        height: 100%;
+      }
+
+      .task-icon-group {
+        width: auto;
+        height: 100%;
+        flex-direction: row;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        padding-right: 1.5vh;
+        margin-right: 1.5vh;
+        border-bottom: none;
+        border-right: 0.5px solid rgba(255, 255, 255, 0.64);
+      }
+
+      /* Adjust left panel height for horizontal taskbar */
+      .left-panel {
+        height: 93vh; /* Full height minus taskbar */
+      }
+
+      /* Adjust overlay for mobile */
+      .overlay-card {
+        width: 90vw;
+      }
+
+      /* Optimize train entries for mobile */
+      .train-entry {
+        padding: 0 3vw;
+      }
+
+      .symbol-slot {
+        width: 9vh;
+      }
+
+      .train-symbol {
+        width: 9vh;
+        height: 9vh;
+      }
+
+      .zugziel {
+        font-size: 4.5vh;
+        padding-left: 2vw;
+      }
+
+      /* Belegungsplan adjustments for mobile */
+      .belegungsplan-time-marker {
+        font-size: 1.8vh;
+        left: 0.3vw;
+      }
+
+      .belegungsplan-train-block.overlap-0 {
+        left: 8vw;
+      }
+
+      .belegungsplan-train-block.overlap-1 {
+        left: 12vw;
+      }
+
+      .belegungsplan-train-block.overlap-2 {
+        left: 16vw;
+      }
+
+      .belegungsplan-train-block.overlap-3 {
+        left: 20vw;
+      }
+    }
   
   </style>
 </head>
@@ -1519,16 +1670,16 @@
     </div>
   </div>
 
-  <!-- Station selection overlay -->
+  <!-- Station selection sidebar -->
   <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="overlay-card">
       <h2 class="overlay-title">Bahnhof auswählen</h2>
       <div class="overlay-sub">Leer lassen für den aktuellen Uni-Stundenplan.</div>
       <div class="station-input-wrap">
         <input id="station-input" class="station-input" type="text" placeholder="Stationsnamen eingeben..." autocomplete="off" />
-        <div id="station-suggestions" class="suggestions" style="display:none"></div>
       </div>
       <div id="overlay-hint" class="overlay-hint"></div>
+      <div id="station-suggestions" class="suggestions" style="display:none"></div>
     </div>
   </div>
 
@@ -1653,15 +1804,6 @@
       
       // Remaining trains (all future trains)
       processedTrainData.remainingTrains = processedTrainData.futureTrains;
-      
-      console.log('Processed train data:', {
-        total: processedTrainData.allTrains.length,
-        local: processedTrainData.localTrains.length,
-        notes: processedTrainData.noteTrains.length,
-        scheduled: processedTrainData.scheduledTrains.length,
-        future: processedTrainData.futureTrains.length,
-        currentFromLocal: processedTrainData.currentTrain ? processedTrainData.currentTrain.linie : 'none'
-      });
       
       return processedTrainData;
     }
@@ -1958,11 +2100,9 @@
         if (currentEva && dbTrains.length > 0) {
           // Station selected: use only DB API trains
           trainsToDisplay = dbTrains;
-          console.log(`Station selected: Using ${dbTrains.length} DB API trains from ${currentStationName} (${localTrains.length} local trains available for headline)`);
         } else {
           // No station: use only local schedule
           trainsToDisplay = localTrains;
-          console.log(`No station selected: Using ${localTrains.length} local trains`);
         }
         
         return { trains: trainsToDisplay, localTrains };
@@ -2022,8 +2162,12 @@
       const now = new Date();
       const trainListEl = document.getElementById('train-list');
       
-      // Save scroll position
+      // Save scroll position BEFORE any DOM manipulation
       const savedScrollPosition = trainListEl.scrollTop;
+      const oldScrollHeight = trainListEl.scrollHeight;
+      
+      // Hide to prevent flashing during render
+      trainListEl.style.opacity = '0';
       
       trainListEl.innerHTML = '';
 
@@ -2265,12 +2409,18 @@
 
       trainListEl.appendChild(belegungsplan);
       
-      // Restore scroll position
-      if (savedScrollPosition > 0) {
-        requestAnimationFrame(() => {
-          trainListEl.scrollTop = savedScrollPosition;
-        });
-      }
+      // Wait for DOM to fully render, then restore scroll and show
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          // Set scroll position
+          if (savedScrollPosition > 0) {
+            trainListEl.scrollTop = savedScrollPosition;
+          }
+          
+          // Show content immediately after setting scroll
+          trainListEl.style.opacity = '1';
+        }, 50);
+      });
     }
 
     // Legacy render function for reference
@@ -2282,7 +2432,8 @@
       const savedScrollPosition = trainListEl.scrollTop;
       const oldScrollHeight = trainListEl.scrollHeight;
       
-      console.log('🔍 Before render - scrollTop:', savedScrollPosition, 'scrollHeight:', oldScrollHeight, 'clientHeight:', trainListEl.clientHeight); // Debug
+      // Hide to prevent flashing during render
+      trainListEl.style.opacity = '0';
       
       trainListEl.innerHTML = '';
 
@@ -2322,30 +2473,18 @@
         trainListEl.appendChild(entry);
       });
       
-      // Restore scroll position after rendering - use longer delay to ensure DOM is ready
-      if (savedScrollPosition > 0) {
-        // Triple RAF for more reliable timing
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              const newScrollHeight = trainListEl.scrollHeight;
-              const maxScroll = newScrollHeight - trainListEl.clientHeight;
-              
-              console.log('🔍 After render - newScrollHeight:', newScrollHeight, 'maxScroll:', maxScroll, 'trying to restore:', savedScrollPosition); // Debug
-              
-              trainListEl.scrollTop = savedScrollPosition;
-              
-              // Verify it worked
-              const actualScrollTop = trainListEl.scrollTop;
-              console.log('✅ Scroll restored - actual scrollTop:', actualScrollTop, 'requested:', savedScrollPosition, 'difference:', savedScrollPosition - actualScrollTop); // Debug
-              
-              if (actualScrollTop === 0 && savedScrollPosition > 0) {
-                console.error('❌ SCROLL FAILED - position reset to 0!');
-              }
-            });
-          });
-        });
-      }
+      // Wait for DOM to fully render, then restore scroll and show
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          // Set scroll position
+          if (savedScrollPosition > 0) {
+            trainListEl.scrollTop = savedScrollPosition;
+          }
+          
+          // Show content immediately after setting scroll
+          trainListEl.style.opacity = '1';
+        }, 50);
+      });
     }
 
     // Format stops with date for display
@@ -2519,7 +2658,6 @@
         if (fixedIndex >= 0) {
           scheduleTrain = schedule.fixedSchedule[fixedIndex];
           sourceArray = 'fixedSchedule';
-          console.log('✅ Found train in fixedSchedule:', scheduleTrain);
         } else {
           // Try spontaneousEntries (trains with specific dates)
           const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
@@ -2527,7 +2665,6 @@
           if (spontIndex >= 0) {
             scheduleTrain = schedule.spontaneousEntries[spontIndex];
             sourceArray = 'spontaneousEntries';
-            console.log('✅ Found train in spontaneousEntries:', scheduleTrain);
           }
         }
         
@@ -3089,26 +3226,16 @@
           
           if (fixedIndex >= 0) {
             scheduleTrain = schedule.fixedSchedule[fixedIndex];
-            console.log('✅ Found train in fixedSchedule for button action:', scheduleTrain);
           } else {
             // Try spontaneousEntries (trains with specific dates)
             const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
             
             if (spontIndex >= 0) {
               scheduleTrain = schedule.spontaneousEntries[spontIndex];
-              console.log('✅ Found train in spontaneousEntries for button action:', scheduleTrain);
             }
           }
           
           if (!scheduleTrain) {
-            console.error('❌ Could not find train in schedule to modify!', {
-              linie: train.linie,
-              plan: train.plan,
-              weekday: train.weekday,
-              date: train.date,
-              fixedSchedule: schedule.fixedSchedule,
-              spontaneousEntries: schedule.spontaneousEntries
-            });
             alert('Fehler: Zug nicht im Stundenplan gefunden');
             return;
           }
@@ -3251,11 +3378,10 @@
 
         if (!res.ok) throw new Error('Failed to save schedule');
 
-        console.log('✅ Schedule saved successfully');
         // Server will broadcast update event via SSE, which will trigger auto re-render
 
       } catch (error) {
-        console.error('❌ Error saving schedule:', error);
+        console.error('Error saving schedule:', error);
         alert('Fehler beim Speichern: ' + error.message);
       }
     }
@@ -3298,8 +3424,6 @@
 
         if (!saveRes.ok) throw new Error('Failed to save schedule');
 
-        console.log('✅ Train deleted successfully');
-
         // Refresh the display
         const newSchedule = await fetchSchedule();
         processTrainData(newSchedule);
@@ -3307,7 +3431,7 @@
         renderComprehensiveAnnouncementPanel();
 
       } catch (error) {
-        console.error('❌ Error deleting train:', error);
+        console.error('Error deleting train:', error);
         alert('Fehler beim Löschen: ' + error.message);
       }
     }
@@ -3419,30 +3543,19 @@
       
       for (let i = 0; i < allActiveTrains.length; i++) {
         const train1 = allActiveTrains[i];
-        const start1 = parseTime(train1.actual || train1.plan, now, train1.date);
-        const end1 = getOccupancyEnd(train1, now);
-        if (!start1 || !end1) {
-          console.log('⚠️ Train missing time/duration:', { linie: train1.linie, plan: train1.plan, date: train1.date, dauer: train1.dauer });
-          continue;
-        }
-
-        for (let j = i + 1; j < allActiveTrains.length; j++) {
-          const train2 = allActiveTrains[j];
-          const start2 = parseTime(train2.actual || train2.plan, now, train2.date);
-          const end2 = getOccupancyEnd(train2, now);
-          if (!start2 || !end2) {
-            console.log('⚠️ Train missing time/duration:', { linie: train2.linie, plan: train2.plan, date: train2.date, dauer: train2.dauer });
-            continue;
-          }
-
-          // Check for overlap
-          if (start1 < end2 && end1 > start2) {
-            console.log('✅ KONFLIKT FOUND:', {
-              train1: { linie: train1.linie, plan: train1.plan, date: train1.date, start: start1, end: end1 },
-              train2: { linie: train2.linie, plan: train2.plan, date: train2.date, start: start2, end: end2 }
-            });
+          const start1 = parseTime(train1.actual || train1.plan, now, train1.date);
+          const end1 = getOccupancyEnd(train1, now);
+          if (!start1 || !end1) continue;
+          
+          for (let j = i + 1; j < allActiveTrains.length; j++) {
+            const train2 = allActiveTrains[j];
+            const start2 = parseTime(train2.actual || train2.plan, now, train2.date);
+            const end2 = getOccupancyEnd(train2, now);
+            if (!start2 || !end2) continue;
             
-            // Determine conflict type:
+            // Check for overlap
+            if (start1 < end2 && end1 > start2) {
+              // Determine conflict type:
             // - 'complete': train2 is completely within train1's duration (start2 >= start1 && end2 <= end1)
             // - 'nested': trains partially overlap
             const isComplete = start2 >= start1 && end2 <= end1;
@@ -3459,17 +3572,6 @@
         }
       }
       allAnnouncements.push(...konfliktTrains);
-
-      console.log('Konflikt debug:', {
-        allActiveTrainsCount: allActiveTrains.length,
-        konfliktCount: konfliktTrains.length,
-        konfliktTrains: konfliktTrains.map(t => ({ 
-          main: `${t.linie} ${t.plan}`,
-          conflict: `${t.conflictWith.linie} ${t.conflictWith.plan}`,
-          type: t.conflictType,
-          date: t.date
-        }))
-      });
 
       // Sort all announcements chronologically
       // Notes without times go first, then everything else by departure time
@@ -4079,15 +4181,11 @@
         return;
       }
       
-      // Store currently focused train info before refresh
+      // Store currently focused train unique ID before refresh
       const panel = document.getElementById('focus-panel');
-      let focusedTrainInfo = null;
-      if (panel && panel.dataset.currentTrain) {
-        try {
-          focusedTrainInfo = JSON.parse(panel.dataset.currentTrain);
-        } catch (e) {
-          console.error('Failed to parse focused train');
-        }
+      let focusedTrainId = null;
+      if (panel && panel.dataset.trainId) {
+        focusedTrainId = panel.dataset.trainId;
       }
       
       // Fetch and update the GLOBAL schedule object
@@ -4097,12 +4195,10 @@
       renderComprehensiveAnnouncementPanel();
       
       // Re-render focus panel if a train was focused
-      if (focusedTrainInfo && processedTrainData.allTrains) {
-        // Find the updated train in the refreshed data
+      if (focusedTrainId && processedTrainData.allTrains) {
+        // Find the updated train in the refreshed data using unique ID
         const updatedTrain = processedTrainData.allTrains.find(t => 
-          t.linie === focusedTrainInfo.linie && 
-          t.plan === focusedTrainInfo.plan && 
-          (t.date === focusedTrainInfo.date || t.weekday === focusedTrainInfo.weekday)
+          t._uniqueId === focusedTrainId
         );
         
         if (updatedTrain) {
@@ -4129,7 +4225,6 @@
       input.value = '';
       sugg.innerHTML = '';
       sugg.style.display = 'none';
-      hint.textContent = 'Leer lassen + Enter: Persönlicher Stundenplan';
       input.focus();
 
       let timer = null;
@@ -4213,8 +4308,12 @@
         sugg.innerHTML = '';
         lastMatches = Array.isArray(list) ? list : [];
         activeIndex = -1;
-        if (!lastMatches.length) { sugg.style.display = 'none'; return; }
-        lastMatches.slice(0, 20).forEach((st) => {
+        if (!lastMatches.length) { 
+          sugg.style.display = 'none'; 
+          hint.textContent = 'Keine passenden Bahnhöfe gefunden.';
+          return; 
+        }
+        lastMatches.slice(0, 50).forEach((st) => {
           const item = document.createElement('div');
           item.className = 'suggestion-item';
           const label = st.ds100 ? `${st.name} (${st.ds100})` : st.name;
@@ -4224,6 +4323,7 @@
           sugg.appendChild(item);
         });
         sugg.style.display = 'block';
+        hint.textContent = `${lastMatches.length} Bahnhöfe gefunden:`;
         updateActiveSuggestion();
       }
 
@@ -4262,11 +4362,9 @@
         const val = input.value.trim();
         sugg.style.display = 'none';
         sugg.innerHTML = '';
-        if (!val) { hint.textContent = 'Leer lassen + Enter: Persönlicher Stundenplan'; return; }
         hint.textContent = 'Suche…';
         if (timer) clearTimeout(timer);
         timer = setTimeout(async () => {
-          if (val.length < 1) { hint.textContent = 'Bitte mehr eingeben…'; return; }
           const idx = await ensureStationsIndex();
           const qn = normalizeStr(val);
           const rawMatches = idx.filter((s) => normalizeStr(s.name).includes(qn) || (s.ds100 && normalizeStr(s.ds100).includes(qn)));
@@ -4301,12 +4399,7 @@
         }
       });
 
-      // Cancel button
-      document.getElementById('overlay-cancel').addEventListener('click', () => {
-        overlay.classList.add('hidden');
-      });
-
-      // Close on overlay click
+      // Close on background click (clicking outside the sidebar)
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
           overlay.classList.add('hidden');
@@ -4476,6 +4569,13 @@
       }, 100);
     }
 
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/public/service-worker.js');
+      });
+    }
   </script>
 </body>
 </html>

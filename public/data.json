@@ -16,7 +16,7 @@
     },
     {
       "linie": "S7",
-      "ziel": "Mathematik I",
+      "ziel": "Technische Mechanik I (Übung)",
       "stops": "Einsatzort: Zuhause\n\nDieser Termin is für die folgenden Aufgaben vorgesehen\n\n- Mathe: Übungen zu Kapitel 1 bis einschließlich komplexen Zahlen. (2h)\n\n- Technische Mechanik I: Übungen bis einschließlich Kapitel 4: Schwerpunkt. (45m)",
       "plan": "09:00",
       "dauer": 135,
@@ -386,14 +386,19 @@
       "canceled": false,
       "weekday": "thursday",
       "_uniqueId": "train_yw3lsuoqe_1762683030038",
-      "actual": "15:45"
+      "actual": "15:45",
+      "zwischenhalte": [
+        "PWR 07 - V 07.02",
+        "",
+        "Überlappung mit CAD Crashkurs. Empfehlung ist TM1."
+      ]
     },
     {
       "linie": "S7",
       "ziel": "Technische Mechanik I (Übung)",
       "stops": "",
       "plan": "20:00",
-      "actual": "20:30",
+      "actual": "20:00",
       "dauer": 180,
       "canceled": false,
       "weekday": "thursday",
@@ -1084,7 +1089,7 @@
       "ziel": "[PRÜ] Technische Mechanik",
       "stops": "Qualitätsprüfung\n\nZeit: 90 Minuten\n\n Form: Multiple Choice. \n\nInhalt: Altklausur, ausgenommen sind nicht abgedeckte Themen.",
       "plan": "09:00",
-      "actual": "09:00",
+      "actual": "15:00",
       "dauer": "60",
       "canceled": false,
       "date": "2025-11-22",
@@ -1743,7 +1748,7 @@
       "linie": "S6",
       "ziel": "CAD Crashkurs",
       "plan": "13:30",
-      "dauer": 180,
+      "dauer": 135,
       "zwischenhalte": [
         "PWR 9, 0.229",
         "StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE"
@@ -1904,7 +1909,8 @@
         "20. Nacharbeiten ExPhys bis Rotation !!!!!!!!!!!",
         "8. Präsenzübungen HM1 noch nicht - fertig. - Nachholtermin !",
         "16. Hausübungen 4",
-        "20. Praktikumswochenbericht umformulieren"
+        "21. Praktikumswochenbericht umformulieren",
+        "22. Cắt tóc ????"
       ]
     },
     {
@@ -2516,7 +2522,7 @@
       "linie": "S6",
       "ziel": "[PRÜ] Softwaretechnik",
       "plan": "09:00",
-      "actual": "10:00",
+      "actual": "10:45",
       "dauer": 60,
       "zwischenhalte": [
         ""
@@ -3205,7 +3211,7 @@
       "linie": "S1",
       "ziel": "Pause",
       "plan": "21:00",
-      "actual": "21:00",
+      "actual": "21:05",
       "dauer": 10,
       "zwischenhalte": [
         ""
@@ -3287,10 +3293,10 @@
     },
     {
       "linie": "S2",
-      "ziel": "Kochen",
+      "ziel": "Mittag + Wocheneinkauf",
       "plan": "11:00",
-      "actual": "11:00",
-      "dauer": 120,
+      "actual": "11:45",
+      "dauer": 90,
       "zwischenhalte": [
         ""
       ],
@@ -3303,8 +3309,8 @@
       "linie": "S7",
       "ziel": "Technische Mechanik I (Übung)",
       "plan": "13:00",
-      "actual": "13:00",
-      "dauer": 240,
+      "actual": "13:30",
+      "dauer": 120,
       "zwischenhalte": [
         ""
       ],
@@ -3350,7 +3356,7 @@
       "zwischenhalte": [
         ""
       ],
-      "canceled": false,
+      "canceled": true,
       "date": "2025-11-22",
       "weekday": "saturday",
       "_uniqueId": "train_oqwz8idfp_1763734208407"
