@@ -6,7 +6,7 @@
       "stops": "PWR 53 - V53.01",
       "plan": "07:45",
       "dauer": 45,
-      "canceled": false,
+      "canceled": true,
       "weekday": "monday",
       "zwischenhalte": [
         "PWR 53 - V53.01"
@@ -52,7 +52,7 @@
       "plan": "13:00",
       "actual": "13:00",
       "dauer": 45,
-      "canceled": false,
+      "canceled": true,
       "weekday": "monday",
       "_uniqueId": "train_e8gq8wh1q_1762683030038",
       "zwischenhalte": [
@@ -70,7 +70,6 @@
       "weekday": "monday",
       "zwischenhalte": [
         "PWR 47 - V47.02",
-        "",
         "Its really boring seriously."
       ],
       "_uniqueId": "train_99gxoh7s0_1762683030038"
@@ -97,7 +96,7 @@
       "plan": "17:30",
       "actual": "17:30",
       "dauer": 30,
-      "canceled": false,
+      "canceled": true,
       "weekday": "monday",
       "_uniqueId": "train_ckcbzslrz_1762683030038",
       "zwischenhalte": [
@@ -115,7 +114,8 @@
       "dauer": "90",
       "canceled": false,
       "weekday": "monday",
-      "_uniqueId": "train_pwqxmxanm_1762683030038"
+      "_uniqueId": "train_pwqxmxanm_1762683030038",
+      "zwischenhalte": []
     },
     {
       "linie": "S3",
@@ -137,7 +137,7 @@
       "stops": "",
       "plan": "08:00",
       "actual": "08:00",
-      "dauer": "90",
+      "dauer": 90,
       "canceled": false,
       "weekday": "tuesday",
       "zwischenhalte": [
@@ -154,9 +154,7 @@
       "dauer": 180,
       "canceled": false,
       "weekday": "tuesday",
-      "zwischenhalte": [
-        ""
-      ],
+      "zwischenhalte": [],
       "_uniqueId": "train_x17mvdduj_1762683030038"
     },
     {
@@ -3062,13 +3060,13 @@
       "actual": "18:30",
       "dauer": 360,
       "zwischenhalte": [
-        "and i mean a real movie night in CLEAN SHEETS, with CANDLES, BIG SCREEN, POP CORN, CLEAN ROOM, and shits",
-        ""
+        "and i mean a real movie night in CLEAN SHEETS, with CANDLES, BIG SCREEN, POP CORN, CLEAN ROOM, and shits"
       ],
       "canceled": false,
       "date": "2025-11-23",
       "weekday": "sunday",
-      "_uniqueId": "train_6cxxyvsgh_1763498859257"
+      "_uniqueId": "train_6cxxyvsgh_1763498859257",
+      "beschreibung": "Girls' Night Out"
     },
     {
       "linie": "S7",
@@ -3185,7 +3183,7 @@
       "actual": "00:00",
       "dauer": 0,
       "zwischenhalte": [],
-      "canceled": false,
+      "canceled": true,
       "date": "2025-11-25",
       "weekday": "tuesday",
       "_uniqueId": "train_b53wskaf5_1763666876410"
@@ -3196,10 +3194,11 @@
       "stops": "",
       "plan": "00:00",
       "actual": "00:00",
-      "dauer": "",
+      "dauer": 0,
       "canceled": false,
-      "date": "2025-11-25",
-      "_uniqueId": "train_qmqfjg0r1_1763674522806"
+      "date": "2025-11-24",
+      "_uniqueId": "train_qmqfjg0r1_1763674522806",
+      "weekday": "monday"
     },
     {
       "linie": "S7",
@@ -3452,6 +3451,19 @@
       "date": "2025-11-23",
       "weekday": "sunday",
       "_uniqueId": "train_eh4sf07xf_1763899854190"
+    },
+    {
+      "linie": "S1",
+      "ziel": "",
+      "plan": "21:42",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_5t0f2yyll_1763930525093",
+      "beschreibung": "Pause",
+      "actual": "21:42"
     }
   ],
   "trains": []

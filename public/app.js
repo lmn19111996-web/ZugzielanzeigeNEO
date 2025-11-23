@@ -348,6 +348,7 @@
                   ...t,
                   date: dateStr,
                   source: 'local',
+                  isFixedSchedule: true, // Mark as fixed schedule train
                   _uniqueId: t._uniqueId // Preserve unique ID
                 };
                 // Normalize stops to zwischenhalte
@@ -839,7 +840,7 @@
       };
       
       // Check if this is a fixed schedule (repeating) train
-      const isFixedScheduleTrain = train.weekday && !train.date;
+      const isFixedScheduleTrain = train.isFixedSchedule === true;
       
       // Convert each field to input
       editableFields.forEach(field => {
@@ -1048,8 +1049,8 @@
       // Only allow editing for local schedule trains
       const isEditable = train.source === 'local';
       
-      // Check if this is a fixed schedule train (has weekday but no date in original schedule)
-      const isFixedSchedule = train.weekday && !train.date;
+      // Check if this is a fixed schedule train (marked during normalization)
+      const isFixedSchedule = train.isFixedSchedule === true;
       
       // Clear panel and clone template
       panel.innerHTML = '';
@@ -1404,15 +1405,10 @@
               if (train.plan) {
                 const currentDelay = getDelay(train.plan, train.actual, now, train.date);
                 const newDelay = currentDelay - 5; // Allow negative (earlier than planned)
-                if (newDelay === 0) {
-                  train.actual = undefined; // Remove delay (on time)
-                  scheduleTrain.actual = undefined;
-                } else {
-                  const planDate = parseTime(train.plan, now, train.date);
-                  const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
-                  train.actual = formatClock(newActualDate);
-                  scheduleTrain.actual = train.actual;
-                }
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
               }
               renderFocusMode(train);
               await saveSchedule(); // Auto-save
@@ -1486,7 +1482,7 @@
       
       // Only allow editing for local schedule trains
       const isEditable = train.source === 'local';
-      const isFixedSchedule = train.weekday && !train.date;
+      const isFixedSchedule = train.isFixedSchedule === true;
       
       // Show popup with slide-up animation
       popup.style.display = 'flex';
@@ -1496,24 +1492,11 @@
       const lineIcon = popup.querySelector('[data-mobile-focus="line-icon"]');
       const lineSlot = popup.querySelector('.mobile-line-description-slot');
       
-      // Remove any existing description
+      // Remove any existing description or picker
       const existingDesc = lineSlot.querySelector('.mobile-line-description');
       if (existingDesc) existingDesc.remove();
-      
-      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
-        lineIcon.src = getTrainSVG(train.linie);
-        lineIcon.alt = train.linie;
-        lineIcon.style.display = 'block';
-        lineIcon.onerror = () => {
-          lineIcon.style.display = 'none';
-        };
-      } else {
-        lineIcon.style.display = 'none';
-      }
-      
-      // Add description field (editable route info)
-      const description = document.createElement('div');
-      description.className = 'mobile-line-description';
+      const existingPicker = lineSlot.querySelector('.mobile-line-picker-button');
+      if (existingPicker) existingPicker.remove();
       
       // Get description presets for S-Bahn lines
       const descriptionPresets = {
@@ -1532,19 +1515,79 @@
         'S85': ' - Reise'
       };
       
-      const defaultDescription = descriptionPresets[train.linie] || '';
-      description.textContent = train.beschreibung || defaultDescription;
-      description.setAttribute('data-field', 'beschreibung');
-      description.setAttribute('data-value', defaultDescription);
-      description.setAttribute('data-input-type', 'text');
-      description.setAttribute('data-placeholder', 'Linienbeschreibung...');
-
-      
-      lineSlot.appendChild(description);
+      // If no line selected, show picker button
+      if (!train.linie || train.linie.trim() === '') {
+        lineIcon.style.display = 'none';
+        
+        // Create picker button
+        const pickerButton = document.createElement('button');
+        pickerButton.className = 'mobile-line-picker-button';
+        pickerButton.textContent = 'Linie auswählen';
+        pickerButton.style.cssText = `
+          background: rgba(255, 255, 255, 0.1);
+          border: 2px dashed rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+          color: rgba(255, 255, 255, 0.7);
+          padding: 2vh 4vw;
+          font-size: 2.5vh;
+          cursor: pointer;
+          width: 100%;
+          text-align: center;
+          margin: 1vh 0;
+        `;
+        
+        pickerButton.addEventListener('click', () => {
+          showLinePickerDropdown(train, popup);
+        });
+        
+        lineSlot.appendChild(pickerButton);
+      } else {
+        // Show line icon and description
+        if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+          lineIcon.src = getTrainSVG(train.linie);
+          lineIcon.alt = train.linie;
+          lineIcon.style.display = 'block';
+          lineIcon.onerror = () => {
+            lineIcon.style.display = 'none';
+          };
+          
+          // Make line icon clickable to change line if editable
+          if (isEditable) {
+            lineIcon.style.cursor = 'pointer';
+            // Clone to remove old event listeners
+            const newLineIcon = lineIcon.cloneNode(true);
+            lineIcon.parentNode.replaceChild(newLineIcon, lineIcon);
+            newLineIcon.addEventListener('click', () => {
+              showLinePickerDropdown(train, popup);
+            });
+          }
+        } else {
+          lineIcon.style.display = 'none';
+        }
+        
+        // Add description field (editable route info)
+        const description = document.createElement('div');
+        description.className = 'mobile-line-description';
+        
+        const defaultDescription = descriptionPresets[train.linie] || '';
+        description.textContent = train.beschreibung || defaultDescription;
+        description.setAttribute('data-field', 'beschreibung');
+        description.setAttribute('data-value', defaultDescription);
+        description.setAttribute('data-input-type', 'text');
+        description.setAttribute('data-placeholder', 'Linienbeschreibung...');
+        
+        lineSlot.appendChild(description);
+      }
       
       // Populate destination
       const destination = popup.querySelector('[data-mobile-focus=\"destination\"]');
-      destination.textContent = train.ziel || '';
+      if (!train.ziel || train.ziel.trim() === '') {
+        destination.textContent = 'Ziel eingeben...';
+        destination.style.color = 'rgba(255, 255, 255, 0.5)';
+      } else {
+        destination.textContent = train.ziel;
+        destination.style.color = 'white';
+      }
       destination.setAttribute('data-field', 'ziel');
       destination.setAttribute('data-value', train.ziel || '');
       destination.setAttribute('data-input-type', 'text');
@@ -1581,7 +1624,13 @@
       
       // Populate times
       const arrivalPlan = popup.querySelector('[data-mobile-focus=\"arrival-plan\"]');
-      arrivalPlan.textContent = train.plan || '';
+      if (!train.plan || train.plan.trim() === '') {
+        arrivalPlan.textContent = '--:--';
+        arrivalPlan.style.color = 'rgba(255, 255, 255, 0.5)';
+      } else {
+        arrivalPlan.textContent = train.plan;
+        arrivalPlan.style.color = 'white';
+      }
       arrivalPlan.setAttribute('data-field', 'plan');
       arrivalPlan.setAttribute('data-value', train.plan || '');
       arrivalPlan.setAttribute('data-input-type', 'time');
@@ -1596,12 +1645,25 @@
       }
       
       const arrivalDelayed = popup.querySelector('[data-mobile-focus=\"arrival-delayed\"]');
-      arrivalDelayed.textContent = train.actual || train.plan || '';
+      const hasDelay = train.actual && train.actual !== train.plan && train.plan;
+      
+      // Show placeholder if no actual time
+      if (!train.actual || train.actual.trim() === '') {
+        arrivalDelayed.textContent = '--:--';
+        arrivalDelayed.style.color = 'rgba(255, 255, 255, 0.5)';
+        arrivalDelayed.style.background = 'transparent';
+      } else {
+        arrivalDelayed.textContent = train.actual;
+        arrivalDelayed.style.color = '#161B75';
+        arrivalDelayed.style.background = 'white';
+        arrivalDelayed.style.padding = '0.2vh 0.5vw';
+        arrivalDelayed.style.borderRadius = '2px';
+      }
+      
       arrivalDelayed.setAttribute('data-field', 'actual');
       arrivalDelayed.setAttribute('data-value', train.actual || '');
       arrivalDelayed.setAttribute('data-input-type', 'time');
       
-      const hasDelay = train.actual && train.actual !== train.plan;
       if (hasDelay) {
         arrivalDelayed.style.display = 'block';
         arrivalDelayed.style.opacity = '1';
@@ -1628,64 +1690,71 @@
       const departureSlot = popup.querySelector('.mobile-departure-slot');
       const timelines = popup.querySelectorAll('.mobile-focus-timeline');
       
-      if (train.dauer) {
+      // Always show duration slot, but handle empty/zero case
+      const duration = popup.querySelector('[data-mobile-focus="duration"]');
+      
+      if (train.dauer && train.dauer > 0) {
         // Show carriage, duration, departure time, and timelines
         carriage.src = getCarriageSVG(train.dauer, train.linie === 'FEX');
         if (carriageDurationSlot) carriageDurationSlot.style.display = 'flex';
         if (departureSlot) departureSlot.style.display = 'flex';
         timelines.forEach(tl => tl.style.display = 'block');
         
-        const duration = popup.querySelector('[data-mobile-focus="duration"]');
         duration.textContent = `${train.dauer} Min`;
+        duration.style.color = 'white';
         if (train.canceled) {
           duration.style.textDecoration = 'line-through';
         } else {
           duration.style.textDecoration = 'none';
         }
-        duration.setAttribute('data-field', 'dauer');
-        duration.setAttribute('data-value', train.dauer || '0');
-        duration.setAttribute('data-input-type', 'number');
-        if (isEditable) {
-          duration.style.cursor = 'pointer';
-          duration.setAttribute('data-editable', 'true');
-        }
-        
-        // Populate departure time
-        if (train.plan) {
-          const arrivalDate = parseTime(train.plan, now, train.date);
-          const depDate = new Date(arrivalDate.getTime() + Number(train.dauer) * 60000);
-          const depPlan = formatClock(depDate);
-          
-          const departurePlan = popup.querySelector('[data-mobile-focus="departure-plan"]');
-          departurePlan.textContent = depPlan;
-          if (train.canceled) {
-            departurePlan.style.textDecoration = 'line-through';
-          } else {
-            departurePlan.style.textDecoration = 'none';
-          }
-          
-          const departureDelayed = popup.querySelector('[data-mobile-focus="departure-delayed"]');
-          if (hasDelay) {
-            const actualArrivalDate = parseTime(train.actual, now, train.date);
-            const actualDepDate = new Date(actualArrivalDate.getTime() + Number(train.dauer) * 60000);
-            const depActual = formatClock(actualDepDate);
-            
-            departureDelayed.textContent = depActual;
-            departureDelayed.style.display = 'block';
-            if (train.canceled) {
-              departureDelayed.style.textDecoration = 'line-through';
-            } else {
-              departureDelayed.style.textDecoration = 'none';
-            }
-          } else {
-            departureDelayed.style.display = 'none';
-          }
-        }
       } else {
-        // No duration - hide carriage, duration, departure time, and timelines
-        if (carriageDurationSlot) carriageDurationSlot.style.display = 'none';
+        // Show placeholder for duration
+        if (carriageDurationSlot) carriageDurationSlot.style.display = 'flex';
         if (departureSlot) departureSlot.style.display = 'none';
         timelines.forEach(tl => tl.style.display = 'none');
+        
+        duration.textContent = '0 Min';
+        duration.style.color = 'rgba(255, 255, 255, 0.5)';
+      }
+      
+      duration.setAttribute('data-field', 'dauer');
+      duration.setAttribute('data-value', train.dauer || '0');
+      duration.setAttribute('data-input-type', 'number');
+      if (isEditable) {
+        duration.style.cursor = 'pointer';
+        duration.setAttribute('data-editable', 'true');
+      }
+      
+      // Populate departure time only if we have both plan and duration
+      if (train.plan && train.dauer && train.dauer > 0) {
+        const arrivalDate = parseTime(train.plan, now, train.date);
+        const depDate = new Date(arrivalDate.getTime() + Number(train.dauer) * 60000);
+        const depPlan = formatClock(depDate);
+        
+        const departurePlan = popup.querySelector('[data-mobile-focus="departure-plan"]');
+        departurePlan.textContent = depPlan;
+        if (train.canceled) {
+          departurePlan.style.textDecoration = 'line-through';
+        } else {
+          departurePlan.style.textDecoration = 'none';
+        }
+        
+        const departureDelayed = popup.querySelector('[data-mobile-focus="departure-delayed"]');
+        if (hasDelay) {
+          const actualArrivalDate = parseTime(train.actual, now, train.date);
+          const actualDepDate = new Date(actualArrivalDate.getTime() + Number(train.dauer) * 60000);
+          const depActual = formatClock(actualDepDate);
+          
+          departureDelayed.textContent = depActual;
+          departureDelayed.style.display = 'block';
+          if (train.canceled) {
+            departureDelayed.style.textDecoration = 'line-through';
+          } else {
+            departureDelayed.style.textDecoration = 'none';
+          }
+        } else {
+          departureDelayed.style.display = 'none';
+        }
       }
       
       // Populate stops
@@ -1699,7 +1768,13 @@
           stopsArray = train.zwischenhalte.split(/\\n|\n/).filter(s => s.trim());
         }
       }
-      stops.textContent = stopsArray.length > 0 ? stopsArray.join('\n') : '';
+      if (stopsArray.length === 0) {
+        stops.textContent = 'Zwischenhalte eingeben...';
+        stops.style.color = 'rgba(255, 255, 255, 0.5)';
+      } else {
+        stops.textContent = stopsArray.join('\n');
+        stops.style.color = 'white';
+      }
       stops.setAttribute('data-field', 'zwischenhalte');
       stops.setAttribute('data-value', stopsArray.join('\n'));
       stops.setAttribute('data-input-type', 'textarea');
@@ -1726,13 +1801,13 @@
       if (!isEditable && train.source === 'db-api') {
         const badge = document.createElement('div');
         badge.className = 'mobile-train-badge';
-        badge.style.cssText = 'position: fixed; top: 6vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;';
+        badge.style.cssText = 'position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;';
         badge.textContent = 'DB API - Nur Lesen';
         popup.appendChild(badge);
       } else if (isEditable && isFixedSchedule) {
         const badge = document.createElement('div');
         badge.className = 'mobile-train-badge';
-        badge.style.cssText = 'position: fixed; top: 6vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 1px solid rgba(255,200,100,0.4); z-index: 5001;';
+        badge.style.cssText = 'position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 0.5px solid rgba(255,200,100,0.4); z-index: 5001;';
         badge.textContent = '🔒 Wiederholender Termin';
         popup.appendChild(badge);
       }
@@ -1893,10 +1968,56 @@
               renderMobileFocusPopup(train);
             };
             
-            // Auto-save on blur
+            // Auto-save on blur (when input loses focus)
+            let isSaving = false;
+            let isRemoved = false;
+            
+            const saveValue = async () => {
+              if (isSaving || isRemoved) return; // Prevent double-save
+              isSaving = true;
+              
+              // Check if we're still in the same popup and the input exists
+              if (!input.parentNode) {
+                isRemoved = true;
+                return; // Input was already removed
+              }
+              
+              try {
+                await updateValue(input.value);
+                isRemoved = true;
+              } catch (error) {
+                console.error('Error saving field:', error);
+                isSaving = false;
+              }
+            };
+            
             input.addEventListener('blur', async () => {
-              await updateValue(input.value);
+              // Small timeout to allow other events to process first
+              setTimeout(saveValue, 100);
             });
+            
+            // For time/date inputs: save immediately when user confirms selection
+            if (inputType === 'time' || inputType === 'date') {
+              input.addEventListener('change', async () => {
+                if (!isSaving && !isRemoved) {
+                  await saveValue();
+                }
+              });
+            }
+            
+            // Also listen for clicks outside the input field
+            const handleOutsideClick = async (e) => {
+              if (!input.contains(e.target) && input.parentNode && !isSaving && !isRemoved) {
+                // Clicked outside, save and remove listener
+                await saveValue();
+                document.removeEventListener('click', handleOutsideClick, true);
+              }
+            };
+            
+            // Add listener with slight delay to avoid triggering on the click that created the input
+            setTimeout(() => {
+              document.addEventListener('click', handleOutsideClick, true);
+            }, 200);
             
             // Handle Enter key
             input.addEventListener('keydown', async (e) => {
@@ -1992,15 +2113,10 @@
               if (train.plan && scheduleTrain) {
                 const currentDelay = getDelay(train.plan, train.actual, now, train.date);
                 const newDelay = currentDelay - 5;
-                if (newDelay === 0) {
-                  train.actual = undefined;
-                  scheduleTrain.actual = undefined;
-                } else {
-                  const planDate = parseTime(train.plan, now, train.date);
-                  const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
-                  train.actual = formatClock(newActualDate);
-                  scheduleTrain.actual = train.actual;
-                }
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
                 renderMobileFocusPopup(train);
                 await saveSchedule();
               }
@@ -2112,7 +2228,7 @@
         panel.dataset.currentTrain = JSON.stringify(train);
       };
       
-      const isFixedScheduleTrain = train.weekday && !train.date;
+      const isFixedScheduleTrain = train.isFixedSchedule === true;
       
       editableFields.forEach(field => {
         const fieldName = field.getAttribute('data-field');
@@ -2298,20 +2414,20 @@
             .filter(t => t.linie && t.linie.trim() !== '')
             .map(t => {
               // Fixed schedule: remove date property, keep only weekday
-              const { date, source, ...cleanTrain } = t;
+              const { date, source, isFixedSchedule, ...cleanTrain } = t;
               return cleanTrain;
             }),
           spontaneousEntries: schedule.spontaneousEntries
             .filter(t => t.linie && t.linie.trim() !== '')
             .map(t => {
               // Spontaneous: keep date, can have weekday for reference but ensure date is primary
-              const { source, ...cleanTrain } = t;
+              const { source, isFixedSchedule, ...cleanTrain } = t;
               return cleanTrain;
             }),
           trains: schedule.trains
             .filter(t => t.linie && t.linie.trim() !== '')
             .map(t => {
-              const { source, ...cleanTrain } = t;
+              const { source, isFixedSchedule, ...cleanTrain } = t;
               return cleanTrain;
             })
         };
@@ -3601,6 +3717,205 @@
 
 
     // Function to create a new blank train entry
+    // Show line picker dropdown for selecting S-Bahn lines
+    function showLinePickerDropdown(train, popup) {
+      // Check if dropdown already exists and remove it
+      const existingOverlay = document.querySelector('.line-picker-overlay');
+      if (existingOverlay) {
+        document.body.removeChild(existingOverlay);
+        return; // Don't create a new one
+      }
+      
+      // Available S-Bahn lines with descriptions
+      const lineOptions = [
+        { linie: 'S1', beschreibung: 'Pause' },
+        { linie: 'S2', beschreibung: 'Vorbereitung' },
+        { linie: 'S3', beschreibung: 'Kreativität' },
+        { linie: 'S4', beschreibung: "Girls' Night Out" },
+        { linie: 'S45', beschreibung: 'FLURUS' },
+        { linie: 'S46', beschreibung: 'Fachschaftsarbeit' },
+        { linie: 'S5', beschreibung: 'Sport' },
+        { linie: 'S6', beschreibung: 'Lehrveranstaltung' },
+        { linie: 'S60', beschreibung: 'Vortragsübung' },
+        { linie: 'S62', beschreibung: 'Tutorium' },
+        { linie: 'S7', beschreibung: 'Selbststudium' },
+        { linie: 'S8', beschreibung: 'Reise' },
+        { linie: 'S85', beschreibung: 'Reise' },
+        { linie: 'FEX', beschreibung: 'Wichtig ' }
+      ];
+      
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'line-picker-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 5002;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      // Create dropdown container
+      const dropdown = document.createElement('div');
+      dropdown.style.cssText = `
+        background: #1a1f4d;
+        border-radius: 8px;
+        padding: 2vh;
+        width: 70vw;
+        max-height: 70vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        scrollbar-width: none;
+      `;
+      
+      // Add title
+      const title = document.createElement('div');
+      title.textContent = 'Linie auswählen';
+      title.style.cssText = `
+        font-size: 3vh;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 2vh;
+        text-align: center;
+      `;
+      dropdown.appendChild(title);
+      
+      // Create line options
+      lineOptions.forEach(option => {
+        const optionButton = document.createElement('button');
+        optionButton.style.cssText = `
+          width: 100%;
+          padding: 1vh 3vw;
+          margin: 1vh 0;
+          background: rgba(255, 255, 255, 0.1);
+          border: 0.3px solid rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
+          color: white;
+          font-size: 2.5vh;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 2vw;
+          transition: background 0.2s;
+        `;
+        
+        // Add line icon
+        const icon = document.createElement('img');
+        icon.src = getTrainSVG(option.linie);
+        icon.alt = option.linie;
+        icon.style.cssText = `
+          height: 2vh;
+          width: auto;
+        `;
+        icon.onerror = () => {
+          icon.outerHTML = `<div style="padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;">${option.linie}</div>`;
+        };
+        optionButton.appendChild(icon);
+        
+        // Add description
+        const desc = document.createElement('span');
+        desc.textContent = option.beschreibung;
+        desc.style.cssText = `
+          flex: 1;
+          text-align: left;
+          color: rgba(255, 255, 255, 0.8);
+        `;
+        optionButton.appendChild(desc);
+        
+        // Click handler
+        optionButton.addEventListener('click', async () => {
+          // Update train object
+          train.linie = option.linie;
+          train.beschreibung = option.beschreibung;
+          
+          // Find the train in schedule and update it
+          const trainId = train._uniqueId;
+          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+          if (spontIndex >= 0) {
+            schedule.spontaneousEntries[spontIndex].linie = option.linie;
+            schedule.spontaneousEntries[spontIndex].beschreibung = option.beschreibung;
+          }
+          
+          // Auto-save the schedule
+          saveSchedule();
+          
+          // Close overlay
+          document.body.removeChild(overlay);
+          
+          // Re-render popup
+          renderMobileFocusPopup(train);
+        });
+        
+        // Hover effect
+        optionButton.addEventListener('mousedown', () => {
+          optionButton.style.background = 'rgba(255, 255, 255, 0.2)';
+        });
+        optionButton.addEventListener('mouseup', () => {
+          optionButton.style.background = 'rgba(255, 255, 255, 0.1)';
+        });
+        
+        dropdown.appendChild(optionButton);
+      });
+      
+      // Add cancel button
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Abbrechen';
+      cancelButton.style.cssText = `
+        width: 100%;
+        margin-top: 1vh;
+        padding: 1vh;
+        background: rgba(255, 100, 100, 0.3);
+        border: none;
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 2vh;
+        cursor: pointer;
+      `;
+      const closeDropdown = () => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+          window.removeEventListener('popstate', handleBackButton, true);
+        }
+      };
+      
+      cancelButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeDropdown();
+      });
+      dropdown.appendChild(cancelButton);
+      
+      // Close on overlay click (clicking outside the dropdown)
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDropdown();
+        }
+      });
+      
+      // Handle system back button (Android)
+      const handleBackButton = (e) => {
+        if (document.body.contains(overlay)) {
+          closeDropdown();
+        }
+      };
+      
+      // Add back button listener first before pushing state
+      window.addEventListener('popstate', handleBackButton, true); // Use capture phase
+      
+      // Push a new history state for this dropdown
+      window.history.pushState({ dropdown: 'line-picker' }, '');
+      
+      overlay.appendChild(dropdown);
+      document.body.appendChild(overlay);
+    }
+
     function createNewTrainEntry() {
       // Create a blank train object with current date but NO auto-filled time
       const now = new Date();
@@ -3627,12 +3942,14 @@
       // Render in focus mode (will auto-detect mobile/desktop)
       renderFocusMode(newTrain);
       
-      // Auto-click on the line field to enter edit mode
+      // Auto-open line picker for mobile, auto-click for desktop
       setTimeout(() => {
         const isMobile = window.innerWidth <= 768;
         if (isMobile) {
-          const lineDescription = document.querySelector('[data-mobile-focus="line-description"]');
-          if (lineDescription) lineDescription.click();
+          const popup = document.getElementById('mobile-focus-popup');
+          if (popup) {
+            showLinePickerDropdown(newTrain, popup);
+          }
         } else {
           const lineField = document.querySelector('[data-field="linie"]');
           if (lineField) lineField.click();

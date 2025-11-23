@@ -64,3 +64,26 @@
 {"trainKey":"fex|hallucination|17:00|2025-11-23","linie":"FEX","ziel":"Hallucination","plan":"17:00","actual":"17:30","dauer":120,"stops":"","date":"2025-11-23","canceled":true}
 {"trainKey":"s1|everrrything shower|16:00|2025-11-23","linie":"S1","ziel":"EVErrRYTHING SHOWER","plan":"16:00","actual":"17:30","dauer":60,"stops":"","date":"2025-11-23","canceled":false}
 {"trainKey":"s7|everything shower|16:00|2025-11-23","linie":"S7","ziel":"EVERYTHING SHOWER","plan":"16:00","actual":"17:30","dauer":60,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|what|unknown|2025-11-23","linie":"S1","ziel":"What","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|what|20:55|2025-11-23","linie":"S1","ziel":"What","plan":"20:55","actual":"20:55","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|hiii|unknown|2025-11-23","linie":"S1","ziel":"Hiii","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|hi|unknown|2025-11-23","linie":"S1","ziel":"Hi","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|movie nighttt|18:00|2025-11-23","linie":"S1","ziel":"MOVIE NIGHTTT","plan":"18:00","actual":"18:30","dauer":360,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|movie njighttt|18:00|2025-11-23","linie":"S4","ziel":"MOVIE NjIGHTTT","plan":"18:00","actual":"18:30","dauer":360,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|unknown|21:14|2025-11-23","linie":"S4","ziel":"","plan":"21:14","actual":"21:14","dauer":50,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|woohoo|21:14|2025-11-23","linie":"S4","ziel":"WOOHOO","plan":"21:14","actual":"21:14","dauer":50,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s2|unknown|unknown|2025-11-23","linie":"S2","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s2|unknown|22:16|2025-11-23","linie":"S2","ziel":"","plan":"22:16","actual":"22:25","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|unknown|21:18|2025-11-23","linie":"S1","ziel":"","plan":"21:18","actual":"21:18","dauer":30,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s2|movie nighttt|18:00|2025-11-23","linie":"S2","ziel":"MOVIE NIGHTTT","plan":"18:00","actual":"18:30","dauer":360,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s3|movie nighttt|18:00|2025-11-23","linie":"S3","ziel":"MOVIE NIGHTTT","plan":"18:00","actual":"18:30","dauer":360,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|unknown|unknown|2025-11-23","linie":"S4","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|mom im famous|unknown|2025-11-23","linie":"S4","ziel":"Mom im famous","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|mom im famous|21:32|2025-11-23","linie":"S4","ziel":"Mom im famous","plan":"21:32","actual":"21:32","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|mom im famous|21:45|2025-11-23","linie":"S4","ziel":"Mom im famous","plan":"21:45","actual":"21:45","dauer":50,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|unknown|unknown|2025-11-23","linie":"S1","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|unknown|21:32|2025-11-23","linie":"S1","ziel":"","plan":"21:32","actual":"21:32","dauer":50,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s6|unknown|unknown|2025-11-23","linie":"S6","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s6|mama|unknown|2025-11-23","linie":"S6","ziel":"Mama","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s6|mama|22:00|2025-11-23","linie":"S6","ziel":"Mama","plan":"22:00","actual":"22:00","dauer":1000,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|unknown|21:42|2025-11-23","linie":"S1","ziel":"","plan":"21:42","actual":"21:42","dauer":"","stops":"","date":"2025-11-23","canceled":false}

@@ -1446,11 +1446,11 @@ html, body {
       width: 100%;
       background: rgba(255, 255, 255, 0);
       border: none;
-      color: rgba(255, 255, 255, 0.616);
+      color: rgba(255, 255, 255, 0.827);
       font-family: inherit;
       font-size: 2vh;
       -webkit-tap-highlight-color: transparent;
-      font-weight: 300;
+      font-weight: 400;
     }
 
     .mobile-focus-btn:active {
@@ -1459,7 +1459,7 @@ html, body {
     }
 
     .mobile-focus-btn-cancel {
-      color: rgba(255, 165, 0, 0.7);
+      color: rgba(255, 166, 0, 0.801);
     }
 
     .mobile-focus-btn-delete {
@@ -1692,12 +1692,6 @@ html, body {
         font-size: 2.2vh;
         color: rgba(255, 255, 255, 0.8);
         cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-      }
-      
-      .date-selector:active {
-        background: rgba(255, 255, 255, 0.15);
-        transform: scale(0.98);
       }
 
       /* Adjust left panel height for horizontal taskbar */
