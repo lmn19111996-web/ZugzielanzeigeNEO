@@ -49,7 +49,7 @@
       "stops": "",
       "plan": "13:00",
       "actual": "13:00",
-      "dauer": "60",
+      "dauer": 45,
       "canceled": false,
       "weekday": "monday",
       "_uniqueId": "train_e8gq8wh1q_1762683030038",
@@ -82,7 +82,12 @@
       "dauer": 90,
       "canceled": false,
       "weekday": "monday",
-      "_uniqueId": "train_xk5fjo7up_1762683030038"
+      "_uniqueId": "train_xk5fjo7up_1762683030038",
+      "zwischenhalte": [
+        "PWR 57 - V57.03",
+        "",
+        "Dieser Termin ist als Vortragsübung angeboten."
+      ]
     },
     {
       "linie": "S45",
@@ -93,7 +98,12 @@
       "dauer": 30,
       "canceled": false,
       "weekday": "monday",
-      "_uniqueId": "train_ckcbzslrz_1762683030038"
+      "_uniqueId": "train_ckcbzslrz_1762683030038",
+      "zwischenhalte": [
+        "PWR 27 - V27.03",
+        "",
+        "Der Termin findet ab nächste Woche (W44) statt."
+      ]
     },
     {
       "linie": "S5",
@@ -127,7 +137,7 @@
       "plan": "08:00",
       "actual": "08:00",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "tuesday",
       "zwischenhalte": [
         "PWR 27 - V27.03"
@@ -191,7 +201,7 @@
       "canceled": false,
       "weekday": "tuesday",
       "_uniqueId": "train_60w1taad2_1762683030038",
-      "actual": "16:35"
+      "actual": "15:45"
     },
     {
       "linie": "S5",
@@ -200,7 +210,7 @@
       "plan": "17:45",
       "actual": "17:45",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "tuesday",
       "_uniqueId": "train_l7zj70p8s_1762683030038",
       "zwischenhalte": [
@@ -225,7 +235,7 @@
       "plan": "22:00",
       "actual": "22:00",
       "dauer": 50,
-      "canceled": true,
+      "canceled": false,
       "weekday": "tuesday",
       "_uniqueId": "train_6ldvb2jj5_1762683030038"
     },
@@ -234,9 +244,9 @@
       "ziel": "Fitness Studio",
       "stops": "Achtung: Anmeldung noch nicht abgeschlossen!\n\nAb diese Woche um 17 Uhr, falls [HM1] Vortragsübung stattfindet, sonst als [Zusatzfahrt] um 7:30 Uhr angeboten. Dieser Termin fällt demzufolge aus.",
       "plan": "17:00",
-      "actual": "07:30",
+      "actual": "17:00",
       "dauer": "90",
-      "canceled": false,
+      "canceled": true,
       "weekday": "wednesday",
       "_uniqueId": "train_vx729bqey_1762683030038",
       "zwischenhalte": [
@@ -253,7 +263,7 @@
       "plan": "08:00",
       "actual": "08:00",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "wednesday",
       "_uniqueId": "train_che4gqu2r_1762683030038"
     },
@@ -263,7 +273,7 @@
       "stops": "PWR 53 - V 53.01",
       "plan": "09:45",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "wednesday",
       "_uniqueId": "train_wv2d8u64j_1762683030038",
       "actual": "09:45",
@@ -280,7 +290,7 @@
       "plan": "11:30",
       "actual": "11:30",
       "dauer": "60",
-      "canceled": true,
+      "canceled": false,
       "weekday": "wednesday",
       "_uniqueId": "train_duxjo2aw9_1762683030038"
     },
@@ -351,7 +361,7 @@
       "plan": "11:30",
       "actual": "11:30",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "thursday",
       "_uniqueId": "train_1j9efydtg_1762683030038"
     },
@@ -360,8 +370,8 @@
       "ziel": "Mittagspause",
       "stops": "",
       "plan": "13:00",
-      "actual": "11:30",
-      "dauer": "60",
+      "actual": "13:00",
+      "dauer": 30,
       "canceled": false,
       "weekday": "thursday",
       "_uniqueId": "train_iairv1kh1_1762683030038"
@@ -426,7 +436,7 @@
       "plan": "07:30",
       "actual": "07:30",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "friday",
       "_uniqueId": "train_r1k1re5k8_1762683030038",
       "zwischenhalte": [
@@ -440,7 +450,7 @@
       "plan": "09:45",
       "actual": "09:45",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "friday",
       "_uniqueId": "train_dzwld6gt9_1762683030038"
     },
@@ -463,20 +473,20 @@
       "ziel": "Technische Mechanik I (Übung)",
       "stops": "Einsatzort: WG\n\nDieser Termin ist zur Vorbereitung für das Faserverbundlabor vorgesehen.",
       "plan": "13:00",
-      "actual": "14:00",
+      "actual": "13:00",
       "dauer": 220,
-      "canceled": false,
+      "canceled": true,
       "weekday": "friday",
       "_uniqueId": "train_ld7cldm8m_1762683030038"
     },
     {
       "linie": "S4",
-      "ziel": "",
+      "ziel": "Girls Night Out",
       "stops": "Kein Termin zum Ausgehen eingetragen....leider.",
       "plan": "18:00",
       "actual": "18:00",
       "dauer": "480",
-      "canceled": true,
+      "canceled": false,
       "weekday": "friday",
       "_uniqueId": "train_yq8qnn2fn_1762683030038"
     },
@@ -501,7 +511,7 @@
       "plan": "10:00",
       "actual": "10:00",
       "dauer": "120",
-      "canceled": true,
+      "canceled": false,
       "weekday": "saturday",
       "_uniqueId": "train_iv114mf8o_1763154342994"
     },
@@ -511,7 +521,7 @@
       "stops": "",
       "plan": "14:00",
       "dauer": "180",
-      "canceled": true,
+      "canceled": false,
       "weekday": "saturday",
       "zwischenhalte": [
         "ToDo-Liste und Eingabeoberfläche für Kurznotizen"
@@ -524,7 +534,7 @@
       "ziel": "Mathematik I",
       "stops": "",
       "plan": "20:00",
-      "actual": "19:00",
+      "actual": "20:00",
       "dauer": 180,
       "canceled": false,
       "weekday": "saturday",
@@ -540,8 +550,8 @@
       "ziel": "Movie Night Prep",
       "stops": "",
       "plan": "22:00",
-      "actual": "22:00",
-      "dauer": "120",
+      "actual": "23:00",
+      "dauer": 60,
       "canceled": false,
       "weekday": "saturday",
       "_uniqueId": "train_n97exkpf5_1762683030038"
@@ -568,7 +578,7 @@
       "stops": "Dieser Termin ist für das Selbststudium TM1 vorgesehen.\nLiteratur: TM1",
       "plan": "14:00",
       "dauer": "180",
-      "canceled": true,
+      "canceled": false,
       "weekday": "sunday",
       "_uniqueId": "train_0qb5u1qjv_1762683030038",
       "actual": "14:00"
@@ -1718,7 +1728,7 @@
       "linie": "S6",
       "ziel": "CAD Crashkurs",
       "plan": "13:30",
-      "dauer": 180,
+      "dauer": 135,
       "zwischenhalte": [
         "PWR 9, 0.229",
         "StutCAD - CAD-Kurse: Siemens NX - Grundlagen LRT & EE"
@@ -2547,21 +2557,6 @@
       "actual": "18:00"
     },
     {
-      "linie": "3",
-      "ziel": "Mathe Prüfung",
-      "plan": "",
-      "dauer": 0,
-      "zwischenhalte": [
-        "Arten von Reihen und ihre Konvergenz, Divergenz",
-        " ",
-        ""
-      ],
-      "canceled": false,
-      "date": "2025-11-14",
-      "weekday": "friday",
-      "_uniqueId": "train_q46a1fljo_1763115326667"
-    },
-    {
       "linie": "S7",
       "ziel": "ISD Labor",
       "plan": "10:00",
@@ -3053,7 +3048,7 @@
       "linie": "S4",
       "ziel": "MOVIE NIGHTTT",
       "plan": "18:00",
-      "actual": "18:00",
+      "actual": "18:30",
       "dauer": 360,
       "zwischenhalte": [
         "and i mean a real movie night in CLEAN SHEETS, with CANDLES, BIG SCREEN, POP CORN, CLEAN ROOM, and shits",
@@ -3068,7 +3063,7 @@
       "linie": "S1",
       "ziel": "EVERYTHING SHOWER",
       "plan": "16:00",
-      "actual": "17:00",
+      "actual": "17:30",
       "dauer": 60,
       "zwischenhalte": [],
       "canceled": false,
@@ -3377,10 +3372,10 @@
     },
     {
       "linie": "S7",
-      "ziel": "WK + FT Vorbereitung",
+      "ziel": "Technische Mechanik I (Übung)",
       "plan": "13:00",
       "actual": "13:00",
-      "dauer": 120,
+      "dauer": 180,
       "zwischenhalte": [
         ""
       ],
@@ -3388,6 +3383,62 @@
       "date": "2025-11-23",
       "weekday": "sunday",
       "_uniqueId": "train_sb88ql2ga_1763741809422"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Pause",
+      "plan": "21:34",
+      "actual": "21:34",
+      "dauer": 10,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-22",
+      "weekday": "saturday",
+      "_uniqueId": "train_m2jk8ir9v_1763843689452"
+    },
+    {
+      "linie": "S6",
+      "ziel": "[PRÜ] Technische Mechanik I",
+      "plan": "16:00",
+      "actual": "16:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_obmduf9nk_1763887876982"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Lüften",
+      "plan": "09:55",
+      "actual": "09:55",
+      "dauer": 14,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_6wsuck883_1763888104362"
+    },
+    {
+      "linie": "FEX",
+      "ziel": "Hallucination",
+      "plan": "17:00",
+      "actual": "17:30",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_eh4sf07xf_1763899854190"
     }
   ],
   "trains": []

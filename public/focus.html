@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Focus Mode As HTML</title>
+    <meta name="theme-color" content="#161B75">
+    <style>
+        html, body {
+            background: #161B75;
+            color: white;
+            font-family: "Bahnschrift Condensed", sans-serif-condensed, sans-serif;
+            font-stretch: condensed;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+         /* Focus mode template styles - from focus.html */
+    .focus-container {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .taskbar-placeholder {
+      height: 5vh;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+    }
+    
+
+    .focus-btn {
+      
+      width: 100%;
+      background: rgba(255, 255, 255, 0);
+      border:none;  
+      color: rgba(255, 255, 255, 0.616);
+      font-family: inherit;
+      font-size: 2vh;
+      -webkit-tap-highlight-color: transparent;
+      font-weight: 300;
+    }
+
+    .focus-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .focus-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .focus-btn-cancel {
+      color: rgba(255, 165, 0, 0.5);
+    }
+
+    .focus-btn-cancel:hover {
+      background: rgba(255, 165, 0, 0.5);
+    }
+
+    .focus-btn-cancel.reactivate {
+      background: rgba(0, 200, 100, 0.3);
+      border-color: rgba(0, 200, 100, 0.5);
+    }
+
+    .focus-btn-cancel.reactivate:hover {
+      background: rgba(0, 200, 100, 0.5);
+    }
+
+    .focus-btn-delete {
+      color: rgba(255, 100, 100, 0.5);
+    }
+
+    .focus-btn-delete:hover {
+      background: rgba(255, 50, 50, 0.5);
+    }
+
+    .line-description-slot {
+      display: flex;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+      justify-content: flex-start;
+      padding: 3vh 0;
+    }
+
+    .focus-line-icon {
+        width: 5vh;
+        height: 3vh;
+        margin-left: 1vh;
+    }
+
+    .line-description{
+        width: 100%;
+        font-size: 2vh;
+        font-weight: 300;
+        letter-spacing: -0.02em;
+        text-overflow: ellipsis;
+        padding: 0 1vw;
+    }
+
+    .focus-destination {
+      font-size: 3.5vh;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-left: 1vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      padding: 0 2vw;
+    }
+
+    .focus-destination:hover:not(:has(input)):not(:has(textarea)) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .date-slot {
+        width: 100%;
+        font-size: 2vh;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 300;
+        padding-left: 4vw;
+    }
+
+    .dauer-time-slot {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+      justify-content: space-between;
+      padding: 3vh 2vw;
+    }
+
+    .carriage-duration-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .focus-carriage-slot {
+      width: 20vw;
+      height: 2vh;
+    }
+
+    .focus-duration {
+      width: 100%;
+      text-align: center;
+      font-size: 2.5vh;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      user-select: none;
+      box-sizing: border-box;
+    }
+
+    .focus-time-slot {
+        width:100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        -webkit-tap-highlight-color: transparent;
+         justify-content: space-between;
+        font-size: 3vh;
+        font-weight: 400;
+        margin-right: 1.5vw;
+        margin-left: 1vw;
+        letter-spacing: -0.02em;
+    }
+
+    .arrival-slot, .departure-slot {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .focus-plan {
+      margin-right: 0.5vw;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      padding: 0.25vh 0;
+      border-radius: 2px;
+    }
+
+    .focus-delayed {
+      background: white;
+      color: #161B75;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 2px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .focus-timeline {
+        width: 100%;
+        height: 1px;
+        margin: 0 2vw;
+        box-sizing: border-box;
+      background-color: white;
+      pointer-events: none;
+    }
+
+    .focus-content-panel {
+      height: auto;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .focus-inter-stops {
+      width: 100%;
+      font-size: 2vh;
+      color: #e0dfdf;
+      font-weight: 200;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      min-width: 0;
+      min-height: 0;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.5vh 5vw;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+
+    .focus-inter-stops::-webkit-scrollbar {
+      display: none;
+    }
+
+    .focus-buttons {
+      margin-top: 1vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5vh;
+      box-sizing: border-box;
+    }
+
+    .focus-right-column {
+      position: relative;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 2vh;
+    }
+
+    .focus-bottom-time {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      font-size: clamp(2.5vh, 5vh, 2.5vw);
+      font-weight: 400;
+      margin-right: 1.5vw;
+      margin-left: 1vw;
+      letter-spacing: -0.02em;
+      margin-bottom: clamp(1vh, 2vh, 1vw);
+    }
+    </style>
+</head>
+<body>
+    <div class="focus-container">
+        <div class="taskbar-placeholder">
+            <button class="focus-btn focus-btn-return" data-focus-action="cancel">←</button>
+            <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">✕</button>
+            <button class="focus-btn focus-btn-minus5" data-focus-action="minus5">-5</button>
+            <button class="focus-btn focus-btn-plus5" data-focus-action="plus5">+5</button>
+            <button class="focus-btn focus-btn-plus10" data-focus-action="plus10">+10</button>
+            <button class="focus-btn focus-btn-plus30" data-focus-action="plus30">+30</button>
+            <button class="focus-btn focus-btn-delete" data-focus-action="delete">🗑</button>
+        </div>
+
+        <div class="line-description-slot">
+            <img src="s1.svg" alt="Line" class="focus-line-icon" data-focus="line-icon">
+            <div class="line-description"> - über Frankfurt Hbf (tief)</div>
+        </div>
+        
+        <div class="focus-destination" data-focus="destination">Frankfurt am Main ✈ Flughafen Fernbahnhof</div>
+        <div class="date-slot" data-focus="date">Montag, 1. Januar 2024</div>
+        
+        <div class="dauer-time-slot">
+            <div class="focus-time-slot">
+                <div class="arrival-slot">
+                    <div class="focus-plan" data-focus="arrival-plan">12:34</div>
+                    <div class="focus-delayed" data-focus="arrival-delayed">13:34</div>
+                </div>
+                <div class="focus-timeline"></div>
+                <div class="focus-carriage-duration-slot">
+                    <img src="c3.svg" alt="Carriage" class="focus-carriage-slot" data-focus="carriage">
+                    <div class="focus-duration" data-focus="duration">180m</div>
+                </div>
+                <div class="focus-timeline"></div>
+                <div class="departure-slot">
+                    <div class="focus-plan" data-focus="departure-plan">15:04</div>
+                    <div class="focus-delayed" data-focus="departure-delayed">16:04</div>
+                </div>
+            </div>
+        </div>
+        <div class="focus-inter-stops" data-focus="stops">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</div>
+</body>
+</html>

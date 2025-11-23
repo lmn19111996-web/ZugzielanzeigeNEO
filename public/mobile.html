@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard</title>
+  <title>Mobile Dashboard</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#161B75">
   <style>
@@ -469,11 +469,6 @@
       position: relative;
     }
 
-    /* Hide indicator dot for first train in ribbon */
-    .train-entry.first-train .indicator-dot {
-      display: none;
-    }
-
     /* Status indicator */
     .indicator-dot {
       width: 0.9vh;
@@ -602,7 +597,7 @@
 
     /* Day separator */
     .day-separator {
-      height: 4.5vh;
+        margin-top: 1vh;
       display: flex;
       flex-direction: column;
       padding: 0 1.5vw;
@@ -1390,6 +1385,229 @@
       opacity: 0.8;
     }
 
+    /* Mobile Popup Overlay for Focus Mode */
+    .mobile-focus-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #161B75;
+      z-index: 5000;
+      display: none;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.2s ease-out;
+    }
+    
+    .mobile-focus-popup.show {
+      display: flex;
+      transform: translateY(0);
+    }
+    
+    .mobile-focus-content {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mobile-optimized focus mode styles from focus.html */
+    .mobile-focus-container {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 2vh;
+    }
+
+    .mobile-taskbar-placeholder {
+      height: 5vh;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .mobile-focus-btn {
+      width: 100%;
+      background: rgba(255, 255, 255, 0);
+      border: none;
+      color: rgba(255, 255, 255, 0.616);
+      font-family: inherit;
+      font-size: 2vh;
+      -webkit-tap-highlight-color: transparent;
+      font-weight: 300;
+    }
+
+    .mobile-focus-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-focus-btn-cancel {
+      color: rgba(255, 165, 0, 0.7);
+    }
+
+    .mobile-focus-btn-delete {
+      color: rgba(255, 100, 100, 0.7);
+    }
+
+    .mobile-line-description-slot {
+      display: flex;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+      justify-content: flex-start;
+      padding: 3vh 0;
+      flex-shrink: 0;
+    }
+
+    .mobile-focus-line-icon {
+      width: 5vh;
+      height: 3vh;
+      margin-left: 1vh;
+      flex-shrink: 0;
+    }
+
+    .mobile-line-description {
+      width: 100%;
+      font-size: 2vh;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      text-overflow: ellipsis;
+      padding: 0 1vw;
+    }
+
+    .mobile-focus-destination {
+      font-size: 3.5vh;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-left: 1vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      padding: 0 2vw;
+      flex-shrink: 0;
+    }
+
+    .mobile-date-slot {
+      width: 100%;
+      font-size: 2vh;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 300;
+      padding-left: 4vw;
+      flex-shrink: 0;
+    }
+
+    .mobile-dauer-time-slot {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+      justify-content: space-between;
+      padding: 3vh 2vw;
+      flex-shrink: 0;
+    }
+
+    .mobile-carriage-duration-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobile-focus-carriage-slot {
+      width: 20vw;
+      height: 2vh;
+    }
+
+    .mobile-focus-duration {
+      width: 100%;
+      text-align: center;
+      font-size: 2.5vh;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      user-select: none;
+      box-sizing: border-box;
+      padding-top: 0.5vh;
+    }
+
+    .mobile-focus-time-slot {
+      width:100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        -webkit-tap-highlight-color: transparent;
+         justify-content: space-between;
+        font-size: 3vh;
+        font-weight: 400;
+        margin-right: 1.5vw;
+        margin-left: 1vw;
+        letter-spacing: -0.02em;
+    }
+
+    .mobile-arrival-slot,
+    .mobile-departure-slot {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .mobile-focus-plan {
+      margin-right: 0.5vw;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      padding: 0.25vh 0;
+      border-radius: 2px;
+    }
+
+    .mobile-focus-delayed {
+      background: white;
+      color: #161B75;
+      border-radius: 2px;
+      line-height: 1;
+      padding: 1px 2px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .mobile-focus-timeline {
+      width: 100%;
+      height: 1px;
+      margin: 0 2vw;
+      box-sizing: border-box;
+      background-color: white;
+      pointer-events: none;
+    }
+
+    .mobile-focus-inter-stops {
+      width: 100%;
+      font-size: 2vh;
+      color: #e0dfdf;
+      font-weight: 200;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      min-width: 0;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.5vh 5vw;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.4;
+      flex: 1;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-focus-inter-stops::-webkit-scrollbar {
+      display: none;
+    }
+
     /* Mobile responsive styles */
     @media screen and (max-width: 768px) {
       /* Hide the clock section on mobile */
@@ -1417,10 +1635,11 @@
       /* Horizontal taskbar at the top */
       .taskbar {
         width: 100%;
-        height: 7vh;
+        height: 5vh;
         flex-direction: row;
         border-right: none;
         border-bottom: 0.5px solid rgba(255, 255, 255, 0.64);
+        justify-content: space-between;
       }
 
       .task-button {
@@ -1440,14 +1659,29 @@
         margin-bottom: 0;
         padding-bottom: 0;
         padding-right: 1.5vh;
-        margin-right: 1.5vh;
+        margin-right: 0;
         border-bottom: none;
-        border-right: 0.5px solid rgba(255, 255, 255, 0.64);
+        border-right: none;
+      }
+      
+      /* Date selector on the right side */
+      .date-selector {
+        display: flex;
+        align-items: center;
+        padding: 0 2vw;
+        font-size: 2.2vh;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      .date-selector:active {
+        background: rgba(255, 255, 255, 0.1);
       }
 
       /* Adjust left panel height for horizontal taskbar */
       .left-panel {
-        height: 93vh; /* Full height minus taskbar */
+        height: 95vh; /* Full height minus taskbar */
       }
 
       /* Adjust overlay for mobile */
@@ -1456,28 +1690,62 @@
       }
 
       /* Optimize train entries for mobile */
+      .departure {
+        font-size: 2.5vh;
+        padding-left: 3vw;
+      }
+      
       .train-entry {
-        padding: 0 3vw;
+        height: 6vh;
+        padding-right: 2vw;
+        padding-left: 3vw;
+      }
+
+      .indicator-dot {
+        margin-right: 2vw;
+        font-size: 2vh;
       }
 
       .symbol-slot {
-        width: 9vh;
+        width: 4vh;
       }
 
       .train-symbol {
-        width: 9vh;
-        height: 9vh;
+        width: 4vh;
+        height: 4vh;
       }
 
       .zugziel {
-        font-size: 4.5vh;
+        font-size: 3vh;
         padding-left: 2vw;
+        padding-right: 2vw;
+      }
+
+      .day-separator-date {
+        font-size: 2vh;
       }
 
       /* Belegungsplan adjustments for mobile */
       .belegungsplan-time-marker {
+        font-size: 1.6vh;
+        left: 0.5vw;
+      }
+
+      .belegungsplan-train-block {
+        font-size: 2.2vh;
+      }
+
+      .belegungsplan-line-icon {
+        width: 2.5vh;
+        height: 2.5vh;
+      }
+
+      .belegungsplan-destination {
+        font-size: 2.2vh;
+      }
+
+      .belegungsplan-footer {
         font-size: 1.8vh;
-        left: 0.3vw;
       }
 
       .belegungsplan-train-block.overlap-0 {
@@ -1494,6 +1762,10 @@
 
       .belegungsplan-train-block.overlap-3 {
         left: 20vw;
+      }
+      
+      .belegungsplan-date-separator {
+        font-size: 1.8vh;
       }
     }
   
@@ -1620,6 +1892,51 @@
   </template>
   <!-- End of konflikt template -->
 
+  <!-- Mobile Focus Popup Template -->
+  <div id="mobile-focus-popup" class="mobile-focus-popup">
+    <div class="mobile-focus-content">
+      <div class="mobile-focus-container">
+        <div class="mobile-taskbar-placeholder">
+          <button class="mobile-focus-btn mobile-focus-btn-return" data-mobile-focus-action="return">←</button>
+          <button class="mobile-focus-btn mobile-focus-btn-cancel" data-mobile-focus-action="cancel">✕</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="minus5">-5</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="plus5">+5</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="plus10">+10</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="plus30">+30</button>
+          <button class="mobile-focus-btn mobile-focus-btn-delete" data-mobile-focus-action="delete">🗑</button>
+        </div>
+
+        <div class="mobile-line-description-slot">
+          <img src="s1.svg" alt="Line" class="mobile-focus-line-icon" data-mobile-focus="line-icon">
+        </div>
+        
+        <div class="mobile-focus-destination" data-mobile-focus="destination">Destination</div>
+        <div class="mobile-date-slot" data-mobile-focus="date">Date</div>
+        
+        <div class="mobile-dauer-time-slot">
+          <div class="mobile-focus-time-slot">
+            <div class="mobile-arrival-slot">
+              <div class="mobile-focus-plan" data-mobile-focus="arrival-plan">12:34</div>
+              <div class="mobile-focus-delayed" data-mobile-focus="arrival-delayed" style="display: none;">13:34</div>
+            </div>
+            <div class="mobile-focus-timeline"></div>
+            <div class="mobile-carriage-duration-slot">
+              <img src="c3.svg" alt="Carriage" class="mobile-focus-carriage-slot" data-mobile-focus="carriage">
+              <div class="mobile-focus-duration" data-mobile-focus="duration">180m</div>
+            </div>
+            <div class="mobile-focus-timeline"></div>
+            <div class="mobile-departure-slot">
+              <div class="mobile-focus-plan" data-mobile-focus="departure-plan">15:04</div>
+              <div class="mobile-focus-delayed" data-mobile-focus="departure-delayed" style="display: none;">16:04</div>
+            </div>
+          </div>
+        </div>
+        <div class="mobile-focus-inter-stops" data-mobile-focus="stops">Stops content</div>
+      </div>
+    </div>
+  </div>
+  <!-- End of Mobile Focus Popup -->
+
   <!-- Main display area -->
 
   <div id="container">
@@ -1646,6 +1963,9 @@
             <button class="task-button" id="add-train-button">+</button>
             <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
             <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
+          </div>
+          <div class="date-selector" id="date-selector">
+            <span id="date-display">Heute</span>
           </div>
         </div>
         <!-- Train list -->
@@ -2905,6 +3225,16 @@
 
     function renderFocusMode(train) {
       const now = new Date();
+      
+      // Check if mobile (screen width <= 768px)
+      const isMobile = window.innerWidth <= 768;
+      
+      if (isMobile) {
+        renderMobileFocusPopup(train);
+        return;
+      }
+      
+      // Desktop mode
       const panel = document.getElementById('focus-panel');
       const template = document.getElementById('focus-template');
       
@@ -3337,8 +3667,647 @@
       panel.dataset.currentTrain = JSON.stringify(train);
     }
 
-    // Save train to schedule (simplified like InputEnhanced - just save entire schedule)
-    // Save entire schedule (like InputEnhanced saveJSON)
+    // Mobile-specific focus popup rendering - using PC's exact edit mechanism
+    function renderMobileFocusPopup(train) {
+      const now = new Date();
+      const popup = document.getElementById('mobile-focus-popup');
+      
+      if (!popup) {
+        console.error('Mobile focus popup not found');
+        return;
+      }
+      
+      // Only allow editing for local schedule trains
+      const isEditable = train.source === 'local';
+      const isFixedSchedule = train.weekday && !train.date;
+      
+      // Show popup with slide-up animation
+      popup.style.display = 'flex';
+      setTimeout(() => popup.classList.add('show'), 10);
+      
+      // Populate line icon
+      const lineIcon = popup.querySelector('[data-mobile-focus="line-icon"]');
+      
+      if (typeof train.linie === 'string' && (/^S\\d+/i.test(train.linie) || train.linie === 'FEX' || /^\\d+$/.test(train.linie))) {
+        lineIcon.src = getTrainSVG(train.linie);
+        lineIcon.alt = train.linie;
+        lineIcon.style.display = 'block';
+        lineIcon.onerror = () => {
+          const badge = document.createElement('div');
+          badge.className = 'line-badge';
+          badge.style.fontSize = '3vh';
+          badge.textContent = train.linie || '';
+          badge.setAttribute('data-field', 'linie');
+          badge.setAttribute('data-value', train.linie || '');
+          badge.setAttribute('data-input-type', 'text');
+          badge.setAttribute('data-placeholder', 'Linie');
+          if (isEditable) {
+            badge.style.cursor = 'pointer';
+            badge.setAttribute('data-editable', 'true');
+          }
+          lineIcon.parentNode.replaceChild(badge, lineIcon);
+        };
+      } else {
+        const badge = document.createElement('div');
+        badge.className = 'line-badge';
+        badge.style.fontSize = '3vh';
+        badge.textContent = train.linie || '';
+        badge.setAttribute('data-field', 'linie');
+        badge.setAttribute('data-value', train.linie || '');
+        badge.setAttribute('data-input-type', 'text');
+        badge.setAttribute('data-placeholder', 'Linie');
+        if (isEditable) {
+          badge.style.cursor = 'pointer';
+          badge.setAttribute('data-editable', 'true');
+        }
+        lineIcon.style.display = 'none';
+        const lineSlot = popup.querySelector('.mobile-line-description-slot');
+        if (!lineSlot.querySelector('.line-badge')) {
+          lineSlot.appendChild(badge);
+        }
+      }
+      
+      // Populate destination
+      const destination = popup.querySelector('[data-mobile-focus=\"destination\"]');
+      destination.textContent = train.ziel || '';
+      destination.setAttribute('data-field', 'ziel');
+      destination.setAttribute('data-value', train.ziel || '');
+      destination.setAttribute('data-input-type', 'text');
+      destination.setAttribute('data-placeholder', 'Ziel');
+      if (isEditable) {
+        destination.style.cursor = 'pointer';
+        destination.setAttribute('data-editable', 'true');
+      }
+      if (train.canceled) {
+        destination.style.textDecoration = 'line-through';
+      } else {
+        destination.style.textDecoration = 'none';
+      }
+      
+      // Populate date
+      const dateField = popup.querySelector('[data-mobile-focus=\"date\"]');
+      const trainDate = train.date ? new Date(train.date) : now;
+      dateField.textContent = trainDate.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      dateField.setAttribute('data-field', 'date');
+      dateField.setAttribute('data-value', train.date || now.toISOString().split('T')[0]);
+      dateField.setAttribute('data-input-type', 'date');
+      if (isEditable && !isFixedSchedule) {
+        dateField.style.cursor = 'pointer';
+        dateField.setAttribute('data-editable', 'true');
+      } else {
+        dateField.style.cursor = 'default';
+        dateField.removeAttribute('data-editable');
+      }
+      
+      // Populate times
+      const arrivalPlan = popup.querySelector('[data-mobile-focus=\"arrival-plan\"]');
+      arrivalPlan.textContent = train.plan || '';
+      arrivalPlan.setAttribute('data-field', 'plan');
+      arrivalPlan.setAttribute('data-value', train.plan || '');
+      arrivalPlan.setAttribute('data-input-type', 'time');
+      if (isEditable) {
+        arrivalPlan.style.cursor = 'pointer';
+        arrivalPlan.setAttribute('data-editable', 'true');
+      }
+      if (train.canceled) {
+        arrivalPlan.style.textDecoration = 'line-through';
+      } else {
+        arrivalPlan.style.textDecoration = 'none';
+      }
+      
+      const arrivalDelayed = popup.querySelector('[data-mobile-focus=\"arrival-delayed\"]');
+      arrivalDelayed.textContent = train.actual || train.plan || '';
+      arrivalDelayed.setAttribute('data-field', 'actual');
+      arrivalDelayed.setAttribute('data-value', train.actual || '');
+      arrivalDelayed.setAttribute('data-input-type', 'time');
+      
+      const hasDelay = train.actual && train.actual !== train.plan;
+      if (hasDelay) {
+        arrivalDelayed.style.display = 'block';
+        arrivalDelayed.style.opacity = '1';
+        if (train.canceled) {
+          arrivalDelayed.style.textDecoration = 'line-through';
+        } else {
+          arrivalDelayed.style.textDecoration = 'none';
+        }
+      } else if (isEditable) {
+        arrivalDelayed.style.display = 'block';
+        arrivalDelayed.style.opacity = '0.5';
+      } else {
+        arrivalDelayed.style.display = 'none';
+      }
+      
+      if (isEditable) {
+        arrivalDelayed.style.cursor = 'pointer';
+        arrivalDelayed.setAttribute('data-editable', 'true');
+      }
+      
+      // Populate carriage and duration
+      const carriage = popup.querySelector('[data-mobile-focus=\"carriage\"]');
+      carriage.src = getCarriageSVG(train.dauer, train.linie === 'FEX');
+      
+      const duration = popup.querySelector('[data-mobile-focus=\"duration\"]');
+      if (train.dauer) {
+        duration.textContent = `${train.dauer} Min`;
+        if (train.canceled) {
+          duration.style.textDecoration = 'line-through';
+        } else {
+          duration.style.textDecoration = 'none';
+        }
+      } else {
+        duration.textContent = '';
+      }
+      duration.setAttribute('data-field', 'dauer');
+      duration.setAttribute('data-value', train.dauer || '0');
+      duration.setAttribute('data-input-type', 'number');
+      if (isEditable) {
+        duration.style.cursor = 'pointer';
+        duration.setAttribute('data-editable', 'true');
+      }
+      
+      // Populate departure time
+      if (train.plan && train.dauer) {
+        const arrivalDate = parseTime(train.plan, now, train.date);
+        const depDate = new Date(arrivalDate.getTime() + Number(train.dauer) * 60000);
+        const depPlan = formatClock(depDate);
+        
+        const departurePlan = popup.querySelector('[data-mobile-focus=\"departure-plan\"]');
+        departurePlan.textContent = depPlan;
+        if (train.canceled) {
+          departurePlan.style.textDecoration = 'line-through';
+        } else {
+          departurePlan.style.textDecoration = 'none';
+        }
+        
+        const departureDelayed = popup.querySelector('[data-mobile-focus=\"departure-delayed\"]');
+        if (hasDelay) {
+          const actualArrivalDate = parseTime(train.actual, now, train.date);
+          const actualDepDate = new Date(actualArrivalDate.getTime() + Number(train.dauer) * 60000);
+          const depActual = formatClock(actualDepDate);
+          
+          departureDelayed.textContent = depActual;
+          departureDelayed.style.display = 'block';
+          if (train.canceled) {
+            departureDelayed.style.textDecoration = 'line-through';
+          } else {
+            departureDelayed.style.textDecoration = 'none';
+          }
+        } else {
+          departureDelayed.style.display = 'none';
+        }
+      }
+      
+      // Populate stops
+      const stops = popup.querySelector('[data-mobile-focus=\"stops\"]');
+      let stopsArray = [];
+      if (train.zwischenhalte) {
+        if (Array.isArray(train.zwischenhalte)) {
+          stopsArray = train.zwischenhalte;
+        } else if (typeof train.zwischenhalte === 'string') {
+          stopsArray = train.zwischenhalte.split('\\n');
+        }
+      }
+      stops.textContent = stopsArray.length > 0 ? stopsArray.join('\\n') : '';
+      stops.setAttribute('data-field', 'zwischenhalte');
+      stops.setAttribute('data-value', stopsArray.join('\\n'));
+      stops.setAttribute('data-input-type', 'textarea');
+      stops.setAttribute('data-placeholder', 'Zwischenhalte (eine pro Zeile)...');
+      if (isEditable) {
+        stops.style.cursor = 'pointer';
+        stops.setAttribute('data-editable', 'true');
+      }
+      
+      // Update cancel button
+      const cancelBtn = popup.querySelector('[data-mobile-focus-action=\"cancel\"]');
+      if (cancelBtn) {
+        if (train.canceled) {
+          cancelBtn.textContent = '✓';
+        } else {
+          cancelBtn.textContent = '✕';
+        }
+      }
+      
+      // Show badge for DB API trains (read-only) or fixed schedule trains
+      const existingBadge = popup.querySelector('.mobile-train-badge');
+      if (existingBadge) existingBadge.remove();
+      
+      if (!isEditable && train.source === 'db-api') {
+        const badge = document.createElement('div');
+        badge.className = 'mobile-train-badge';
+        badge.style.cssText = 'position: fixed; top: 6vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;';
+        badge.textContent = 'DB API - Nur Lesen';
+        popup.appendChild(badge);
+      } else if (isEditable && isFixedSchedule) {
+        const badge = document.createElement('div');
+        badge.className = 'mobile-train-badge';
+        badge.style.cssText = 'position: fixed; top: 6vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 1px solid rgba(255,200,100,0.4); z-index: 5001;';
+        badge.textContent = '🔒 Wiederholender Termin';
+        popup.appendChild(badge);
+      }
+      
+      // Store reference to current train for editing using unique ID
+      popup.dataset.trainId = train._uniqueId;
+      popup.dataset.isEditable = isEditable;
+      popup.dataset.currentTrain = JSON.stringify(train);
+      
+      // Only add editing functionality for local trains using PC mechanism
+      if (isEditable) {
+        // Add click-to-edit functionality for editable fields (PC mechanism)
+        const editableFields = popup.querySelectorAll('[data-editable=\"true\"]');
+        editableFields.forEach(field => {
+          // Remove old listeners
+          const newField = field.cloneNode(true);
+          field.parentNode.replaceChild(newField, field);
+        });
+        
+        // Re-attach listeners
+        popup.querySelectorAll('[data-editable=\"true\"]').forEach(field => {
+          field.addEventListener('click', function(e) {
+            // Check if already in edit mode
+            const isAlreadyInput = field.querySelector('input, textarea');
+            if (isAlreadyInput) {
+              return;
+            }
+            
+            const fieldName = field.getAttribute('data-field');
+            
+            // Calculate click position for cursor placement
+            const rect = field.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const fieldWidth = rect.width;
+            const text = field.textContent || '';
+            
+            // Estimate character position based on click location
+            const clickRatio = clickX / fieldWidth;
+            const estimatedPosition = Math.round(text.length * clickRatio);
+            
+            // Convert ALL fields to inputs at once (PC mechanism)
+            makeAllFieldsEditableMobile(train, popup, fieldName);
+            
+            // Focus and position cursor in the clicked field
+            setTimeout(() => {
+              const input = field.querySelector('input, textarea');
+              if (input) {
+                input.focus();
+                
+                // Set cursor position for text inputs
+                if (input.setSelectionRange) {
+                  try {
+                    const safePosition = Math.min(estimatedPosition, input.value.length);
+                    input.setSelectionRange(safePosition, safePosition);
+                  } catch (e) {
+                    // For date/time inputs that don't support setSelectionRange
+                    if (input.select) input.select();
+                  }
+                } else if (input.select) {
+                  input.select();
+                }
+              }
+            }, 0);
+            
+            e.preventDefault();
+          });
+        });
+      }
+      
+      // Add button event listeners
+      const buttons = popup.querySelectorAll('[data-mobile-focus-action]');
+      buttons.forEach(button => {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+      });
+      
+      popup.querySelectorAll('[data-mobile-focus-action]').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const action = button.dataset.mobileFocusAction;
+          
+          const trainId = train._uniqueId;
+          let scheduleTrain = null;
+          
+          const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
+          if (fixedIndex >= 0) {
+            scheduleTrain = schedule.fixedSchedule[fixedIndex];
+          } else {
+            const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+            if (spontIndex >= 0) {
+              scheduleTrain = schedule.spontaneousEntries[spontIndex];
+            }
+          }
+          
+          if (!scheduleTrain && action !== 'return' && action !== 'delete') {
+            alert('Fehler: Zug nicht im Stundenplan gefunden');
+            return;
+          }
+          
+          switch(action) {
+            case 'return':
+              popup.classList.remove('show');
+              setTimeout(() => popup.style.display = 'none', 300);
+              break;
+              
+            case 'cancel':
+              if (scheduleTrain) {
+                train.canceled = !train.canceled;
+                scheduleTrain.canceled = train.canceled;
+                renderMobileFocusPopup(train);
+                await saveSchedule();
+              }
+              break;
+              
+            case 'minus5':
+              if (train.plan && scheduleTrain) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay - 5;
+                if (newDelay === 0) {
+                  train.actual = undefined;
+                  scheduleTrain.actual = undefined;
+                } else {
+                  const planDate = parseTime(train.plan, now, train.date);
+                  const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                  train.actual = formatClock(newActualDate);
+                  scheduleTrain.actual = train.actual;
+                }
+                renderMobileFocusPopup(train);
+                await saveSchedule();
+              }
+              break;
+              
+            case 'plus5':
+            case 'plus10':
+            case 'plus30':
+              if (train.plan && scheduleTrain) {
+                const minutes = action === 'plus5' ? 5 : (action === 'plus10' ? 10 : 30);
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + minutes;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+                renderMobileFocusPopup(train);
+                await saveSchedule();
+              }
+              break;
+              
+            case 'delete':
+              if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                await deleteTrainFromSchedule(train);
+                popup.classList.remove('show');
+                setTimeout(() => popup.style.display = 'none', 300);
+              }
+              break;
+          }
+        });
+      });
+      
+      // Handle system back button
+      const handleBackButton = (e) => {
+        if (popup.classList.contains('show')) {
+          e.preventDefault();
+          popup.classList.remove('show');
+          setTimeout(() => popup.style.display = 'none', 300);
+          window.removeEventListener('popstate', handleBackButton);
+        }
+      };
+      
+      window.history.pushState({ popup: 'mobile-focus' }, '');
+      window.addEventListener('popstate', handleBackButton);
+      
+      // Close popup when clicking outside content
+      const handleOutsideClick = (e) => {
+        if (e.target === popup) {
+          popup.classList.remove('show');
+          setTimeout(() => popup.style.display = 'none', 300);
+          popup.removeEventListener('click', handleOutsideClick);
+          window.removeEventListener('popstate', handleBackButton);
+        }
+      };
+      popup.addEventListener('click', handleOutsideClick);
+    }
+    
+    // Mobile version of makeAllFieldsEditable (adapted from PC version)
+    function makeAllFieldsEditableMobile(train, panel, focusFieldName) {
+      const editableFields = panel.querySelectorAll('[data-editable=\"true\"]');
+      const inputs = {};
+      
+      const tabOrder = ['date', 'linie', 'ziel', 'zwischenhalte', 'plan', 'dauer', 'actual'];
+      
+      const updateValue = (field, value) => {
+        const trainId = panel.dataset.trainId;
+        let scheduleTrain = null;
+        
+        const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
+        if (fixedIndex >= 0) {
+          scheduleTrain = schedule.fixedSchedule[fixedIndex];
+        } else {
+          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+          if (spontIndex >= 0) {
+            scheduleTrain = schedule.spontaneousEntries[spontIndex];
+          }
+        }
+        
+        if (!scheduleTrain) {
+          console.error('❌ Could not find train in schedule!');
+        }
+        
+        if (field === 'date') {
+          const isFixedSchedule = scheduleTrain && scheduleTrain.weekday && !scheduleTrain.date;
+          if (!isFixedSchedule) {
+            train.date = value;
+            const dateObj = new Date(train.date);
+            const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+            train.weekday = newWeekday;
+            if (scheduleTrain) {
+              scheduleTrain.date = value;
+              scheduleTrain.weekday = newWeekday;
+            }
+          }
+        } else if (field === 'dauer') {
+          train.dauer = Number(value) || 0;
+          if (scheduleTrain) scheduleTrain.dauer = Number(value) || 0;
+        } else if (field === 'zwischenhalte') {
+          train.zwischenhalte = value.split('\\n');
+          if (scheduleTrain) scheduleTrain.zwischenhalte = value.split('\\n');
+        } else if (field === 'actual') {
+          train.actual = value || undefined;
+          if (scheduleTrain) scheduleTrain.actual = value || undefined;
+        } else {
+          train[field] = value;
+          if (scheduleTrain) scheduleTrain[field] = value;
+        }
+        
+        panel.dataset.currentTrain = JSON.stringify(train);
+      };
+      
+      const isFixedScheduleTrain = train.weekday && !train.date;
+      
+      editableFields.forEach(field => {
+        const fieldName = field.getAttribute('data-field');
+        const inputType = field.getAttribute('data-input-type');
+        const currentValue = field.getAttribute('data-value');
+        const placeholder = field.getAttribute('data-placeholder') || '';
+        
+        if (fieldName === 'date' && isFixedScheduleTrain) {
+          return;
+        }
+        
+        const input = inputType === 'textarea' 
+          ? document.createElement('textarea') 
+          : document.createElement('input');
+        
+        if (inputType !== 'textarea') {
+          input.type = inputType;
+        }
+        input.value = currentValue;
+        if (placeholder) input.placeholder = placeholder;
+        
+        input.style.background = 'rgba(255, 255, 255, 0.1)';
+        input.style.border = 'none';
+        input.style.outline = 'none';
+        input.style.borderRadius = '2px';
+        input.style.color = 'white';
+        input.style.fontSize = 'inherit';
+        input.style.fontWeight = 'inherit';
+        input.style.textAlign = field.style.textAlign || 'inherit';
+        input.style.width = '100%';
+        input.style.height = '100%';
+        input.style.fontFamily = 'inherit';
+        input.style.resize = 'none';
+        input.style.padding = '0';
+        input.style.margin = '0';
+        input.style.boxSizing = 'border-box';
+        input.style.letterSpacing = 'inherit';
+        input.style.lineHeight = 'inherit';
+        
+        if (fieldName === 'actual') {
+          input.style.color = '#161B75';
+          input.style.background = 'white';
+          input.style.padding = '1px 2px';
+        }
+        
+        if (inputType === 'textarea') {
+          input.style.minHeight = '20vh';
+          input.style.whiteSpace = 'pre-wrap';
+          input.style.padding = '2vh 5vw';
+        }
+        
+        if (fieldName === 'linie') {
+          input.style.fontWeight = 'bold';
+          input.style.textAlign = 'center';
+          input.style.width = 'auto';
+          input.style.maxWidth = '15vw';
+        }
+        
+        if (fieldName === 'dauer') {
+          input.style.fontSize = '2.5vh';
+          const wrapper = document.createElement('div');
+          wrapper.style.display = 'flex';
+          wrapper.style.alignItems = 'center';
+          wrapper.style.gap = '1vw';
+          wrapper.appendChild(input);
+          const minLabel = document.createElement('span');
+          minLabel.textContent = 'Min';
+          minLabel.style.color = 'rgba(255, 255, 255, 0.7)';
+          minLabel.style.fontSize = '2vh';
+          wrapper.appendChild(minLabel);
+          field.innerHTML = '';
+          field.appendChild(wrapper);
+        } else {
+          field.innerHTML = '';
+          field.appendChild(input);
+        }
+        
+        field.removeAttribute('data-editable');
+        field.removeAttribute('data-value');
+        
+        inputs[fieldName] = input;
+        
+        input.addEventListener('focus', () => {
+          isEditingTrain = true;
+        });
+        
+        input.addEventListener('change', () => updateValue(fieldName, input.value));
+        input.addEventListener('input', () => updateValue(fieldName, input.value));
+        
+        input.addEventListener('keydown', (e) => {
+          if (inputType === 'textarea' && e.key === 'Enter' && !e.ctrlKey) {
+            return;
+          }
+          
+          if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            updateValue(fieldName, input.value);
+            
+            if (e.key === 'Tab') {
+              const currentIndex = tabOrder.indexOf(fieldName);
+              let nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
+              
+              if (nextIndex >= tabOrder.length) nextIndex = 0;
+              if (nextIndex < 0) nextIndex = tabOrder.length - 1;
+              
+              const nextFieldName = tabOrder[nextIndex];
+              const nextInput = inputs[nextFieldName];
+              if (nextInput) {
+                nextInput.focus();
+                if (nextInput.setSelectionRange && nextInput.type === 'text') {
+                  nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+                }
+              }
+            } else if (e.key === 'Enter') {
+              renderMobileFocusPopup(train);
+            }
+          } else if (e.key === 'Escape') {
+            renderMobileFocusPopup(train);
+          }
+        });
+      });
+      
+      let blurTimeout;
+      const handleBlur = () => {
+        clearTimeout(blurTimeout);
+        blurTimeout = setTimeout(async () => {
+          const newFocus = document.activeElement;
+          const isStillInInputs = newFocus && (
+            newFocus.tagName === 'INPUT' || 
+            newFocus.tagName === 'TEXTAREA'
+          );
+          
+          if (!isStillInInputs) {
+            isEditingTrain = false;
+            
+            const trainListEl = document.getElementById('train-list');
+            const savedScroll = trainListEl ? trainListEl.scrollTop : 0;
+            
+            await saveSchedule();
+            processTrainData(schedule);
+            renderTrains();
+            
+            const trainId = train._uniqueId;
+            const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
+              t._uniqueId === trainId
+            );
+            if (updatedTrain) {
+              renderMobileFocusPopup(updatedTrain);
+            }
+            
+            setTimeout(() => {
+              if (trainListEl && savedScroll > 0) {
+                trainListEl.scrollTop = savedScroll;
+              }
+            }, 150);
+          }
+        }, 50);
+      };
+      
+      Object.values(inputs).forEach(input => {
+        input.addEventListener('blur', handleBlur);
+      });
+    }
+
     async function saveSchedule() {
       try {
         // Auto-fill any empty actual times with plan times before saving
@@ -4126,6 +5095,92 @@
           toggleViewMode();
         });
       }
+      
+      // Update date display based on scroll position (mobile only)
+      const trainListEl = document.getElementById('train-list');
+      const dateDisplay = document.getElementById('date-display');
+      if (trainListEl && dateDisplay && window.innerWidth <= 768) {
+        trainListEl.addEventListener('scroll', () => {
+          // Find first visible train entry
+          const trainEntries = trainListEl.querySelectorAll('.train-entry, .belegungsplan-train-block');
+          const scrollTop = trainListEl.scrollTop;
+          const listTop = trainListEl.getBoundingClientRect().top;
+          
+          for (const entry of trainEntries) {
+            const entryTop = entry.getBoundingClientRect().top - listTop;
+            if (entryTop >= 0) {
+              // This is the first visible train
+              const trainDate = entry.dataset.date;
+              if (trainDate) {
+                const date = new Date(trainDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                date.setHours(0, 0, 0, 0);
+                
+                const dayDiff = Math.round((date - today) / (24 * 60 * 60 * 1000));
+                
+                let dateText = 'Heute';
+                if (dayDiff === 1) {
+                  dateText = 'Morgen';
+                } else if (dayDiff === -1) {
+                  dateText = 'Gestern';
+                } else if (dayDiff !== 0) {
+                  dateText = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                }
+                
+                dateDisplay.textContent = dateText;
+              }
+              break;
+            }
+          }
+        });
+      }
+      
+      // Date selector event listener (mobile only)
+      const dateSelector = document.getElementById('date-selector');
+      if (dateSelector && window.innerWidth <= 768) {
+        dateSelector.addEventListener('click', () => {
+          const input = document.createElement('input');
+          input.type = 'date';
+          input.value = new Date().toISOString().split('T')[0];
+          input.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 6000; font-size: 3vh; padding: 2vh; background: #161B75; color: white; border: 2px solid white; border-radius: 8px;';
+          
+          input.addEventListener('change', () => {
+            const selectedDate = new Date(input.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            selectedDate.setHours(0, 0, 0, 0);
+            
+            const dayDiff = Math.round((selectedDate - today) / (24 * 60 * 60 * 1000));
+            
+            let dateText = 'Heute';
+            if (dayDiff === 1) {
+              dateText = 'Morgen';
+            } else if (dayDiff === -1) {
+              dateText = 'Gestern';
+            } else if (dayDiff !== 0) {
+              dateText = selectedDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+            }
+            
+            document.getElementById('date-display').textContent = dateText;
+            
+            // TODO: Filter trains by selected date
+            // For now, just show the date
+            
+            document.body.removeChild(input);
+          });
+          
+          input.addEventListener('blur', () => {
+            if (document.body.contains(input)) {
+              document.body.removeChild(input);
+            }
+          });
+          
+          document.body.appendChild(input);
+          input.focus();
+          input.showPicker();
+        });
+      }
     })();
 
     // Update clock every second
@@ -4582,14 +5637,18 @@
       // Add to spontaneousEntries (like InputEnhanced does)
       schedule.spontaneousEntries.push(newTrain);
       
-      // Render in focus mode
+      // Render in focus mode (will auto-detect mobile/desktop)
       renderFocusMode(newTrain);
       
       // Auto-click on the line field to enter edit mode
       setTimeout(() => {
-        const lineField = document.querySelector('[data-field="linie"]');
-        if (lineField) {
-          lineField.click();
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          const lineDescription = document.querySelector('[data-mobile-focus="line-description"]');
+          if (lineDescription) lineDescription.click();
+        } else {
+          const lineField = document.querySelector('[data-field="linie"]');
+          if (lineField) lineField.click();
         }
       }, 100);
     }
@@ -4604,3 +5663,4 @@
   </script>
 </body>
 </html>
+
