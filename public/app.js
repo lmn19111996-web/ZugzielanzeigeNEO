@@ -553,35 +553,22 @@
         const currentDate = markerTime.toLocaleDateString('sv-SE');
         
         if (isNewDay && currentDate !== lastDate) {
-          // Add date separator
-          const dateSeparator = document.createElement('div');
-          dateSeparator.className = 'belegungsplan-date-separator';
-          dateSeparator.style.top = `${markerY}vh`;
-          const dateObj = new Date(markerTime);
-          dateSeparator.textContent = dateObj.toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-          });
-          belegungsplan.appendChild(dateSeparator);
+          // Use template for date separator
+          const dateSeparatorHTML = Templates.belegungsplanDateSeparator(markerTime, markerY);
+          const template = document.createElement('template');
+          template.innerHTML = dateSeparatorHTML.trim();
+          belegungsplan.appendChild(template.content.firstChild);
           lastDate = currentDate;
         }
         
-        // Hour line
-        const hourLine = document.createElement('div');
-        hourLine.className = 'belegungsplan-hour-line';
-        if (isNewDay) {
-          hourLine.classList.add('midnight');
+        // Use template for hour line and marker
+        const hourLineHTML = Templates.belegungsplanHourLine(markerTime, markerY, isNewDay);
+        const template = document.createElement('template');
+        template.innerHTML = hourLineHTML.trim();
+        // Append all children (both line and marker)
+        while (template.content.firstChild) {
+          belegungsplan.appendChild(template.content.firstChild);
         }
-        hourLine.style.top = `${markerY}vh`;
-        belegungsplan.appendChild(hourLine);
-        
-        // Time marker
-        const marker = document.createElement('div');
-        marker.className = 'belegungsplan-time-marker';
-        marker.style.top = `${markerY}vh`;
-        marker.textContent = formatClock(markerTime);
-        belegungsplan.appendChild(marker);
       }
 
       // Add current time indicator line
@@ -590,10 +577,10 @@
       const currentTimeY = currentTimeOffsetHours * 7;
       
       if (currentTimeY >= 0 && currentTimeY <= totalHeight) {
-        const currentTimeLine = document.createElement('div');
-        currentTimeLine.className = 'belegungsplan-current-time-line';
-        currentTimeLine.style.top = `${currentTimeY}vh`;
-        belegungsplan.appendChild(currentTimeLine);
+        const currentTimeLineHTML = Templates.belegungsplanCurrentTimeLine(currentTimeY);
+        const template = document.createElement('template');
+        template.innerHTML = currentTimeLineHTML.trim();
+        belegungsplan.appendChild(template.content.firstChild);
       }
 
       // Helper to calculate position and height
@@ -645,75 +632,13 @@
 
       // Render train blocks
       trainData.forEach(({ train, pos, overlapLevel }) => {
-        const block = document.createElement('div');
-        block.className = 'belegungsplan-train-block';
-        block.style.top = `${pos.top}vh`;
-        block.style.height = `${pos.height}vh`;
+        // Use template to create HTML
+        const htmlString = Templates.belegungsplanBlock(train, pos, overlapLevel, now);
+        const template = document.createElement('template');
+        template.innerHTML = htmlString.trim();
+        const block = template.content.firstChild;
         
-        // Add overlap class for indentation
-        block.classList.add(`overlap-${overlapLevel}`);
-        
-        // Add data attributes
-        block.dataset.uniqueId = train._uniqueId || '';
-        block.dataset.linie = train.linie || '';
-        block.dataset.plan = train.plan || '';
-        
-        // Add state classes
-        if (train.linie === 'FEX') {
-          block.classList.add('fex-entry');
-        } else if (typeof train.linie === 'string' && /^S\d+/i.test(train.linie)) {
-          // Add S-Bahn color class
-          const lineClass = `s-bahn-${train.linie.toLowerCase()}`;
-          block.classList.add(lineClass);
-        }
-        
-        // Check if currently occupying
-        const trainStart = parseTime(train.actual || train.plan, now, train.date);
-        const trainEnd = getOccupancyEnd(train, now);
-        if (trainStart && trainEnd && trainStart <= now && trainEnd > now) {
-          block.classList.add('current');
-        }
-        
-        // Only show header content for blocks 30 minutes or longer
-        const duration = Number(train.dauer) || 0;
-        if (duration >= 30) {
-          // Header: icon + destination
-          const header = document.createElement('div');
-          header.className = 'belegungsplan-header';
-          
-          // Line icon
-          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
-            const img = document.createElement('img');
-            img.className = 'belegungsplan-line-icon';
-            img.src = getTrainSVG(train.linie);
-            img.alt = train.linie;
-            img.onerror = () => {
-              const badge = document.createElement('div');
-              badge.className = 'line-badge';
-              badge.style.fontSize = '2.5vh';
-              badge.textContent = train.linie || '';
-              img.parentNode.replaceChild(badge, img);
-            };
-            header.appendChild(img);
-          } else {
-            const badge = document.createElement('div');
-            badge.className = 'line-badge';
-            badge.style.fontSize = '2.5vh';
-            badge.textContent = train.linie || '';
-            header.appendChild(badge);
-          }
-          
-          // Destination
-          const dest = document.createElement('div');
-          dest.className = 'belegungsplan-destination';
-          dest.textContent = train.ziel || '';
-          header.appendChild(dest);
-          
-          block.appendChild(header);
-        }
-        // For blocks under 30 minutes, just leave it as a colored block with no content
-        
-        // Click handler
+        // Add click handler
         block.addEventListener('click', () => {
           renderFocusMode(train);
           document.querySelectorAll('.belegungsplan-train-block').forEach(b => b.classList.remove('selected'));
@@ -764,25 +689,11 @@
         // Check if this is the first train of a new day
         const prevTrain = index === 0 ? processedTrainData.currentTrain : remainingTrains[index - 1];
         if (prevTrain && train.date !== prevTrain.date && train.date) {
-          // Create day separator element
-          const separator = document.createElement('div');
-          separator.className = 'day-separator';
-          
-          const dateSpan = document.createElement('span');
-          dateSpan.className = 'day-separator-date';
-          const trainDate = new Date(train.date);
-          dateSpan.textContent = trainDate.toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit'
-          });
-          
-          const line = document.createElement('div');
-          line.className = 'day-separator-line';
-          
-          separator.appendChild(dateSpan);
-          separator.appendChild(line);
-          trainListEl.appendChild(separator);
+          // Use template to create day separator
+          const separatorHTML = Templates.daySeparator(train.date);
+          const template = document.createElement('template');
+          template.innerHTML = separatorHTML.trim();
+          trainListEl.appendChild(template.content.firstChild);
         }
         
         const entry = createTrainEntry(train, now, false);
@@ -834,20 +745,14 @@
 
     // Create a single train entry
     function createTrainEntry(train, now, isFirstTrain = false) {
-      const entry = document.createElement('div');
-      entry.className = 'train-entry';
-      if (isFirstTrain) entry.classList.add('first-train');
+      // Use template to create HTML
+      const htmlString = Templates.trainEntry(train, now, isFirstTrain);
       
-      // Add data attributes for identification
-      entry.dataset.linie = train.linie || '';
-      entry.dataset.plan = train.plan || '';
-      entry.dataset.date = train.date || '';
-      entry.dataset.uniqueId = train._uniqueId || '';
+      // Create element from HTML string
+      const template = document.createElement('template');
+      template.innerHTML = htmlString.trim();
+      const entry = template.content.firstChild;
       
-      if (train.linie === 'FEX') {
-        entry.classList.add('fex-entry');
-      }
-
       // Add click handler to show focus mode
       entry.addEventListener('click', () => {
         renderFocusMode(train);
@@ -855,99 +760,6 @@
         document.querySelectorAll('.train-entry').forEach(e => e.classList.remove('selected'));
         entry.classList.add('selected');
       });
-
-      // Status indicator
-      const indicator = document.createElement('div');
-      indicator.className = 'indicator-dot';
-      
-      if (train.canceled) {
-        // Show X for cancelled trains
-        indicator.classList.add('cancelled');
-      } else {
-        // Check if train is currently occupying (arrived but not departed)
-        const tTime = parseTime(train.actual || train.plan, now, train.date);
-        const occEnd = getOccupancyEnd(train, now);
-        if (train.actual && occEnd && parseTime(train.actual, now, train.date) <= now && occEnd > now) {
-          // Current train - show solid dot
-          indicator.classList.add('current');
-        }
-      }
-
-      // Train info container
-      const trainInfo = document.createElement('div');
-      trainInfo.className = 'train-info';
-
-      // Symbol slot
-      const symbolSlot = document.createElement('div');
-      symbolSlot.className = 'symbol-slot';
-
-      let trainSymbol;
-      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
-        const img = document.createElement('img');
-        img.className = 'train-symbol';
-        img.src = getTrainSVG(train.linie);
-        img.alt = train.linie;
-        img.onerror = () => {
-          const badge = document.createElement('div');
-          badge.className = 'line-badge';
-          badge.textContent = train.linie || '';
-          if (img.parentNode) img.parentNode.replaceChild(badge, img);
-        };
-        trainSymbol = img;
-      } else {
-        trainSymbol = document.createElement('div');
-        trainSymbol.className = 'line-badge';
-        trainSymbol.textContent = train.linie || '';
-      }
-
-      symbolSlot.appendChild(trainSymbol);
-
-      // Destination
-      const zugziel = document.createElement('div');
-      zugziel.className = 'zugziel';
-      
-      if (train.canceled) {
-        zugziel.textContent = 'Zug fällt aus';
-      } else {
-        zugziel.textContent = train.ziel || '';
-      }
-
-      trainInfo.appendChild(indicator);
-      trainInfo.appendChild(symbolSlot);
-      trainInfo.appendChild(zugziel);
-
-      // Right block
-      const rightBlock = document.createElement('div');
-      rightBlock.className = 'right-block';
-
-      // Departure time (no carriage symbol)
-      const departureSlot = document.createElement('div');
-      departureSlot.className = 'departure-slot';
-      const departure = document.createElement('div');
-      departure.className = 'departure';
-      departure.dataset.departure = '1';
-      if (train.plan) departure.dataset.plan = train.plan;
-      if (train.actual) departure.dataset.actual = train.actual;
-      if (train.dauer != null) departure.dataset.dauer = String(train.dauer);
-      if (train.date) departure.dataset.date = train.date;
-      departure.dataset.canceled = train.canceled ? 'true' : 'false';
-      
-      // For headline train, show countdown; for others, show formatted time
-      if (isFirstTrain) {
-        departure.dataset.isHeadline = 'true';
-        const depNode = formatCountdown(train, now);
-        departure.appendChild(depNode);
-      } else {
-        const delay = train.canceled ? 0 : getDelay(train.plan, train.actual, now, train.date);
-        const depNode = formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date);
-        departure.appendChild(depNode);
-      }
-      
-      departureSlot.appendChild(departure);
-      rightBlock.appendChild(departureSlot);
-
-      entry.appendChild(trainInfo);
-      entry.appendChild(rightBlock);
 
       return entry;
     }
