@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<link rel="stylesheet" href="style.css">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mobile Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#161B75">
+  <!-- style extracted to style.css -->
+</head>
+<body>
+  <!-- Focus mode template -->
+  <template id="focus-template">
+    <div class="focus-container">
+      <div class="focus-first-row">
+        <div class="focus-line-destination-slot">
+          <img src="" alt="Line" class="focus-line-icon" data-focus="line-icon">
+          <div class="focus-destination" data-focus="destination"></div>
+        </div>
+        <div class="focus-time-slot">
+          <div class="focus-plan" data-focus="arrival-plan"></div>
+          <div class="focus-delayed" data-focus="arrival-delayed" style="display: none;"></div>
+        </div>
+      </div>
+      <div class="focus-content-panel">
+        <div class="focus-left-column">
+          <img src="" alt="Carriage" class="focus-carriage-slot" data-focus="carriage">
+          <div class="focus-duration" data-focus="duration"></div>
+          <div class="focus-buttons">
+            <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">Cancel</button>
+            <button class="focus-btn focus-btn-minus5" data-focus-action="minus5">-5</button>
+            <button class="focus-btn focus-btn-plus5" data-focus-action="plus5">+5</button>
+            <button class="focus-btn focus-btn-plus10" data-focus-action="plus10">+10</button>
+            <button class="focus-btn focus-btn-plus30" data-focus-action="plus30">+30</button>
+            <button class="focus-btn focus-btn-delete" data-focus-action="delete">✕</button>
+          </div>
+        </div>
+        <div class="focus-middle-column">
+          <div class="focus-date" data-focus="date"></div>
+          <div class="focus-inter-stops" data-focus="stops"></div>
+        </div>
+        <div class="focus-right-column">
+          <div class="focus-timeline-placeholder"></div>
+          <div class="focus-timeline"></div>
+          <div class="focus-bottom-time">
+            <div class="focus-plan" data-focus="departure-plan"></div>
+            <div class="focus-delayed" data-focus="departure-delayed" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- End of focus mode template-->
+
+  <!-- Announcement template -->
+  <template id="announcement-template">
+    <div class="announcement-container">
+      <div class="announcement-panel">
+        <div class="announcement-headline late" data-announcement="headline"> ✕ Zug fällt aus </div>
+        <div class="announcement-group-icon-type">
+          <img class="announcement-line-icon" src="" alt="Train Icon" data-announcement="line-icon">
+        </div>
+        <div class="announcement-time-slot">
+          <div class="announcement-plan" data-announcement="plan"></div>
+          <div class="announcement-delayed" data-announcement="delayed" style="display: none;"></div>
+        </div>
+        <div class="announcement-destination" data-announcement="destination"></div>
+        <div class="announcement-content-panel" data-announcement="content"></div>
+      </div>
+    </div>
+  </template>
+  <!-- End of announcement template -->
+
+  <!-- Konflikt announcement template -->
+  <template id="konflikt-template">
+    <div class="announcement-container">
+      <div class="announcement-panel konflikt-announcement-panel">
+        <div class="announcement-headline cancelled">
+          <span>⚠︎ Konflikt</span>
+          <button class="konflikt-resolve-button" data-konflikt="resolve-button">Lösen</button>
+        </div>
+        
+        <!-- Main train block 1 -->
+        <div class="konflikt-block konflikt-main-block">
+          <img class="konflikt-line-icon" src="" alt="Train Icon" data-konflikt="main-icon">
+          <div class="konflikt-destination" data-konflikt="main-destination"></div>
+          <div class="konflikt-panel" data-konflikt="main-stops"></div>
+        </div>
+
+        <!-- Main train block 2 (empty) -->
+        <div class="konflikt-block konflikt-main-block"></div>
+        
+        <!-- Main train block 3 (full height for train-in-train, half height for nested) -->
+        <div class="konflikt-block konflikt-main-block" data-konflikt="main-block-3"></div>
+
+        <!-- Conflict train block (middle position for train-in-train, nested position for overlap) -->
+        <div class="konflikt-block konflikt-color" data-konflikt="conflict-block">
+          <img class="konflikt-line-icon" src="" alt="Train Icon" data-konflikt="conflict-icon">
+          <div class="konflikt-destination" data-konflikt="conflict-destination"></div>
+          <div class="konflikt-panel" data-konflikt="conflict-stops"></div>
+        </div>
+
+        <!-- Time slot 1: Main train departure -->
+        <div class="konflikt-time-slot konflikt-time-slot-1" data-konflikt="time-1">
+          <div class="konflikt-plan" data-konflikt="time-1-plan"></div>
+          <div class="konflikt-delayed delayed-main" data-konflikt="time-1-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 2: Conflict arrival (always red) -->
+        <div class="konflikt-time-slot konflikt-time-slot-2" data-konflikt="time-2">
+          <div class="konflikt-plan" data-konflikt="time-2-plan"></div>
+          <div class="konflikt-delayed delayed-konflikt" data-konflikt="time-2-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 3: Conflict end (train-in-train) OR Main end (nested) -->
+        <div class="konflikt-time-slot konflikt-time-slot-3" data-konflikt="time-3">
+          <div class="konflikt-plan" data-konflikt="time-3-plan"></div>
+          <div class="konflikt-delayed" data-konflikt="time-3-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 4: Main end (train-in-train) OR Conflict end (nested) -->
+        <div class="konflikt-time-slot konflikt-time-slot-4" data-konflikt="time-4">
+          <div class="konflikt-plan" data-konflikt="time-4-plan"></div>
+          <div class="konflikt-delayed" data-konflikt="time-4-delayed" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <!-- End of konflikt template -->
+
+  <!-- Mobile Focus Popup Template -->
+  <div id="mobile-focus-popup" class="mobile-focus-popup">
+    <div class="mobile-focus-content">
+      <div class="mobile-focus-container">
+        <div class="mobile-line-description-slot">
+          <img src="s1.svg" alt="Line" class="mobile-focus-line-icon" data-mobile-focus="line-icon">
+        </div>
+        
+        <div class="mobile-focus-destination" data-mobile-focus="destination">Destination</div>
+        <div class="mobile-date-slot" data-mobile-focus="date">Date</div>
+        
+        <div class="mobile-dauer-time-slot">
+          <div class="mobile-focus-time-slot">
+            <div class="mobile-arrival-slot">
+              <div class="mobile-focus-plan" data-mobile-focus="arrival-plan">12:34</div>
+              <div class="mobile-focus-delayed" data-mobile-focus="arrival-delayed" style="display: none;">13:34</div>
+            </div>
+            <div class="mobile-focus-timeline"></div>
+            <div class="mobile-carriage-duration-slot">
+              <img src="c3.svg" alt="Carriage" class="mobile-focus-carriage-slot" data-mobile-focus="carriage">
+              <div class="mobile-focus-duration" data-mobile-focus="duration">180m</div>
+            </div>
+            <div class="mobile-focus-timeline"></div>
+            <div class="mobile-departure-slot">
+              <div class="mobile-focus-plan" data-mobile-focus="departure-plan">15:04</div>
+              <div class="mobile-focus-delayed" data-mobile-focus="departure-delayed" style="display: none;">16:04</div>
+            </div>
+          </div>
+        </div>
+        <div class="mobile-focus-inter-stops" data-mobile-focus="stops">Stops content</div>
+        
+        <div class="mobile-taskbar-placeholder">
+          <button class="mobile-focus-btn mobile-focus-btn-return" data-mobile-focus-action="return">←</button>
+          <button class="mobile-focus-btn mobile-focus-btn-cancel" data-mobile-focus-action="cancel">✕</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="minus5">-5</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="plus5">+5</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="plus10">+10</button>
+          <button class="mobile-focus-btn" data-mobile-focus-action="plus30">+30</button>
+          <button class="mobile-focus-btn mobile-focus-btn-delete" data-mobile-focus-action="delete">🗑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End of Mobile Focus Popup -->
+
+  <!-- Main display area -->
+
+  <div id="container">
+    <!-- Left column: clock + train list -->
+    <div class="left-column">
+      <!-- Top ribbon with clock -->
+      <div class="top-ribbon">
+        <div class="clockSlot">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="hour"></div>
+            <div class="hand minute" id="minute"></div>
+          </div>
+          <div class="clock" id="clock">--:--</div>
+        </div>
+        <!-- First train entry will be rendered here by updateClock() -->
+        <div id="first-train-container"></div>
+      </div>
+      
+      <!--Taskbar-->
+      <div class="container-task-panel">
+        <div class="taskbar">
+          <div class="task-icon-group">
+            <button class="task-button" id="add-train-button">+</button>
+            <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
+            <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
+          </div>
+          <div class="date-selector" id="date-selector">
+            <span id="date-display">Heute</span>
+          </div>
+        </div>
+        <!-- Train list -->
+        <div class="left-panel" id="train-list">
+          <!-- Train entries will be inserted here -->
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Right column: split horizontally -->
+    <div class="right-panel">
+      <!-- Top section - focus mode -->
+      <div class="right-panel-top" id="focus-panel">
+        <div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">
+          Klicken Sie auf einen Zug<br>für weitere Details
+        </div>
+      </div>
+      
+      <!-- Bottom section -->
+      <div class="right-panel-bottom" id="announcement-panel">
+      </div>
+    </div>
+  </div>
+
+  <!-- Station selection sidebar -->
+  <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlay-card">
+      <h2 class="overlay-title">Bahnhof auswählen</h2>
+      <div class="overlay-sub">Leer lassen für den aktuellen Uni-Stundenplan.</div>
+      <div class="station-input-wrap">
+        <input id="station-input" class="station-input" type="text" placeholder="Stationsnamen eingeben..." autocomplete="off" />
+      </div>
+      <div id="overlay-hint" class="overlay-hint"></div>
+      <div id="station-suggestions" class="suggestions" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- script extracted to app.js -->
+  <!-- script extracted to app.js -->
+<script src="app.js"></script>
+</body>
+</html>
+

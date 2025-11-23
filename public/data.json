@@ -24,7 +24,6 @@
       "weekday": "monday",
       "zwischenhalte": [
         "Einsatzort: Zuhause",
-        "",
         "Dieser Termin is für die folgenden Aufgaben vorgesehen",
         "1. Alle wichtige Formen und Eigenschaften von Sondergleichungen notieren.",
         "2. Präsens- und Hausübungen."
@@ -41,7 +40,10 @@
       "dauer": "90",
       "canceled": false,
       "weekday": "monday",
-      "_uniqueId": "train_1oebkzvmg_1762683030038"
+      "_uniqueId": "train_1oebkzvmg_1762683030038",
+      "zwischenhalte": [
+        "PWR 07 - V 7.02"
+      ]
     },
     {
       "linie": "S1",
@@ -59,7 +61,7 @@
     },
     {
       "linie": "S62",
-      "ziel": "TM1 Tutorium ",
+      "ziel": "TM1 Tutorium",
       "stops": "PWR 47 - V47.02",
       "plan": "14:00",
       "actual": "14:00",
@@ -85,7 +87,6 @@
       "_uniqueId": "train_xk5fjo7up_1762683030038",
       "zwischenhalte": [
         "PWR 57 - V57.03",
-        "",
         "Dieser Termin ist als Vortragsübung angeboten."
       ]
     },
@@ -101,9 +102,9 @@
       "_uniqueId": "train_ckcbzslrz_1762683030038",
       "zwischenhalte": [
         "PWR 27 - V27.03",
-        "",
         "Der Termin findet ab nächste Woche (W44) statt."
-      ]
+      ],
+      "beschreibung": " -  über Schöneweide"
     },
     {
       "linie": "S5",
@@ -180,7 +181,7 @@
       "plan": "14:00",
       "actual": "14:00",
       "dauer": "90",
-      "canceled": true,
+      "canceled": false,
       "weekday": "tuesday",
       "_uniqueId": "train_yx8l64idv_1762683030038",
       "zwischenhalte": [
@@ -235,7 +236,7 @@
       "plan": "22:00",
       "actual": "22:00",
       "dauer": 50,
-      "canceled": false,
+      "canceled": true,
       "weekday": "tuesday",
       "_uniqueId": "train_6ldvb2jj5_1762683030038"
     },
@@ -452,7 +453,10 @@
       "dauer": "90",
       "canceled": false,
       "weekday": "friday",
-      "_uniqueId": "train_dzwld6gt9_1762683030038"
+      "_uniqueId": "train_dzwld6gt9_1762683030038",
+      "zwischenhalte": [
+        "PWR 53 - V 53.01"
+      ]
     },
     {
       "linie": "S1",
@@ -577,11 +581,15 @@
       "ziel": "Technische Mechanik (Übung)",
       "stops": "Dieser Termin ist für das Selbststudium TM1 vorgesehen.\nLiteratur: TM1",
       "plan": "14:00",
-      "dauer": "180",
+      "dauer": 180,
       "canceled": false,
       "weekday": "sunday",
       "_uniqueId": "train_0qb5u1qjv_1762683030038",
-      "actual": "14:00"
+      "actual": "14:00",
+      "zwischenhalte": [
+        "Dieser Termin ist für das Selbststudium TM1 vorgesehen.",
+        "Literatur: TM1"
+      ]
     },
     {
       "linie": "S7",
@@ -592,7 +600,9 @@
       "canceled": true,
       "weekday": "sunday",
       "actual": "19:00",
-      "_uniqueId": "train_g8kenyqlk_1762683030038"
+      "_uniqueId": "train_g8kenyqlk_1762683030038",
+      "beschreibung": " - über Ahrensfelde",
+      "zwischenhalte": []
     }
   ],
   "spontaneousEntries": [
@@ -1080,7 +1090,8 @@
       "dauer": "",
       "canceled": false,
       "date": "2025-12-13",
-      "_uniqueId": "train_xlg3c62eh_1762683030038"
+      "_uniqueId": "train_xlg3c62eh_1762683030038",
+      "weekday": "saturday"
     },
     {
       "linie": "S6",
@@ -3060,12 +3071,14 @@
       "_uniqueId": "train_6cxxyvsgh_1763498859257"
     },
     {
-      "linie": "S1",
+      "linie": "S7",
       "ziel": "EVERYTHING SHOWER",
       "plan": "16:00",
       "actual": "17:30",
       "dauer": 60,
-      "zwischenhalte": [],
+      "zwischenhalte": [
+        ""
+      ],
       "canceled": false,
       "date": "2025-11-23",
       "weekday": "sunday",
@@ -3407,7 +3420,7 @@
       "zwischenhalte": [
         ""
       ],
-      "canceled": false,
+      "canceled": true,
       "date": "2025-11-23",
       "weekday": "sunday",
       "_uniqueId": "train_obmduf9nk_1763887876982"
@@ -3435,7 +3448,7 @@
       "zwischenhalte": [
         ""
       ],
-      "canceled": false,
+      "canceled": true,
       "date": "2025-11-23",
       "weekday": "sunday",
       "_uniqueId": "train_eh4sf07xf_1763899854190"
