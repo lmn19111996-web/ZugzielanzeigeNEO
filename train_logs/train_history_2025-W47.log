@@ -32,7 +32,7 @@
 {"trainKey":"s7|isd labor|22:00|2025-11-18","linie":"S7","ziel":"ISD Labor","plan":"22:00","actual":"22:00","dauer":120,"stops":"","date":"2025-11-18","canceled":false}
 {"trainKey":"s2|your chicken is baking|18:50|2025-11-18","linie":"S2","ziel":"Your chicken is baking","plan":"18:50","actual":"18:50","dauer":"","stops":"","date":"2025-11-18","canceled":false}
 {"trainKey":"s7|[zf] mathematik i|18:27|2025-11-18","linie":"S7","ziel":"[ZF] Mathematik I","plan":"18:27","actual":"18:27","dauer":20,"stops":"","date":"2025-11-18","canceled":false}
-{"trainKey":"s4|movie nighttt|18:00|2025-11-23","linie":"S4","ziel":"MOVIE NIGHTTT","plan":"18:00","actual":"18:30","dauer":360,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s4|movie nighttt|18:00|2025-11-23","linie":"S4","ziel":"MOVIE NIGHTTT","plan":"18:00","actual":"18:30","dauer":360,"stops":"","date":"2025-11-23","canceled":true}
 {"trainKey":"s1|everything shower|16:00|2025-11-23","linie":"S1","ziel":"EVERYTHING SHOWER","plan":"16:00","actual":"17:30","dauer":60,"stops":"","date":"2025-11-23","canceled":false}
 {"trainKey":"s7|prüfungsvorbereitung: softwaretechnik|19:00|2025-11-21","linie":"S7","ziel":"Prüfungsvorbereitung: Softwaretechnik","plan":"19:00","actual":"19:30","dauer":60,"stops":"","date":"2025-11-21","canceled":false}
 {"trainKey":"s9|cardigan drop today!!|00:00|2025-11-19","linie":"S9","ziel":"CARDIGAN DROP TODAY!!","plan":"00:00","actual":"00:00","dauer":1440,"stops":"","date":"2025-11-19","canceled":false}
@@ -86,4 +86,13 @@
 {"trainKey":"s6|unknown|unknown|2025-11-23","linie":"S6","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
 {"trainKey":"s6|mama|unknown|2025-11-23","linie":"S6","ziel":"Mama","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
 {"trainKey":"s6|mama|22:00|2025-11-23","linie":"S6","ziel":"Mama","plan":"22:00","actual":"22:00","dauer":1000,"stops":"","date":"2025-11-23","canceled":false}
-{"trainKey":"s1|unknown|21:42|2025-11-23","linie":"S1","ziel":"","plan":"21:42","actual":"21:42","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s1|unknown|21:42|2025-11-23","linie":"S1","ziel":"","plan":"21:42","actual":"22:12","dauer":"","stops":"","date":"2025-11-23","canceled":true}
+{"trainKey":"s3|unknown|unknown|2025-11-23","linie":"S3","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s3|dashboard entwicklung |unknown|2025-11-23","linie":"S3","ziel":"Dashboard Entwicklung ","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s3|dashboard entwicklung |20:00|2025-11-23","linie":"S3","ziel":"Dashboard Entwicklung ","plan":"20:00","actual":"20:00","dauer":130,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s5|unknown|unknown|2025-11-23","linie":"S5","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s7|unknown|unknown|2025-11-23","linie":"S7","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s7|[zf] technische mechanik i (übung)|unknown|2025-11-23","linie":"S7","ziel":"[ZF] Technische Mechanik I (Übung)","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s7|[zf] technische mechanik i (übung)|22:15|2025-11-23","linie":"S7","ziel":"[ZF] Technische Mechanik I (Übung)","plan":"22:15","actual":"22:15","dauer":90,"stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"s2|dev note|unknown|2025-11-23","linie":"S2","ziel":"Dev note","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"4|supply mission 20.01.2026|unknown|2025-11-23","linie":"4","ziel":"Supply Mission 20.01.2026","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}

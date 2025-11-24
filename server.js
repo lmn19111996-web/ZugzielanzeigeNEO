@@ -726,7 +726,7 @@ app.post('/api/schedule', (req, res) => {
     fs.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8', (err) => {
       if (err) return res.status(500).json({ error: 'Failed to write schedule' });
       // Notify listeners
-      try { broadcastUpdate(); } catch {}
+      try { broadcastUpdate('manual-save'); } catch {}
       res.json({ ok: true, savedAt: new Date().toISOString() });
     });
   } catch (e) {
@@ -756,6 +756,7 @@ app.get('/api/db-departures', async (req, res) => {
 // SSE events
 const clients = new Set();
 app.get('/events', (req, res) => {
+  console.log('🔌 New SSE client connected. Total clients:', clients.size + 1);
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -763,16 +764,21 @@ app.get('/events', (req, res) => {
 
   const client = { res };
   clients.add(client);
-  // Send an initial ping
-  res.write(`event: update\n`);
+  // Send an initial ping (but mark it as initial so clients can ignore it)
+  console.log('📤 Sending initial "connected" event to new client');
+  res.write(`event: connected\n`);
   res.write(`data: {"ok":true}\n\n`);
 
   req.on('close', () => {
     clients.delete(client);
+    console.log('🔌 SSE client disconnected. Remaining clients:', clients.size);
   });
 });
 
-function broadcastUpdate() {
+function broadcastUpdate(source = 'unknown') {
+  const stack = new Error().stack.split('\n')[2].trim();
+  console.log(`📡 Broadcasting SSE update to ${clients.size} client(s) - Source: ${source}`);
+  console.log(`   Called from: ${stack}`);
   for (const { res } of clients) {
     try {
       res.write(`event: update\n`);
@@ -784,6 +790,8 @@ function broadcastUpdate() {
 }
 
 // Periodic background refresh and broadcast
+let periodicRefreshIntervalId = null;
+
 async function periodicRefresh() {
   try {
     const data = await loadDbDepartures(DEFAULT_EVA);
@@ -791,11 +799,10 @@ async function periodicRefresh() {
     cachedData = data;
     const curr = JSON.stringify(cachedData.trains || []);
     if (prev !== curr) {
-      broadcastUpdate();
-    } else {
-      // still nudge clients to refresh clocks
-      broadcastUpdate();
+      console.log('DB API data changed, broadcasting update');
+      broadcastUpdate('db-api-change');
     }
+    // Don't broadcast if nothing changed - clients handle clock updates locally
     lastFetchOk = true;
   } catch (e) {
     console.warn('Background refresh failed:', e.message);
@@ -803,10 +810,11 @@ async function periodicRefresh() {
   }
 }
 
-// Kick off periodic refresh every 30s
-setInterval(periodicRefresh, 30000);
-// Also do an initial refresh shortly after start
-setTimeout(periodicRefresh, 2000);
+// Don't start periodic refresh automatically - it's wasteful if no one is using DB API mode
+// The client-side auto-refresh interval in DB API mode will keep data fresh via /api/db-departures
+// Only uncomment this if you want server-side caching for the default station:
+// setInterval(periodicRefresh, 30000);
+// setTimeout(periodicRefresh, 2000);
 
 // Start server
 app.listen(PORT, '0.0.0.0',() => {

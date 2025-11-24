@@ -6,7 +6,7 @@
       "stops": "PWR 53 - V53.01",
       "plan": "07:45",
       "dauer": 45,
-      "canceled": true,
+      "canceled": false,
       "weekday": "monday",
       "zwischenhalte": [
         "PWR 53 - V53.01"
@@ -18,8 +18,8 @@
       "linie": "S7",
       "ziel": "Technische Mechanik I (Übung)",
       "stops": "Einsatzort: Zuhause\n\nDieser Termin is für die folgenden Aufgaben vorgesehen\n\n- Mathe: Übungen zu Kapitel 1 bis einschließlich komplexen Zahlen. (2h)\n\n- Technische Mechanik I: Übungen bis einschließlich Kapitel 4: Schwerpunkt. (45m)",
-      "plan": "09:00",
-      "dauer": 135,
+      "plan": "14:00",
+      "dauer": 60,
       "canceled": false,
       "weekday": "monday",
       "zwischenhalte": [
@@ -29,7 +29,7 @@
         "2. Präsens- und Hausübungen."
       ],
       "_uniqueId": "train_qrz1x0tyu_1762683030038",
-      "actual": "09:00"
+      "actual": "14:00"
     },
     {
       "linie": "S6",
@@ -52,7 +52,7 @@
       "plan": "13:00",
       "actual": "13:00",
       "dauer": 45,
-      "canceled": true,
+      "canceled": false,
       "weekday": "monday",
       "_uniqueId": "train_e8gq8wh1q_1762683030038",
       "zwischenhalte": [
@@ -62,9 +62,9 @@
     {
       "linie": "S62",
       "ziel": "TM1 Tutorium",
-      "stops": "PWR 47 - V47.02",
-      "plan": "14:00",
-      "actual": "14:00",
+      "stops": "PWR 06H - V 6.02 (PF06HEGV 6.02)",
+      "plan": "09:45",
+      "actual": "09:45",
       "dauer": "90",
       "canceled": false,
       "weekday": "monday",
@@ -96,7 +96,7 @@
       "plan": "17:30",
       "actual": "17:30",
       "dauer": 30,
-      "canceled": true,
+      "canceled": false,
       "weekday": "monday",
       "_uniqueId": "train_ckcbzslrz_1762683030038",
       "zwischenhalte": [
@@ -122,12 +122,13 @@
       "ziel": "Room Decor",
       "stops": "",
       "plan": "22:00",
-      "actual": "22:00",
+      "actual": "11:45",
       "dauer": "120",
       "canceled": false,
       "weekday": "monday",
       "zwischenhalte": [
-        "Wahrscheinlichkeitsgrad niedrig, fällt bei Nachholterminsbedarf aus."
+        "Wahrscheinlichkeitsgrad niedrig, fällt bei Nachholterminsbedarf aus",
+        "Omg keine Nachholtermine heute, du kannst aufräumen, und dann schlafen gehen wenn's fertig ist."
       ],
       "_uniqueId": "train_b6enjnekl_1762683030038"
     },
@@ -177,9 +178,9 @@
       "ziel": "HM1 - Gruppenübung",
       "stops": "PWR 09 - V 0.208 (PF09EGV 0.208)\n\nGruppe: Gruppe 43\nLehrveranstaltung: 010500104 Gruppenübung D zu Höhere Mathematik 1 für Ingenieurstudiengänge (2SSt UE, WS 2025/26)\nStudium: 1590 82 057 1 Luft- und Raumfahrttechnik\nStudienplankontext: Keine Zuordnung\n\n\nFÄLLT DIESE WOCHE AUS. ÜBERLAPPUNG MIT CAD KURS:",
       "plan": "14:00",
-      "actual": "14:00",
+      "actual": "12:00",
       "dauer": "90",
-      "canceled": false,
+      "canceled": true,
       "weekday": "tuesday",
       "_uniqueId": "train_yx8l64idv_1762683030038",
       "zwischenhalte": [
@@ -200,7 +201,10 @@
       "canceled": false,
       "weekday": "tuesday",
       "_uniqueId": "train_60w1taad2_1762683030038",
-      "actual": "15:45"
+      "actual": "17:05",
+      "zwischenhalte": [
+        "PWR 47 - V47. 01"
+      ]
     },
     {
       "linie": "S5",
@@ -232,9 +236,9 @@
       "ziel": "Room Decor",
       "stops": "",
       "plan": "22:00",
-      "actual": "22:00",
+      "actual": "23:00",
       "dauer": 50,
-      "canceled": true,
+      "canceled": false,
       "weekday": "tuesday",
       "_uniqueId": "train_6ldvb2jj5_1762683030038"
     },
@@ -284,7 +288,7 @@
     },
     {
       "linie": "S1",
-      "ziel": "Mittagspause",
+      "ziel": "Mittagspause/Sprechstunde TZ",
       "stops": "",
       "plan": "11:30",
       "actual": "11:30",
@@ -295,7 +299,7 @@
     },
     {
       "linie": "S7",
-      "ziel": "ISD Labor",
+      "ziel": "",
       "stops": "Einsatzort: Zuhause\n\nAufgaben:\n- Mathe: Übungsblatt (circa 2 Stunden)\n- Faserverbundlabor: Notizen vervollständigen\n- Physik: Skript für die nächste Vorlesung lesen\n\nHeute um 30 Minuten verlängert.",
       "plan": "13:00",
       "actual": "13:00",
@@ -408,10 +412,13 @@
       "stops": "",
       "plan": "20:00",
       "actual": "20:00",
-      "dauer": 180,
+      "dauer": 120,
       "canceled": false,
       "weekday": "thursday",
-      "_uniqueId": "train_maj7457l9_1763375944915"
+      "_uniqueId": "train_maj7457l9_1763375944915",
+      "zwischenhalte": [
+        "Themen: Allg. Kräftegruppen im Raum. Schwerpunkt, Dreigelenkige Bogen."
+      ]
     },
     {
       "linie": "S3",
@@ -420,7 +427,7 @@
       "plan": "22:00",
       "actual": "23:00",
       "dauer": 60,
-      "canceled": false,
+      "canceled": true,
       "weekday": "thursday",
       "_uniqueId": "train_bwly6108t_1762683030038",
       "zwischenhalte": [
@@ -488,7 +495,7 @@
       "plan": "18:00",
       "actual": "18:00",
       "dauer": "480",
-      "canceled": false,
+      "canceled": true,
       "weekday": "friday",
       "_uniqueId": "train_yq8qnn2fn_1762683030038"
     },
@@ -549,23 +556,23 @@
     },
     {
       "linie": "S3",
-      "ziel": "Movie Night Prep",
+      "ziel": "",
       "stops": "",
       "plan": "22:00",
       "actual": "23:00",
       "dauer": 60,
-      "canceled": false,
+      "canceled": true,
       "weekday": "saturday",
       "_uniqueId": "train_n97exkpf5_1762683030038"
     },
     {
       "linie": "S7",
-      "ziel": "Mathe: Folgen, Reihen, Grenzwert",
+      "ziel": "Mathematik I",
       "stops": "",
       "plan": "10:00",
-      "actual": "10:00",
+      "actual": "08:00",
       "dauer": 210,
-      "canceled": true,
+      "canceled": false,
       "weekday": "sunday",
       "zwischenhalte": [
         "Aufgaben:",
@@ -576,7 +583,7 @@
     },
     {
       "linie": "S7",
-      "ziel": "Technische Mechanik (Übung)",
+      "ziel": "Technische Mechanik I (Übung)",
       "stops": "Dieser Termin ist für das Selbststudium TM1 vorgesehen.\nLiteratur: TM1",
       "plan": "14:00",
       "dauer": 180,
@@ -591,11 +598,11 @@
     },
     {
       "linie": "S7",
-      "ziel": "ISD Labor",
+      "ziel": "Mathematik I",
       "stops": "",
       "plan": "19:00",
       "dauer": 240,
-      "canceled": true,
+      "canceled": false,
       "weekday": "sunday",
       "actual": "19:00",
       "_uniqueId": "train_g8kenyqlk_1762683030038",
@@ -891,7 +898,7 @@
       "_uniqueId": "train_gycux2pjy_1762683030038"
     },
     {
-      "linie": "S6",
+      "linie": "FEX",
       "ziel": "[PRÜ] TZ-Aufgabe 2",
       "stops": "V31.51",
       "plan": "14:00",
@@ -899,7 +906,8 @@
       "dauer": "90",
       "canceled": false,
       "date": "2025-12-11",
-      "_uniqueId": "train_0hceinkec_1762683030038"
+      "_uniqueId": "train_0hceinkec_1762683030038",
+      "beschreibung": "Wichtig "
     },
     {
       "linie": "S6",
@@ -1825,7 +1833,7 @@
       "linie": "17",
       "ziel": "SPACENIGHT 2026",
       "plan": "20:00",
-      "dauer": 480,
+      "dauer": 0,
       "zwischenhalte": [
         ""
       ],
@@ -1921,13 +1929,12 @@
         "18. Rủ chị Hanna đi chơi chít mớt",
         "19. TM1 Vortragsübung nacharbeiten",
         "",
-        "14. FS Vertrag abschließen",
         "15. Lohnabrechnung????",
         "3. monatliche Amazonkauf",
         "16. Technik treffen erwünscht?",
         "20. Nacharbeiten ExPhys bis Rotation !!!!!!!!!!!",
         "8. Präsenzübungen HM1 noch nicht - fertig. - Nachholtermin !",
-        "16. Hausübungen 4",
+        "23. Hausübungen 5",
         "21. Praktikumswochenbericht umformulieren",
         "22. Cắt tóc ????"
       ]
@@ -2056,23 +2063,21 @@
       "zwischenhalte": [
         "- Lotus Biscoff ist richtig lecker ",
         "- Mathe: Vollständige Induktion immer IA, IH, IS klar schreiben",
-        "- Nachholtermine: Mathe (2x180m) fürs Häufungspunkte, Präsenzübung, Vortragsübung",
-        "- Die TM1 Tutorien 2 und 3 dienen als Prüfungsmaterialen",
+        "- Die TM1 Tutorien 2 und 3 dienen als Prüfungsmaterialen (immer noch nicht fertig!!)",
         "- Inhalt Musterklausuren",
         " + Mathe: Bis Häufungspunkte",
         " + TM: Bis Allgemeine Kräftesystem in 3D",
         " + Werkstoffkunde: Bis ???",
         " + Fertigungstechnik: Bis Metalllegierung",
         "",
-        "- 19.11: HM1 Vorlesung fällt aus",
-        "",
+        "HM1",
         "- ABSCHÄTZUNG GRENZWERTE ist interessant",
         "-Grenzwertssätze, Sandwichsatz. usw....",
         "- Cauchysche Konvergenzkriterium",
         "",
-        "COMMERZBANK",
-        "DE51 2504 0066 0490 1724 00",
-        "DE51250400660490172400",
+        "TECHNISCHE MECHANIK I",
+        "- Buch: S.123-129 übersprungen (Dreigelenkige Bogen, wurde in Vorlesung behandelt) - nacharbeiten ",
+        "Übersprungene Inhalt: Allgemeine Kräftegruppen im Raum",
         ""
       ],
       "canceled": false,
@@ -2152,20 +2157,6 @@
       "_uniqueId": "train_kjrmxlb2e_1762873277964"
     },
     {
-      "linie": "S7",
-      "ziel": "TZ - CAD Anfangen",
-      "plan": "20:30",
-      "actual": "20:30",
-      "dauer": 0,
-      "zwischenhalte": [
-        ""
-      ],
-      "canceled": false,
-      "date": "2025-11-25",
-      "weekday": "tuesday",
-      "_uniqueId": "train_4xbl6uwp1_1762874081013"
-    },
-    {
       "linie": "S2",
       "ziel": "[ZF] Duschen",
       "plan": "18:15",
@@ -2226,10 +2217,8 @@
       "ziel": "FRANKFURT",
       "plan": "13:00",
       "actual": "13:00",
-      "dauer": 0,
-      "zwischenhalte": [
-        ""
-      ],
+      "dauer": 1440,
+      "zwischenhalte": [],
       "canceled": false,
       "date": "2025-12-19",
       "weekday": "friday",
@@ -3062,7 +3051,7 @@
       "zwischenhalte": [
         "and i mean a real movie night in CLEAN SHEETS, with CANDLES, BIG SCREEN, POP CORN, CLEAN ROOM, and shits"
       ],
-      "canceled": false,
+      "canceled": true,
       "date": "2025-11-23",
       "weekday": "sunday",
       "_uniqueId": "train_6cxxyvsgh_1763498859257",
@@ -3177,16 +3166,21 @@
       "_uniqueId": "train_o88tyry6v_1763661357836"
     },
     {
-      "linie": "S6",
+      "linie": "FEX",
       "ziel": "TM1 Hörsaaltest",
       "plan": "00:00",
       "actual": "00:00",
       "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": true,
+      "zwischenhalte": [
+        "Die Hörsaaltests dienen zur Vertiefung des Lernstoffs. Sie haben eine Woche Zeit, die Lösung zu berechnen und auf ILIAS im Bereich Hörsaaltest hochzuladen. Sie können den Hörsaaltest in Gruppen bis zu max. 4 Personen bearbeiten. Es reicht dabei, wenn eine Person pro Gruppe die Lösung hochlädt. Die Hörsaaltests, die nicht vor der Abgabefrist hochgeladen werden, werden nicht gewertet. Die Abgabe ist freiwillig.",
+        " ",
+        "Abgabefrist: 5.12"
+      ],
+      "canceled": false,
       "date": "2025-11-25",
       "weekday": "tuesday",
-      "_uniqueId": "train_b53wskaf5_1763666876410"
+      "_uniqueId": "train_b53wskaf5_1763666876410",
+      "beschreibung": "Wichtig "
     },
     {
       "linie": "S6",
@@ -3453,17 +3447,222 @@
       "_uniqueId": "train_eh4sf07xf_1763899854190"
     },
     {
-      "linie": "S1",
-      "ziel": "",
-      "plan": "21:42",
-      "dauer": 0,
+      "linie": "S3",
+      "ziel": "Dashboard Entwicklung ",
+      "plan": "20:00",
+      "dauer": 130,
+      "zwischenhalte": [
+        "This is called remote control babe hahahahahahahaha "
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_9ujgi6i0q_1763931923742",
+      "beschreibung": "Kreativität",
+      "actual": "20:00"
+    },
+    {
+      "linie": "S7",
+      "ziel": "[ZF] Technische Mechanik I (Übung)",
+      "plan": "22:15",
+      "dauer": 90,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2025-11-23",
       "weekday": "sunday",
-      "_uniqueId": "train_5t0f2yyll_1763930525093",
+      "_uniqueId": "train_no9smbo7c_1763931974238",
+      "beschreibung": "Selbststudium",
+      "actual": "22:15"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Dev note",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [
+        "- Non sbahn line rollback text badge is too big in mobile mode",
+        "- now why the hell does it keep jumping to the newly created train like geez we know you excited but c'mon "
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_7gw5vmwzg_1763932734509",
+      "beschreibung": "Vorbereitung"
+    },
+    {
+      "linie": "4",
+      "ziel": "Supply Mission 20.01.2026",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [
+        "→ Đèn mặt trăng",
+        "→ Đồ điện tử (rep tour stage)",
+        "→",
+        "← quần áo cũ",
+        "← bia",
+        "← quà",
+        "← gấu trắng cho hải",
+        "",
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-23",
+      "weekday": "sunday",
+      "_uniqueId": "train_0rvnmjuxa_1763937157696"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Physik Abschlusstest",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-25",
+      "weekday": "tuesday",
+      "_uniqueId": "train_mfmcuysu3_1763973991755"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Kochen",
+      "plan": "17:00",
+      "actual": "17:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-28",
+      "weekday": "friday",
+      "_uniqueId": "train_wya88gxya_1763974053946"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TZ - CAD Anfangen",
+      "plan": "19:00",
+      "actual": "19:00",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-28",
+      "_uniqueId": "train_v5z65nqkx_1763974065110",
+      "weekday": "friday"
+    },
+    {
+      "linie": "S45",
+      "ziel": "",
+      "plan": "23:00",
+      "dauer": 60,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-29",
+      "weekday": "saturday",
+      "_uniqueId": "train_yea9jnqtr_1763974236958",
+      "beschreibung": "FLURUS",
+      "actual": "23:00"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Technische Mechanik I (Übung)",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": 90,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": true,
+      "date": "2025-11-24",
+      "weekday": "monday",
+      "_uniqueId": "train_y2a97nual_1763977274721"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Minecraft Night",
+      "plan": "20:00",
+      "dauer": 720,
+      "zwischenhalte": [
+        "Ort\tFachschaft",
+        "Beginn\tMittwoch, Dezember 17, 2025 - 20:00 Europe/Berlin",
+        "Ende\tDonnerstag, Dezember 18, 2025 - 08:00 Europe/Berlin",
+        "Kommentar:\tLetztes Jahr wurde kurz vor Weihnachten durchgezockt (btw meine erste durchzockte Nacht), und das war so super, dass es dieses Jahr wiederholt werden muss. Natürlich auch um unseren Drittis eine möglichst große Ablenkung zur KON zu liefern. Nach getaner Arbeit wird morgens um 8 Uhr gemeinsam in die ExPhys-Vorlesung gegangen, idealerweise mit Punsch und Waffeln. Freue mich drauf :))"
+      ],
+      "canceled": false,
+      "date": "2025-12-17",
+      "weekday": "wednesday",
+      "_uniqueId": "train_u9vrq71ll_1763977493320",
+      "beschreibung": "Girls' Night Out",
+      "actual": "20:00"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Mittag",
+      "plan": "14:41",
+      "dauer": 60,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-24",
+      "weekday": "monday",
+      "_uniqueId": "train_15p0zm508_1763991712947",
       "beschreibung": "Pause",
-      "actual": "21:42"
+      "actual": "14:41"
+    },
+    {
+      "linie": "S4",
+      "ziel": "FLURUS Weihnachtsfeier",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-15",
+      "weekday": "monday",
+      "_uniqueId": "train_433l46xe5_1764002644310"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Kochen",
+      "plan": "19:15",
+      "actual": "19:15",
+      "dauer": 45,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-25",
+      "weekday": "tuesday",
+      "_uniqueId": "train_3u5kuo52x_1764008913026"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TM1 - Hörsaaltest",
+      "plan": "21:10",
+      "actual": "21:10",
+      "dauer": 180,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-11-28",
+      "weekday": "friday",
+      "_uniqueId": "train_xncmpyb2p_1764009021567"
+    },
+    {
+      "linie": "S7",
+      "ziel": "TM1 - Hörsaaltest",
+      "plan": "22:10",
+      "actual": "22:10",
+      "dauer": 120,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-11-27",
+      "weekday": "thursday",
+      "_uniqueId": "train_7rq88mrfq_1764009178806"
     }
   ],
   "trains": []

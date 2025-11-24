@@ -12,6 +12,14 @@
     let refreshIntervalId = null;
     let isEditingTrain = false;
     
+    // Track focused trains separately for desktop and mobile
+    let desktopFocusedTrainId = null;
+    let mobileFocusedTrainId = null;
+    
+    // Mobile edit debounce timer
+    let mobileEditDebounceTimer = null;
+    let pendingMobileSave = false;
+    
     // Global schedule object (like InputEnhanced)
     let schedule = {
       fixedSchedule: [],
@@ -127,6 +135,32 @@
     //S1 to s1 weil s1.svg
     function getTrainSVG(line) {
       return `./${line.toLowerCase()}.svg`;
+    }
+
+    function getLineColor(line) {
+      const lineColors = {
+        's1': '#7D66AD',
+        's2': '#00793B',
+        's25': '#1c763b',
+        's3': '#C76AA2',
+        's4': '#992946',
+        's41': '#aa5c3a',
+        's42': '#c86722',
+        's45': '#cc9d5a',
+        's46': '#cc9d5a',
+        's47': '#cc9d5a',
+        's5': '#F08600',
+        's6': '#004E9D',
+        's60': '#8b8d26',
+        's62': '#c17b36',
+        's7': '#AEC926',
+        's75': '#7f6ea3',
+        's8': '#6da939',
+        's85': '#6da939',
+        's9': '#962d44',
+        'fex': '#FF0000'
+      };
+      return lineColors[line.toLowerCase()] || '#161B75';
     }
 
     function getCarriageSVG(dauer, isFEX = false) {
@@ -1038,11 +1072,15 @@
       const isMobile = window.innerWidth <= 768;
       
       if (isMobile) {
+        mobileFocusedTrainId = train._uniqueId; // Track mobile focused train
+        desktopFocusedTrainId = null; // Clear desktop focus
         renderMobileFocusPopup(train);
         return;
       }
       
       // Desktop mode
+      desktopFocusedTrainId = train._uniqueId; // Track desktop focused train
+      mobileFocusedTrainId = null; // Clear mobile focus
       const panel = document.getElementById('focus-panel');
       const template = document.getElementById('focus-template');
       
@@ -1459,6 +1497,7 @@
             case 'delete':
               if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
                 await deleteTrainFromSchedule(train);
+                desktopFocusedTrainId = null; // Clear desktop focus
                 panel.innerHTML = '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center; padding: 2vh;">Zug gelöscht</div>';
               }
               break;
@@ -1480,9 +1519,19 @@
         return;
       }
       
+      // Track this as the mobile focused train
+      mobileFocusedTrainId = train._uniqueId;
+      
       // Only allow editing for local schedule trains
       const isEditable = train.source === 'local';
       const isFixedSchedule = train.isFixedSchedule === true;
+      
+      // Apply gradient background to content layer based on line color
+      const lineColor = getLineColor(train.linie || 'S1');
+      const content = popup.querySelector('.mobile-focus-content');
+      if (content) {
+        content.style.background = `linear-gradient(180deg, ${lineColor}80 0%, ${lineColor}10 20%, #161B75 80%)`;
+      }
       
       // Show popup with slide-up animation
       popup.style.display = 'flex';
@@ -1963,9 +2012,10 @@
               
               popup.dataset.currentTrain = JSON.stringify(train);
               
-              // Save and re-render
+              // Save and re-render with the updated train from dataset
               await saveSchedule();
-              renderMobileFocusPopup(train);
+              const updatedTrain = JSON.parse(popup.dataset.currentTrain);
+              renderMobileFocusPopup(updatedTrain);
             };
             
             // Auto-save on blur (when input loses focus)
@@ -2094,8 +2144,38 @@
             return;
           }
           
+          // Helper function to schedule debounced save and rerender
+          const scheduleDebouncedUpdate = (updatedTrain) => {
+            // Clear existing timer
+            if (mobileEditDebounceTimer) {
+              clearTimeout(mobileEditDebounceTimer);
+            }
+            
+            // Mark that we have a pending save
+            pendingMobileSave = true;
+            
+            // Immediately update the display
+            renderMobileFocusPopup(updatedTrain);
+            
+            // Schedule the actual save after 800ms of no input
+            mobileEditDebounceTimer = setTimeout(async () => {
+              if (pendingMobileSave) {
+                await saveSchedule();
+                pendingMobileSave = false;
+                console.log('Mobile edit auto-saved');
+              }
+            }, 800);
+          };
+          
           switch(action) {
             case 'return':
+              // If there's a pending save, execute it immediately before closing
+              if (pendingMobileSave && mobileEditDebounceTimer) {
+                clearTimeout(mobileEditDebounceTimer);
+                await saveSchedule();
+                pendingMobileSave = false;
+              }
+              mobileFocusedTrainId = null; // Clear mobile focus
               popup.classList.remove('show');
               setTimeout(() => popup.style.display = 'none', 300);
               break;
@@ -2104,8 +2184,7 @@
               if (scheduleTrain) {
                 train.canceled = !train.canceled;
                 scheduleTrain.canceled = train.canceled;
-                renderMobileFocusPopup(train);
-                await saveSchedule();
+                scheduleDebouncedUpdate(train);
               }
               break;
               
@@ -2117,8 +2196,7 @@
                 const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
                 train.actual = formatClock(newActualDate);
                 scheduleTrain.actual = train.actual;
-                renderMobileFocusPopup(train);
-                await saveSchedule();
+                scheduleDebouncedUpdate(train);
               }
               break;
               
@@ -2133,14 +2211,19 @@
                 const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
                 train.actual = formatClock(newActualDate);
                 scheduleTrain.actual = train.actual;
-                renderMobileFocusPopup(train);
-                await saveSchedule();
+                scheduleDebouncedUpdate(train);
               }
               break;
               
             case 'delete':
               if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                // Cancel any pending saves
+                if (mobileEditDebounceTimer) {
+                  clearTimeout(mobileEditDebounceTimer);
+                  pendingMobileSave = false;
+                }
                 await deleteTrainFromSchedule(train);
+                mobileFocusedTrainId = null; // Clear mobile focus
                 popup.classList.remove('show');
                 setTimeout(() => popup.style.display = 'none', 300);
               }
@@ -2153,6 +2236,7 @@
       const handleBackButton = (e) => {
         if (popup.classList.contains('show')) {
           e.preventDefault();
+          mobileFocusedTrainId = null; // Clear mobile focus
           popup.classList.remove('show');
           setTimeout(() => popup.style.display = 'none', 300);
           window.removeEventListener('popstate', handleBackButton);
@@ -2165,6 +2249,7 @@
       // Close popup when clicking outside content
       const handleOutsideClick = (e) => {
         if (e.target === popup) {
+          mobileFocusedTrainId = null; // Clear mobile focus
           popup.classList.remove('show');
           setTimeout(() => popup.style.display = 'none', 300);
           popup.removeEventListener('click', handleOutsideClick);
@@ -2364,26 +2449,42 @@
           if (!isStillInInputs) {
             isEditingTrain = false;
             
-            const trainListEl = document.getElementById('train-list');
-            const savedScroll = trainListEl ? trainListEl.scrollTop : 0;
-            
-            await saveSchedule();
-            processTrainData(schedule);
-            renderTrains();
-            
-            const trainId = train._uniqueId;
-            const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
-              t._uniqueId === trainId
-            );
-            if (updatedTrain) {
-              renderMobileFocusPopup(updatedTrain);
+            // Clear existing debounce timer
+            if (mobileEditDebounceTimer) {
+              clearTimeout(mobileEditDebounceTimer);
             }
             
-            setTimeout(() => {
-              if (trainListEl && savedScroll > 0) {
-                trainListEl.scrollTop = savedScroll;
+            // Mark that we have a pending save
+            pendingMobileSave = true;
+            
+            // Schedule the actual save after 800ms of no input
+            mobileEditDebounceTimer = setTimeout(async () => {
+              if (pendingMobileSave) {
+                const trainListEl = document.getElementById('train-list');
+                const savedScroll = trainListEl ? trainListEl.scrollTop : 0;
+                
+                await saveSchedule();
+                processTrainData(schedule);
+                renderTrains();
+                
+                const trainId = train._uniqueId;
+                const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
+                  t._uniqueId === trainId
+                );
+                if (updatedTrain) {
+                  renderMobileFocusPopup(updatedTrain);
+                }
+                
+                setTimeout(() => {
+                  if (trainListEl && savedScroll > 0) {
+                    trainListEl.scrollTop = savedScroll;
+                  }
+                }, 100);
+                
+                pendingMobileSave = false;
+                console.log('Mobile field edit auto-saved');
               }
-            }, 150);
+            }, 800);
           }
         }, 50);
       };
@@ -3340,35 +3441,45 @@
       });
     }, 5000);
 
-    // Refresh full schedule every minute (unless editing)
-    refreshIntervalId = setInterval(async () => {
-      if (isEditingTrain) {
-        console.log('Skipping refresh - train is being edited');
-        return;
+    // Function to start/stop refresh interval based on mode
+    function updateRefreshInterval() {
+      // Clear existing interval
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
       }
-      const schedule = await fetchSchedule();
-      processTrainData(schedule);
-      renderTrains(); // Use unified render function
-      renderComprehensiveAnnouncementPanel(); // Debug: render to upper right panel
-    }, 60000);
+      
+      // Only set up interval if in DB API mode (station selected)
+      if (currentEva) {
+        console.log('Starting auto-refresh interval (DB API mode)');
+        refreshIntervalId = setInterval(async () => {
+          if (isEditingTrain) {
+            console.log('Skipping refresh - train is being edited');
+            return;
+          }
+          const schedule = await fetchSchedule();
+          processTrainData(schedule);
+          renderTrains();
+          renderComprehensiveAnnouncementPanel();
+        }, 60000);
+      } else {
+        console.log('Auto-refresh interval disabled (local mode - using SSE only)');
+      }
+    }
+    
+    // Initial setup - no interval in local mode
+    updateRefreshInterval();
 
     // Set up Server-Sent Events for real-time updates
     const eventSource = new EventSource('/events');
     
     eventSource.addEventListener('update', async (event) => {
-      console.log('Received server update event, refreshing data...');
+      console.log('🔄 SSE update received at', new Date().toISOString());
       
       // Skip refresh if editing
       if (isEditingTrain) {
         console.log('Skipping SSE refresh - train is being edited');
         return;
-      }
-      
-      // Store currently focused train unique ID before refresh
-      const panel = document.getElementById('focus-panel');
-      let focusedTrainId = null;
-      if (panel && panel.dataset.trainId) {
-        focusedTrainId = panel.dataset.trainId;
       }
       
       // Fetch and update the GLOBAL schedule object
@@ -3377,15 +3488,41 @@
       renderTrains(); // Use unified render function
       renderComprehensiveAnnouncementPanel();
       
-      // Re-render focus panel if a train was focused
-      if (focusedTrainId && processedTrainData.allTrains) {
-        // Find the updated train in the refreshed data using unique ID
-        const updatedTrain = processedTrainData.allTrains.find(t => 
-          t._uniqueId === focusedTrainId
-        );
-        
-        if (updatedTrain) {
-          renderFocusMode(updatedTrain);
+      // Re-render the appropriate focused train based on which one is set
+      const isMobile = window.innerWidth <= 768;
+      
+      if (isMobile && mobileFocusedTrainId) {
+        // Mobile mode - only re-render if mobile popup is actually open
+        const popup = document.getElementById('mobile-focus-popup');
+        if (popup && popup.classList.contains('show')) {
+          const updatedTrain = processedTrainData.allTrains.find(t => 
+            t._uniqueId === mobileFocusedTrainId
+          );
+          
+          if (updatedTrain) {
+            renderMobileFocusPopup(updatedTrain);
+          } else {
+            // Train was deleted, close the popup
+            mobileFocusedTrainId = null;
+            popup.classList.remove('show');
+            setTimeout(() => popup.style.display = 'none', 300);
+          }
+        }
+      } else if (!isMobile && desktopFocusedTrainId) {
+        // Desktop mode - only re-render if desktop panel has content
+        const panel = document.getElementById('focus-panel');
+        if (panel && panel.innerHTML.trim() !== '') {
+          const updatedTrain = processedTrainData.allTrains.find(t => 
+            t._uniqueId === desktopFocusedTrainId
+          );
+          
+          if (updatedTrain) {
+            renderFocusMode(updatedTrain);
+          } else {
+            // Train was deleted, clear the panel
+            desktopFocusedTrainId = null;
+            panel.innerHTML = '';
+          }
         }
       }
     });
@@ -3516,6 +3653,10 @@
         localStorage.removeItem('selectedEva');
         localStorage.removeItem('selectedStationName');
         overlay.classList.add('hidden');
+        
+        // Stop auto-refresh for local mode (SSE handles updates)
+        updateRefreshInterval();
+        
         (async () => {
           const schedule = await fetchSchedule();
           processTrainData(schedule);
@@ -3531,6 +3672,10 @@
         localStorage.setItem('selectedEva', currentEva);
         localStorage.setItem('selectedStationName', currentStationName);
         overlay.classList.add('hidden');
+        
+        // Start auto-refresh for DB API mode
+        updateRefreshInterval();
+        
         (async () => {
           const schedule = await fetchSchedule();
           processTrainData(schedule);
@@ -3597,6 +3742,7 @@
         const focusPanel = document.getElementById('focus-panel');
         if (focusPanel && focusPanel.innerHTML.trim() !== '') {
           e.preventDefault();
+          desktopFocusedTrainId = null; // Clear desktop focus
           focusPanel.innerHTML = '';
           // Remove selection from all train entries
           document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
