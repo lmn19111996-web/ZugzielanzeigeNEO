@@ -392,6 +392,387 @@ const Templates = {
         <button class="mobile-focus-btn mobile-focus-btn-delete" data-mobile-focus-action="delete">🗑</button>
       </div>
     `;
+  },
+
+  /**
+   * Create "train deleted" message for focus panel
+   */
+  trainDeletedMessage() {
+    return '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center; padding: 2vh;">Zug gelöscht</div>';
+  },
+
+  /**
+   * Create "no announcements" message
+   */
+  noAnnouncementsMessage() {
+    return '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">Keine Ankündigungen</div>';
+  },
+
+  /**
+   * Create strikethrough text for cancelled trains
+   */
+  strikethrough(text) {
+    return `<s>${text || ''}</s>`;
+  },
+
+  /**
+   * Create line picker option button (mobile)
+   */
+  linePickerOption(linie, beschreibung) {
+    const iconHTML = (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || /^\d+$/.test(linie)))
+      ? `<img src="${getTrainSVG(linie)}" alt="${linie}" style="height: 2vh; width: auto;" onerror="this.outerHTML='<div style=\\'padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;\\'>${linie}</div>'">`
+      : `<div style="padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;">${linie}</div>`;
+    
+    return `
+      <button class="line-picker-option" data-linie="${linie}" data-beschreibung="${beschreibung}" style="
+        width: 100%;
+        padding: 1vh 3vw;
+        margin: 1vh 0;
+        background: rgba(255, 255, 255, 0.1);
+        border: 0.3px solid rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+        color: white;
+        font-size: 2.5vh;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 2vw;
+        transition: background 0.2s;
+      ">
+        ${iconHTML}
+        <span style="flex: 1; text-align: left; color: rgba(255, 255, 255, 0.8);">${beschreibung}</span>
+      </button>
+    `;
+  },
+
+  /**
+   * Create line picker overlay (mobile)
+   */
+  linePickerOverlay() {
+    const lineOptions = [
+      { linie: 'S1', beschreibung: 'Pause' },
+      { linie: 'S2', beschreibung: 'Vorbereitung' },
+      { linie: 'S3', beschreibung: 'Kreativität' },
+      { linie: 'S4', beschreibung: "Girls' Night Out" },
+      { linie: 'S45', beschreibung: 'FLURUS' },
+      { linie: 'S46', beschreibung: 'Fachschaftsarbeit' },
+      { linie: 'S5', beschreibung: 'Sport' },
+      { linie: 'S6', beschreibung: 'Lehrveranstaltung' },
+      { linie: 'S60', beschreibung: 'Vortragsübung' },
+      { linie: 'S62', beschreibung: 'Tutorium' },
+      { linie: 'S7', beschreibung: 'Selbststudium' },
+      { linie: 'S8', beschreibung: 'Reise' },
+      { linie: 'S85', beschreibung: 'Reise' },
+      { linie: 'FEX', beschreibung: 'Wichtig ' }
+    ];
+
+    const optionsHTML = lineOptions.map(opt => this.linePickerOption(opt.linie, opt.beschreibung)).join('');
+
+    return `
+      <div class="line-picker-overlay" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 5002;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div class="line-picker-dropdown" style="
+          background: #1a1f4d;
+          border-radius: 8px;
+          padding: 2vh;
+          width: 70vw;
+          max-height: 70vh;
+          overflow-y: auto;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+          scrollbar-width: none;
+        ">
+          <div style="
+            font-size: 3vh;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 2vh;
+            text-align: center;
+          ">Linie auswählen</div>
+          ${optionsHTML}
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile line picker button (when no line selected)
+   */
+  mobileLinePickerButton() {
+    return `
+      <button class="mobile-line-picker-button" style="
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.7);
+        padding: 2vh 4vw;
+        font-size: 2.5vh;
+        cursor: pointer;
+        width: 100%;
+        text-align: center;
+        margin: 1vh 0;
+      ">Linie auswählen</button>
+    `;
+  },
+
+  /**
+   * Create line badge for focus mode (when line icon fails to load or is not an S-Bahn)
+   */
+  lineBadge(linie, isEditable, fontSize = 'clamp(18px, 5vh, 40px)') {
+    const editableAttrs = isEditable 
+      ? `data-editable="true" style="cursor: pointer; font-size: ${fontSize};"` 
+      : `style="font-size: ${fontSize};"`;
+    
+    return `
+      <div class="line-badge" 
+           data-field="linie" 
+           data-value="${linie || ''}" 
+           data-input-type="text" 
+           data-placeholder="Linie" 
+           ${editableAttrs}>
+        ${linie || ''}
+      </div>
+    `;
+  },
+
+  /**
+   * Create DB API badge indicator
+   */
+  dbApiBadge() {
+    return `
+      <div style="position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.3); padding: 0.5vh 1vw; border-radius: 2px;">
+        DB API - Nur Lesen
+      </div>
+    `;
+  },
+
+  /**
+   * Create fixed schedule badge indicator
+   */
+  fixedScheduleBadge() {
+    return `
+      <div style="position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,200,100,0.8); background: rgba(100,60,0,0.4); padding: 0.5vh 1vw; border-radius: 2px; border: 1px solid rgba(255,200,100,0.3);" title="Datum kann nicht bearbeitet werden - dieser Termin wiederholt sich wöchentlich">
+        🔒 Wiederholender Termin
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile DB API badge
+   */
+  mobileDbApiBadge() {
+    return `
+      <div class="mobile-train-badge" style="position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;">
+        DB API - Nur Lesen
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile fixed schedule badge
+   */
+  mobileFixedScheduleBadge() {
+    return `
+      <div class="mobile-train-badge" style="position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 0.5px solid rgba(255,200,100,0.4); z-index: 5001;">
+        🔒 Wiederholender Termin
+      </div>
+    `;
+  },
+
+  /**
+   * Create pagination dots for announcement carousel
+   */
+  paginationDots(totalPages, currentPage) {
+    let dotsHTML = '';
+    for (let i = 0; i < totalPages; i++) {
+      const activeClass = i === currentPage ? ' active' : '';
+      dotsHTML += `<div class="pagination-dot${activeClass}"></div>`;
+    }
+    return `<div class="pagination-dots">${dotsHTML}</div>`;
+  },
+
+  /**
+   * Create station search suggestion item
+   */
+  stationSuggestion(station) {
+    const label = station.ds100 ? `${station.name} (${station.ds100})` : station.name;
+    return `
+      <div class="suggestion-item" title="${label}">
+        ${label}
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile announcement card
+   */
+  mobileAnnouncementCard(announcement) {
+    // Determine colors and background based on announcement type
+    let stripeColor = 'rgba(255, 255, 255, 0.3)';
+    let headingColor = 'white';
+    let backgroundColor = 'rgba(30, 35, 95, 0.6)';
+    let borderColor = 'rgba(255, 255, 255, 0.15)';
+    let headingText = '';
+    
+    switch(announcement.announcementType) {
+      case 'cancelled':
+        stripeColor = '#ff4444';
+        headingColor = '#ff4444';
+        backgroundColor = 'rgba(80, 20, 20, 0.4)';
+        borderColor = 'rgba(255, 68, 68, 0.3)';
+        headingText = '✕ Zug fällt aus';
+        break;
+      case 'delayed':
+        stripeColor = '#ffaa00';
+        headingColor = '#ffaa00';
+        backgroundColor = 'rgba(80, 60, 0, 0.4)';
+        borderColor = 'rgba(255, 170, 0, 0.3)';
+        headingText = '⚠︎ Verspätung';
+        break;
+      case 'zusatzfahrt':
+        stripeColor = '#00aaff';
+        headingColor = '#00aaff';
+        backgroundColor = 'rgba(0, 60, 100, 0.4)';
+        borderColor = 'rgba(0, 170, 255, 0.3)';
+        headingText = '⇄ Ersatzfahrt';
+        break;
+      case 'ersatzfahrt':
+        stripeColor = '#00aaff';2
+        headingColor = '#00aaff';
+        backgroundColor = 'rgba(0, 60, 100, 0.4)';
+        borderColor = 'rgba(0, 170, 255, 0.3)';
+        headingText = '⇄ Ersatzfahrt';
+        break;
+      case 'konflikt':
+        stripeColor = '#ff4444';
+        headingColor = '#ff4444';
+        backgroundColor = 'rgba(80, 20, 20, 0.4)';
+        borderColor = 'rgba(255, 68, 68, 0.3)';
+        headingText = '⚠︎ Konflikt';
+        break;
+      case 'note':
+        stripeColor = '#ffffff';
+        headingColor = 'white';
+        backgroundColor = 'rgba(50, 55, 115, 0.5)';
+        borderColor = 'rgba(255, 255, 255, 0.2)';
+        headingText = announcement.ziel || 'Ankündigung';
+        break;
+    }
+    
+    // For non-note types, add train info to heading
+    if (announcement.announcementType !== 'note') {
+      if (announcement.linie) {
+        headingText += ' · ' + announcement.linie;
+      }
+      if (announcement.ziel) {
+        headingText += ' → ' + announcement.ziel.replace('[ZF] ', '');
+      }
+      if (announcement.plan) {
+        headingText += ' (' + announcement.plan + ')';
+      }
+    }
+    
+    // Get preview text
+    let previewText = 'Für Details antippen';
+    if (announcement.zwischenhalte && announcement.zwischenhalte.length > 0) {
+      const stops = Array.isArray(announcement.zwischenhalte) 
+        ? announcement.zwischenhalte 
+        : announcement.zwischenhalte.split('\n');
+      const stopsText = stops.filter(s => s.trim()).join(', ');
+      if (stopsText) previewText = stopsText;
+    }
+    
+    return `
+      <div class="mobile-announcement-card" 
+           data-unique-id="${announcement._uniqueId || ''}"
+           style="
+             display: flex;
+             margin: 1.5vh 2vw;
+             background: ${backgroundColor};
+             border: 1px solid ${borderColor};
+             border-radius: 8px;
+             overflow: hidden;
+             cursor: pointer;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+             transition: transform 0.2s, box-shadow 0.2s;
+             min-height: 10vh;
+           ">
+        <div style="
+          width: 1vw;
+          min-width: 4px;
+          background: ${stripeColor};
+          flex-shrink: 0;
+        "></div>
+        <div style="
+          flex: 1;
+          padding: 2vh 3vw;
+          display: flex;
+          flex-direction: column;
+          gap: 1vh;
+        ">
+          <div style="
+            color: ${headingColor};
+            font-weight: bold;
+            font-size: 2.2vh;
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          ">${headingText}</div>
+          <div style="
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.8vh;
+            line-height: 1.5;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+          ">${previewText}</div>
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile announcements empty state
+   */
+  mobileNoAnnouncements() {
+    return `
+      <div style="
+        color: rgba(255, 255, 255, 0.5);
+        text-align: center;
+        padding: 4vh 0;
+        font-size: 2.5vh;
+      ">Keine Ankündigungen vorhanden</div>
+    `;
+  },
+
+  /**
+   * Create line picker cancel button
+   */
+  linePickerCancelButton() {
+    return `
+      <button style="
+        width: 100%;
+        margin-top: 1vh;
+        padding: 1vh;
+        background: rgba(255, 100, 100, 0.3);
+        border: none;
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 2vh;
+        cursor: pointer;
+      ">Abbrechen</button>
+    `;
   }
 };
 

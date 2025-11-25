@@ -5,8 +5,9 @@
     let currentEva = null;
     let currentStationName = null;
     
-    // View mode: 'belegungsplan' or 'list'
+    // Global view mode tracking
     let currentViewMode = 'belegungsplan';
+    let isAnnouncementsView = false;
     
     // Global refresh interval tracking
     let refreshIntervalId = null;
@@ -1101,34 +1102,14 @@
         lineIcon.src = getTrainSVG(train.linie);
         lineIcon.alt = train.linie;        
         lineIcon.onerror = () => {
-          const badge = document.createElement('div');
-          badge.className = 'line-badge';
-          badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
-          badge.textContent = train.linie || '';
-          badge.setAttribute('data-field', 'linie');
-          badge.setAttribute('data-value', train.linie || '');
-          badge.setAttribute('data-input-type', 'text');
-          badge.setAttribute('data-placeholder', 'Linie');
-          if (isEditable) {
-            badge.style.cursor = 'pointer';
-            badge.setAttribute('data-editable', 'true');
-          }
-          lineIcon.parentNode.replaceChild(badge, lineIcon);
+          const template = document.createElement('template');
+          template.innerHTML = Templates.lineBadge(train.linie, isEditable, 'clamp(18px, 5vh, 40px)').trim();
+          lineIcon.parentNode.replaceChild(template.content.firstChild, lineIcon);
         };
       } else {
-        const badge = document.createElement('div');
-        badge.className = 'line-badge';
-        badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
-        badge.textContent = train.linie || '';
-        badge.setAttribute('data-field', 'linie');
-        badge.setAttribute('data-value', train.linie || '');
-        badge.setAttribute('data-input-type', 'text');
-        badge.setAttribute('data-placeholder', 'Linie');
-        if (isEditable) {
-          badge.style.cursor = 'pointer';
-          badge.setAttribute('data-editable', 'true');
-        }
-        lineIcon.parentNode.replaceChild(badge, lineIcon);
+        const template = document.createElement('template');
+        template.innerHTML = Templates.lineBadge(train.linie, isEditable, 'clamp(18px, 5vh, 40px)').trim();
+        lineIcon.parentNode.replaceChild(template.content.firstChild, lineIcon);
       }
 
       // Populate destination
@@ -1326,21 +1307,18 @@
 
       // Show badge for DB API trains (read-only)
       if (!isEditable && train.source === 'db-api') {
-        const indicator = document.createElement('div');
-        indicator.style.cssText = 'position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.3); padding: 0.5vh 1vw; border-radius: 2px;';
-        indicator.textContent = 'DB API - Nur Lesen';
+        const template = document.createElement('template');
+        template.innerHTML = Templates.dbApiBadge().trim();
         panel.style.position = 'relative';
-        panel.appendChild(indicator);
+        panel.appendChild(template.content.firstChild);
       }
       
       // Show badge for fixed schedule trains (date not editable)
       if (isEditable && isFixedSchedule) {
-        const fixedIndicator = document.createElement('div');
-        fixedIndicator.style.cssText = 'position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,200,100,0.8); background: rgba(100,60,0,0.4); padding: 0.5vh 1vw; border-radius: 2px; border: 1px solid rgba(255,200,100,0.3);';
-        fixedIndicator.textContent = '🔒 Wiederholender Termin';
-        fixedIndicator.title = 'Datum kann nicht bearbeitet werden - dieser Termin wiederholt sich wöchentlich';
+        const template = document.createElement('template');
+        template.innerHTML = Templates.fixedScheduleBadge().trim();
         panel.style.position = 'relative';
-        panel.appendChild(fixedIndicator);
+        panel.appendChild(template.content.firstChild);
       }
 
       // Only add editing functionality for local trains
@@ -1498,7 +1476,7 @@
               if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
                 await deleteTrainFromSchedule(train);
                 desktopFocusedTrainId = null; // Clear desktop focus
-                panel.innerHTML = '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center; padding: 2vh;">Zug gelöscht</div>';
+                panel.innerHTML = Templates.trainDeletedMessage();
               }
               break;
           }
@@ -1568,22 +1546,10 @@
       if (!train.linie || train.linie.trim() === '') {
         lineIcon.style.display = 'none';
         
-        // Create picker button
-        const pickerButton = document.createElement('button');
-        pickerButton.className = 'mobile-line-picker-button';
-        pickerButton.textContent = 'Linie auswählen';
-        pickerButton.style.cssText = `
-          background: rgba(255, 255, 255, 0.1);
-          border: 2px dashed rgba(255, 255, 255, 0.3);
-          border-radius: 4px;
-          color: rgba(255, 255, 255, 0.7);
-          padding: 2vh 4vw;
-          font-size: 2.5vh;
-          cursor: pointer;
-          width: 100%;
-          text-align: center;
-          margin: 1vh 0;
-        `;
+        // Create picker button from template
+        const template = document.createElement('template');
+        template.innerHTML = Templates.mobileLinePickerButton().trim();
+        const pickerButton = template.content.firstChild;
         
         pickerButton.addEventListener('click', () => {
           showLinePickerDropdown(train, popup);
@@ -1848,17 +1814,13 @@
       if (existingBadge) existingBadge.remove();
       
       if (!isEditable && train.source === 'db-api') {
-        const badge = document.createElement('div');
-        badge.className = 'mobile-train-badge';
-        badge.style.cssText = 'position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;';
-        badge.textContent = 'DB API - Nur Lesen';
-        popup.appendChild(badge);
+        const template = document.createElement('template');
+        template.innerHTML = Templates.mobileDbApiBadge().trim();
+        popup.appendChild(template.content.firstChild);
       } else if (isEditable && isFixedSchedule) {
-        const badge = document.createElement('div');
-        badge.className = 'mobile-train-badge';
-        badge.style.cssText = 'position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 0.5px solid rgba(255,200,100,0.4); z-index: 5001;';
-        badge.textContent = '🔒 Wiederholender Termin';
-        popup.appendChild(badge);
+        const template = document.createElement('template');
+        template.innerHTML = Templates.mobileFixedScheduleBadge().trim();
+        popup.appendChild(template.content.firstChild);
       }
       
       // Store reference to current train for editing using unique ID
@@ -2777,7 +2739,7 @@
       })));
 
       if (allAnnouncements.length === 0) {
-        panel.innerHTML = '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">Keine Ankündigungen</div>';
+        panel.innerHTML = Templates.noAnnouncementsMessage();
         if (comprehensiveAnnouncementInterval) {
           clearInterval(comprehensiveAnnouncementInterval);
           comprehensiveAnnouncementInterval = null;
@@ -2824,20 +2786,16 @@
             mainIcon.src = getTrainSVG(train.linie);
             mainIcon.alt = train.linie;
             mainIcon.onerror = () => {
-              const badge = document.createElement('div');
-              badge.className = 'line-badge';
-              badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
-              badge.textContent = train.linie || '';
+              const template = document.createElement('template');
+              template.innerHTML = Templates.lineBadge(train.linie, false, 'clamp(12px, 3vh, 24px)').trim();
               if (mainIcon.parentNode) {
-                mainIcon.parentNode.replaceChild(badge, mainIcon);
+                mainIcon.parentNode.replaceChild(template.content.firstChild, mainIcon);
               }
             };
           } else {
-            const badge = document.createElement('div');
-            badge.className = 'line-badge';
-            badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
-            badge.textContent = train.linie || '';
-            mainIcon.parentNode.replaceChild(badge, mainIcon);
+            const template = document.createElement('template');
+            template.innerHTML = Templates.lineBadge(train.linie, false, 'clamp(12px, 3vh, 24px)').trim();
+            mainIcon.parentNode.replaceChild(template.content.firstChild, mainIcon);
           }
 
           // Main train destination and stops
@@ -2850,20 +2808,16 @@
             conflictIcon.src = getTrainSVG(conflictTrain.linie);
             conflictIcon.alt = conflictTrain.linie;
             conflictIcon.onerror = () => {
-              const badge = document.createElement('div');
-              badge.className = 'line-badge';
-              badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
-              badge.textContent = conflictTrain.linie || '';
+              const template = document.createElement('template');
+              template.innerHTML = Templates.lineBadge(conflictTrain.linie, false, 'clamp(12px, 3vh, 24px)').trim();
               if (conflictIcon.parentNode) {
-                conflictIcon.parentNode.replaceChild(badge, conflictIcon);
+                conflictIcon.parentNode.replaceChild(template.content.firstChild, conflictIcon);
               }
             };
           } else {
-            const badge = document.createElement('div');
-            badge.className = 'line-badge';
-            badge.style.fontSize = 'clamp(12px, 3vh, 24px)';
-            badge.textContent = conflictTrain.linie || '';
-            conflictIcon.parentNode.replaceChild(badge, conflictIcon);
+            const template = document.createElement('template');
+            template.innerHTML = Templates.lineBadge(conflictTrain.linie, false, 'clamp(12px, 3vh, 24px)').trim();
+            conflictIcon.parentNode.replaceChild(template.content.firstChild, conflictIcon);
           }
 
           // Conflict train destination and stops
@@ -3073,20 +3027,16 @@
             lineIcon.src = getTrainSVG(train.linie);
             lineIcon.alt = train.linie;
             lineIcon.onerror = () => {
-              const badge = document.createElement('div');
-              badge.className = 'line-badge';
-              badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
-              badge.textContent = train.linie || '';
+              const template = document.createElement('template');
+              template.innerHTML = Templates.lineBadge(train.linie, false, 'clamp(18px, 5vh, 40px)').trim();
               if (lineIcon.parentNode) {
-                lineIcon.parentNode.replaceChild(badge, lineIcon);
+                lineIcon.parentNode.replaceChild(template.content.firstChild, lineIcon);
               }
             };
           } else {
-            const badge = document.createElement('div');
-            badge.className = 'line-badge';
-            badge.style.fontSize = 'clamp(18px, 5vh, 40px)';
-            badge.textContent = train.linie || '';
-            lineIcon.parentNode.replaceChild(badge, lineIcon);
+            const template = document.createElement('template');
+            template.innerHTML = Templates.lineBadge(train.linie, false, 'clamp(18px, 5vh, 40px)').trim();
+            lineIcon.parentNode.replaceChild(template.content.firstChild, lineIcon);
           }
         }
 
@@ -3097,7 +3047,7 @@
         } else {
           const planEl = clone.querySelector('[data-announcement="plan"]');
           if (train.canceled || train.announcementType === 'cancelled') {
-            planEl.innerHTML = `<s>${train.plan || ''}</s>`;
+            planEl.innerHTML = Templates.strikethrough(train.plan || '');
           } else {
             planEl.textContent = train.plan || '';
           }
@@ -3105,7 +3055,7 @@
           const delayedEl = clone.querySelector('[data-announcement="delayed"]');
           if (train.actual && train.actual !== train.plan) {
             if (train.canceled || train.announcementType === 'cancelled') {
-              delayedEl.innerHTML = `<s>${train.actual}</s>`;
+              delayedEl.innerHTML = Templates.strikethrough(train.actual);
             } else {
               delayedEl.textContent = train.actual;
             }
@@ -3121,7 +3071,7 @@
         }
         
         if (train.canceled || train.announcementType === 'cancelled') {
-          destination.innerHTML = `<s>${destinationText}</s>`;
+          destination.innerHTML = Templates.strikethrough(destinationText);
         } else {
           destination.textContent = destinationText;
         }
@@ -3146,19 +3096,9 @@
       
       // Add pagination dots if there are multiple pages
       if (totalPages > 1) {
-        const paginationDots = document.createElement('div');
-        paginationDots.className = 'pagination-dots';
-        
-        for (let i = 0; i < totalPages; i++) {
-          const dot = document.createElement('div');
-          dot.className = 'pagination-dot';
-          if (i === comprehensiveAnnouncementCurrentPage) {
-            dot.classList.add('active');
-          }
-          paginationDots.appendChild(dot);
-        }
-        
-        wrapper.appendChild(paginationDots);
+        const template = document.createElement('template');
+        template.innerHTML = Templates.paginationDots(totalPages, comprehensiveAnnouncementCurrentPage).trim();
+        wrapper.appendChild(template.content.firstChild);
       }
       
       panel.appendChild(wrapper);
@@ -3280,6 +3220,25 @@
         toggleViewBtn.addEventListener('click', () => {
           toggleViewMode();
         });
+      }
+      
+      // Announcements button event listener
+      const announcementsBtn = document.getElementById('announcements-button');
+      if (announcementsBtn) {
+        console.log('✅ Announcements button found, adding event listener');
+        announcementsBtn.addEventListener('click', () => {
+          console.log('📢 Announcements button clicked');
+          // Toggle announcements view
+          if (isAnnouncementsView) {
+            isAnnouncementsView = false;
+            renderTrains(); // Go back to normal train list
+          } else {
+            isAnnouncementsView = true;
+            showAnnouncementsView();
+          }
+        });
+      } else {
+        console.log('❌ Announcements button not found');
       }
       
       // Update date display based on scroll position (mobile only)
@@ -3634,11 +3593,9 @@
           return; 
         }
         lastMatches.slice(0, 50).forEach((st) => {
-          const item = document.createElement('div');
-          item.className = 'suggestion-item';
-          const label = st.ds100 ? `${st.name} (${st.ds100})` : st.name;
-          item.textContent = label;
-          item.title = label;
+          const template = document.createElement('template');
+          template.innerHTML = Templates.stationSuggestion(st).trim();
+          const item = template.content.firstChild;
           item.addEventListener('click', () => chooseLive(st));
           sugg.appendChild(item);
         });
@@ -3872,126 +3829,45 @@
         return; // Don't create a new one
       }
       
-      // Available S-Bahn lines with descriptions
-      const lineOptions = [
-        { linie: 'S1', beschreibung: 'Pause' },
-        { linie: 'S2', beschreibung: 'Vorbereitung' },
-        { linie: 'S3', beschreibung: 'Kreativität' },
-        { linie: 'S4', beschreibung: "Girls' Night Out" },
-        { linie: 'S45', beschreibung: 'FLURUS' },
-        { linie: 'S46', beschreibung: 'Fachschaftsarbeit' },
-        { linie: 'S5', beschreibung: 'Sport' },
-        { linie: 'S6', beschreibung: 'Lehrveranstaltung' },
-        { linie: 'S60', beschreibung: 'Vortragsübung' },
-        { linie: 'S62', beschreibung: 'Tutorium' },
-        { linie: 'S7', beschreibung: 'Selbststudium' },
-        { linie: 'S8', beschreibung: 'Reise' },
-        { linie: 'S85', beschreibung: 'Reise' },
-        { linie: 'FEX', beschreibung: 'Wichtig ' }
-      ];
+      // Create overlay from template
+      const template = document.createElement('template');
+      template.innerHTML = Templates.linePickerOverlay().trim();
+      const overlay = template.content.firstChild;
       
-      // Create overlay
-      const overlay = document.createElement('div');
-      overlay.className = 'line-picker-overlay';
-      overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 5002;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `;
+      const dropdown = overlay.querySelector('.line-picker-dropdown');
       
-      // Create dropdown container
-      const dropdown = document.createElement('div');
-      dropdown.style.cssText = `
-        background: #1a1f4d;
-        border-radius: 8px;
-        padding: 2vh;
-        width: 70vw;
-        max-height: 70vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        scrollbar-width: none;
-      `;
+      const closeDropdown = () => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+          window.removeEventListener('popstate', handleBackButton, true);
+        }
+      };
       
-      // Add title
-      const title = document.createElement('div');
-      title.textContent = 'Linie auswählen';
-      title.style.cssText = `
-        font-size: 3vh;
-        font-weight: bold;
-        color: white;
-        margin-bottom: 2vh;
-        text-align: center;
-      `;
-      dropdown.appendChild(title);
-      
-      // Create line options
-      lineOptions.forEach(option => {
-        const optionButton = document.createElement('button');
-        optionButton.style.cssText = `
-          width: 100%;
-          padding: 1vh 3vw;
-          margin: 1vh 0;
-          background: rgba(255, 255, 255, 0.1);
-          border: 0.3px solid rgba(255, 255, 255, 0.2);
-          border-radius: 3px;
-          color: white;
-          font-size: 2.5vh;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 2vw;
-          transition: background 0.2s;
-        `;
-        
-        // Add line icon
-        const icon = document.createElement('img');
-        icon.src = getTrainSVG(option.linie);
-        icon.alt = option.linie;
-        icon.style.cssText = `
-          height: 2vh;
-          width: auto;
-        `;
-        icon.onerror = () => {
-          icon.outerHTML = `<div style="padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;">${option.linie}</div>`;
-        };
-        optionButton.appendChild(icon);
-        
-        // Add description
-        const desc = document.createElement('span');
-        desc.textContent = option.beschreibung;
-        desc.style.cssText = `
-          flex: 1;
-          text-align: left;
-          color: rgba(255, 255, 255, 0.8);
-        `;
-        optionButton.appendChild(desc);
+      // Add click handlers to all option buttons
+      const optionButtons = overlay.querySelectorAll('.line-picker-option');
+      optionButtons.forEach(optionButton => {
+        const linie = optionButton.dataset.linie;
+        const beschreibung = optionButton.dataset.beschreibung;
         
         // Click handler
         optionButton.addEventListener('click', async () => {
           // Update train object
-          train.linie = option.linie;
-          train.beschreibung = option.beschreibung;
+          train.linie = linie;
+          train.beschreibung = beschreibung;
           
           // Find the train in schedule and update it
           const trainId = train._uniqueId;
           const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
           if (spontIndex >= 0) {
-            schedule.spontaneousEntries[spontIndex].linie = option.linie;
-            schedule.spontaneousEntries[spontIndex].beschreibung = option.beschreibung;
+            schedule.spontaneousEntries[spontIndex].linie = linie;
+            schedule.spontaneousEntries[spontIndex].beschreibung = beschreibung;
           }
           
           // Auto-save the schedule
           saveSchedule();
           
           // Close overlay
-          document.body.removeChild(overlay);
+          closeDropdown();
           
           // Re-render popup
           renderMobileFocusPopup(train);
@@ -4004,30 +3880,12 @@
         optionButton.addEventListener('mouseup', () => {
           optionButton.style.background = 'rgba(255, 255, 255, 0.1)';
         });
-        
-        dropdown.appendChild(optionButton);
       });
       
       // Add cancel button
-      const cancelButton = document.createElement('button');
-      cancelButton.textContent = 'Abbrechen';
-      cancelButton.style.cssText = `
-        width: 100%;
-        margin-top: 1vh;
-        padding: 1vh;
-        background: rgba(255, 100, 100, 0.3);
-        border: none;
-        border-radius: 4px;
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 2vh;
-        cursor: pointer;
-      `;
-      const closeDropdown = () => {
-        if (document.body.contains(overlay)) {
-          document.body.removeChild(overlay);
-          window.removeEventListener('popstate', handleBackButton, true);
-        }
-      };
+      const template2 = document.createElement('template');
+      template2.innerHTML = Templates.linePickerCancelButton().trim();
+      const cancelButton = template2.content.firstChild;
       
       cancelButton.addEventListener('click', (e) => {
         e.preventDefault();
@@ -4058,7 +3916,6 @@
       // Push a new history state for this dropdown
       window.history.pushState({ dropdown: 'line-picker' }, '');
       
-      overlay.appendChild(dropdown);
       document.body.appendChild(overlay);
     }
 
@@ -4101,6 +3958,147 @@
           if (lineField) lineField.click();
         }
       }, 100);
+    }
+
+    // Show announcements view in mobile mode
+    function showAnnouncementsView() {
+      console.log('🎯 showAnnouncementsView called');
+      const now = new Date();
+      
+      // Get all announcements using the same logic as renderComprehensiveAnnouncementPanel
+      const allAnnouncements = [];
+      
+      console.log('📊 processedTrainData:', processedTrainData);
+      
+      const todayDateStr = now.toLocaleDateString('sv-SE');
+      const isToday = (train) => {
+        if (!train.date) return false;
+        const trainDateStr = train.date.split('T')[0];
+        return trainDateStr === todayDateStr;
+      };
+      
+      // 1. Notes without departure time - ALWAYS FIRST, sorted by their own order
+      const noteTrains = processedTrainData.noteTrains
+        .map(t => ({ ...t, announcementType: 'note' }));
+      
+      // 2. Future trains for other types
+      const futureTrains = processedTrainData.futureTrains.filter(isToday);
+      
+      // 3. Cancelled trains
+      const cancelledTrains = futureTrains
+        .filter(t => t.canceled)
+        .map(t => ({ ...t, announcementType: 'cancelled' }));
+      
+      // 4. Delayed trains
+      const delayedTrains = futureTrains
+        .filter(t => !t.canceled && t.actual && t.actual !== t.plan)
+        .filter(t => {
+          const delay = getDelay(t.plan, t.actual, now, t.date);
+          return delay > 0;
+        })
+        .map(t => ({ ...t, announcementType: 'delayed' }));
+      
+      // 5. Zusatzfahrt
+      const zusatzfahrtTrains = futureTrains
+        .filter(t => !t.canceled && t.ziel && t.ziel.trim().startsWith('[ZF]'))
+        .map(t => ({ ...t, announcementType: 'zusatzfahrt' }));
+      
+      // 6. Ersatzfahrt
+      const cancelledTrainsList = futureTrains.filter(t => t.canceled);
+      const ersatzfahrtTrains = futureTrains.filter(activeTrain => {
+        if (activeTrain.canceled) return false;
+        const activeStart = parseTime(activeTrain.actual || activeTrain.plan, now, activeTrain.date);
+        const activeDur = Number(activeTrain.dauer) || 0;
+        if (!activeStart || activeDur <= 0) return false;
+        const activeEnd = new Date(activeStart.getTime() + activeDur * 60000);
+        
+        return cancelledTrainsList.some(cancelledTrain => {
+          const cancelledStart = parseTime(cancelledTrain.plan, now, cancelledTrain.date);
+          const cancelledDur = Number(cancelledTrain.dauer) || 0;
+          if (!cancelledStart || cancelledDur <= 0) return false;
+          const cancelledEnd = new Date(cancelledStart.getTime() + cancelledDur * 60000);
+          return activeStart < cancelledEnd && activeEnd > cancelledStart;
+        });
+      }).map(t => ({ ...t, announcementType: 'ersatzfahrt' }));
+      
+      // 7. Konflikt
+      const allActiveTrains = processedTrainData.futureTrains.filter(t => !t.canceled);
+      const konfliktTrains = [];
+      for (let i = 0; i < allActiveTrains.length; i++) {
+        for (let j = i + 1; j < allActiveTrains.length; j++) {
+          const t1 = allActiveTrains[i];
+          const t2 = allActiveTrains[j];
+          const t1Start = parseTime(t1.actual || t1.plan, now, t1.date);
+          const t2Start = parseTime(t2.actual || t2.plan, now, t2.date);
+          const t1Dur = Number(t1.dauer) || 0;
+          const t2Dur = Number(t2.dauer) || 0;
+          if (!t1Start || !t2Start || t1Dur <= 0 || t2Dur <= 0) continue;
+          const t1End = new Date(t1Start.getTime() + t1Dur * 60000);
+          const t2End = new Date(t2Start.getTime() + t2Dur * 60000);
+          if (t1Start < t2End && t1End > t2Start) {
+            konfliktTrains.push({
+              ...t1,
+              announcementType: 'konflikt',
+              conflictWith: t2,
+              _uniqueId: t1._uniqueId + '_konflikt_' + t2._uniqueId
+            });
+            break;
+          }
+        }
+      }
+      
+      // Sort each category by time
+      const sortByTime = (arr) => {
+        return arr.sort((a, b) => {
+          const aTime = parseTime(a.plan, now, a.date);
+          const bTime = parseTime(b.plan, now, b.date);
+          if (!aTime && !bTime) return 0;
+          if (!aTime) return 1;
+          if (!bTime) return -1;
+          return aTime - bTime;
+        });
+      };
+      
+      // Add announcements in priority order (notes always first)
+      allAnnouncements.push(...noteTrains);
+      allAnnouncements.push(...sortByTime(cancelledTrains));
+      allAnnouncements.push(...sortByTime(delayedTrains));
+      allAnnouncements.push(...sortByTime(zusatzfahrtTrains));
+      allAnnouncements.push(...sortByTime(ersatzfahrtTrains));
+      allAnnouncements.push(...sortByTime(konfliktTrains));
+      
+      console.log('📢 Total announcements:', allAnnouncements.length);
+      console.log('📋 Announcements:', allAnnouncements);
+      
+      // Render announcements in the main train list panel
+      const trainListEl = document.getElementById('train-list');
+      trainListEl.innerHTML = '';
+      trainListEl.style.opacity = '0';
+      
+      if (allAnnouncements.length === 0) {
+        const template = document.createElement('template');
+        template.innerHTML = Templates.mobileNoAnnouncements().trim();
+        trainListEl.appendChild(template.content.firstChild);
+      } else {
+        allAnnouncements.forEach(announcement => {
+          const template = document.createElement('template');
+          template.innerHTML = Templates.mobileAnnouncementCard(announcement).trim();
+          const card = template.content.firstChild;
+          
+          card.addEventListener('click', () => {
+            renderFocusMode(announcement);
+          });
+          
+          trainListEl.appendChild(card);
+        });
+      }
+      
+      // Show the list with fade-in
+      setTimeout(() => {
+        trainListEl.style.opacity = '1';
+      }, 50);
+      
+      console.log('✅ Announcements rendered in train list panel');
     }
 
 if ('serviceWorker' in navigator) {
