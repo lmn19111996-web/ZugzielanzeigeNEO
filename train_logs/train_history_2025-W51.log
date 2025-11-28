@@ -3,3 +3,5 @@
 {"trainKey":"s4|minecraft night|unknown|2025-12-17","linie":"S4","ziel":"Minecraft Night","plan":"","actual":"","dauer":"","stops":"","date":"2025-12-17","canceled":false}
 {"trainKey":"s4|minecraft night|20:00|2025-12-17","linie":"S4","ziel":"Minecraft Night","plan":"20:00","actual":"20:00","dauer":720,"stops":"","date":"2025-12-17","canceled":false}
 {"trainKey":"s4|flurus weihnachtsfeier|00:00|2025-12-15","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-12-15","canceled":false}
+{"trainKey":"s4|flurus weihnachtsfeier|00:00|2025-12-16","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"00:00","actual":"17:00","dauer":300,"stops":"","date":"2025-12-16","canceled":false}
+{"trainKey":"s4|flurus weihnachtsfeier|17:00|2025-12-16","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"17:00","actual":"00:00","dauer":500,"stops":"","date":"2025-12-16","canceled":false}

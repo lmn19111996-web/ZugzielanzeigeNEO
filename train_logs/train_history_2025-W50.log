@@ -4,3 +4,5 @@
 {"trainKey":"fex|final 25 start|00:00|2025-12-13","linie":"FEX","ziel":"Final 25 Start","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-12-13","canceled":false}
 {"trainKey":"13|eras tour documentary|00:00|2025-12-13","linie":"13","ziel":"Eras Tour Documentary","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-12-13","canceled":false}
 {"trainKey":"fex|[prü] tz-aufgabe 2|14:00|2025-12-11","linie":"FEX","ziel":"[PRÜ] TZ-Aufgabe 2","plan":"14:00","actual":"14:00","dauer":"90","stops":"V31.51","date":"2025-12-11","canceled":false}
+{"trainKey":"fex|supply mission 20.01.2026 - einkauf|00:00|2025-12-13","linie":"FEX","ziel":"Supply Mission 20.01.2026 - Einkauf","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-12-13","canceled":false}
+{"trainKey":"s6|[prü] physik abschlusstest|00:00|2025-12-08","linie":"S6","ziel":"[PRÜ] Physik Abschlusstest","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-12-08","canceled":false}

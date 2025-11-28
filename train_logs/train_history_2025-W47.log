@@ -96,3 +96,4 @@
 {"trainKey":"s7|[zf] technische mechanik i (übung)|22:15|2025-11-23","linie":"S7","ziel":"[ZF] Technische Mechanik I (Übung)","plan":"22:15","actual":"22:15","dauer":90,"stops":"","date":"2025-11-23","canceled":false}
 {"trainKey":"s2|dev note|unknown|2025-11-23","linie":"S2","ziel":"Dev note","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
 {"trainKey":"4|supply mission 20.01.2026|unknown|2025-11-23","linie":"4","ziel":"Supply Mission 20.01.2026","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
+{"trainKey":"4|supply mission 14.01.2026|unknown|2025-11-23","linie":"4","ziel":"Supply Mission 14.01.2026","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-23","canceled":false}
