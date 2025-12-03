@@ -39,6 +39,7 @@ const Templates = {
     const entryClasses = ['train-entry'];
     if (isFirstTrain) entryClasses.push('first-train');
     if (train.linie === 'FEX') entryClasses.push('fex-entry');
+    if (train._isPreview) entryClasses.push('preview-train');
     
     // Create a temporary container for departure HTML
     const tempDiv = document.createElement('div');
@@ -119,6 +120,11 @@ const Templates = {
     const trainEnd = getOccupancyEnd(train, now);
     if (trainStart && trainEnd && trainStart <= now && trainEnd > now) {
       blockClasses.push('current');
+    }
+    
+    // Add preview class
+    if (train._isPreview) {
+      blockClasses.push('preview-train');
     }
     
     // Only show header content for blocks 30 minutes or longer

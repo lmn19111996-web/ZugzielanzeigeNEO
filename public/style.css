@@ -257,26 +257,26 @@ html, body {
 
     /* Overlap indentation levels */
     .belegungsplan-train-block.overlap-0 {
-      width: 100%;
-      left: 2.5vw;
+      width: calc(100% - 5%);
+      left: 5%;
       z-index: 1;
     }
 
     .belegungsplan-train-block.overlap-1 {
-      width: 100%;
-      left: 4vw;
+      width: calc(100% - 8%);
+      left: 8%;
       z-index: 2;
     }
 
     .belegungsplan-train-block.overlap-2 {
-      width: 100%;
-      left: 5.5vw;
+      width: calc(100% - 11%);
+      left: 11%;
       z-index: 3;
     }
 
     .belegungsplan-train-block.overlap-3 {
-      width: 100%;
-      left: 7vw;
+      width: calc(100% - 14%);
+      left: 14%;
       z-index: 4;
     }
 
@@ -900,6 +900,20 @@ html, body {
       background-color: rgba(255, 255, 255, 0.2);
     }
 
+    /* Preview train styles - gray appearance */
+    .train-entry.preview-train {
+      background: rgba(128, 128, 128, 0.448) !important;
+    }
+
+    .train-entry.preview-train * {
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    .belegungsplan-train-block.preview-train {
+      background: rgba(128, 128, 128, 0.597) !important;
+      border-color: rgba(128, 128, 128, 0.722) !important;
+    }
+
     /* Announcement panel styles */
     .announcement-container {
       width: 100%;
@@ -1354,7 +1368,6 @@ html, body {
       cursor: pointer;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       font-size: 2vh;
-      transition: background 0.15s ease;
     }
 
     .suggestion-item:hover,
@@ -1787,3 +1800,126 @@ html, body {
         font-size: 1.8vh;
       }
     }
+
+/* Time Suggestion Panel Styles */
+.time-suggestion-slots-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.time-suggestion-title {
+  font-size: 2.5vh;
+  font-weight: 600;
+  margin-bottom: 2vh;
+  text-align: left;
+}
+
+.time-suggestion-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 1vw;
+  scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;
+}
+
+.time-suggestion-no-slots {
+  padding: 2vh;
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
+  font-size: clamp(14px, 1.8vh, 20px);
+}
+
+.time-suggestion-slot-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 1.5vh 1.5vw;
+  color: white;
+  font-size: clamp(14px, 1.8vh, 20px);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.time-suggestion-slot-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.time-suggestion-slot-button.selected {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.time-suggestion-button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  justify-content: center;
+  align-items: stretch;
+  width: clamp(120px, 15vw, 200px);
+}
+
+.time-suggestion-accept-btn,
+.time-suggestion-cancel-btn {
+  width: 100%;
+  padding: 2vh 0;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-size: 2vh;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.time-suggestion-accept-btn {
+  background: rgba(0, 200, 100, 0.3);
+}
+
+.time-suggestion-accept-btn:hover:not(:disabled) {
+  background: rgba(0, 200, 100, 0.5);
+}
+
+.time-suggestion-accept-btn:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.time-suggestion-cancel-btn {
+  background: rgba(255, 165, 0, 0.3);
+}
+
+.time-suggestion-cancel-btn:hover {
+  background: rgba(255, 165, 0, 0.5);
+}
+
+.time-suggestion-trigger-btn {
+  width: 100%;
+  padding: 1vh 0.5vw;
+  background: rgba(255, 255, 255, 0.155);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.519);
+  font-family: inherit;
+  font-size: 2.5vh;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.time-suggestion-trigger-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.time-suggestion-trigger-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -121,9 +121,9 @@
       "ziel": "Room Decor",
       "stops": "",
       "plan": "22:00",
-      "actual": "22:05",
+      "actual": "19:57",
       "dauer": "120",
-      "canceled": true,
+      "canceled": false,
       "weekday": "monday",
       "zwischenhalte": [
         "Wahrscheinlichkeitsgrad niedrig, fällt bei Nachholterminsbedarf aus",
@@ -236,7 +236,7 @@
       "ziel": "Room Decor",
       "stops": "",
       "plan": "22:00",
-      "actual": "23:00",
+      "actual": "23:22",
       "dauer": 50,
       "canceled": false,
       "weekday": "tuesday",
@@ -248,7 +248,7 @@
       "ziel": "Fitness Studio",
       "stops": "Achtung: Anmeldung noch nicht abgeschlossen!\n\nAb diese Woche um 17 Uhr, falls [HM1] Vortragsübung stattfindet, sonst als [Zusatzfahrt] um 7:30 Uhr angeboten. Dieser Termin fällt demzufolge aus.",
       "plan": "17:00",
-      "actual": "17:00",
+      "actual": "11:00",
       "dauer": "90",
       "canceled": false,
       "weekday": "wednesday",
@@ -279,7 +279,7 @@
       "canceled": false,
       "weekday": "wednesday",
       "_uniqueId": "train_wv2d8u64j_1762683030038",
-      "actual": "09:45",
+      "actual": "09:20",
       "zwischenhalte": [
         "PWR 53 - V 53.01"
       ]
@@ -289,45 +289,18 @@
       "ziel": "Mittagspause/Sprechstunde TZ",
       "stops": "",
       "plan": "11:30",
-      "actual": "11:30",
+      "actual": "10:40",
       "dauer": "60",
       "canceled": false,
       "weekday": "wednesday",
       "_uniqueId": "train_duxjo2aw9_1762683030038"
     },
     {
-      "linie": "S7",
-      "ziel": "",
-      "stops": "Einsatzort: Zuhause\n\nAufgaben:\n- Mathe: Übungsblatt (circa 2 Stunden)\n- Faserverbundlabor: Notizen vervollständigen\n- Physik: Skript für die nächste Vorlesung lesen\n\nHeute um 30 Minuten verlängert.",
-      "plan": "13:00",
-      "actual": "13:00",
-      "dauer": 150,
-      "canceled": false,
-      "weekday": "wednesday",
-      "_uniqueId": "train_q9wkaloze_1762683030038",
-      "zwischenhalte": [
-        "Einsatzort: Zuhause",
-        "",
-        "Aufgabe: ISD Labor vorbereiten"
-      ]
-    },
-    {
-      "linie": "S7",
-      "ziel": "",
-      "stops": "",
-      "plan": "20:00",
-      "actual": "19:30",
-      "dauer": 150,
-      "canceled": false,
-      "weekday": "wednesday",
-      "_uniqueId": "train_fbddlhtlu_1762683030038"
-    },
-    {
       "linie": "S3",
       "ziel": "Room Decor",
       "stops": "",
       "plan": "22:00",
-      "actual": "22:00",
+      "actual": "12:00",
       "dauer": 120,
       "canceled": false,
       "weekday": "wednesday",
@@ -371,7 +344,7 @@
       "ziel": "Mittagspause",
       "stops": "",
       "plan": "13:00",
-      "actual": "12:45",
+      "actual": "13:15",
       "dauer": 45,
       "canceled": false,
       "weekday": "thursday",
@@ -379,7 +352,7 @@
     },
     {
       "linie": "S7",
-      "ziel": "Mathematik I",
+      "ziel": "",
       "stops": "Mengen, Gruppe, Ringe und Körper\n\nKomplexe Zahlen",
       "plan": "14:00",
       "actual": "14:00",
@@ -541,7 +514,7 @@
     },
     {
       "linie": "S7",
-      "ziel": "Mathematik I",
+      "ziel": "",
       "stops": "",
       "plan": "20:00",
       "actual": "20:00",
@@ -1918,11 +1891,11 @@
       "ziel": "Cheap ahh To Do List",
       "stops": "1. Rundfunkbeitrag\n\n4. Dein Ladekabel liegt (hoffentlich) noch in der Fachschaft\n\n6. Viết thư cho Ngọc\n\n\nEdit nur in Legacy-App möglich :3",
       "plan": "",
-      "dauer": "",
+      "dauer": 100,
       "canceled": false,
-      "date": "2025-11-10",
+      "date": "2025-12-03",
       "_uniqueId": "train_oi4t450go_1762765793505",
-      "weekday": "monday",
+      "weekday": "wednesday",
       "zwischenhalte": [
         "6. Viết thư cho Ngọc",
         "17. VORPRAKTIKUM FÜR FEBRUAR - MÄRZ (1 WOCHE)",
@@ -3701,7 +3674,7 @@
       "linie": "S2",
       "ziel": "Kaufliste",
       "plan": "",
-      "dauer": 0,
+      "dauer": 100,
       "zwischenhalte": [
         "- Shampoo ",
         "- Milch!!!",
@@ -3709,7 +3682,7 @@
         "- Matchaaas"
       ],
       "canceled": false,
-      "date": "2024-11-24",
+      "date": "2025-12-03",
       "weekday": "sunday",
       "_uniqueId": "train_335smuvrv_1764024871340",
       "beschreibung": "Vorbereitung"
@@ -3962,7 +3935,7 @@
       "linie": "S45",
       "ziel": "FLURUS IT",
       "plan": "17:30",
-      "actual": "17:30",
+      "actual": "17:10",
       "dauer": 500,
       "zwischenhalte": [
         ""
@@ -3985,6 +3958,70 @@
       "date": "2025-11-28",
       "weekday": "friday",
       "_uniqueId": "train_bafdo5vgh_1764327834358"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Test",
+      "plan": "21:58",
+      "actual": "21:58",
+      "dauer": 2,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-01",
+      "weekday": "monday",
+      "_uniqueId": "train_trp9r3tm4_1764622788569"
+    },
+    {
+      "linie": "S1",
+      "ziel": "TeST",
+      "plan": "22:00",
+      "actual": "22:00",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-12-01",
+      "weekday": "monday",
+      "_uniqueId": "train_dvil76m7j_1764622818181"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Test",
+      "plan": "",
+      "dauer": 100,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-02",
+      "weekday": "tuesday",
+      "_uniqueId": "train_muaimn6yq_1764713065113"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Drugs",
+      "plan": "",
+      "dauer": 60,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2025-12-03",
+      "weekday": "wednesday",
+      "_uniqueId": "train_dbt6gr5wr_1764720659236"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Mathe",
+      "plan": "14:00",
+      "dauer": 60,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2025-12-04",
+      "weekday": "wednesday",
+      "_uniqueId": "train_mzkml4v51_1764784287783",
+      "actual": "14:00"
     }
   ],
   "trains": []
