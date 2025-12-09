@@ -2,7 +2,10 @@ html, body {
       height: 100%;
       margin: 0;
       padding: 0;
+      /* DEBUG COLOR */
       background: #161B75;
+      /* RELEASE COLOR */
+      /*background: #161B75; */
       color: white;
       font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
       font-stretch: condensed;
@@ -937,6 +940,11 @@ html, body {
     .announcement-container.fade-out {
       opacity: 0;
     }
+    
+    .announcement-container.pinned-train {
+      background: #161B75;
+      color: white;
+    }
 
     .announcement-panel {
       width: 100%;
@@ -988,6 +996,33 @@ html, body {
     .announcement-headline.konflikt {
       background: #8a0303;
       color: white;
+    }
+    
+    .announcement-headline.pinned {
+      background: #161B75;
+      color: #161B75;
+    }
+    
+    /* Unpin button styles - matches konflikt resolve button */
+    .unpin-button {
+      background: rgba(252, 246, 246, 0);
+      color: rgba(255, 255, 255, 0.152);
+      font-family: inherit;
+      padding: 0.5vh 1.5vh;
+      border: none;
+      letter-spacing: normal;
+      font-size: 2.5vh;
+      font-weight: 400;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    
+    .unpin-button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .unpin-button:active {
+      background: rgba(130, 130, 130, 0.226);
     }
 
     /* Konflikt-specific styles */
@@ -1160,28 +1195,33 @@ html, body {
     .announcement-group-icon-type {
       width: 100%;
       display: flex;
-      flex-direction: row;
+      justify-content: space-between;
       align-items: center;
+      box-sizing: border-box;
+      margin-bottom: 2vh;
       box-sizing: border-box;
     }
 
     .announcement-line-icon {
-      width: 8vh;
-      height: 8vh;
+      width: clamp(4vh, 8vh, 8vw);
+      height: clamp(4vh, 8vh, 8vw);
       padding-left: 0.5vh;
+      padding-right: 2vh;
+      object-fit: contain;
     }
 
     .announcement-time-slot {
-      width: 100%;
+      width: auto;
       display: flex;
       flex-direction: row;
       align-items: center;
-      font-size: 5.5vh;
+      font-size: clamp(2.5vh, 5.5vh, 5vw);
       font-weight: 400;
       padding-right: 0.5vh;
       padding-left: 0.5vh;
       letter-spacing: -0.02em;
       padding-bottom: 0.2vh;
+      padding-top: 1vh;
       box-sizing: border-box;
     }
 
@@ -1199,7 +1239,7 @@ html, body {
 
     .announcement-destination {
       width: 100%;
-      font-size: 5.5vh;
+      font-size: clamp(2.5vh, 4.5vh, 4vw);
       font-weight: 500;
       letter-spacing: -0.02em;
       padding: 0 0.5vh;
@@ -1335,7 +1375,7 @@ html, body {
 
     .suggestions {
       flex: 1 1 auto;
-      background: #0e1254;
+      background: #161B75;
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 5px;
       overflow-y: auto;

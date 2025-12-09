@@ -121,7 +121,7 @@
       "ziel": "Room Decor",
       "stops": "",
       "plan": "22:00",
-      "actual": "19:57",
+      "actual": "20:02",
       "dauer": "120",
       "canceled": false,
       "weekday": "monday",
@@ -212,7 +212,7 @@
       "plan": "17:45",
       "actual": "17:45",
       "dauer": "90",
-      "canceled": false,
+      "canceled": true,
       "weekday": "tuesday",
       "_uniqueId": "train_l7zj70p8s_1762683030038",
       "zwischenhalte": [
@@ -529,12 +529,12 @@
     },
     {
       "linie": "S3",
-      "ziel": "",
+      "ziel": "Kreativität",
       "stops": "",
       "plan": "22:00",
       "actual": "23:00",
       "dauer": 60,
-      "canceled": true,
+      "canceled": false,
       "weekday": "saturday",
       "_uniqueId": "train_n97exkpf5_1762683030038"
     },

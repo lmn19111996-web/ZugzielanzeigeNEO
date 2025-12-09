@@ -130,6 +130,9 @@
       // Remaining trains (all future trains)
       processedTrainData.remainingTrains = processedTrainData.futureTrains;
       
+      // Sync pinned trains with updated data
+      syncPinnedTrains();
+      
       return processedTrainData;
     }
     // Helper functions
@@ -3383,6 +3386,9 @@
     // Comprehensive announcements panel pagination state
     let comprehensiveAnnouncementCurrentPage = 0;
     let comprehensiveAnnouncementInterval = null;
+    
+    // Pinned trains state (array for multiple pins)
+    let pinnedTrains = [];
 
     // Render comprehensive announcement panel with all announcement types
     function renderComprehensiveAnnouncementPanel() {
@@ -3396,6 +3402,22 @@
       }
 
       const allAnnouncements = [];
+      
+      // 0. PRIORITY: Pinned trains (if any exist) - sorted by time
+      if (pinnedTrains && pinnedTrains.length > 0) {
+        const sortedPinnedTrains = [...pinnedTrains].sort((a, b) => {
+          const aTime = parseTime(a.actual || a.plan, now, a.date);
+          const bTime = parseTime(b.actual || b.plan, now, b.date);
+          if (!aTime && !bTime) return 0;
+          if (!aTime) return 1;
+          if (!bTime) return -1;
+          return aTime - bTime;
+        });
+        
+        sortedPinnedTrains.forEach(train => {
+          allAnnouncements.push({ ...train, announcementType: 'pinned' });
+        });
+      }
 
       // Helper function to check if a train is today
       const todayDateStr = now.toLocaleDateString('sv-SE'); // YYYY-MM-DD format
@@ -3518,9 +3540,26 @@
       allAnnouncements.push(...konfliktTrains);
 
       // Sort all announcements chronologically
-      // Notes without times go first, then everything else by departure time
+      // Pinned trains ALWAYS come first (maintain their sorted order)
+      // Notes without times go second, then everything else by departure time
       allAnnouncements.sort((a, b) => {
-        // Notes without plan time come first
+        // Pinned trains always come first
+        const aIsPinned = a.announcementType === 'pinned';
+        const bIsPinned = b.announcementType === 'pinned';
+        
+        if (aIsPinned && !bIsPinned) return -1;
+        if (!aIsPinned && bIsPinned) return 1;
+        if (aIsPinned && bIsPinned) {
+          // Both pinned, sort by time
+          const aTime = parseTime(a.actual || a.plan, now, a.date);
+          const bTime = parseTime(b.actual || b.plan, now, b.date);
+          if (!aTime && !bTime) return 0;
+          if (!aTime) return 1;
+          if (!bTime) return -1;
+          return aTime - bTime;
+        }
+        
+        // Notes without plan time come next (after pinned)
         const aHasTime = a.plan && a.plan.trim() !== '';
         const bHasTime = b.plan && b.plan.trim() !== '';
         
@@ -3813,7 +3852,18 @@
 
         // Set headline based on announcement type
         const headline = clone.querySelector('[data-announcement="headline"]');
-        if (train.announcementType === 'note') {
+        if (train.announcementType === 'pinned') {
+          // Pinned train: classic blue background, no text, with unpin button
+          headline.className = 'announcement-headline pinned';
+          headline.innerHTML = '<button class="unpin-button">✕</button>';
+          
+          // Add unpin functionality
+          const unpinButton = headline.querySelector('.unpin-button');
+          unpinButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            unpinTrain(train._uniqueId);
+          });
+        } else if (train.announcementType === 'note') {
           headline.className = 'announcement-headline announce';
           headline.textContent = ' ⓘ Ankündigung ';
         } else if (train.announcementType === 'cancelled') {
@@ -3828,6 +3878,12 @@
         } else if (train.announcementType === 'delayed') {
           headline.className = 'announcement-headline late';
           headline.textContent = ' ⚠︎ Verspätung ';
+        }
+        
+        // Apply classic blue background to pinned train container using CSS class
+        if (train.announcementType === 'pinned') {
+          const announcementContainer = clone.querySelector('.announcement-container');
+          announcementContainer.classList.add('pinned-train');
         }
 
         // Hide or show line icon and type
@@ -3893,9 +3949,17 @@
         const content = clone.querySelector('[data-announcement="content"]');
         content.innerHTML = formatStopsWithDate(train);
 
-        // Add click-to-edit functionality for local trains
+        // Add click-to-edit functionality for local trains or click-to-view for pinned
         const announcementPanel = clone.querySelector('.announcement-panel');
-        if (train.source === 'local' && train.announcementType === 'note') {
+        if (train.announcementType === 'pinned') {
+          announcementPanel.style.cursor = 'pointer';
+          announcementPanel.addEventListener('click', (e) => {
+            // Don't trigger if clicking the unpin button
+            if (!e.target.closest('.unpin-button')) {
+              renderFocusMode(train);
+            }
+          });
+        } else if (train.source === 'local' && train.announcementType === 'note') {
           announcementPanel.style.cursor = 'pointer';
           announcementPanel.addEventListener('click', () => {
             renderFocusMode(train);
@@ -3942,6 +4006,117 @@
           }, 1000); // Match the CSS transition time
         }, 16000); // 15 seconds visible + 1 second transition
       }
+    }
+
+    /**
+     * Pin the currently focused train to announcements
+     */
+    function pinCurrentTrain() {
+      // Check if there's a focused train
+      const focusedTrainId = desktopFocusedTrainId || mobileFocusedTrainId;
+      if (!focusedTrainId) {
+        console.log('No train focused, cannot pin');
+        return;
+      }
+      
+      // Find the train in processed data
+      const train = processedTrainData.scheduledTrains.find(t => t._uniqueId === focusedTrainId);
+      if (!train) {
+        console.log('Focused train not found');
+        return;
+      }
+      
+      // Check if focus panel is in edit mode (has input/textarea elements)
+      const focusPanel = document.getElementById('focus-panel');
+      if (focusPanel && (focusPanel.querySelector('input') || focusPanel.querySelector('textarea'))) {
+        console.log('Focus panel is in edit mode, cannot pin');
+        return;
+      }
+      
+      // Check if already pinned
+      if (pinnedTrains.some(t => t._uniqueId === train._uniqueId)) {
+        console.log('Train already pinned');
+        return;
+      }
+      
+      // Pin the train (create a copy to avoid mutation)
+      const pinnedCopy = { ...train };
+      pinnedTrains.push(pinnedCopy);
+      console.log('Train pinned:', pinnedCopy);
+      
+      // Save to localStorage
+      savePinnedTrains();
+      
+      // Re-render announcement panel to show pinned train
+      renderComprehensiveAnnouncementPanel();
+    }
+    
+    /**
+     * Unpin a specific train by ID
+     */
+    function unpinTrain(trainId) {
+      pinnedTrains = pinnedTrains.filter(t => t._uniqueId !== trainId);
+      console.log('Train unpinned:', trainId);
+      
+      // Save to localStorage
+      savePinnedTrains();
+      
+      // Re-render announcement panel
+      renderComprehensiveAnnouncementPanel();
+    }
+    
+    /**
+     * Save pinned trains to localStorage
+     */
+    function savePinnedTrains() {
+      try {
+        localStorage.setItem('pinnedTrains', JSON.stringify(pinnedTrains));
+      } catch (error) {
+        console.error('Error saving pinned trains:', error);
+      }
+    }
+    
+    /**
+     * Load pinned trains from localStorage
+     */
+    function loadPinnedTrains() {
+      try {
+        const saved = localStorage.getItem('pinnedTrains');
+        if (saved) {
+          pinnedTrains = JSON.parse(saved);
+          console.log('Loaded pinned trains:', pinnedTrains);
+        }
+      } catch (error) {
+        console.error('Error loading pinned trains:', error);
+        pinnedTrains = [];
+      }
+    }
+    
+    /**
+     * Sync pinned trains with current schedule data
+     * Updates pinned trains with latest data from processedTrainData
+     */
+    function syncPinnedTrains() {
+      if (!pinnedTrains || pinnedTrains.length === 0) return;
+      
+      const updated = [];
+      pinnedTrains.forEach(pinnedTrain => {
+        // Find the current version of this train in processed data
+        const currentTrain = processedTrainData.scheduledTrains.find(
+          t => t._uniqueId === pinnedTrain._uniqueId
+        );
+        
+        if (currentTrain) {
+          // Update with current data
+          updated.push({ ...currentTrain });
+        } else {
+          // Train no longer exists, keep the old data but mark it
+          updated.push(pinnedTrain);
+        }
+      });
+      
+      pinnedTrains = updated;
+      savePinnedTrains();
     }
 
     // Render announcement panel with cancelled trains
@@ -4032,6 +4207,14 @@
       if (toggleViewBtn) {
         toggleViewBtn.addEventListener('click', () => {
           toggleViewMode();
+        });
+      }
+      
+      // Pin train button event listener
+      const pinTrainBtn = document.getElementById('pin-train-button');
+      if (pinTrainBtn) {
+        pinTrainBtn.addEventListener('click', () => {
+          pinCurrentTrain();
         });
       }
       
@@ -4790,6 +4973,22 @@
         return trainDateStr === todayDateStr;
       };
       
+      // 0. PRIORITY: Pinned trains (if any exist) - sorted by time
+      if (pinnedTrains && pinnedTrains.length > 0) {
+        const sortedPinnedTrains = [...pinnedTrains].sort((a, b) => {
+          const aTime = parseTime(a.actual || a.plan, now, a.date);
+          const bTime = parseTime(b.actual || b.plan, now, b.date);
+          if (!aTime && !bTime) return 0;
+          if (!aTime) return 1;
+          if (!bTime) return -1;
+          return aTime - bTime;
+        });
+        
+        sortedPinnedTrains.forEach(train => {
+          allAnnouncements.push({ ...train, announcementType: 'pinned' });
+        });
+      }
+      
       // 1. Notes without departure time - ALWAYS FIRST, sorted by their own order
       const noteTrains = processedTrainData.noteTrains
         .map(t => ({ ...t, announcementType: 'note' }));
@@ -4919,3 +5118,6 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/public/service-worker.js');
       });
     }
+    
+    // Load pinned trains from localStorage on startup
+    loadPinnedTrains();

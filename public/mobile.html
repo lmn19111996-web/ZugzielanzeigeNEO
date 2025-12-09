@@ -61,11 +61,11 @@
       <div class="announcement-panel">
         <div class="announcement-headline late" data-announcement="headline"> ✕ Zug fällt aus </div>
         <div class="announcement-group-icon-type">
+          <div class="announcement-time-slot">
+            <div class="announcement-plan" data-announcement="plan"></div>
+            <div class="announcement-delayed" data-announcement="delayed" style="display: none;"></div>
+          </div>
           <img class="announcement-line-icon" src="" alt="Train Icon" data-announcement="line-icon">
-        </div>
-        <div class="announcement-time-slot">
-          <div class="announcement-plan" data-announcement="plan"></div>
-          <div class="announcement-delayed" data-announcement="delayed" style="display: none;"></div>
         </div>
         <div class="announcement-destination" data-announcement="destination"></div>
         <div class="announcement-content-panel" data-announcement="content"></div>
@@ -202,6 +202,7 @@
             <button class="task-button" id="add-train-button">+</button>
             <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
             <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
+            <button class="task-icon-button" id="pin-train-button" title="Pin Train to Announcements"><img src="pin.svg" alt="Pin Train"></button>
             <button class="task-icon-button" id="announcements-button" title="View Announcements"><img src="notes.png" alt="Announcements"></button>
           </div>
           <div class="date-selector" id="date-selector">
@@ -243,8 +244,7 @@
       <div id="station-suggestions" class="suggestions" style="display:none"></div>
     </div>
   </div>
-
-  <!-- script extracted to app.js -->
+  
   <!-- script extracted to app.js -->
 <script src="templates.js"></script>
 <script src="app.js"></script>
