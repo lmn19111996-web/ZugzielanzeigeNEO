@@ -12,7 +12,7 @@
         "PWR 53 - V53.01"
       ],
       "_uniqueId": "train_s9bcv3it9_1762683030038",
-      "actual": "07:45"
+      "actual": "00:45"
     },
     {
       "linie": "S7",
@@ -4022,6 +4022,62 @@
       "weekday": "wednesday",
       "_uniqueId": "train_mzkml4v51_1764784287783",
       "actual": "14:00"
+    },
+    {
+      "linie": "S75",
+      "ziel": "Hildesheim",
+      "plan": "00:00",
+      "actual": "00:20",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-08",
+      "weekday": "monday",
+      "_uniqueId": "train_i0jnmihum_1770591959823"
+    },
+    {
+      "linie": "S75",
+      "ziel": "Hildesheim Hbf",
+      "plan": "00:00",
+      "actual": "00:24",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_7d89yhiej_1770591994677"
+    },
+    {
+      "linie": "10",
+      "ziel": "Ahlem",
+      "plan": "00:30",
+      "actual": "00:30",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-08",
+      "weekday": "monday",
+      "_uniqueId": "train_vi556ypo3_1770592063944"
+    },
+    {
+      "linie": "10",
+      "ziel": "Ahlem",
+      "plan": "00:30",
+      "actual": "00:30",
+      "dauer": 0,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_1odlgbzkx_1770592103383"
     }
   ],
   "trains": []

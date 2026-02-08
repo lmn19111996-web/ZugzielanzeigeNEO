@@ -2,3 +2,10 @@
 {"trainKey":"fex|prüfungsphase wise25/26|00:00|2026-02-04","linie":"FEX","ziel":"Prüfungsphase WiSe25/26","plan":"00:00","actual":"00:00","dauer":"0","stops":"","date":"2026-02-04","canceled":false}
 {"trainKey":"s5|ski kurs|06:00|2026-02-04","linie":"S5","ziel":"Ski Kurs","plan":"06:00","actual":"06:00","dauer":720,"stops":"","date":"2026-02-04","canceled":false}
 {"trainKey":"s6|[prü] physik abschlusstest|00:00|2026-02-02","linie":"S6","ziel":"[PRÜ] Physik Abschlusstest","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-02-02","canceled":false}
+{"trainKey":"s7|mathematik i|10:00|2026-02-08","linie":"S7","ziel":"Mathematik I","plan":"10:00","actual":"08:00","dauer":210,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s7|technische mechanik i (übung)|14:00|2026-02-08","linie":"S7","ziel":"Technische Mechanik I (Übung)","plan":"14:00","actual":"14:00","dauer":180,"stops":"Dieser Termin ist für das Selbststudium TM1 vorgesehen.\nLiteratur: TM1","date":"2026-02-08","canceled":false}
+{"trainKey":"s7|mathematik i|19:00|2026-02-08","linie":"S7","ziel":"Mathematik I","plan":"19:00","actual":"19:00","dauer":240,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s5|test|23:56|2026-02-08","linie":"S5","ziel":"Test","plan":"23:56","actual":"00:12","dauer":"","stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|hildesheim|00:00|2026-02-08","linie":"S75","ziel":"Hildesheim","plan":"00:00","actual":"00:20","dauer":"","stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"10|ahlem|00:15|2026-02-08","linie":"10","ziel":"Ahlem","plan":"00:15","actual":"00:30","dauer":"","stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"10|ahlem|00:30|2026-02-08","linie":"10","ziel":"Ahlem","plan":"00:30","actual":"00:30","dauer":"","stops":"","date":"2026-02-08","canceled":false}
