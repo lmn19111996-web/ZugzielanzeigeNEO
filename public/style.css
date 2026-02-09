@@ -15,7 +15,7 @@ html, body {
     }
 
     :root {
-      --editor-drawer-width: 20vw;
+      --editor-drawer-width: clamp(20vw, 300px, 350px);
       --announcements-drawer-width: 20vw;
     }
     
@@ -47,13 +47,12 @@ html, body {
 
     /* Top ribbon with clock and title - now part of left column */
     .top-ribbon {
-      height: 9vh;
+      height: 8vh;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding-left: 1.5vw;
       padding-right: 1.5vw;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.64);
       box-sizing: border-box;
     }
 
@@ -69,6 +68,27 @@ html, body {
       width: 100%;
       max-width: 100%;
       padding-right: 0;
+    }
+
+    #first-train-container .train-symbol {
+      width: 7.5vh;
+      height: 7.5vh;
+    }
+
+    #first-train-container .symbol-slot {
+      width: 7.5vh;
+    }
+
+    #first-train-container .line-badge {
+      font-size: 3vh;
+    }
+
+    #first-train-container .zugziel {
+      font-size: 4.2vh;
+    }
+
+    #first-train-container .departure {
+      font-size: 3.75vh;
     }
 
     .clock {
@@ -498,13 +518,14 @@ html, body {
       top: 0;
       right: calc(-1 * var(--editor-drawer-width));
       width: var(--editor-drawer-width);
-      height: 100vh;
-      background: #161B75;
-      border-left: 1px solid rgba(255, 255, 255, 0.64);
+      height: 95vh;
+      margin-top: 2.5vh;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      background: #0F1450;
       box-sizing: border-box;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: right 0.3s ease;
+      transition: right 0.2s ease;
       z-index: 1200;
       display: block;
       padding: 0;
@@ -515,7 +536,7 @@ html, body {
     }
 
     .now-card {
-      background: rgba(255, 255, 255, 0.03);
+      background: #171d5e;
       border-bottom: none;
       border: 0.5px solid rgba(255, 255, 255, 0.2);
       border-radius: 0.8vh;
@@ -670,7 +691,7 @@ html, body {
 
     /* Symbol slot */
     .symbol-slot {
-      width: 7.5vh;
+      width: 6vh;
       display: flex;
       align-items: center;
       justify-content: flex-start;
@@ -679,8 +700,8 @@ html, body {
     }
 
     .train-symbol {
-      width: 7.5vh;
-      height: 7.5vh;
+      width: 6vh;
+      height: 6vh;
     }
 
     .line-badge {
@@ -691,7 +712,7 @@ html, body {
       padding: 0.45vh 1.2vh;
       border-radius: 0.6vh;
       font-weight: 500;
-      font-size: 3vh;
+      font-size: 2.4vh;
       font-stretch: condensed;
       color: white;
       background: transparent;
@@ -708,7 +729,7 @@ html, body {
       overflow: hidden;
       text-overflow: ellipsis;
       display: block;
-      font-size: 4.2vh;
+      font-size: 3.4vh;
       flex: 1;
       padding-left: 1.2vw;
     }
@@ -732,7 +753,7 @@ html, body {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 3.75vh;
+      font-size: 3vh;
       color: inherit;
       display: inline-block;
     }
@@ -1905,13 +1926,20 @@ html, body {
         padding: 2vh 0;
         box-sizing: border-box;
         overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .editor-container::-webkit-scrollbar {
+        display: none;
       }
 
       .editor-field {
-        padding: 1.5vh 2vw;
+        padding: 1.5vh 1vw;
+        margin: 0 1vw;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         cursor: pointer;
-        transition: background 0.2s ease;
+        transition: background 0.1s ease;
       }
 
       .editor-field:hover {
@@ -1919,7 +1947,7 @@ html, body {
       }
 
       .editor-field-label {
-        font-size: 1.4vh;
+        font-size: 1.6vh;
         color: rgba(255, 255, 255, 0.6);
         margin-bottom: 0.5vh;
         font-weight: 300;
@@ -1932,10 +1960,41 @@ html, body {
         min-height: 2.5vh;
       }
 
+      .editor-field-multiline {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
       .editor-field-multiline .editor-field-value {
         white-space: pre-wrap;
         word-wrap: break-word;
         line-height: 1.5;
+        flex: 1;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .editor-field-multiline .editor-field-value::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Hide scrollbar in textarea when in edit mode */
+      .editor-field-multiline textarea {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .editor-field-multiline textarea::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Date and time input picker styling */
+      .editor-field input[type="date"]::-webkit-calendar-picker-indicator,
+      .editor-field input[type="time"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
       }
 
       .editor-actions {
@@ -1957,7 +2016,7 @@ html, body {
         font-weight: 400;
         cursor: pointer;
         border-radius: 4px;
-        transition: background 0.2s ease;
+        transition: background 0.1s ease;
       }
 
       .editor-btn:hover {
@@ -1980,6 +2039,35 @@ html, body {
 
       .editor-btn-delete:hover {
         background: rgba(255, 80, 80, 0.4);
+      }
+
+      .editor-delay-buttons {
+        display: flex;
+        gap: 1vh;
+        padding: 1vh 2vw;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .editor-btn-delay {
+        flex: 1;
+        padding: 1vh 0;
+        background: rgba(100, 150, 255, 0.2);
+        border: none;
+        color: rgba(150, 200, 255, 0.9);
+        font-family: inherit;
+        font-size: 1.6vh;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+      }
+
+      .editor-btn-delay:hover {
+        background: rgba(100, 150, 255, 0.3);
+      }
+
+      .editor-btn-delay:active {
+        background: rgba(100, 150, 255, 0.4);
       }
     }
 

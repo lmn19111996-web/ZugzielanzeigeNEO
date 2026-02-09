@@ -24,6 +24,57 @@
       "date": "2026-02-09",
       "weekday": "monday",
       "_uniqueId": "train_j7w5o2ruz_1770633766020"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Hildesheim",
+      "plan": "",
+      "dauer": 6,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_hmorb8u8y_1770644986840"
+    },
+    {
+      "linie": "S8",
+      "ziel": "Dörverden",
+      "plan": "11:00",
+      "actual": "22:10",
+      "dauer": 30,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_0vwezc3lz_1770657976017"
+    },
+    {
+      "linie": "RE8",
+      "ziel": "",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_f74ri39sg_1770662542825"
+    },
+    {
+      "linie": "S60",
+      "ziel": "ExPhys",
+      "plan": "22:00",
+      "dauer": 120,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_12isrcun4_1770667893919",
+      "announcementType": "note",
+      "actual": "00:00"
     }
   ],
   "trains": []

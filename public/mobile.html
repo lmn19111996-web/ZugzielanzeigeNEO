@@ -30,17 +30,24 @@
       </div>
       
       <div class="editor-field" data-field="plan" data-input-type="time" data-editable="true">
-        <div class="editor-field-label">Ankunft (Plan)</div>
+        <div class="editor-field-label">Planmäßige Abfahrt</div>
         <div class="editor-field-value" data-focus="arrival-plan"></div>
       </div>
       
       <div class="editor-field" data-field="actual" data-input-type="time" data-editable="true">
-        <div class="editor-field-label">Ankunft (Ist)</div>
+        <div class="editor-field-label">Tatsächliche Abfahrt</div>
         <div class="editor-field-value" data-focus="arrival-actual"></div>
       </div>
       
+      <div class="editor-delay-buttons">
+        <button class="editor-btn-delay" data-delay-action="minus5" tabindex="-1">-5</button>
+        <button class="editor-btn-delay" data-delay-action="plus5" tabindex="-1">+5</button>
+        <button class="editor-btn-delay" data-delay-action="plus10" tabindex="-1">+10</button>
+        <button class="editor-btn-delay" data-delay-action="plus30" tabindex="-1">+30</button>
+      </div>
+      
       <div class="editor-field" data-field="dauer" data-input-type="number" data-editable="true">
-        <div class="editor-field-label">Dauer (Min)</div>
+        <div class="editor-field-label">Dauer</div>
         <div class="editor-field-value" data-focus="duration"></div>
       </div>
       
@@ -50,8 +57,8 @@
       </div>
       
       <div class="editor-actions" data-focus="actions">
-        <button class="editor-btn editor-btn-cancel" data-focus-action="cancel">Abbrechen</button>
-        <button class="editor-btn editor-btn-delete" data-focus-action="delete">Löschen</button>
+        <button class="editor-btn editor-btn-cancel" data-focus-action="cancel" tabindex="-1">Durchstreichen</button>
+        <button class="editor-btn editor-btn-delete" data-focus-action="delete" tabindex="-1">Löschen</button>
       </div>
     </div>
   </template>

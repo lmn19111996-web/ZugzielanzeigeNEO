@@ -595,6 +595,7 @@
       const now = new Date();
       const firstTrainContainer = document.getElementById('first-train-container');
       const currentTrain = processedTrainData.currentTrain;
+      const topRibbon = document.querySelector('.top-ribbon');
       
       if (currentTrain) {
         const existingEntry = firstTrainContainer.querySelector('.train-entry');
@@ -614,10 +615,20 @@
           const firstEntry = createTrainEntry(currentTrain, now, true);
           firstTrainContainer.innerHTML = '';
           firstTrainContainer.appendChild(firstEntry);
+          
+          // Apply line color to top ribbon bottom border
+          if (topRibbon) {
+            const lineColor = getLineColor(currentTrain.linie || 'S1');
+            topRibbon.style.borderBottom = `4px solid ${lineColor}`;
+          }
         }
         // If train hasn't changed, updateClock() will handle the countdown update
       } else {
         firstTrainContainer.innerHTML = '';
+        // Reset to default border color when no train
+        if (topRibbon) {
+          topRibbon.style.borderBottom = '3px solid rgba(255, 255, 255, 0.64)';
+        }
       }
     }
 
@@ -2053,6 +2064,13 @@
       // The browser will handle cursor positioning based on where the user clicked
     }
 
+    // Persistent timeout for delay button debouncing (survives re-renders)
+    let delayButtonTimeout = null;
+    
+    // Global handlers for editor drawer (prevent duplicate listener registration)
+    let editorDrawerEscHandler = null;
+    let editorDrawerClickOutHandler = null;
+
     function renderFocusMode(train) {
       const now = new Date();
       
@@ -2085,6 +2103,12 @@
       
       openEditorDrawer();
       hideWorkspacePlaceholder();
+      
+      // Apply line color to editor drawer border
+      const lineColor = getLineColor(train.linie || 'S1');
+      panel.style.borderLeft = `4px solid ${lineColor}`;
+      panel.style.borderTopLeftRadius = '8px';
+      panel.style.borderBottomLeftRadius = '8px';
       
       try {
         // Only allow editing for local schedule trains
@@ -2325,9 +2349,18 @@
             input.style.fontSize = '2vh';
             input.style.outline = 'none';
             
+            // Style date and time inputs with white icons (dark mode)
+            if (inputType === 'date' || inputType === 'time') {
+              input.style.colorScheme = 'dark';
+            }
+            
             if (inputType === 'textarea') {
+              input.style.height = '100%';
               input.style.minHeight = '8vh';
-              input.style.resize = 'vertical';
+              input.style.resize = 'none';
+              input.style.overflowY = 'auto';
+              input.style.scrollbarWidth = 'none';
+              input.style.msOverflowStyle = 'none';
             }
             
             // Replace value element
@@ -2343,13 +2376,39 @@
                 return; // Allow default
               }
               
+              // For Tab key, implement custom cycling
+              if (keyEvent.key === 'Tab') {
+                keyEvent.preventDefault();
+                
+                // Define tab order
+                const tabOrder = ['linie', 'ziel', 'date', 'plan', 'actual', 'dauer', 'zwischenhalte'];
+                const currentIndex = tabOrder.indexOf(fName);
+                let nextIndex = keyEvent.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                
+                // Wrap around
+                if (nextIndex >= tabOrder.length) nextIndex = 0;
+                if (nextIndex < 0) nextIndex = tabOrder.length - 1;
+                
+                const nextFieldName = tabOrder[nextIndex];
+                const nextInput = inputs[nextFieldName];
+                if (nextInput) {
+                  nextInput.focus();
+                  // Position cursor at end for text inputs
+                  if (nextInput.setSelectionRange && nextInput.type === 'text') {
+                    nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+                  }
+                }
+                return;
+              }
+              
               if (keyEvent.key === 'Enter') {
                 keyEvent.preventDefault();
                 await saveAllFields();
               } else if (keyEvent.key === 'Escape') {
                 keyEvent.preventDefault();
-                // Just re-render without saving to revert changes
-                renderFocusMode(train);
+                keyEvent.stopPropagation(); // Prevent global Esc handler from closing drawer
+                // Save changes and exit edit mode (don't close drawer yet)
+                await saveAllFields();
               }
             });
           });
@@ -2403,18 +2462,148 @@
       });
       
       // Global Esc handler to close drawer when not in edit mode
-      const globalEscHandler = (e) => {
+      // Remove old handler if exists to prevent duplicates
+      if (editorDrawerEscHandler) {
+        document.removeEventListener('keydown', editorDrawerEscHandler, true);
+      }
+      
+      editorDrawerEscHandler = (e) => {
         if (e.key === 'Escape' && document.body.contains(panel)) {
           // Check if we're in edit mode
           const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
           if (!hasInputs) {
             // Not in edit mode, close the drawer
+            e.preventDefault();
+            desktopFocusedTrainId = null;
+            panel.innerHTML = '';
             closeEditorDrawer();
           }
         }
       };
       
-      document.addEventListener('keydown', globalEscHandler, true);
+      document.addEventListener('keydown', editorDrawerEscHandler, true);
+      
+      // Click-out handler to close drawer when clicking outside
+      // Remove old handler if exists to prevent duplicates
+      if (editorDrawerClickOutHandler) {
+        document.removeEventListener('click', editorDrawerClickOutHandler, true);
+      }
+      
+      editorDrawerClickOutHandler = (e) => {
+        // Check if panel is open and has content
+        if (panel && panel.classList.contains('is-open') && panel.innerHTML.trim() !== '') {
+          // Check if we're in edit mode
+          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          
+          // Don't close if clicking inside the panel or if in edit mode
+          if (!panel.contains(e.target) && !hasInputs) {
+            desktopFocusedTrainId = null;
+            panel.innerHTML = '';
+            closeEditorDrawer();
+            // Remove selection from all train entries
+            document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+          }
+        }
+      };
+      
+      // Use capture phase to handle click before other handlers
+      document.addEventListener('click', editorDrawerClickOutHandler, true);
+      
+      // Add delay button event listeners - EXACTLY like legacy but with debounced save
+      const delayButtonsContainer = panel.querySelector('.editor-delay-buttons');
+      if (delayButtonsContainer) {
+        // Use persistent timeout variable (defined outside renderFocusMode)
+        // Clear any existing timeout to prevent duplicate saves
+        clearTimeout(delayButtonTimeout);
+        delayButtonTimeout = null;
+        
+        delayButtonsContainer.addEventListener('click', async (e) => {
+          const button = e.target.closest('[data-delay-action]');
+          if (!button) return;
+          
+          const action = button.dataset.delayAction;
+          const trainId = panel.dataset.trainId;
+          
+          // Find train in schedule
+          let scheduleTrain = schedule.fixedSchedule.find(t => t._uniqueId === trainId);
+          if (!scheduleTrain) {
+            scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+          }
+          
+          if (!scheduleTrain) {
+            console.error('Train not found in schedule!');
+            return;
+          }
+          
+          const now = new Date();
+          
+          // COPY LEGACY LOGIC EXACTLY
+          switch (action) {
+            case 'minus5':
+              // Subtract 5 minutes from delay (actual time) - can make train earlier than planned
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay - 5; // Allow negative (earlier than planned)
+                if (newDelay === 0) {
+                  train.actual = undefined; // Remove delay (on time)
+                  scheduleTrain.actual = undefined;
+                } else {
+                  const planDate = parseTime(train.plan, now, train.date);
+                  const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                  train.actual = formatClock(newActualDate);
+                  scheduleTrain.actual = train.actual;
+                }
+              }
+              renderFocusMode(train);
+              break;
+              
+            case 'plus5':
+              // Add 5 minutes to delay (actual time)
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + 5;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+              }
+              renderFocusMode(train);
+              break;
+              
+            case 'plus10':
+              // Add 10 minutes to delay (actual time)
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + 10;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+              }
+              renderFocusMode(train);
+              break;
+              
+            case 'plus30':
+              // Add 30 minutes to delay (actual time)
+              if (train.plan) {
+                const currentDelay = getDelay(train.plan, train.actual, now, train.date);
+                const newDelay = currentDelay + 30;
+                const planDate = parseTime(train.plan, now, train.date);
+                const newActualDate = new Date(planDate.getTime() + newDelay * 60000);
+                train.actual = formatClock(newActualDate);
+                scheduleTrain.actual = train.actual;
+              }
+              renderFocusMode(train);
+              break;
+          }
+          
+          // Debounce only the save operation to prevent multiple rapid saves
+          clearTimeout(delayButtonTimeout);
+          delayButtonTimeout = setTimeout(async () => {
+            await saveSchedule();
+          }, 500);
+        });
+      }
       
       // Add button event listeners
       const actionsContainer = panel.querySelector('.editor-actions');
@@ -5407,8 +5596,13 @@
         }
       }
       
-      // Left/Right arrow keys to change announcement page - but NOT when editing
-      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isEditingTrain) {
+      // Left/Right arrow keys to change announcement page - but NOT when editing or in date/time input
+      const activeElement = document.activeElement;
+      const isInDateTimeInput = activeElement && 
+        (activeElement.tagName === 'INPUT') && 
+        (activeElement.type === 'date' || activeElement.type === 'time');
+      
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isEditingTrain && !isInDateTimeInput) {
         e.preventDefault();
         
         // Calculate total pages
