@@ -48,3 +48,44 @@
 {"trainKey":"s7|mathematik i|19:00|2026-02-15","linie":"S7","ziel":"Mathematik I","plan":"19:00","actual":"19:00","dauer":240,"stops":"","date":"2026-02-15","canceled":false}
 {"trainKey":"s75|hildesheim hbf|00:00|2026-02-09","linie":"S75","ziel":"Hildesheim Hbf","plan":"00:00","actual":"00:24","dauer":"","stops":"","date":"2026-02-09","canceled":false}
 {"trainKey":"10|ahlem|00:30|2026-02-09","linie":"10","ziel":"Ahlem","plan":"00:30","actual":"00:30","dauer":"","stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s6|birkenwerder|12:00|2026-02-09","linie":"S6","ziel":"Birkenwerder","plan":"12:00","actual":"12:00","dauer":10,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s1|unknown|unknown|2026-02-09","linie":"S1","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s1|hannover|unknown|2026-02-09","linie":"S1","ziel":"Hannover","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s1|hannover|10:00|2026-02-09","linie":"S1","ziel":"Hannover","plan":"10:00","actual":"10:10","dauer":10,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s61|tm1 tutorium|09:45|2026-02-09","linie":"S61","ziel":"TM1 Tutorium","plan":"09:45","actual":"09:45","dauer":"90","stops":"PWR 06H - V 6.02 (PF06HEGV 6.02)","date":"2026-02-09","canceled":false}
+{"trainKey":"s5|volleyball|12:00|2026-02-09","linie":"S5","ziel":"Volleyball","plan":"12:00","actual":"12:00","dauer":12,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s7|technische mechanik i (übung)2121|14:00|2026-02-09","linie":"S7","ziel":"Technische Mechanik I (Übung)2121","plan":"14:00","actual":"14:00","dauer":90,"stops":"Einsatzort: Zuhause\n\nDieser Termin is für die folgenden Aufgaben vorgesehen\n\n- Mathe: Übungen zu Kapitel 1 bis einschließlich komplexen Zahlen. (2h)\n\n- Technische Mechanik I: Übungen bis einschließlich Kapitel 4: Schwerpunkt. (45m)","date":"2026-02-09","canceled":false}
+{"trainKey":"s7|technische mechanik i (übung)321323312312323|14:00|2026-02-09","linie":"S7","ziel":"Technische Mechanik I (Übung)321323312312323","plan":"14:00","actual":"14:00","dauer":90,"stops":"Einsatzort: Zuhause\n\nDieser Termin is für die folgenden Aufgaben vorgesehen\n\n- Mathe: Übungen zu Kapitel 1 bis einschließlich komplexen Zahlen. (2h)\n\n- Technische Mechanik I: Übungen bis einschließlich Kapitel 4: Schwerpunkt. (45m)","date":"2026-02-09","canceled":false}
+{"trainKey":"s52|volleyball|12:00|2026-02-09","linie":"S52","ziel":"Volleyball","plan":"12:00","actual":"12:00","dauer":12,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s622|tm1 tutorium|09:45|2026-02-09","linie":"S622","ziel":"TM1 Tutorium","plan":"09:45","actual":"09:45","dauer":"90","stops":"PWR 06H - V 6.02 (PF06HEGV 6.02)","date":"2026-02-09","canceled":false}
+{"trainKey":"s62|tm1 tutoriume|09:45|2026-02-09","linie":"S62","ziel":"TM1 Tutoriume","plan":"09:45","actual":"09:45","dauer":"90","stops":"PWR 06H - V 6.02 (PF06HEGV 6.02)","date":"2026-02-09","canceled":false}
+{"trainKey":"s1|mittagspause1|13:00|2026-02-09","linie":"S1","ziel":"Mittagspause1","plan":"13:00","actual":"13:00","dauer":45,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s51|volleyball|12:00|2026-02-09","linie":"S51","ziel":"Volleyball","plan":"12:00","actual":"12:00","dauer":12,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s6o|werkstoffkunde|11:30|2026-02-09","linie":"S6o","ziel":"Werkstoffkunde","plan":"11:30","actual":"11:30","dauer":"90","stops":"PWR 07 - V 7.02","date":"2026-02-09","canceled":false}
+{"trainKey":"s6j|werkstoffkunde|11:30|2026-02-09","linie":"S6j","ziel":"Werkstoffkunde","plan":"11:30","actual":"11:30","dauer":"90","stops":"PWR 07 - V 7.02","date":"2026-02-09","canceled":false}
+{"trainKey":"s61|werkstoffkunde|11:30|2026-02-09","linie":"S61","ziel":"Werkstoffkunde","plan":"11:30","actual":"11:30","dauer":"90","stops":"PWR 07 - V 7.02","date":"2026-02-09","canceled":false}
+{"trainKey":"s6|tm1 tutorium|09:45|2026-02-09","linie":"S6","ziel":"TM1 Tutorium","plan":"09:45","actual":"09:45","dauer":"90","stops":"PWR 06H - V 6.02 (PF06HEGV 6.02)","date":"2026-02-09","canceled":false}
+{"trainKey":"s1|tesla|12:00|2026-02-09","linie":"S1","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"rr1|unknown|unknown|2026-02-09","linie":"rr1","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s1|tesla0|12:00|2026-02-09","linie":"S1","ziel":"Tesla0","plan":"12:00","actual":"12:20","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s2|tesla|12:00|2026-02-09","linie":"S2","ziel":"Tesla","plan":"12:00","actual":"10:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s6|tesla|12:00|2026-02-09","linie":"S6","ziel":"Tesla","plan":"12:00","actual":"10:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s75|tesla|12:00|2026-02-09","linie":"S75","ziel":"Tesla","plan":"12:00","actual":"10:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s71|tesla|12:00|2026-02-09","linie":"S71","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s7|tesla|12:00|2026-02-09","linie":"S7","ziel":"Tesla","plan":"12:00","actual":"12:00","dauer":100,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s|tesla|12:00|2026-02-09","linie":"S","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"re7|tesla|12:00|2026-02-09","linie":"RE7","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"re48|tesla|12:00|2026-02-09","linie":"RE48","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"ice 390|tesla|12:00|2026-02-09","linie":"ICE 390","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"i wanna kill a man|tesla|12:00|2026-02-09","linie":"I wanna kill a man","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"ey176|tesla|12:00|2026-02-09","linie":"EY176","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s1, s2|tesla|12:00|2026-02-09","linie":"S1, S2","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"10|tesla|12:00|2026-02-09","linie":"10","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"1|tesla|12:00|2026-02-09","linie":"1","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s5|tesla|12:00|2026-02-09","linie":"S5","ziel":"Tesla","plan":"12:00","actual":"14:30","dauer":30,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s2|haha|12:12|2026-02-09","linie":"S2","ziel":"haha","plan":"12:12","actual":"12:30","dauer":120,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s21|haha|12:12|2026-02-09","linie":"S21","ziel":"haha","plan":"12:12","actual":"12:12","dauer":120,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s21|haharee|12:12|2026-02-09","linie":"S21","ziel":"haharee","plan":"12:12","actual":"12:12","dauer":120,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s29|haha|12:12|2026-02-09","linie":"S29","ziel":"haha","plan":"12:12","actual":"12:12","dauer":120,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s22|haha|12:12|2026-02-09","linie":"S22","ziel":"haha","plan":"12:12","actual":"12:12","dauer":120,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s2|haha1|12:12|2026-02-09","linie":"S2","ziel":"haha1","plan":"12:12","actual":"12:12","dauer":120,"stops":"","date":"2026-02-09","canceled":false}

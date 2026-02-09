@@ -13,42 +13,45 @@
 <body>
   <!-- Focus mode template -->
   <template id="focus-template">
-    <div class="focus-container">
-      <div class="focus-first-row">
-        <div class="focus-line-destination-slot">
-          <img src="" alt="Line" class="focus-line-icon" data-focus="line-icon">
-          <div class="focus-destination" data-focus="destination"></div>
-        </div>
-        <div class="focus-time-slot">
-          <div class="focus-plan" data-focus="arrival-plan"></div>
-          <div class="focus-delayed" data-focus="arrival-delayed" style="display: none;"></div>
-        </div>
+    <div class="editor-container">
+      <div class="editor-field" data-field="linie" data-input-type="text" data-editable="true">
+        <div class="editor-field-label">Linie</div>
+        <div class="editor-field-value" data-focus="line"></div>
       </div>
-      <div class="focus-content-panel">
-        <div class="focus-left-column">
-          <img src="" alt="Carriage" class="focus-carriage-slot" data-focus="carriage">
-          <div class="focus-duration" data-focus="duration"></div>
-          <div class="focus-buttons">
-            <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">Cancel</button>
-            <button class="focus-btn focus-btn-minus5" data-focus-action="minus5">-5</button>
-            <button class="focus-btn focus-btn-plus5" data-focus-action="plus5">+5</button>
-            <button class="focus-btn focus-btn-plus10" data-focus-action="plus10">+10</button>
-            <button class="focus-btn focus-btn-plus30" data-focus-action="plus30">+30</button>
-            <button class="focus-btn focus-btn-delete" data-focus-action="delete">✕</button>
-          </div>
-        </div>
-        <div class="focus-middle-column">
-          <div class="focus-date" data-focus="date"></div>
-          <div class="focus-inter-stops" data-focus="stops"></div>
-        </div>
-        <div class="focus-right-column">
-          <div class="focus-timeline-placeholder"></div>
-          <div class="focus-timeline"></div>
-          <div class="focus-bottom-time">
-            <div class="focus-plan" data-focus="departure-plan"></div>
-            <div class="focus-delayed" data-focus="departure-delayed" style="display: none;"></div>
-          </div>
-        </div>
+      
+      <div class="editor-field" data-field="ziel" data-input-type="text" data-editable="true">
+        <div class="editor-field-label">Ziel</div>
+        <div class="editor-field-value" data-focus="destination"></div>
+      </div>
+      
+      <div class="editor-field" data-field="date" data-input-type="date" data-editable="true">
+        <div class="editor-field-label">Datum</div>
+        <div class="editor-field-value" data-focus="date"></div>
+      </div>
+      
+      <div class="editor-field" data-field="plan" data-input-type="time" data-editable="true">
+        <div class="editor-field-label">Ankunft (Plan)</div>
+        <div class="editor-field-value" data-focus="arrival-plan"></div>
+      </div>
+      
+      <div class="editor-field" data-field="actual" data-input-type="time" data-editable="true">
+        <div class="editor-field-label">Ankunft (Ist)</div>
+        <div class="editor-field-value" data-focus="arrival-actual"></div>
+      </div>
+      
+      <div class="editor-field" data-field="dauer" data-input-type="number" data-editable="true">
+        <div class="editor-field-label">Dauer (Min)</div>
+        <div class="editor-field-value" data-focus="duration"></div>
+      </div>
+      
+      <div class="editor-field editor-field-multiline" data-field="zwischenhalte" data-input-type="textarea" data-editable="true">
+        <div class="editor-field-label">Zwischenhalte</div>
+        <div class="editor-field-value" data-focus="stops"></div>
+      </div>
+      
+      <div class="editor-actions" data-focus="actions">
+        <button class="editor-btn editor-btn-cancel" data-focus-action="cancel">Abbrechen</button>
+        <button class="editor-btn editor-btn-delete" data-focus-action="delete">Löschen</button>
       </div>
     </div>
   </template>
@@ -182,7 +185,7 @@
     <!-- Left column: clock + train list -->
     <div class="left-column">
       <!-- Top ribbon with clock -->
-      <div class="top-ribbon">
+      <div class="top-ribbon now-card">
         <div class="clockSlot">
           <div class="aclock">
             <div class="center"></div>
@@ -199,13 +202,20 @@
       <div class="container-task-panel">
         <div class="taskbar">
           <div class="task-icon-group">
+            <button class="task-button mode-drawer-toggle nav-only" id="mode-drawer-toggle">≡</button>
             <button class="task-button" id="add-train-button">+</button>
             <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
-            <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
+            <button class="task-icon-button mobile-only" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
+            <button class="task-icon-button nav-only" id="list-view-button" title="Listenansicht"><img src="list.png" alt="List View"></button>
+            <button class="task-icon-button nav-only" id="occupancy-view-button" title="Belegungsplan"><img src="countdown.png" alt="Occupancy View"></button>
             <button class="task-icon-button" id="pin-train-button" title="Pin Train to Announcements"><img src="pin.svg" alt="Pin Train"></button>
-            <button class="task-icon-button" id="announcements-button" title="View Announcements"><img src="notes.png" alt="Announcements"></button>
+            <button class="task-icon-button" id="announcements-button" title="Ankuendigungen"><img src="notes.png" alt="Announcements"></button>
+            <button class="task-icon-button nav-only" data-mode="projects" title="Projekte"><img src="todo.png" alt="Projects"></button>
+            <button class="task-icon-button nav-only" data-mode="meals" title="Mahlzeiten"><img src="todo.png" alt="Meals"></button>
+            <button class="task-icon-button nav-only" data-mode="groceries" title="Einkauf"><img src="todo.png" alt="Groceries"></button>
+            <button class="task-icon-button nav-only" data-mode="inventory" title="Inventar"><img src="todo.png" alt="Inventory"></button>
           </div>
-          <div class="date-selector" id="date-selector">
+          <div class="date-selector mobile-only" id="date-selector">
             <span id="date-display">Heute</span>
           </div>
         </div>
@@ -213,24 +223,41 @@
         <div class="left-panel" id="train-list">
           <!-- Train entries will be inserted here -->
         </div>
+        <div class="mode-placeholder" id="mode-placeholder" aria-live="polite"></div>
       </div>
       
     </div>
 
-    <!-- Right column: split horizontally -->
-    <div class="right-panel">
-      <!-- Top section - focus mode -->
-      <div class="right-panel-top" id="focus-panel">
-        <div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">
-          Klicken Sie auf einen Zug<br>für weitere Details
-        </div>
-      </div>
-      
-      <!-- Bottom section -->
-      <div class="right-panel-bottom" id="announcement-panel">
-      </div>
+    <!-- Right column: announcements drawer -->
+    <div class="right-panel" id="announcement-drawer">
+      <div class="right-panel-bottom" id="announcement-panel"></div>
     </div>
   </div>
+
+  <!-- Focus panel drawer (desktop) -->
+  <div class="right-panel-top" id="focus-panel"></div>
+
+  <!-- Mode switcher drawer (desktop) -->
+  <div class="mode-drawer" id="mode-drawer" aria-hidden="true">
+    <div class="mode-drawer-header">
+      <div class="mode-drawer-title">Modus</div>
+      <button class="mode-drawer-close" id="mode-drawer-close">✕</button>
+    </div>
+    <div class="mode-drawer-section">
+      <button class="mode-drawer-item" data-mode="add">Eintrag hinzufuegen</button>
+      <button class="mode-drawer-item" data-mode="list">Listenansicht</button>
+      <button class="mode-drawer-item" data-mode="occupancy">Belegungsplan</button>
+      <button class="mode-drawer-item" data-mode="announcements">Ankuendigungen</button>
+      <button class="mode-drawer-item" data-mode="db-api">DB API</button>
+    </div>
+    <div class="mode-drawer-section">
+      <button class="mode-drawer-item" data-mode="projects">Projekte</button>
+      <button class="mode-drawer-item" data-mode="meals">Mahlzeiten</button>
+      <button class="mode-drawer-item" data-mode="groceries">Einkauf</button>
+      <button class="mode-drawer-item" data-mode="inventory">Inventar</button>
+    </div>
+  </div>
+  <div class="mode-drawer-scrim" id="mode-drawer-scrim" aria-hidden="true"></div>
 
   <!-- Station selection sidebar -->
   <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true">

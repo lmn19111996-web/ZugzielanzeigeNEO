@@ -1,6 +1,7 @@
 // Express server to fetch DB Timetables API and feed the frontend
 // Endpoints:
 // - GET /api/db-departures -> { trains: [...] }
+// - GET /api/db-raw        -> raw parsed XML from DB API (for debugging)
 // - GET /api/schedule      -> serves fallback JSON from public/data.json
 // - GET /api/health        -> health status
 // - GET /events            -> Server-Sent Events (emits {event: 'update'})
@@ -368,12 +369,17 @@ function extractLine(stop) {
   const cat = rawCat ? String(rawCat).toUpperCase() : undefined; // e.g., 'S', 'RE', 'ICE'
   const rawNum = tlo?.n;
   const num = rawNum != null ? String(rawNum) : undefined; // may be long train number
-  const evLineRaw = ev.line != null ? String(ev.line) : undefined; // e.g., '38', 'RE2'
+  const evLineRaw = ev.line != null ? String(ev.line) : undefined; // e.g., '38', 'RE2', 'S1'
   const evLine = evLineRaw ? evLineRaw.toUpperCase().replace(/\s+/g, '') : undefined;
 
-  // S-Bahn: enforce 'S' + short digits from dp.l when available
+  // S-Bahn: dp.l now contains the full line (e.g., "S1"), use it directly if available
   if (cat === 'S') {
-    const digits = (evLine && /^\d+$/.test(evLine)) ? evLine : (num && /^\d+$/.test(num) ? num : undefined);
+    // First check if dp.l has the full S-Bahn line designation (S1, S2, etc.)
+    if (evLine && /^S\d{1,2}$/.test(evLine)) {
+      return evLine;
+    }
+    // Otherwise try to extract digits and build it
+    const digits = (evLine && /^\d+$/.test(evLine)) ? evLine : (num && /^\d{1,3}$/.test(num) ? num : undefined);
     if (digits) return `S${digits}`;
     if (num) return `S${num}`;
     return 'S';
@@ -750,6 +756,29 @@ app.get('/api/db-departures', async (req, res) => {
     console.warn('DB fetch failed:', e.message);
     if (cachedData.trains?.length) return res.json(cachedData);
     res.status(503).json({ trains: [], error: 'DB API unavailable' });
+  }
+});
+
+// Raw DB API data endpoint for debugging
+app.get('/api/db-raw', async (req, res) => {
+  try {
+    const eva = (req.query.eva || DEFAULT_EVA).toString();
+    const now = new Date();
+    const date = toYyMmDd(now);
+    const hour = toHour(now);
+    const { p1, p2, ch } = await fetchPlannedAndChanges({ eva, dateYYMMDD: date, hourHH: hour });
+    
+    res.json({
+      station: eva,
+      fetchedAt: new Date().toISOString(),
+      date: date,
+      hour: hour,
+      plan1: p1,
+      plan2: p2,
+      changes: ch
+    });
+  } catch (e) {
+    res.status(503).json({ error: 'DB API unavailable', details: e.message });
   }
 });
 

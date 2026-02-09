@@ -13,6 +13,11 @@ html, body {
       overflow: hidden;
       -webkit-tap-highlight-color: transparent;
     }
+
+    :root {
+      --editor-drawer-width: 20vw;
+      --announcements-drawer-width: 20vw;
+    }
     
     * {
       -webkit-tap-highlight-color: transparent;
@@ -37,7 +42,7 @@ html, body {
       height: 100vh;
       width: 100vw;
       display: flex;
-      flex-direction: row; /* Split vertically into 2 halves */
+      flex-direction: row;
     }
 
     /* Top ribbon with clock and title - now part of left column */
@@ -140,6 +145,9 @@ html, body {
       display: flex;
       justify-content: space-between;
       height: 100%;
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
     }
 
     .taskbar {
@@ -151,6 +159,14 @@ html, body {
       background: #2e3273;
       border-right: 0.5px solid rgba(255, 255, 255, 0.64);
       border-color: rgba(255, 255, 255, 0.64);
+    }
+
+    .mobile-only {
+      display: flex;
+    }
+
+    .nav-only {
+      display: none;
     }
 
     .task-button {
@@ -218,15 +234,35 @@ html, body {
 
     /* Left panel - scrollable train list (now inside left column) */
     .left-panel {
-      width: 100%; /* Full width of left column */
-      height: 91vh; /* Remaining height after smaller clock ribbon */
+      width: 100%;
+      height: 91vh;
       overflow-y: scroll;
       overflow-x: hidden;
       box-sizing: border-box;
-      /* Hide scrollbar while keeping scroll functionality */
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE 10+ */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .mode-placeholder {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: clamp(16px, 3vh, 28px);
+      font-weight: 300;
+      padding: 4vh 4vw;
+      position: absolute;
+      inset: 0;
+      background: rgba(22, 27, 117, 0.75);
+      backdrop-filter: blur(2px);
+    }
+
+    .mode-placeholder.is-active {
+      display: flex;
     }
 
     .left-panel::-webkit-scrollbar {
@@ -436,30 +472,148 @@ html, body {
       transform: translateY(-100%);
     }
 
-    /* Right half - split horizontally */
+    /* Right column drawer for announcements */
     .right-panel {
-      width: 50%;
-      height: 100vh; /* Full viewport height */
+      width: var(--announcements-drawer-width);
+      height: 100vh;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
+      position: fixed;
+      top: 0;
+      right: calc(-1 * var(--announcements-drawer-width));
+      background: #161B75;
+      border-left: 0.5px solid rgba(255, 255, 255, 0.64);
+      transition: right 0.3s ease;
+      z-index: 1100;
     }
 
-    /* Top section of right panel */
+    .right-panel.is-open {
+      right: 0;
+    }
+
+    /* Editor drawer */
     .right-panel-top {
-      height: 50%;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.64);
+      position: fixed;
+      top: 0;
+      right: calc(-1 * var(--editor-drawer-width));
+      width: var(--editor-drawer-width);
+      height: 100vh;
+      background: #161B75;
+      border-left: 1px solid rgba(255, 255, 255, 0.64);
       box-sizing: border-box;
-      position: relative;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      transition: right 0.3s ease;
+      z-index: 1200;
+      display: block;
+      padding: 0;
+    }
+
+    .right-panel-top.is-open {
+      right: 0;
+    }
+
+    .now-card {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: none;
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.8vh;
+      width: 65vw;
+      margin: 2vh auto 1vh;
+      padding: 0.5vh 1vw;
+    }
+
+    .mode-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 18vw;
+      min-width: 240px;
+      max-width: 360px;
+      background: #161B75;
+      border-right: 0.5px solid rgba(255, 255, 255, 0.64);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1300;
+      display: flex;
+      flex-direction: column;
+      padding: 2vh 1.5vw;
+      box-sizing: border-box;
+    }
+
+    .mode-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .mode-drawer-header {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      margin-bottom: 2vh;
+    }
+
+    .mode-drawer-title {
+      font-size: 3vh;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .mode-drawer-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      font-family: inherit;
+      font-size: 2.5vh;
+      width: 4vh;
+      height: 4vh;
+      border-radius: 0.6vh;
+      cursor: pointer;
+    }
+
+    .mode-drawer-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8vh;
+      margin-bottom: 2vh;
+    }
+
+    .mode-drawer-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      font-family: inherit;
+      font-size: 2.2vh;
+      text-align: left;
+      padding: 1vh 1vw;
+      border-radius: 0.6vh;
+      cursor: pointer;
+    }
+
+    .mode-drawer-item:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .mode-drawer-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1250;
+    }
+
+    .mode-drawer-scrim.is-active {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     /* Bottom section of right panel */
     .right-panel-bottom {
-      height: 50%;
+      flex: 1 1 auto;
+      height: auto;
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
@@ -920,26 +1074,19 @@ html, body {
     /* Announcement panel styles */
     .announcement-container {
       width: 100%;
-      height: 100%;
-      background: white;
+      background: rgba(255, 255, 255, 0.9);
       color: rgb(0, 0, 50);
       position: relative;
-      opacity: 1;
-      transition: opacity 0.5s ease-in-out;
-      flex: 1 1 0;
-      min-width: 0;
       display: flex;
       flex-direction: column;
-      border-right: 0.5px solid #161B75;
+      border: none;
+      border-radius: 6px;
+      overflow: hidden;
+      flex: 0 0 auto;
+      min-height: 100px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    .announcement-container:last-child {
-      border-right: none;
-    }
-
-    .announcement-container.fade-out {
-      opacity: 0;
-    }
     
     .announcement-container.pinned-train {
       background: #161B75;
@@ -948,21 +1095,21 @@ html, body {
 
     .announcement-panel {
       width: 100%;
-      height: 100%;
+      height: auto; /* Changed from 100% for list items */
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       box-sizing: border-box;
-      flex: 1 1 0;
+      flex: 1 1 auto; /* Allow flexible sizing */
       min-width: 0;
       position: relative;
     }
 
     .announcement-headline {
       width: 100%;
-      height: 4vh;
-      font-size: 2.5vh;
+      height: 3vh;
+      font-size: 1.6vh;
       font-weight: 400;
       padding-left: 0.5vh;
       display: flex;
@@ -1011,7 +1158,7 @@ html, body {
       padding: 0.5vh 1.5vh;
       border: none;
       letter-spacing: normal;
-      font-size: 2.5vh;
+      font-size: 1.6vh;
       font-weight: 400;
       cursor: pointer;
       margin-left: auto;
@@ -1031,7 +1178,7 @@ html, body {
       height: 31%;
       display: flex;
       flex-direction: column;
-      padding-top: 1vh;
+      padding-top: 0.5vh;
       box-sizing: border-box;
     }
 
@@ -1071,18 +1218,19 @@ html, body {
     }
 
     .konflikt-line-icon {
-      width: 5vh;
-      height: 3.5vh;
-      padding-left: 1vh;
+      width: 3vh;
+      height: 2vh;
+      padding-left: 0.5vh;
     }
 
     .konflikt-destination {
       flex: 0 0 auto;
       width: 100%;
-      font-size: 4vh;
+      font-size: 2vh;
       font-weight: 500;
       letter-spacing: -0.02em;
-      padding: 0 1vh;
+      line-height: 1.4;
+      padding: 0.5vh 0.5vh;
       box-sizing: border-box;
       white-space: nowrap;
       overflow: hidden;
@@ -1092,13 +1240,14 @@ html, body {
     }
 
     .konflikt-panel {
-      max-height: 7vh;
+      max-height: 5vh;
       flex: 1 1 auto;
-      font-size: 1.8vh;
+      font-size: 1.3vh;
       font-weight: 300;
       letter-spacing: -0.03em;
-      padding-left: 1vh;
-      padding-right: 8vh;
+      line-height: 1.5;
+      padding: 0.5vh 0.5vh;
+      padding-right: 6vh;
       overflow-y: scroll;
       text-overflow: ellipsis;
       box-sizing: border-box;
@@ -1112,9 +1261,9 @@ html, body {
       display: flex;
       flex-direction: row;
       align-items: center;
-      font-size: 3.5vh;
+      font-size: 2vh;
       font-weight: 400;
-      padding: 1vh;
+      padding: 0.5vh;
       letter-spacing: -0.02em;
       position: absolute;
       left: 100%;
@@ -1140,7 +1289,7 @@ html, body {
     }
 
     .konflikt-plan {
-      padding-right: 1vh;
+      padding-right: 0.5vh;
     }
 
     .konflikt-delayed {
@@ -1175,13 +1324,13 @@ html, body {
       background: rgba(252, 246, 246, 0.202);
       color: rgb(255, 255, 255);
       font-family: inherit;
-      padding: 0.5vh 1.5vh;
+      padding: 0.3vh 1vh;
       border: 1px solid rgba(255, 255, 255, 0.582);
       letter-spacing: normal;
-      font-size: 2.5vh;
+      font-size: 1.5vh;
       font-weight: 400;
       cursor: pointer;
-      margin-left: 2vh; 
+      margin-left: 1vh; 
     }
 
     .konflikt-resolve-button:hover {
@@ -1198,15 +1347,15 @@ html, body {
       justify-content: space-between;
       align-items: center;
       box-sizing: border-box;
-      margin-bottom: 2vh;
+      margin-bottom: 0.5vh;
       box-sizing: border-box;
     }
 
     .announcement-line-icon {
-      width: clamp(4vh, 8vh, 8vw);
-      height: clamp(4vh, 8vh, 8vw);
+      width: clamp(3vh, 5vh, 5vw);
+      height: clamp(3vh, 5vh, 5vw);
       padding-left: 0.5vh;
-      padding-right: 2vh;
+      padding-right: 1vh;
       object-fit: contain;
     }
 
@@ -1215,13 +1364,13 @@ html, body {
       display: flex;
       flex-direction: row;
       align-items: center;
-      font-size: clamp(2.5vh, 5.5vh, 5vw);
+      font-size: clamp(1.6vh, 3vh, 3vw);
       font-weight: 400;
       padding-right: 0.5vh;
       padding-left: 0.5vh;
       letter-spacing: -0.02em;
       padding-bottom: 0.2vh;
-      padding-top: 1vh;
+      padding-top: 0.5vh;
       box-sizing: border-box;
     }
 
@@ -1239,9 +1388,10 @@ html, body {
 
     .announcement-destination {
       width: 100%;
-      font-size: clamp(2.5vh, 4.5vh, 4vw);
+      font-size: clamp(1.6vh, 2.5vh, 2.5vw);
       font-weight: 500;
       letter-spacing: -0.02em;
+      line-height: 1.4;
       padding: 0 0.5vh;
       white-space: nowrap;
       overflow: hidden;
@@ -1255,10 +1405,11 @@ html, body {
     .announcement-content-panel {
       flex: 1 1 auto;
       width: 100%;
-      font-size: 2.5vh;
+      font-size: 1.6vh;
       padding: 0.3vh 0.5vh;
       font-weight: 300;
       letter-spacing: -0.03em;
+      line-height: 1.5;
       overflow-y: scroll;
       overflow-x: hidden;
       box-sizing: border-box;
@@ -1268,6 +1419,16 @@ html, body {
     }
 
     .announcement-content-panel::-webkit-scrollbar {
+      display: none;
+    }
+    
+    /* Hide scrollbar for announcement content wrapper */
+    .announcement-content-wrapper {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    
+    .announcement-content-wrapper::-webkit-scrollbar {
       display: none;
     }
 
@@ -1483,6 +1644,13 @@ html, body {
       box-sizing: border-box;
     }
 
+    .focus-content-panel {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
     .mobile-taskbar-placeholder {
       height: 6vh;
       min-height: 6vh;
@@ -1678,6 +1846,143 @@ html, body {
       display: none;
     }
 
+    @media screen and (min-width: 769px) {
+      :root {
+        --nav-rail-width: 6vh;
+      }
+
+      .taskbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: var(--nav-rail-width);
+        z-index: 1000;
+      }
+
+      .left-column {
+        width: 100%;
+        border-right: none;
+        padding-left: var(--nav-rail-width);
+      }
+
+      .container-task-panel {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .mobile-only {
+        display: none;
+      }
+
+      .nav-only {
+        display: flex;
+      }
+
+      .task-icon-group {
+        border-bottom: none;
+        padding-bottom: 2vh;
+      }
+
+      .left-panel {
+        height: auto;
+      }
+
+      body.editor-drawer-open .left-column {
+        width: calc(100% - var(--editor-drawer-width));
+      }
+
+      body.announcements-open .left-column {
+        width: calc(100% - var(--announcements-drawer-width));
+      }
+
+      /* Editor drawer content styles */
+      .editor-container {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 2vh 0;
+        box-sizing: border-box;
+        overflow-y: auto;
+      }
+
+      .editor-field {
+        padding: 1.5vh 2vw;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .editor-field:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .editor-field-label {
+        font-size: 1.4vh;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.5vh;
+        font-weight: 300;
+      }
+
+      .editor-field-value {
+        font-size: 2vh;
+        color: rgb(255, 255, 255);
+        font-weight: 400;
+        min-height: 2.5vh;
+      }
+
+      .editor-field-multiline .editor-field-value {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        line-height: 1.5;
+      }
+
+      .editor-actions {
+        margin-top: auto;
+        padding: 2vh 2vw;
+        display: flex;
+        gap: 1vh;
+        flex-direction: column;
+      }
+
+      .editor-btn {
+        width: 100%;
+        padding: 1.2vh 0;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: inherit;
+        font-size: 1.8vh;
+        font-weight: 400;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+      }
+
+      .editor-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .editor-btn-cancel {
+        background: rgba(255, 165, 0, 0.3);
+        color: rgb(255, 200, 100);
+      }
+
+      .editor-btn-cancel:hover {
+        background: rgba(255, 165, 0, 0.4);
+      }
+
+      .editor-btn-delete {
+        background: rgba(255, 80, 80, 0.3);
+        color: rgb(255, 150, 150);
+      }
+
+      .editor-btn-delete:hover {
+        background: rgba(255, 80, 80, 0.4);
+      }
+    }
+
     /* Mobile responsive styles */
     @media screen and (max-width: 768px) {
       /* Hide the clock section on mobile */
@@ -1687,6 +1992,11 @@ html, body {
 
       /* Hide the right panel (focus and announcements) */
       .right-panel {
+        display: none;
+      }
+
+      .mode-drawer,
+      .mode-drawer-scrim {
         display: none;
       }
 

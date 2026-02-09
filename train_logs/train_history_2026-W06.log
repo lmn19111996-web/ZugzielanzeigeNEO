@@ -9,3 +9,5 @@
 {"trainKey":"s75|hildesheim|00:00|2026-02-08","linie":"S75","ziel":"Hildesheim","plan":"00:00","actual":"00:20","dauer":"","stops":"","date":"2026-02-08","canceled":false}
 {"trainKey":"10|ahlem|00:15|2026-02-08","linie":"10","ziel":"Ahlem","plan":"00:15","actual":"00:30","dauer":"","stops":"","date":"2026-02-08","canceled":false}
 {"trainKey":"10|ahlem|00:30|2026-02-08","linie":"10","ziel":"Ahlem","plan":"00:30","actual":"00:30","dauer":"","stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s6|unknown|unknown|2026-02-08","linie":"S6","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s6|birkenwerder|12:00|2026-02-08","linie":"S6","ziel":"Birkenwerder","plan":"12:00","actual":"12:00","dauer":10,"stops":"","date":"2026-02-08","canceled":false}
