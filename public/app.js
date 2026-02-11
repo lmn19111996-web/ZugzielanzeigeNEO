@@ -29,6 +29,10 @@
     let lastTrainStatusById = new Map();
     let lastNotifiedStatusById = new Map();
     
+    // Save queue variables
+    let saveInProgress = false;
+    let saveQueued = false;
+    
     // Global schedule object (like InputEnhanced)
     let schedule = {
       fixedSchedule: [],
@@ -4902,6 +4906,15 @@
     }
 
     async function saveSchedule() {
+      // If a save is already in progress, queue this save
+      if (saveInProgress) {
+        saveQueued = true;
+        console.log('⏳ Save queued - waiting for current save to complete');
+        return;
+      }
+      
+      saveInProgress = true;
+      
       try {
         // Show save status indicator
         showSaveStatus();
@@ -4976,6 +4989,15 @@
       } catch (error) {
         console.error('Error saving schedule:', error);
         alert('Fehler beim Speichern: ' + error.message);
+      } finally {
+        saveInProgress = false;
+        
+        // If another save was queued, execute it now
+        if (saveQueued) {
+          saveQueued = false;
+          console.log('🔄 Executing queued save');
+          await saveSchedule();
+        }
       }
     }
 
