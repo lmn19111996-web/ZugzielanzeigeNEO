@@ -927,6 +927,8 @@
       schedule.projects.push(newProject);
       
       await saveSchedule();
+      const freshSchedule = await fetchSchedule();
+      Object.assign(schedule, freshSchedule);
       openProjectEditor(newProject._uniqueId);
     }
 
@@ -1008,9 +1010,7 @@
       const addRowHTML = `
         <div class="project-task-row project-task-add-row">
           <span class="project-task-plan"></span>
-          <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;">
-            <span class="project-task-status-dot"></span>
-          </span>
+          <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;"></span>
           <span class="project-task-actual"></span>
           <span class="project-task-name project-task-add-input" contenteditable="true" data-placeholder="+ Aufgabe hinzufügen"></span>
           <span class="spacer"></span>
@@ -1184,7 +1184,11 @@
               await saveSchedule();
               const freshSchedule = await fetchSchedule();
               Object.assign(schedule, freshSchedule);
-              renderProjectDrawer(project);
+              // Re-fetch the project from the fresh schedule
+              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (freshProject) {
+                renderProjectDrawer(freshProject);
+              }
               renderProjectsPage();
             };
             
@@ -1226,7 +1230,11 @@
             await saveSchedule();
             const freshSchedule = await fetchSchedule();
             Object.assign(schedule, freshSchedule);
-            renderProjectDrawer(project);
+            // Re-fetch the project from the fresh schedule
+            const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+            if (freshProject) {
+              renderProjectDrawer(freshProject);
+            }
             renderProjectsPage();
           }
         });
@@ -1252,7 +1260,11 @@
               await saveSchedule();
               const freshSchedule = await fetchSchedule();
               Object.assign(schedule, freshSchedule);
-              renderProjectDrawer(project);
+              // Re-fetch the project from the fresh schedule
+              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (freshProject) {
+                renderProjectDrawer(freshProject);
+              }
               // Focus the next add input
               setTimeout(() => {
                 const nextAddInput = document.querySelector('.project-task-add-input');
@@ -1293,7 +1305,11 @@
               await saveSchedule();
               const freshSchedule = await fetchSchedule();
               Object.assign(schedule, freshSchedule);
-              renderProjectDrawer(project);
+              // Re-fetch the project from the fresh schedule
+              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (freshProject) {
+                renderProjectDrawer(freshProject);
+              }
             }
           });
         }

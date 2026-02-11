@@ -2815,7 +2815,13 @@ font-weight: 500;
 }
 
 .project-task-row:last-child .project-task-status-dot::after,
+.project-task-row:nth-last-child(2) .project-task-status-dot::after,
 .project-task-add-row .project-task-status-dot::after {
+  display: none;
+}
+
+.project-task-add-row .project-task-status-dot,
+.project-task-add-row .project-task-status-dot::before {
   display: none;
 }
 

@@ -192,3 +192,6 @@
 {"trainKey":"s45|help me now|10:00|2026-02-11","linie":"s45","ziel":"Help me now","plan":"10:00","actual":"10:00","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s6|help me|10:00|2026-02-11","linie":"s6","ziel":"Help me","plan":"10:00","actual":"10:00","dauer":10000,"stops":"","date":"2026-02-11","canceled":true}
 {"trainKey":"s5|hb|23:59|2026-02-11","linie":"S5","ziel":"HB","plan":"23:59","actual":"23:59","dauer":100,"stops":"","date":"2026-02-11","canceled":false}
+{"trainKey":"s6|haha|unknown|unknown","linie":"S6","ziel":"HAHA","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s6|haha|unknown|2026-02-10","linie":"S6","ziel":"HAHA","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-10","canceled":false}
+{"trainKey":"s6|haha|11:11|2026-02-10","linie":"S6","ziel":"HAHA","plan":"11:11","actual":"11:11","dauer":"","stops":"","date":"2026-02-10","canceled":false}
