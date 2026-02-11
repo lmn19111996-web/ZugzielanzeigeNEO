@@ -19,6 +19,16 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DEFAULT_EVA = process.env.EVA || '8000152'; // Hannover Hbf by default
 const TRAIN_LOG_DIR = path.join(__dirname, 'train_logs');
+const LAST_LOG_TIME_FILE = path.join(__dirname, 'train_logs', '.last_log_time');
+const LOG_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every 1 hour
+
+// In-memory accumulator for pending train data (keyed by week)
+const pendingTrainData = new Map(); // Map<weekId, Map<trainKey, trainState>>
+
+// Cache for schedule data to avoid disk reads on every request
+let scheduleCache = null;
+let scheduleCacheTime = 0;
 
 // Load API keys from key.env (simple parser) if env vars are not already set
 const keyEnvPath = path.join(__dirname, 'key.env');
@@ -133,36 +143,24 @@ function getWeekIdentifier(date = new Date()) {
   return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
 }
 
-// Get weekly log file path
+// Get weekly log file path (directory is created on startup, no need for sync check)
 function getWeeklyLogFile(date = new Date()) {
   const weekId = getWeekIdentifier(date);
-  // Ensure log directory exists
-  if (!fs.existsSync(TRAIN_LOG_DIR)) {
-    fs.mkdirSync(TRAIN_LOG_DIR, { recursive: true });
-  }
   return path.join(TRAIN_LOG_DIR, `train_history_${weekId}.log`);
 }
 
-// Comprehensive train logging - exports everything on every save
+// Accumulate train data in memory (no immediate write)
 async function logTrainHistory(trains, scheduleType, additionalInfo = {}) {
   try {
-    const timestamp = new Date().toISOString();
-    
-    // Log all trains for this schedule type, regardless of changes
-    // This ensures the log is always up-to-date with current state
-    await updateTrainStates(trains, scheduleType, timestamp);
-    
+    // Instead of writing immediately, accumulate train data in memory
+    accumulateTrainData(trains, scheduleType);
   } catch (e) {
-    console.error('Error logging train history:', e.message);
+    console.error('Error accumulating train history:', e.message);
   }
 }
 
-// Update or add all train states in the weekly log (comprehensive export on every save)
-async function updateTrainStates(trains, scheduleType, timestamp) {
-  // Group trains by week based on their calculated dates
-  const trainsByWeek = new Map();
-  
-  // Process all trains and group by week
+// Accumulate train data in memory for batch writing
+function accumulateTrainData(trains, scheduleType) {
   trains.forEach(train => {
     const trainKey = createTrainKey(train, scheduleType);
     
@@ -192,36 +190,108 @@ async function updateTrainStates(trains, scheduleType, timestamp) {
     // Determine which week this train belongs to
     const weekId = getWeekIdentifier(dateObj);
     
-    if (!trainsByWeek.has(weekId)) {
-      trainsByWeek.set(weekId, []);
+    // Create week map if doesn't exist
+    if (!pendingTrainData.has(weekId)) {
+      pendingTrainData.set(weekId, new Map());
     }
-    trainsByWeek.get(weekId).push(currentState);
+    
+    // Add or update train in the week's map
+    pendingTrainData.get(weekId).set(trainKey, currentState);
   });
+}
+
+// Flush all pending train data to disk (called once per day)
+async function flushPendingTrainData() {
+  if (pendingTrainData.size === 0) {
+    console.log('⏭️  No pending train data to flush');
+    return;
+  }
   
-  // Process each week separately
-  const writePromises = [];
-  trainsByWeek.forEach((weekTrains, weekId) => {
-    const writePromise = (async () => {
-      const weekDate = parseWeekIdentifier(weekId);
-      const weekLogFile = getWeeklyLogFile(weekDate);
-      const existingLog = await readLogAsStateMap(weekLogFile);
+  try {
+    const writePromises = [];
+    let totalTrains = 0;
+    
+    // Process each week's accumulated data
+    for (const [weekId, trainMap] of pendingTrainData.entries()) {
+      const writePromise = (async () => {
+        const weekDate = parseWeekIdentifier(weekId);
+        const weekLogFile = getWeeklyLogFile(weekDate);
+        
+        // Read existing log and merge with pending data
+        const existingLog = await readLogAsStateMap(weekLogFile);
+        
+        // Merge accumulated trains
+        for (const [trainKey, trainState] of trainMap.entries()) {
+          existingLog.set(trainKey, trainState);
+        }
+        
+        // Write merged data to file
+        await rewriteLogFile(existingLog, weekLogFile);
+        
+        return trainMap.size;
+      })();
       
-      // Add/update trains for this week
-      weekTrains.forEach(trainState => {
-        existingLog.set(trainState.trainKey, trainState);
-      });
-      
-      // Rewrite the log file for this week
-      await rewriteLogFile(existingLog, weekLogFile);
-    })();
-    writePromises.push(writePromise);
-  });
-  
-  await Promise.all(writePromises);
-  
-  const totalTrains = Array.from(trainsByWeek.values()).reduce((sum, trains) => sum + trains.length, 0);
-  const weeksList = Array.from(trainsByWeek.keys()).join(', ');
-  console.log(`✅ Logged ${totalTrains} ${scheduleType} trains to ${trainsByWeek.size} week(s): ${weeksList}`);
+      writePromises.push(writePromise);
+    }
+    
+    const results = await Promise.all(writePromises);
+    totalTrains = results.reduce((sum, count) => sum + count, 0);
+    
+    const weeksList = Array.from(pendingTrainData.keys()).join(', ');
+    console.log(`✅ Flushed ${totalTrains} trains to ${pendingTrainData.size} week(s): ${weeksList}`);
+    
+    // Clear the accumulator after successful flush
+    pendingTrainData.clear();
+    
+    // Update last log time
+    await updateLastLogTime();
+    
+  } catch (e) {
+    console.error('❌ Error flushing pending train data:', e.message);
+    // Don't clear pendingTrainData on error - will retry next time
+  }
+}
+
+// Get the last logging timestamp
+async function getLastLogTime() {
+  try {
+    const content = await fsPromises.readFile(LAST_LOG_TIME_FILE, 'utf8');
+    const timestamp = parseInt(content.trim(), 10);
+    return isNaN(timestamp) ? 0 : timestamp;
+  } catch (e) {
+    // File doesn't exist or can't be read - return 0 to trigger initial log
+    return 0;
+  }
+}
+
+// Update the last logging timestamp
+async function updateLastLogTime() {
+  try {
+    await fsPromises.mkdir(TRAIN_LOG_DIR, { recursive: true });
+    await fsPromises.writeFile(LAST_LOG_TIME_FILE, Date.now().toString(), 'utf8');
+  } catch (e) {
+    console.error('❌ Error updating last log time:', e.message);
+  }
+}
+
+// Check if 24 hours have passed and flush if needed
+async function checkAndFlushIfNeeded() {
+  try {
+    const lastLogTime = await getLastLogTime();
+    const currentTime = Date.now();
+    const timeSinceLastLog = currentTime - lastLogTime;
+    
+    if (timeSinceLastLog >= LOG_INTERVAL_MS || lastLogTime === 0) {
+      const hoursSince = (timeSinceLastLog / (60 * 60 * 1000)).toFixed(1);
+      console.log(`⏰ 24 hours passed since last log (${hoursSince}h ago). Flushing pending data...`);
+      await flushPendingTrainData();
+    } else {
+      const hoursRemaining = ((LOG_INTERVAL_MS - timeSinceLastLog) / (60 * 60 * 1000)).toFixed(1);
+      console.log(`⏳ Next log in ${hoursRemaining} hours. Pending data: ${pendingTrainData.size} week(s)`);
+    }
+  } catch (e) {
+    console.error('❌ Error checking log timer:', e.message);
+  }
 }
 
 // Parse week identifier back to a date (returns first day of that week)
@@ -658,17 +728,31 @@ app.get('/api/train-history', async (req, res) => {
     
     // Parse JSON lines
     const lines = content.trim().split('\n').filter(line => line.trim());
-    const entries = lines.map(line => JSON.parse(line));
     
-    // Optional filtering by query parameters
-    const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
-    const filtered = limit ? entries.slice(-limit) : entries;
+    // Apply default limit of 1000 to prevent massive responses
+    const DEFAULT_LIMIT = 1000;
+    const requestedLimit = req.query.limit ? parseInt(req.query.limit) : DEFAULT_LIMIT;
+    const limit = Math.min(requestedLimit, 10000); // Cap at 10000 for safety
+    
+    // Only parse the lines we need (from the end for recent entries)
+    const startIdx = lines.length > limit ? lines.length - limit : 0;
+    const linesToParse = lines.slice(startIdx);
+    
+    const entries = linesToParse.map(line => {
+      try {
+        return JSON.parse(line);
+      } catch (e) {
+        console.warn('Skipping invalid log line:', line.substring(0, 50));
+        return null;
+      }
+    }).filter(Boolean);
     
     res.json({ 
-      entries: filtered,
-      total: entries.length,
-      showing: filtered.length,
-      week: weekId
+      entries: entries,
+      total: lines.length,
+      showing: entries.length,
+      week: weekId,
+      limited: lines.length > limit
     });
   } catch (e) {
     res.status(500).json({ error: 'Failed to parse log file', details: e.message });
@@ -702,12 +786,23 @@ app.get('/api/train-history/weeks', async (req, res) => {
   }
 });
 
-// Fallback schedule (static file)
+// Fallback schedule (static file) - cached in memory
 app.get('/api/schedule', async (req, res) => {
-  const filePath = path.join(PUBLIC_DIR, 'data.json');
   try {
+    // Return cached data if available
+    if (scheduleCache !== null) {
+      return res.json(scheduleCache);
+    }
+    
+    // Read from disk if not cached
+    const filePath = path.join(PUBLIC_DIR, 'data.json');
     const content = await fsPromises.readFile(filePath, 'utf8');
     const data = JSON.parse(content);
+    
+    // Cache the data
+    scheduleCache = data;
+    scheduleCacheTime = Date.now();
+    
     res.json(data);
   } catch (err) {
     if (err.code === 'ENOENT') {
@@ -734,28 +829,23 @@ app.post('/api/schedule', async (req, res) => {
       projects: Array.isArray(body.projects) ? body.projects : [],
     };
     
-    // Comprehensive logging: export all current train data on every save
-    const logPromises = [];
+    // Accumulate train data in memory (lightweight - no disk I/O)
     if (toSave.fixedSchedule.length > 0) {
-      logPromises.push(logTrainHistory(toSave.fixedSchedule, 'fixed'));
+      logTrainHistory(toSave.fixedSchedule, 'fixed');
     }
     if (toSave.spontaneousEntries.length > 0) {
-      logPromises.push(logTrainHistory(toSave.spontaneousEntries, 'spontaneous'));
+      logTrainHistory(toSave.spontaneousEntries, 'spontaneous');
     }
     if (toSave.trains.length > 0) {
-      logPromises.push(logTrainHistory(toSave.trains, 'legacy'));
-    }
-    
-    // Wait for all logging operations to complete
-    await Promise.all(logPromises);
-    
-    // Also ensure we log empty states to reflect deletions
-    if (toSave.fixedSchedule.length === 0 && toSave.spontaneousEntries.length === 0 && toSave.trains.length === 0) {
-      // Silent - no need to log empty saves
+      logTrainHistory(toSave.trains, 'legacy');
     }
     
     const filePath = path.join(PUBLIC_DIR, 'data.json');
     await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
+    
+    // Invalidate cache after saving
+    scheduleCache = toSave;
+    scheduleCacheTime = Date.now();
     
     // Notify listeners
     try { broadcastUpdate('manual-save'); } catch {}
@@ -873,9 +963,10 @@ async function periodicRefresh() {
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server listening on http://0.0.0.0:${PORT}`);
-  console.log('📊 Weekly train logging enabled - creates separate log file for each week');
+  console.log('📊 Daily batch train logging enabled - writes once every 24 hours');
   console.log(`📁 Log directory: ${TRAIN_LOG_DIR}`);
   console.log(`📅 Current week: ${getWeekIdentifier()}`);
+  console.log(`⏰ Log check interval: every ${CHECK_INTERVAL_MS / 1000 / 60} minutes`);
   
   // Create log directory if it doesn't exist
   try {
@@ -884,4 +975,12 @@ app.listen(PORT, '0.0.0.0', async () => {
   } catch (e) {
     console.warn('Could not create train logs directory:', e.message);
   }
+  
+  // Check immediately on startup if we need to flush
+  console.log('🔍 Checking if pending data needs to be flushed...');
+  await checkAndFlushIfNeeded();
+  
+  // Set up periodic check (every hour)
+  setInterval(checkAndFlushIfNeeded, CHECK_INTERVAL_MS);
+  console.log('✅ Daily logging timer started');
 });
