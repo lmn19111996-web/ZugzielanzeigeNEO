@@ -30,12 +30,12 @@
       </div>
       
       <div class="editor-field" data-field="plan" data-input-type="time" data-editable="true">
-        <div class="editor-field-label">Planmäßige Abfahrt - Ankunft</div>
+        <div class="editor-field-label">Planmäßige Abfahrt</div>
         <div class="editor-field-value" data-focus="arrival-plan"></div>
       </div>
       
       <div class="editor-field" data-field="actual" data-input-type="time" data-editable="true">
-        <div class="editor-field-label">Tatsächliche Abfahrt - Ankunft</div>
+        <div class="editor-field-label">Tatsächliche Abfahrt</div>
         <div class="editor-field-value" data-focus="arrival-actual"></div>
       </div>
       
@@ -54,11 +54,6 @@
       <div class="editor-field editor-field-multiline" data-field="zwischenhalte" data-input-type="textarea" data-editable="true">
         <div class="editor-field-label">Zwischenhalte</div>
         <div class="editor-field-value" data-focus="stops"></div>
-      </div>
-      
-      <div class="editor-field" data-field="projectId" data-input-type="select" data-editable="true">
-        <div class="editor-field-label">Projekt</div>
-        <div class="editor-field-value" data-focus="project"></div>
       </div>
       
       <div class="editor-actions" data-focus="actions">
@@ -145,41 +140,6 @@
     </div>
   </template>
   <!-- End of konflikt template -->
-
-  <!-- Project drawer template -->
-  <template id="project-drawer-template">
-    <div class="project-drawer-container">
-      <div class="project-drawer-header" data-project="header">
-        <img src="s1.svg" class="project-drawer-symbol" data-project="symbol" alt="Line">
-        <div class="project-drawer-title" data-project="name" data-editable="true">Unbenanntes Projekt</div>
-        <button class="project-drawer-close" data-project="close-btn">✕</button>
-      </div>
-      
-      <div class="project-info-section">
-        <div class="project-field-label">Fälligkeit</div>
-        <div class="project-field-value" data-project="deadline" data-editable="true" data-input-type="datetime-local">Kein Fälligkeitsdatum</div>
-      </div>
-      
-      <div class="project-tasks-header">
-        <span class="project-task-col-plan">Plan</span>
-        <span class="project-task-col-status"></span>
-        <span class="project-task-col-actual">Ist.</span>
-        <span class="project-task-col-name">Aufgabe</span>
-      </div>
-      
-      <div class="project-tasks-list" data-project="tasks-list">
-        <!-- Tasks will be inserted here -->
-      </div>
-      
-      <div class="spacer"></div>
-      
-      <div class="project-footer">
-        <div class="project-created-date" data-project="created-date">Erstellt am</div>
-        <img src="delete.svg" class="project-delete-icon" data-project="delete-btn">
-      </div>
-    </div>
-  </template>
-  <!-- End of project drawer template -->
 
   <!-- Mobile Focus Popup Template -->
   <div id="mobile-focus-popup" class="mobile-focus-popup">
@@ -277,19 +237,12 @@
 
     <!-- Right column: announcements drawer -->
     <div class="right-panel" id="announcement-drawer">
-      <div class="announcement-drawer-header">
-        <span class="announcement-drawer-title">Benachrichtigungen</span>
-        <button class="announcement-drawer-close" id="announcement-drawer-close" aria-label="Close announcements">✕</button>
-      </div>
       <div class="right-panel-bottom" id="announcement-panel"></div>
     </div>
   </div>
 
   <!-- Focus panel drawer (desktop) -->
   <div class="right-panel-top" id="focus-panel"></div>
-
-  <!-- Project drawer (right side) -->
-  <div class="project-drawer" id="project-drawer"></div>
 
   <!-- Mode switcher drawer (desktop) -->
   <div class="mode-drawer" id="mode-drawer" aria-hidden="true">

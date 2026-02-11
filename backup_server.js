@@ -710,7 +710,6 @@ app.post('/api/schedule', (req, res) => {
       fixedSchedule: Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [],
       spontaneousEntries: Array.isArray(body.spontaneousEntries) ? body.spontaneousEntries : [],
       trains: Array.isArray(body.trains) ? body.trains : [],
-      projects: Array.isArray(body.projects) ? body.projects : [],
     };
     
     // Comprehensive logging: export all current train data on every save

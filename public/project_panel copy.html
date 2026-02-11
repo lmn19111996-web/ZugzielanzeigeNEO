@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<link rel="stylesheet" href="style.css">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Project Management</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#d3d3d3">
+  <style>
+    /* Basic styles for the project management panel */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      /* DEBUG COLOR */
+      background: #f6f6f6;
+      /* RELEASE COLOR */
+      /*background: #161B75; */
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
+      font-stretch: condensed;
+      width: 100%;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .project-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    .project-header {
+      background: #111111;
+      color: white;
+      height: 9vh;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      border-bottom: 1.2vh solid rgba(0, 78, 157, 1);
+      align-items: center;
+      padding: 0 2vw;
+      box-sizing: border-box;
+    }
+
+    .project-symbol {
+      width: 10vh;
+      height: 10vh;
+    }
+
+    .project-title {
+      font-weight: 500;
+      color: #f6f6f6;
+      font-stretch: condensed;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      font-size: 5vh;
+      padding-left: 2vw;
+    }
+
+    .project-info-container {
+        width: 100%;
+        max-height: 10vh;
+        display: flex;
+        flex-direction: column;
+        padding: 2vh 2vw;
+        box-sizing: border-box;
+    }
+
+    .project-info-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .project-description-label {
+      font-size: 2vh;
+      color: #333333;
+      font-weight: 300;
+      margin-bottom: 0.5vh;  
+    }
+
+    .project-description {
+      font-size: 2.5vh;
+      color: #101010;
+      font-weight: 500;
+      border-bottom: 0.5px solid rgba(64, 64, 64, 0.5);
+    }
+
+    .project-task-list-label {
+        height: 4vh;
+        padding-top: 2vh;
+        padding-left: 2vw;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .project-plan {
+      font-size: 2.5vh;
+      width: 13vw;
+      color: #333333;
+      font-weight: 300;
+      flex-shrink: 0;
+    }
+
+    .project-icon-slot {
+      min-width: 4vw;
+      flex-shrink: 0;
+    }
+
+    .project-actual {
+      font-size: 2.5vh;
+      width: 13vw;
+      color: #333333;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .project-task-name {
+      font-size: 2.5vh;
+      color: #101010;
+      font-weight: 400;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    .project-task-remove-icon {
+      width: 3vh;
+      height: 3vh;
+      filter: invert(0.5);
+      margin: 0 2vw;
+      box-sizing: border-box;
+    }
+
+    .project-task-list {
+        width: 100%;
+        max-height: 40vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      height: auto;
+      box-sizing: border-box;
+    }
+
+    .project-task-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .project-task-block-bright {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 6vh;
+      background: #f5f5f5;
+      padding: 1vh 2vw;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .project-task-block-dark {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 6vh;
+      background: #e9e9e9;
+      padding: 1vh 2vw;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .project-footer {
+        height: 5vh;
+        background: #e6e6e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .project-close {
+      background: transparent;
+      border: none;
+      font-size: 3vh;
+       color: rgb(99, 99, 99);
+      cursor: pointer;
+    }
+</style>
+</head>
+<body>
+<div class="project-container">
+        <div class="project-header">
+                <img src="s6.svg" class="project-symbol">
+                <span class="project-title">Höhere Mathematik I</span>
+                <span class="spacer"></span>
+                <button class="project-close" id="project-close" aria-label="Close project panel">✕</button>
+        </div>
+        <div class="project-info-container">
+                <div class="project-description-label">Fälligkeit:</div>
+                <div class="project-description">Montag, 23. Februar 2026 - 07:00 Uhr</div>
+        </div>
+        <div class="project-task-list-label">
+                <span class="project-plan">Plan</span>
+                <span class="project-icon-slot"></span>
+                <span class="project-actual">Ist.</span>
+                <span class="project-task-name">Aufgabe</span>
+        </div>
+        <div class="project-task-list">
+                <div class="project-task-block-bright">
+                        <span class="project-plan">07.02</span>
+                        <span class="project-icon-slot"></span>
+                        <span class="project-actual">08.02</span>
+                        <span class="project-task-name">Analysis - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-dark">
+                        <span class="project-plan">12.02</span>
+                        <span class="project-icon-slot"></span> 
+                        <span class="project-actual">12.02</span>
+                        <span class="project-task-name">Lineare Algebra - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-bright">
+                        <span class="project-plan">28.02</span>
+                        <span class="project-icon-slot"></span>
+                        <span class="project-actual">28.02</span>
+                        <span class="project-task-name">Stochastik - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                
+                <div class="project-task-block-dark">
+                        <span class="project-plan">01.03</span>
+                        <span class="project-icon-slot"></span> 
+                        <span class="project-actual">05.03</span>
+                        <span class="project-task-name">Lineare Algebra - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-bright">
+                        <span class="project-plan">07.02</span>
+                        <span class="project-icon-slot"></span>
+                        <span class="project-actual">08.02</span>
+                        <span class="project-task-name">Analysis - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                
+                <div class="project-task-block-dark">
+                        <span class="project-plan">01.03</span>
+                        <span class="project-icon-slot"></span> 
+                        <span class="project-actual">05.03</span>
+                        <span class="project-task-name">Lineare Algebra - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-bright">
+                        <span class="project-plan">28.02</span>
+                        <span class="project-icon-slot"></span>
+                        <span class="project-actual">28.02</span>
+                        <span class="project-task-name">Stochastik - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-dark">
+                        <span class="project-plan">12.02</span>
+                        <span class="project-icon-slot"></span> 
+                        <span class="project-actual">12.02</span>
+                        <span class="project-task-name">Lineare Algebra - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-bright">
+                        <span class="project-plan">28.02</span>
+                        <span class="project-icon-slot"></span>
+                        <span class="project-actual">28.02</span>
+                        <span class="project-task-name">Stochastik - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                
+                <div class="project-task-block-dark">
+                        <span class="project-plan">01.03</span>
+                        <span class="project-icon-slot"></span> 
+                        <span class="project-actual">05.03</span>
+                        <span class="project-task-name">Lineare Algebra - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-bright">
+                        <span class="project-plan">07.02</span>
+                        <span class="project-icon-slot"></span>
+                        <span class="project-actual">08.02</span>
+                        <span class="project-task-name">Analysis - 10 Punkte</span>
+                        <span class="spacer"></span>
+                        <img src="remove.svg" class="project-task-remove-icon">
+                </div>
+                <div class="project-task-block-dark">
+                        <span class="project-plan"></span>
+                        <span class="project-icon-slot"></span> 
+                        <span class="project-actual"></span>
+                        <span class="project-task-name" style="color: #666666; font-weight: 300; font-style: italic;">+  Aufgabe hinzufügen</span>
+                </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="project-footer">
+                <div style="font-size: 2vh; color: #333333; flex: 1; padding: 0 2vw; text-align: center;">Erstellt am Mi, 11. Feb 2026</div>
+                <img src="delete.svg" style="width: 2.5vh; height: 5vh; filter: invert(0.5); margin-right: 4vw; cursor: pointer;" onclick="alert('Projekt löschen?')">
+        </div> 
+                <!-- Footer content can go here -->   
+</div>
+</body>
+</html>

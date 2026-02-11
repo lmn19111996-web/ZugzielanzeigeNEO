@@ -16,7 +16,6 @@ html, body {
 
     :root {
       --editor-drawer-width: clamp(20vw, 300px, 350px);
-      --project-drawer-width: clamp(25vw, 450px, 550px);
       --announcements-drawer-width: 20vw;
     }
     
@@ -496,59 +495,21 @@ html, body {
     /* Right column drawer for announcements */
     .right-panel {
       width: var(--announcements-drawer-width);
-      height: 95vh;
-      margin-top: 2.5vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
       position: fixed;
       top: 0;
       right: calc(-1 * var(--announcements-drawer-width));
-      box-shadow: 0px 0 10px rgb(0, 0, 0);
-      border-radius: 2%;
-      transition: right 0.2s ease;
+      background: #161B75;
+      border-left: 0.5px solid rgba(255, 255, 255, 0.64);
+      transition: right 0.3s ease;
       z-index: 1100;
     }
 
     .right-panel.is-open {
       right: 0;
-    }
-
-    /* Announcement drawer header */
-    .announcement-drawer-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1vh 1vw;
-      background: #0F1450;
-    }
-
-    .announcement-drawer-title {
-      font-size: 2.2vh;
-      font-weight: 300;
-      font-stretch: condensed;
-      letter-spacing: -0.02em;
-      overflow: hidden;
-      color: rgb(255, 255, 255);
-    }
-
-    .announcement-drawer-close {
-      background: transparent;
-      border: none;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 2vh;
-      cursor: pointer;
-      
-      line-height: 1;
-      transition: color 0.2s ease;
-    }
-
-    .announcement-drawer-close:hover {
-      color: rgba(255, 255, 255, 1);
-    }
-
-    .announcement-drawer-close:active {
-      color: rgba(255, 255, 255, 0.5);
     }
 
     /* Editor drawer */
@@ -559,7 +520,7 @@ html, body {
       width: var(--editor-drawer-width);
       height: 95vh;
       margin-top: 2.5vh;
-      box-shadow: 0 0 10px rgb(0, 0, 0);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       background: #0F1450;
       box-sizing: border-box;
       overflow-y: auto;
@@ -743,7 +704,7 @@ html, body {
       height: 6vh;
     }
 
-    .line-badge { 
+    .line-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1168,7 +1129,7 @@ html, body {
 
     .announcement-headline {
       width: 100%;
-      height: 2.5vh;
+      height: 3vh;
       font-size: 1.6vh;
       font-weight: 400;
       padding-left: 0.5vh;
@@ -1235,7 +1196,7 @@ html, body {
     /* Konflikt-specific styles */
     .konflikt-block {
       width: 100%;
-      height: 90px;
+      height: 31%;
       display: flex;
       flex-direction: column;
       padding-top: 0.5vh;
@@ -1486,8 +1447,6 @@ html, body {
     .announcement-content-wrapper {
       scrollbar-width: none;
       -ms-overflow-style: none;
-      background: #0F1450;
-      border-radius: 5px;
     }
     
     .announcement-content-wrapper::-webkit-scrollbar {
@@ -2401,520 +2360,4 @@ html, body {
 .time-suggestion-trigger-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* ==================== PROJECT MANAGEMENT STYLES ==================== */
-
-/* Projects Page */
-.projects-page {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  padding: 3vh 2vw;
-  box-sizing: border-box;
-}
-
-.projects-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 3vh;
-  padding-bottom: 2vh;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.projects-title {
-  font-size: 4vh;
-  font-weight: 500;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.project-create-btn {
-  background: rgba(0, 78, 157, 0.8);
-  border: none;
-  color: white;
-  font-family: inherit;
-  font-size: 2.2vh;
-  font-weight: 400;
-  padding: 1.5vh 2vw;
-  border-radius: 0.6vh;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.project-create-btn:hover {
-  background: rgba(0, 78, 157, 1);
-}
-
-.projects-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2vh 2vw;
-}
-
-.projects-empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 5vh;
-  opacity: 0.6;
-  font-size: 2.2vh;
-}
-
-.project-card {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 0.8vh;
-  padding: 2vh 1.5vw;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-left: 4px solid #004E9D;
-}
-
-.project-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.project-card-header {
-  display: flex;
-  align-items: center;
-  gap: 1.5vw;
-  margin-bottom: 1.5vh;
-}
-
-.project-card-icon {
-  width: 6vh;
-  height: 6vh;
-  flex-shrink: 0;
-}
-
-.project-card-name {
-  font-size: 2.8vh;
-  font-weight: 500;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-card-deadline {
-  font-size: 2vh;
-  opacity: 0.8;
-  margin-bottom: 0.5vh;
-}
-
-.project-card-progress {
-  font-size: 1.8vh;
-  opacity: 0.6;
-}
-
-/* Project Drawer (Right Side) */
-.project-drawer {
-  position: fixed;
-  top: 0;
-  right: calc(-1 * var(--project-drawer-width));
-  width: var(--project-drawer-width);
-  height: 100vh;
-  box-shadow: 0 0 10px rgb(0, 0, 0);
-  background: #f6f6f6;
-  box-sizing: border-box;
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: right 0.2s ease;
-  z-index: 1200;
-}
-
-.project-drawer.is-open {
-  right: 0;
-}
-
-body.project-drawer-open .left-column {
-  width: calc(100% - var(--project-drawer-width) - 1vw);
-}
-
-body.project-drawer-open .right-panel {
-  right: var(--project-drawer-width);
-}
-
-.project-drawer-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.project-drawer-header {
-  background: #111111;
-  color: white;
-  height: 9vh;
-  display: flex;
-  align-items: center;
-  padding: 0 2%;
-  border-bottom: 1.2vh solid rgba(0, 78, 157, 1);
-  flex-shrink: 0;
-}
-
-.project-drawer-symbol {
-  width: 10vh;
-  height: 10vh;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.project-drawer-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 5vh;
-  font-weight: 500;
-  font-stretch: condensed;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.04em;
-  padding: 0 2%;
-  cursor: text;
-  transition: background 0.1s ease;
-  border-radius: 4px;
-}
-
-.project-drawer-title input {
-  padding: 0;
-  outline: none;
-}
-
-.project-drawer-title input:focus {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.project-drawer-close {
-  background: transparent;
-  border: none;
-  color: rgb(99, 99, 99);
-  font-size: 3vh;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.project-info-section {
-  padding: 2% 4%;
-  border-bottom: 0.5px solid rgba(64, 64, 64, 0.3);
-  cursor: pointer;
-  transition: background 0.1s ease;
-}
-
-.project-info-section:hover {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.project-field-label {
-  font-size: 2vh;
-  color: #333333;
-  font-weight: 300;
-  margin-bottom: 0.5vh;
-}
-
-.project-field-value {
-  font-size: 2.5vh;
-  color: #101010;
-  font-weight: 500;
-  cursor: text;
-  min-height: 2.5vh;
-}
-
-.project-field-value input {
-  padding: 0;
-  outline: none;
-}
-
-.project-field-value input:focus {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.project-tasks-header {
-  display: flex;
-  align-items: center;
-  height: 4vh;
-  padding: 2% 4% 1%;
-  font-size: 2vh;
-  color: #666;
-  background: #f5f5f5;
-}
-
-.project-task-col-plan {
-      width: 13%;
-      font-weight: 300;
-      flex-shrink: 0;
-}
-
-.project-task-col-status {
-  width: 8%;
-  flex-shrink: 0;
-  text-align: center;
-}
-
-.project-task-col-actual {
-  width: 13%;
-font-weight: 500;
-  flex-shrink: 0;
-}
-
-.project-task-col-name {
-  flex: 1;
-  min-width: 0;
-  font-weight: 400;
-}
-
-.project-tasks-list {
-  flex: 1;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.project-tasks-list::-webkit-scrollbar {
-  display: none;
-}
-
-.project-task-row,
-.project-task-row-bright,
-.project-task-row-dark {
-  display: flex;
-  align-items: center;
-  height: 6vh;
-  padding: 1% 2%;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.project-task-row-bright {
-  background: #f5f5f5;
-}
-
-.project-task-row-dark {
-  background: #e9e9e9;
-}
-
-.project-task-row:hover,
-.project-task-row-bright:hover,
-.project-task-row-dark:hover {
-  background: #f1f0f0;
-}
-
-.project-task-add-row {
-  cursor: text;
-}
-
-.project-task-add-row:hover {
-  background: #dcdcdc;
-}
-
-.project-task-plan {
-  width: 12%;
-  font-size: 2.2vh;
-  color: #333;
-  font-weight: 300;
-  flex-shrink: 0;
-}
-
-.project-task-status-dot {
-  width: 1.5vh;
-  height: 1.5vh;
-  border-radius: 50%;
-  background: #666;
-  flex-shrink: 0;
-  margin: 0 auto;
-  position: relative;
-  --line-color: #666;
-}
-
-.project-task-status-dot::before,
-.project-task-status-dot::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  width: 2px;
-  background: var(--line-color, #666);
-  transform: translateX(-50%);
-}
-
-.project-task-status-dot::before {
-  top: -100%;
-  height: 100%;
-}
-
-.project-task-status-dot::after {
-  bottom: -100%;
-  height: 100%;
-}
-
-/* Hide the connecting line after the last active task */
-[data-task-active="true"] + .project-task-row:not([data-task-active="true"]) .project-task-status-dot::before,
-[data-task-active="true"] .project-task-status-dot::after {
-  background: #666;
-}
-
-.project-task-row:first-child .project-task-status-dot::before {
-  display: none;
-}
-
-.project-task-row:last-child .project-task-status-dot::after,
-.project-task-add-row .project-task-status-dot::after {
-  display: none;
-}
-
-.project-task-status-dot.project-task-status-active {
-  background: inherit;
-}
-
-.project-task-status-dot.project-task-status-active::before,
-.project-task-status-dot.project-task-status-active::after {
-  background: var(--line-color, inherit);
-}
-
-.project-task-actual {
-  width: 10%;
-  font-size: 2.2vh;
-  color: #333;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.project-task-name {
-  flex: 1;
-  font-size: 2.2vh;
-  color: #101010;
-  font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.project-task-add-input {
-  color: #666;
-  font-weight: 300;
-  font-style: italic;
-  outline: none;
-}
-
-.project-task-add-input:empty::before {
-  content: attr(data-placeholder);
-  color: #999;
-}
-
-.project-task-remove-icon {
-  width: 3vh;
-  height: 3vh;
-  filter: invert(0.5);
-  margin-left: 2vw;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.project-task-remove-icon:hover {
-  filter: invert(0.3);
-}
-
-.spacer {
-  flex: 1;
-}
-
-.project-footer {
-  height: 6vh;
-  background: #e6e6e6;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2vw;
-  flex-shrink: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.project-created-date {
-  font-size: 2vh;
-  color: #333;
-  flex: 1;
-}
-
-.project-delete-icon {
-  width: 2.5vh;
-  height: 5vh;
-  filter: invert(0.5);
-  cursor: pointer;
-}
-
-.project-delete-icon:hover {
-  filter: invert(0.3);
-}
-
-/* ==================== END PROJECT MANAGEMENT STYLES ==================== */
-
-/* Mobile responsiveness for project management */
-@media (max-width: 768px) {
-  .projects-page {
-    padding: 2vh 4vw;
-  }
-  
-  .projects-title {
-    font-size: 3.5vh;
-  }
-  
-  .project-create-btn {
-    font-size: 2vh;
-    padding: 1.5vh 4vw;
-  }
-  
-  .projects-list {
-    grid-template-columns: 1fr;
-    gap: 2vh;
-  }
-  
-  .project-card {
-    padding: 2vh 4vw;
-  }
-  
-  .project-card-icon {
-    width: 5vh;
-    height: 5vh;
-  }
-  
-  .project-card-name {
-    font-size: 2.5vh;
-  }
-  
-  .project-drawer {
-    width: 90vw;
-    right: -90vw;
-  }
-  
-  .project-drawer.is-open {
-    right: 0;
-  }
-  
-  body.project-drawer-open .left-column {
-    display: none;
-  }
-  
-  .project-drawer-title {
-    font-size: 3.5vh;
-  }
-  
-  .project-drawer-symbol {
-    width: 6vh;
-    height: 6vh;
-  }
-  
-  .project-task-col-plan,
-  .project-task-plan {
-    width: 15vw;
-  }
-  
-  .project-task-col-actual,
-  .project-task-actual {
-    width: 15vw;
-  }
-  
-  .project-task-col-status {
-    width: 5vw;
-  }
 }

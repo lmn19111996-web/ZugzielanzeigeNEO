@@ -17,10 +17,6 @@
     let desktopFocusedTrainId = null;
     let mobileFocusedTrainId = null;
     
-    // Track project editor state
-    let currentProjectId = null;
-    let isProjectDrawerOpen = false;
-    
     // Mobile edit debounce timer
     let mobileEditDebounceTimer = null;
     let pendingMobileSave = false;
@@ -33,8 +29,7 @@
     let schedule = {
       fixedSchedule: [],
       spontaneousEntries: [],
-      trains: [],
-      projects: [] // Array of project objects
+      trains: []
     };
 
     // Centralized train processing - creates categorized train lists used by all panels
@@ -193,15 +188,6 @@
       const h = String(date.getHours()).padStart(2, '0');
       const m = String(date.getMinutes()).padStart(2, '0');
       return `${h}:${m}`;
-    }
-
-    function calculateArrivalTime(departureTime, durationMinutes, trainDate = null) {
-      if (!departureTime || !durationMinutes) return null;
-      const now = new Date();
-      const depDate = parseTime(departureTime, now, trainDate);
-      if (!depDate) return null;
-      const arrDate = new Date(depDate.getTime() + durationMinutes * 60000);
-      return formatClock(arrDate);
     }
 
     function parseTime(str, now = new Date(), trainDate = null) {
@@ -502,33 +488,10 @@
             return train;
           };
           
-          // Helper to assign project IDs
-          const assignProjectId = (project) => {
-            if (!project._uniqueId) {
-              project._uniqueId = 'project_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-            }
-            if (!project.createdAt) {
-              project.createdAt = new Date().toISOString();
-            }
-            // Ensure tasks array exists and has IDs
-            if (project.tasks) {
-              project.tasks = project.tasks.map(task => {
-                if (!task._uniqueId) {
-                  task._uniqueId = 'task_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-                }
-                return task;
-              });
-            } else {
-              project.tasks = [];
-            }
-            return project;
-          };
-          
           // Store global schedule object (like InputEnhanced) with unique IDs
           schedule.fixedSchedule = (data.fixedSchedule || []).map(assignId);
           schedule.spontaneousEntries = (data.spontaneousEntries || []).map(assignId);
           schedule.trains = (data.trains || []).map(assignId);
-          schedule.projects = (data.projects || []).map(assignProjectId);
           
           // Handle both new and legacy formats
           if (data.fixedSchedule || data.spontaneousEntries) {
@@ -683,9 +646,6 @@
       if (drawer) {
         drawer.classList.add('is-open');
         document.body.classList.add('announcements-open');
-        
-        // Set up event handlers for closing
-        setupAnnouncementDrawerCloseHandlers();
       }
     }
 
@@ -695,52 +655,6 @@
         drawer.classList.remove('is-open');
       }
       document.body.classList.remove('announcements-open');
-      
-      // Clean up event handlers
-      if (announcementDrawerEscHandler) {
-        document.removeEventListener('keydown', announcementDrawerEscHandler, true);
-        announcementDrawerEscHandler = null;
-      }
-      if (announcementDrawerClickOutHandler) {
-        document.removeEventListener('click', announcementDrawerClickOutHandler, true);
-        announcementDrawerClickOutHandler = null;
-      }
-    }
-
-    function setupAnnouncementDrawerCloseHandlers() {
-      const drawer = document.getElementById('announcement-drawer');
-      
-      // Remove old handlers if they exist
-      if (announcementDrawerEscHandler) {
-        document.removeEventListener('keydown', announcementDrawerEscHandler, true);
-      }
-      if (announcementDrawerClickOutHandler) {
-        document.removeEventListener('click', announcementDrawerClickOutHandler, true);
-      }
-      
-      // Esc handler
-      announcementDrawerEscHandler = (e) => {
-        if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
-          e.preventDefault();
-          closeAnnouncementsDrawer();
-          setWorkspaceMode('list');
-        }
-      };
-      document.addEventListener('keydown', announcementDrawerEscHandler, true);
-      
-      // Click outside handler
-      announcementDrawerClickOutHandler = (e) => {
-        if (drawer && drawer.classList.contains('is-open') && !drawer.contains(e.target)) {
-          // Don't close if clicking the announcements button itself
-          const announcementsBtn = document.getElementById('announcements-button');
-          if (announcementsBtn && announcementsBtn.contains(e.target)) {
-            return;
-          }
-          closeAnnouncementsDrawer();
-          setWorkspaceMode('list');
-        }
-      };
-      document.addEventListener('click', announcementDrawerClickOutHandler, true);
     }
 
     function openEditorDrawer() {
@@ -759,517 +673,6 @@
       }
       document.body.classList.remove('editor-drawer-open');
     }
-
-    // ==================== PROJECT MANAGEMENT FUNCTIONS ====================
-    
-    let projectDrawerEscHandler = null;
-    let projectDrawerClickOutHandler = null;
-    
-    function openProjectDrawer() {
-      closeAnnouncementsDrawer();
-      closeEditorDrawer();
-      const drawer = document.getElementById('project-drawer');
-      if (drawer) {
-        drawer.classList.add('is-open');
-        document.body.classList.add('project-drawer-open');
-      }
-      isProjectDrawerOpen = true;
-      setupProjectDrawerCloseHandlers();
-    }
-
-    function closeProjectDrawer() {
-      const drawer = document.getElementById('project-drawer');
-      if (drawer) {
-        drawer.classList.remove('is-open');
-      }
-      document.body.classList.remove('project-drawer-open');
-      currentProjectId = null;
-      isProjectDrawerOpen = false;
-      
-      // Clean up event handlers
-      if (projectDrawerEscHandler) {
-        document.removeEventListener('keydown', projectDrawerEscHandler, true);
-        projectDrawerEscHandler = null;
-      }
-      if (projectDrawerClickOutHandler) {
-        document.removeEventListener('click', projectDrawerClickOutHandler, true);
-        projectDrawerClickOutHandler = null;
-      }
-    }
-    
-    function setupProjectDrawerCloseHandlers() {
-      const drawer = document.getElementById('project-drawer');
-      
-      // Remove old handlers if they exist
-      if (projectDrawerEscHandler) {
-        document.removeEventListener('keydown', projectDrawerEscHandler, true);
-      }
-      if (projectDrawerClickOutHandler) {
-        document.removeEventListener('click', projectDrawerClickOutHandler, true);
-      }
-      
-      // Esc handler
-      projectDrawerEscHandler = (e) => {
-        if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
-          // Check if we're editing (inputs present)
-          const hasInputs = drawer.querySelector('input');
-          if (hasInputs) {
-            // Trigger blur to save the current input
-            hasInputs.blur();
-          } else {
-            // No inputs, close drawer
-            e.preventDefault();
-            closeProjectDrawer();
-            renderProjectsPage();
-          }
-        }
-      };
-      document.addEventListener('keydown', projectDrawerEscHandler, true);
-      
-      // Click outside handler
-      projectDrawerClickOutHandler = (e) => {
-        if (drawer && drawer.classList.contains('is-open') && !drawer.contains(e.target)) {
-          // Don't close if clicking inside task editor
-          const taskEditor = document.getElementById('project-task-editor');
-          if (taskEditor && taskEditor.contains(e.target)) {
-            return;
-          }
-          closeProjectDrawer();
-          renderProjectsPage();
-        }
-      };
-      document.addEventListener('click', projectDrawerClickOutHandler, true);
-    }
-
-    function renderProjectsPage() {
-      const trainListEl = document.getElementById('train-list');
-      if (!trainListEl) return;
-
-      const projects = schedule.projects || [];
-      
-      let html = '<div class="projects-page">';
-      html += '<div class="projects-header">';
-      html += '<h2 class="projects-title">Projekte</h2>';
-      html += '<button class="project-create-btn" id="create-project-btn">+ Neues Projekt</button>';
-      html += '</div>';
-      html += '<div class="projects-list">';
-      
-      if (projects.length === 0) {
-        html += '<div class="projects-empty">Keine Projekte vorhanden. Erstellen Sie ein neues Projekt.</div>';
-      } else {
-        projects.forEach(project => {
-          const lineColor = getLineColor(project.linie || 's1');
-          const deadlineDate = project.deadline ? new Date(project.deadline) : null;
-          const deadlineStr = deadlineDate ? deadlineDate.toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          }) : 'Open-Ended';
-          
-          const taskCount = (project.tasks || []).length;
-          const completedTasks = (project.tasks || []).filter(t => t.actual).length;
-          
-          html += `<div class="project-card" data-project-id="${project._uniqueId}" style="border-left: 4px solid ${lineColor}">`;
-          html += `<div class="project-card-header">`;
-          html += `<img src="${getTrainSVG(project.linie || 'S1')}" class="project-card-icon" alt="Line" onerror="this.style.display='none'">`;
-          html += `<div class="project-card-name">${project.name || 'Unbenanntes Projekt'}</div>`;
-          html += `</div>`;
-          html += `<div class="project-card-deadline">${deadlineStr}</div>`;
-          html += `<div class="project-card-progress">${completedTasks} / ${taskCount} Aufgaben abgeschlossen</div>`;
-          html += `</div>`;
-        });
-      }
-      
-      html += '</div>';
-      html += '</div>';
-      
-      trainListEl.innerHTML = html;
-      
-      // Add event listeners
-      const createBtn = document.getElementById('create-project-btn');
-      if (createBtn) {
-        createBtn.addEventListener('click', createNewProject);
-      }
-      
-      // Add click handlers for project cards
-      trainListEl.querySelectorAll('.project-card').forEach(card => {
-        card.addEventListener('click', function() {
-          const projectId = this.getAttribute('data-project-id');
-          openProjectEditor(projectId);
-        });
-      });
-    }
-
-    async function createNewProject() {
-      const newProject = {
-        _uniqueId: 'project_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
-        name: '',
-        linie: 's1',
-        deadline: null,
-        createdAt: new Date().toISOString()
-      };
-      
-      schedule.projects = schedule.projects || [];
-      schedule.projects.push(newProject);
-      
-      await saveSchedule();
-      openProjectEditor(newProject._uniqueId);
-    }
-
-    function openProjectEditor(projectId) {
-      const project = schedule.projects.find(p => p._uniqueId === projectId);
-      if (!project) {
-        console.error('Project not found:', projectId);
-        return;
-      }
-      
-      currentProjectId = projectId;
-      renderProjectDrawer(project);
-      openProjectDrawer();
-    }
-
-    function renderProjectDrawer(project) {
-      const drawer = document.getElementById('project-drawer');
-      const template = document.getElementById('project-drawer-template');
-      
-      if (!drawer || !template) return;
-
-      const lineColor = getLineColor(project.linie || 's1');
-      const deadlineDate = project.deadline ? new Date(project.deadline) : null;
-      const createdDate = project.createdAt ? new Date(project.createdAt) : new Date();
-      
-      // Clear drawer and clone template
-      drawer.innerHTML = '';
-      const clone = template.content.cloneNode(true);
-      
-      // Populate header with line color border
-      const header = clone.querySelector('[data-project="header"]');
-      header.style.borderBottom = `1.2vh solid ${lineColor}`;
-      
-      // Populate symbol image
-      const symbol = clone.querySelector('[data-project="symbol"]');
-      symbol.src = getTrainSVG(project.linie || 's1');
-      
-      // Populate project name
-      const nameField = clone.querySelector('[data-project="name"]');
-      nameField.textContent = project.name || 'Unbenanntes Projekt';
-      nameField.setAttribute('data-field', 'name');
-      nameField.setAttribute('data-value', project.name || '');
-      
-      // Populate close button
-      const closeBtn = clone.querySelector('[data-project="close-btn"]');
-      closeBtn.id = 'project-drawer-close-btn';
-      
-      // Populate deadline field
-      const deadlineField = clone.querySelector('[data-project="deadline"]');
-      deadlineField.textContent = deadlineDate 
-        ? deadlineDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-        : 'Open-Ended';
-      deadlineField.setAttribute('data-field', 'deadline');
-      deadlineField.setAttribute('data-value', project.deadline || '');
-      
-      // Populate tasks list
-      const tasksList = clone.querySelector('[data-project="tasks-list"]');
-      schedule.spontaneousEntries = schedule.spontaneousEntries || [];
-      const trains = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
-      
-      trains.forEach((train, index) => {
-        const taskHTML = renderProjectTask(train, index, trains.length, lineColor, project._uniqueId);
-        const taskTemplate = document.createElement('template');
-        taskTemplate.innerHTML = taskHTML.trim();
-        tasksList.appendChild(taskTemplate.content.firstChild);
-      });
-      
-      // Add task creation row
-      const addRowHTML = `
-        <div class="project-task-row project-task-add-row">
-          <span class="project-task-plan"></span>
-          <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;">
-            <span class="project-task-status-dot"></span>
-          </span>
-          <span class="project-task-actual"></span>
-          <span class="project-task-name project-task-add-input" contenteditable="true" data-placeholder="+ Aufgabe hinzufügen"></span>
-          <span class="spacer"></span>
-        </div>
-      `;
-      const addRowTemplate = document.createElement('template');
-      addRowTemplate.innerHTML = addRowHTML.trim();
-      tasksList.appendChild(addRowTemplate.content.firstChild);
-      
-      // Populate created date
-      const createdDateField = clone.querySelector('[data-project="created-date"]');
-      createdDateField.textContent = 'Erstellt am ' + createdDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-      
-      // Populate delete button
-      const deleteBtn = clone.querySelector('[data-project="delete-btn"]');
-      deleteBtn.id = 'project-delete-btn';
-      
-      // Append to drawer
-      drawer.appendChild(clone);
-      
-      // Set up event listeners
-      setupProjectDrawerListeners(project);
-    }
-
-    function renderProjectTask(train, index, totalTasks, lineColor, projectId) {
-      const rowClass = index % 2 === 0 ? 'project-task-row-bright' : 'project-task-row-dark';
-      const planDate = train.plan ? new Date(train.plan).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '';
-      const actualDate = train.actual ? new Date(train.actual).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : planDate;
-      
-      // Determine if this train is the "current" task (first incomplete)
-      const isCompleted = !!train.actual;
-      const trains = schedule.spontaneousEntries.filter(t => t.projectId === projectId);
-      const firstIncompleteIndex = trains.findIndex(t => !t.actual);
-      const isCurrent = index === firstIncompleteIndex;
-      
-      // Calculate if task is before, at, or after current position
-      const beforeCurrent = firstIncompleteIndex >= 0 && index < firstIncompleteIndex;
-      const afterCurrent = firstIncompleteIndex >= 0 && index > firstIncompleteIndex;
-      
-      // Status dot styling - everything up to and including current is colored
-      const isActive = beforeCurrent || isCurrent;
-      let statusDotClass = 'project-task-status-dot';
-      if (isActive) {
-        statusDotClass += ' project-task-status-active';
-      }
-      
-      const dotColor = isActive ? lineColor : '#666';
-      
-      return `
-        <div class="project-task-row ${rowClass}" data-task-id="${train._uniqueId}" data-task-active="${isActive}">
-          <span class="project-task-plan">${planDate}</span>
-          <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;">
-            <span class="${statusDotClass}" style="background-color: ${dotColor}; --line-color: ${dotColor};"></span>
-          </span>
-          <span class="project-task-actual">${actualDate}</span>
-          <span class="project-task-name">${train.ziel || 'Unbenannte Aufgabe'}</span>
-          <span class="spacer"></span>
-          <img src="remove.svg" class="project-task-remove-icon" data-task-action="remove">
-        </div>
-      `;
-    }
-
-    function setupProjectDrawerListeners(project) {
-      // Close button
-      const closeBtn = document.getElementById('project-drawer-close-btn');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          closeProjectDrawer();
-          renderProjectsPage();
-        });
-      }
-      
-      // Delete button
-      const deleteBtn = document.getElementById('project-delete-btn');
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
-          if (confirm('Möchten Sie dieses Projekt wirklich löschen?')) {
-            // Remove project
-            schedule.projects = schedule.projects.filter(p => p._uniqueId !== project._uniqueId);
-            // Make trains projectless (orphaned) instead of deleting them
-            schedule.spontaneousEntries.forEach(train => {
-              if (train.projectId === project._uniqueId) {
-                train.projectId = null;
-              }
-            });
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule();
-            Object.assign(schedule, freshSchedule);
-            closeProjectDrawer();
-            renderProjectsPage();
-          }
-        });
-      }
-      
-      // Editable fields - convert ALL to inputs when ANY is clicked (like train editor)
-      const editableFields = document.querySelectorAll('#project-drawer [data-editable="true"]');
-      editableFields.forEach(field => {
-        field.addEventListener('mousedown', function(e) {
-          // Check if already in edit mode
-          const hasInputs = document.querySelector('#project-drawer [data-editable="true"] input, #project-drawer [data-editable="true"] textarea');
-          if (hasInputs) {
-            return; // Already in edit mode
-          }
-          
-          const clickedFieldName = field.getAttribute('data-field');
-          
-          // Convert ALL editable fields to inputs
-          editableFields.forEach(f => {
-            const fieldName = f.getAttribute('data-field');
-            const inputType = f.getAttribute('data-input-type') || 'text';
-            const currentValue = f.getAttribute('data-value');
-            
-            const input = document.createElement('input');
-            input.type = inputType;
-            input.value = currentValue;
-            input.style.width = '100%';
-            input.style.background = 'transparent';
-            input.style.border = 'none';
-            input.style.color = 'inherit';
-            input.style.fontFamily = 'inherit';
-            input.style.fontSize = 'inherit';
-            input.style.fontWeight = 'inherit';
-            input.style.letterSpacing = 'inherit';
-            input.style.outline = 'none';
-            
-            if (inputType === 'datetime-local' || inputType === 'date') {
-              input.style.colorScheme = 'dark';
-            }
-            
-            const save = async () => {
-              // Save all fields
-              const allInputs = document.querySelectorAll('#project-drawer [data-editable="true"] input');
-              allInputs.forEach(inp => {
-                const fn = inp.parentElement.getAttribute('data-field');
-                if (fn) {
-                  project[fn] = inp.value;
-                }
-              });
-              
-              await saveSchedule();
-              const freshSchedule = await fetchSchedule();
-              Object.assign(schedule, freshSchedule);
-              renderProjectDrawer(project);
-              renderProjectsPage();
-            };
-            
-            input.addEventListener('blur', save);
-            input.addEventListener('keydown', async (e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                await save();
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                await save();
-              }
-            });
-            
-            f.innerHTML = '';
-            f.appendChild(input);
-          });
-          
-          // Focus the clicked field's input
-          setTimeout(() => {
-            const thisInput = field.querySelector('input');
-            if (thisInput) {
-              thisInput.focus();
-            }
-          }, 0);
-        });
-      });
-      
-      // Symbol image opens prompt dialog to change line
-      const symbol = document.querySelector('[data-project="symbol"]');
-      if (symbol) {
-        symbol.addEventListener('click', async function(e) {
-          e.stopPropagation();
-          const currentLine = project.linie || 's1';
-          const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
-          
-          if (newLine && newLine.trim() !== '') {
-            project.linie = newLine.trim().toLowerCase();
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule();
-            Object.assign(schedule, freshSchedule);
-            renderProjectDrawer(project);
-            renderProjectsPage();
-          }
-        });
-      }
-      
-      // Task add input
-      const addInput = document.querySelector('.project-task-add-input');
-      if (addInput) {
-        addInput.addEventListener('keydown', async (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const taskName = addInput.textContent.trim();
-            if (taskName) {
-              const now = new Date();
-              const newTrain = {
-                _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
-                linie: project.linie || 's1',
-                ziel: taskName,
-                plan: '',
-                actual: '',
-                dauer: 0,
-                zwischenhalte: [],
-                canceled: false,
-                date: now.toISOString().split('T')[0],
-                weekday: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()],
-                projectId: project._uniqueId,
-                done: false
-              };
-              schedule.spontaneousEntries = schedule.spontaneousEntries || [];
-              schedule.spontaneousEntries.push(newTrain);
-              await saveSchedule();
-              const freshSchedule = await fetchSchedule();
-              Object.assign(schedule, freshSchedule);
-              renderProjectDrawer(project);
-              // Focus the next add input
-              setTimeout(() => {
-                const nextAddInput = document.querySelector('.project-task-add-input');
-                if (nextAddInput) nextAddInput.focus();
-              }, 100);
-            }
-          }
-        });
-        
-        // Placeholder handling
-        addInput.addEventListener('focus', function() {
-          if (this.textContent === this.getAttribute('data-placeholder')) {
-            this.textContent = '';
-          }
-        });
-        addInput.addEventListener('blur', function() {
-          if (this.textContent.trim() === '') {
-            this.textContent = '';
-          }
-        });
-      }
-      
-      // Task row clicks
-      const taskRows = document.querySelectorAll('.project-task-row:not(.project-task-add-row)');
-      taskRows.forEach(row => {
-        const taskId = row.getAttribute('data-task-id');
-        
-        // Remove button
-        const removeBtn = row.querySelector('[data-task-action="remove"]');
-        if (removeBtn) {
-          removeBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule();
-            Object.assign(schedule, freshSchedule);
-            renderProjectDrawer(project);
-          });
-        }
-        
-        // Click on task row to open editor drawer
-        row.addEventListener('click', function(e) {
-          console.log('Task row clicked:', taskId);
-          if (e.target.closest('[data-task-action]')) {
-            console.log('Clicked on action button, returning');
-            return;
-          }
-          console.log('Opening task editor for:', taskId);
-          openTaskEditor(project._uniqueId, taskId);
-        });
-      });
-    }
-
-    function openTaskEditor(projectId, taskId) {
-      const train = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
-      if (!train) return;
-      
-      // Use the regular editor drawer - same as clicking a train
-      renderFocusMode(train);
-    }
-
-    // ==================== END PROJECT MANAGEMENT FUNCTIONS ====================
-
 
     function showWorkspacePlaceholder(label) {
       const placeholder = document.getElementById('mode-placeholder');
@@ -1319,26 +722,12 @@
           renderTrains();
           break;
         case 'announcements':
+          isAnnouncementsView = true;
           if (isMobile) {
-            // Toggle announcements view (mobile)
-            if (isAnnouncementsView) {
-              isAnnouncementsView = false;
-              renderTrains(); // Go back to normal train list
-            } else {
-              isAnnouncementsView = true;
-              showAnnouncementsView();
-            }
+            showAnnouncementsView();
           } else {
-            // Toggle announcements drawer (desktop)
-            const drawer = document.getElementById('announcement-drawer');
-            if (drawer && drawer.classList.contains('is-open')) {
-              closeAnnouncementsDrawer();
-              setWorkspaceMode('list');
-            } else {
-              isAnnouncementsView = true;
-              openAnnouncementsDrawer();
-              renderComprehensiveAnnouncementPanel();
-            }
+            openAnnouncementsDrawer();
+            renderComprehensiveAnnouncementPanel();
           }
           break;
         case 'db-api':
@@ -1348,10 +737,7 @@
           break;
         case 'projects':
           closeAnnouncementsDrawer();
-          closeEditorDrawer();
-          closeProjectDrawer();
-          hideWorkspacePlaceholder();
-          renderProjectsPage();
+          showWorkspacePlaceholder('Projekte');
           break;
         case 'meals':
           closeAnnouncementsDrawer();
@@ -2685,10 +2071,6 @@
     let editorDrawerEscHandler = null;
     let editorDrawerClickOutHandler = null;
 
-    // Global handlers for announcement drawer (prevent duplicate listener registration)
-    let announcementDrawerEscHandler = null;
-    let announcementDrawerClickOutHandler = null;
-
     function renderFocusMode(train) {
       const now = new Date();
       
@@ -2770,33 +2152,18 @@
         
         // Populate Arrival (Plan)
         const arrivalPlanValue = clone.querySelector('[data-focus="arrival-plan"]');
-        const planDuration = Number(train.dauer) || 0;
-        const planArrival = calculateArrivalTime(train.plan, planDuration, train.date);
-        if (train.plan && planArrival) {
-          arrivalPlanValue.textContent = `${train.plan} - ${planArrival}`;
-        } else {
-          arrivalPlanValue.textContent = train.plan || 'Keine Zeit';
-        }
+        arrivalPlanValue.textContent = train.plan || 'Keine Zeit';
         arrivalPlanValue.parentElement.setAttribute('data-value', train.plan || '');
         arrivalPlanValue.parentElement.setAttribute('data-placeholder', '14:00');
         
         // Populate Arrival (Actual)
         const arrivalActualValue = clone.querySelector('[data-focus="arrival-actual"]');
         const hasDelay = train.actual && train.actual !== train.plan;
-        const actualArrival = train.actual ? calculateArrivalTime(train.actual, planDuration, train.date) : null;
         if (hasDelay) {
-          if (actualArrival) {
-            arrivalActualValue.textContent = `${train.actual} - ${actualArrival}`;
-          } else {
-            arrivalActualValue.textContent = train.actual;
-          }
+          arrivalActualValue.textContent = train.actual;
           arrivalActualValue.parentElement.style.color = 'rgb(255, 200, 100)';
         } else {
-          if (train.actual && actualArrival) {
-            arrivalActualValue.textContent = `${train.actual} - ${actualArrival}`;
-          } else {
-            arrivalActualValue.textContent = train.actual || 'Keine Verspätung';
-          }
+          arrivalActualValue.textContent = train.actual || 'Keine Verspätung';
           arrivalActualValue.parentElement.style.opacity = '0.6';
         }
         arrivalActualValue.parentElement.setAttribute('data-value', train.actual || '');
@@ -2826,21 +2193,6 @@
         stopsValue.parentElement.setAttribute('data-value', stopsArray.join('\n'));
         stopsValue.parentElement.setAttribute('data-placeholder', 'Eine Station pro Zeile...');
         
-        // Populate Project dropdown
-        const projectValue = clone.querySelector('[data-focus="project"]');
-        if (projectValue) {
-          const projects = schedule.projects || [];
-          const currentProject = train.projectId ? projects.find(p => p._uniqueId === train.projectId) : null;
-          
-          if (currentProject) {
-            projectValue.textContent = currentProject.name || 'Unbenanntes Projekt';
-          } else {
-            projectValue.textContent = 'Kein Projekt';
-            projectValue.parentElement.style.opacity = '0.6';
-          }
-          projectValue.parentElement.setAttribute('data-value', train.projectId || '');
-        }
-        
         // Append to panel
         panel.appendChild(clone);
         
@@ -2868,7 +2220,7 @@
         let hasChanges = false;
         
         editableFields.forEach(field => {
-          const input = field.querySelector('input, textarea, select');
+          const input = field.querySelector('input, textarea');
           if (!input) return;
           
           const fieldName = field.getAttribute('data-field');
@@ -2890,8 +2242,6 @@
               train.zwischenhalte = newValue.split('\n').filter(s => s.trim());
             } else if (fieldName === 'actual') {
               train.actual = newValue || undefined;
-            } else if (fieldName === 'projectId') {
-              train.projectId = newValue || undefined;
             } else {
               train[fieldName] = newValue;
             }
@@ -2979,61 +2329,25 @@
             const placeholder = f.getAttribute('data-placeholder') || '';
             const valueElement = f.querySelector('.editor-field-value');
             
-            // Create input or select based on type
-            let input;
-            if (inputType === 'select') {
-              // Special handling for project dropdown
-              input = document.createElement('select');
-              input.style.width = '100%';
-              input.style.background = '#0F1450';
-              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
-              input.style.borderRadius = '0';
-              input.style.padding = '0.5vh';
-              input.style.color = 'white';
-              input.style.fontFamily = 'inherit';
-              input.style.fontSize = '2vh';
-              input.style.outline = 'none';
-              
-              // Add "No Project" option
-              const noneOption = document.createElement('option');
-              noneOption.value = '';
-              noneOption.textContent = 'Kein Projekt';
-              input.appendChild(noneOption);
-              
-              // Add all projects as options
-              const projects = schedule.projects || [];
-              projects.forEach(project => {
-                const option = document.createElement('option');
-                option.value = project._uniqueId;
-                option.textContent = project.name || 'Unbenanntes Projekt';
-                input.appendChild(option);
-              });
-              
-              input.value = currentValue;
-            } else if (inputType === 'textarea') {
-              input = document.createElement('textarea');
-            } else {
-              input = document.createElement('input');
+            // Create input
+            const input = inputType === 'textarea' 
+              ? document.createElement('textarea')
+              : document.createElement('input');
+            
+            if (inputType !== 'textarea') {
               input.type = inputType;
             }
-            
-            if (inputType !== 'select' && inputType !== 'textarea') {
-              input.type = inputType;
-            }
-            
-            if (inputType !== 'select') {
-              input.value = currentValue;
-              input.placeholder = placeholder;
-              input.style.width = '100%';
-              input.style.background = 'transparent';
-              input.style.border = 'none';
-              input.style.borderRadius = '0';
-              input.style.padding = '0';
-              input.style.color = 'white';
-              input.style.fontFamily = 'inherit';
-              input.style.fontSize = '2vh';
-              input.style.outline = 'none';
-            }
+            input.value = currentValue;
+            input.placeholder = placeholder;
+            input.style.width = '100%';
+            input.style.background = 'transparent';
+            input.style.border = 'none';
+            input.style.borderRadius = '0';
+            input.style.padding = '0';
+            input.style.color = 'white';
+            input.style.fontFamily = 'inherit';
+            input.style.fontSize = '2vh';
+            input.style.outline = 'none';
             
             // Style date and time inputs with white icons (dark mode)
             if (inputType === 'date' || inputType === 'time') {
@@ -3067,7 +2381,7 @@
                 keyEvent.preventDefault();
                 
                 // Define tab order
-                const tabOrder = ['linie', 'ziel', 'date', 'plan', 'actual', 'dauer', 'zwischenhalte', 'projectId'];
+                const tabOrder = ['linie', 'ziel', 'date', 'plan', 'actual', 'dauer', 'zwischenhalte'];
                 const currentIndex = tabOrder.indexOf(fName);
                 let nextIndex = keyEvent.shiftKey ? currentIndex - 1 : currentIndex + 1;
                 
@@ -4832,18 +4146,13 @@
             .map(t => {
               const { source, ...cleanTrain } = t;
               return cleanTrain;
-            }),
-          projects: (schedule.projects || []).map(p => {
-            const { ...cleanProject } = p;
-            return cleanProject;
-          })
+            })
         };
         
         console.log('💾 Saving schedule:', {
           fixedSchedule: dataToSave.fixedSchedule.length,
           spontaneousEntries: dataToSave.spontaneousEntries.length,
-          trains: dataToSave.trains.length,
-          projects: dataToSave.projects.length
+          trains: dataToSave.trains.length
         });
         
         const res = await fetch('/api/schedule', {
@@ -5759,15 +5068,6 @@
         console.log('❌ Announcements button not found');
       }
 
-      // Announcement drawer close button event listener
-      const announcementDrawerCloseBtn = document.getElementById('announcement-drawer-close');
-      if (announcementDrawerCloseBtn) {
-        announcementDrawerCloseBtn.addEventListener('click', () => {
-          closeAnnouncementsDrawer();
-          setWorkspaceMode('list');
-        });
-      }
-
       const navModeButtons = document.querySelectorAll('.task-icon-button.nav-only[data-mode]');
       navModeButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -6031,22 +5331,8 @@
       // Fetch and update the GLOBAL schedule object
       const freshSchedule = await fetchSchedule();
       processTrainData(freshSchedule);
-      
-      // Only render trains if not in projects mode
-      if (currentWorkspaceMode !== 'projects') {
-        renderTrains(); // Use unified render function
-        renderComprehensiveAnnouncementPanel();
-      } else {
-        // In projects mode, re-render the project drawer if it's open
-        if (isProjectDrawerOpen && currentProjectId) {
-          const updatedProject = freshSchedule.projects.find(p => p._uniqueId === currentProjectId);
-          if (updatedProject) {
-            renderProjectDrawer(updatedProject);
-          }
-        }
-        // And re-render the projects page
-        renderProjectsPage();
-      }
+      renderTrains(); // Use unified render function
+      renderComprehensiveAnnouncementPanel();
       checkTrainArrivals(); // Check for trains arriving in 15 minutes
       
       // Re-render the appropriate focused train based on which one is set
@@ -6310,11 +5596,13 @@
         }
       }
       
-      // Left/Right arrow keys to change announcement page - but NOT when editing in any input/textarea
+      // Left/Right arrow keys to change announcement page - but NOT when editing or in date/time input
       const activeElement = document.activeElement;
-      const isInInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+      const isInDateTimeInput = activeElement && 
+        (activeElement.tagName === 'INPUT') && 
+        (activeElement.type === 'date' || activeElement.type === 'time');
       
-      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isEditingTrain && !isInInput) {
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isEditingTrain && !isInDateTimeInput) {
         e.preventDefault();
         
         // Calculate total pages

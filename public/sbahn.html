@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Train Display UI – Mock</title>
+  <style>
+    :root{
+      --bg:#f4f6f8;
+      --panel:#ffffff;
+      --text:#111317;
+      --muted:#6b7280;
+      --line:#19a84a;      /* S-Bahn green */
+      --bar:#0b0d10;       /* bottom bar */
+      --shadow: 0 20px 60px rgba(0,0,0,.18);
+      --radius: 10px;
+      --font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: var(--font);
+      background: radial-gradient(1200px 700px at 60% 10%, #ffffff 0%, #eef2f6 40%, #e8edf3 100%);
+      color: var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      padding: 24px;
+    }
+
+    /* frame mimics a display panel */
+    .display{
+      width: min(1080px, 95vw);
+      aspect-ratio: 16/9;
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    /* top content area */
+    .content{
+      height: calc(100% - 110px);
+      display:grid;
+      grid-template-columns: 230px 1fr;
+    }
+
+    /* left timeline column */
+    .left{
+      background: #f7f8fa;
+      border-right: 1px solid rgba(0,0,0,.06);
+      padding: 14px 16px;
+      position:relative;
+    }
+
+    .hdr{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      font-size: 16px;
+      font-weight: 650;
+      color:#1f2937;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .hdr span:last-child{ text-align:left; }
+    .hdr .plan{ opacity:.85; }
+    .hdr .aktuell{ opacity:.85; }
+
+    /* timeline rows */
+    .rows{
+      display:grid;
+      gap: 18px;
+      padding-top: 8px;
+      position:relative;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 36px 1fr;
+      align-items:center;
+      column-gap: 10px;
+      font-size: 18px;
+    }
+    .row .planTime{
+      text-align:right;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      letter-spacing:.2px;
+    }
+    .row .actualTime{
+      text-align:left;
+      font-variant-numeric: tabular-nums;
+      letter-spacing:.2px;
+      color:#111317;
+      font-weight: 650;
+    }
+    .row.delay .actualTime{ color:#7c1d1d; } /* reddish for delay */
+
+    /* timeline track */
+    .track{
+      position:absolute;
+      top: 52px;
+      left: calc(50% + 1px); /* center-ish of middle column */
+      transform: translateX(-50%);
+      width: 6px;
+      height: calc(100% - 70px);
+      background: linear-gradient(to bottom, var(--line), var(--line));
+      border-radius: 999px;
+      opacity: .95;
+    }
+
+    .dot{
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 3px solid var(--line);
+      position:relative;
+      margin: 0 auto;
+    }
+    .dot.filled{
+      background: var(--line);
+      border-color: var(--line);
+    }
+    .dot.small{
+      width: 12px;
+      height: 12px;
+      border-width: 3px;
+    }
+
+    .mid{
+      display:flex;
+      flex-direction:column;
+      background: var(--panel);
+    }
+
+    .title{
+      padding: 20px 26px 10px 26px;
+      font-size: 56px;
+      line-height: 1.05;
+      font-weight: 750;
+      letter-spacing: .2px;
+    }
+
+    /* station list area */
+    .list{
+      padding: 6px 0 0 0;
+      display:flex;
+      flex-direction:column;
+      gap: 0;
+    }
+
+    .station{
+      display:flex;
+      align-items:center;
+      padding: 16px 26px;
+      font-size: 34px;
+      font-weight: 520;
+      color:#2b2f36;
+      background: #eef1f5;
+    }
+    .station:nth-child(even){
+      background: #f6f7f9;
+    }
+
+    /* subtle right crop hint (like the photo) */
+    .rightFade{
+      position:absolute;
+      right:0;
+      top:0;
+      width: 120px;
+      height: calc(100% - 110px);
+      background: linear-gradient(to left, rgba(255,255,255,.0), rgba(255,255,255,.9));
+      pointer-events:none;
+    }
+
+    /* bottom destination bar */
+    .bottom{
+      height: 110px;
+      background: var(--bar);
+      display:flex;
+      align-items:center;
+      padding: 18px 22px;
+      position:relative;
+    }
+    .bottom::after{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      height: 10px;
+      background: var(--line);
+    }
+
+    .badge{
+      background: var(--line);
+      color:#0b0d10;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font-size: 30px;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 86px;
+      margin-right: 22px;
+    }
+
+    .dest{
+      color:#f5f7fb;
+      font-size: 64px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+
+    /* make it scale nicely on small screens */
+    @media (max-width: 840px){
+      .content{ grid-template-columns: 200px 1fr; }
+      .title{ font-size: 44px; }
+      .station{ font-size: 26px; padding: 14px 18px; }
+      .dest{ font-size: 44px; }
+      .badge{ font-size: 22px; padding: 12px 16px; min-width: 70px; }
+      .row{ font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="display" role="img" aria-label="Mockup of a German S-Bahn onboard display showing next station and timetable">
+    <div class="content">
+      <aside class="left">
+        <div class="hdr">
+          <span class="plan">Plan</span>
+          <span class="aktuell">Aktuell</span>
+        </div>
+
+        <div class="track" aria-hidden="true"></div>
+
+        <div class="rows">
+          <div class="row delay">
+            <div class="planTime">18:23</div>
+            <div class="dot filled" aria-hidden="true"></div>
+            <div class="actualTime">18:30</div>
+          </div>
+
+          <div class="row">
+            <div class="planTime">18:32</div>
+            <div class="dot" aria-hidden="true"></div>
+            <div class="actualTime">18:38</div>
+          </div>
+
+          <div class="row">
+            <div class="planTime">18:34</div>
+            <div class="dot" aria-hidden="true"></div>
+            <div class="actualTime">18:41</div>
+          </div>
+
+          <div class="row">
+            <div class="planTime">18:36</div>
+            <div class="dot small" aria-hidden="true"></div>
+            <div class="actualTime">18:43</div>
+          </div>
+
+          <div class="row">
+            <div class="planTime">18:42</div>
+            <div class="dot" aria-hidden="true"></div>
+            <div class="actualTime">18:48</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="mid">
+        <div style="padding: 6px 26px 0 26px; font-size: 18px; color: #4b5563; font-weight: 650;">
+          Nächste Station
+        </div>
+
+        <div class="title">Feuersee</div>
+
+        <section class="list" aria-label="Upcoming stops">
+          <div class="station">Österfeld</div>
+          <div class="station">Vaihingen</div>
+          <div class="station">Rohr</div>
+          <div class="station">Goldberg</div>
+        </section>
+      </main>
+
+      <div class="rightFade" aria-hidden="true"></div>
+    </div>
+
+    <footer class="bottom" aria-label="Line and destination">
+      <div class="badge">S1</div>
+      <div class="dest">Herrenberg</div>
+    </footer>
+  </div>
+</body>
+</html>

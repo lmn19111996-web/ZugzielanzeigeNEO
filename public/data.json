@@ -75,7 +75,536 @@
       "_uniqueId": "train_12isrcun4_1770667893919",
       "announcementType": "note",
       "actual": "00:00"
+    },
+    {
+      "linie": "S9",
+      "ziel": "Test",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [
+        "regerger"
+      ],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_j4v6miua4_1770757757554"
+    },
+    {
+      "linie": "S9",
+      "ziel": "Flughafen BER",
+      "plan": "10:10",
+      "actual": "22:40",
+      "dauer": 1000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_7akihsmjj_1770757835431"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Makelhaf",
+      "plan": "22:15",
+      "actual": "01:09",
+      "dauer": 101,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_4z10t28u0_1770757867158"
+    },
+    {
+      "linie": "RE1",
+      "ziel": "Bremen Hbf",
+      "plan": "23:30",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_174qx45a5_1770762440386",
+      "actual": "23:30"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Testgergsrthgdethrzt",
+      "plan": "10:33",
+      "dauer": 1000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "_uniqueId": "train_z0kxvcz8r_1770802388014",
+      "actual": "11:00",
+      "projectId": "project_52wvlwp62_1770834520110"
+    },
+    {
+      "linie": "S6",
+      "ziel": "",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "_uniqueId": "train_dn34v766t_1770828411336"
+    },
+    {
+      "_uniqueId": "train_az2z5swjk_1770833608343",
+      "linie": "s1",
+      "ziel": "k",
+      "plan": "",
+      "actual": "18:22",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": null,
+      "done": false,
+      "announcementType": "note"
+    },
+    {
+      "_uniqueId": "train_gxf3w3jpf_1770833616099",
+      "linie": "s1",
+      "ziel": "hih",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_66lc1ni1h_1770833599291",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_3yp57juqg_1770833618145",
+      "linie": "s1",
+      "ziel": "thrthrh",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_66lc1ni1h_1770833599291",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_6oe5j5mtl_1770834807988",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_grawr8sk0_1770834793968",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_w4slkwvts_1770834930938",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_52wvlwp62_1770834520110",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_ij2wa7l3x_1770834932369",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_52wvlwp62_1770834520110",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_1nhs9txts_1770834935327",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_52wvlwp62_1770834520110",
+      "done": false
+    },
+    {
+      "linie": "S2",
+      "ziel": "Hallo",
+      "plan": "12:12",
+      "dauer": 100,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "_uniqueId": "train_oraolb17i_1770836759536",
+      "actual": "20:10"
     }
   ],
-  "trains": []
+  "trains": [
+    {
+      "linie": "S2",
+      "ziel": "haha",
+      "plan": "12:12",
+      "actual": "12:30",
+      "dauer": 120,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_ifgpq7b47_1770630241711"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Tesla",
+      "plan": "12:00",
+      "actual": "12:00",
+      "dauer": 100,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_j7w5o2ruz_1770633766020"
+    },
+    {
+      "linie": "S4",
+      "ziel": "Hildesheim",
+      "plan": "",
+      "dauer": 6,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_hmorb8u8y_1770644986840"
+    },
+    {
+      "linie": "S8",
+      "ziel": "Dörverden",
+      "plan": "11:00",
+      "actual": "22:10",
+      "dauer": 30,
+      "zwischenhalte": [
+        ""
+      ],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_0vwezc3lz_1770657976017"
+    },
+    {
+      "linie": "RE8",
+      "ziel": "",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_f74ri39sg_1770662542825"
+    },
+    {
+      "linie": "S60",
+      "ziel": "ExPhys",
+      "plan": "22:00",
+      "dauer": 120,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-09",
+      "weekday": "monday",
+      "_uniqueId": "train_12isrcun4_1770667893919",
+      "announcementType": "note",
+      "actual": "00:00"
+    },
+    {
+      "linie": "S9",
+      "ziel": "Test",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [
+        "regerger"
+      ],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_j4v6miua4_1770757757554"
+    },
+    {
+      "linie": "S9",
+      "ziel": "Flughafen BER",
+      "plan": "10:10",
+      "actual": "22:40",
+      "dauer": 1000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_7akihsmjj_1770757835431"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Makelhaf",
+      "plan": "22:15",
+      "actual": "01:09",
+      "dauer": 101,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_4z10t28u0_1770757867158"
+    },
+    {
+      "linie": "RE1",
+      "ziel": "Bremen Hbf",
+      "plan": "23:30",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-10",
+      "weekday": "tuesday",
+      "_uniqueId": "train_174qx45a5_1770762440386",
+      "actual": "23:30"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Testgergsrthgdethrzt",
+      "plan": "10:33",
+      "dauer": 1000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "_uniqueId": "train_z0kxvcz8r_1770802388014",
+      "actual": "11:00",
+      "projectId": "project_m6fzh68di_1770834346526"
+    },
+    {
+      "linie": "S6",
+      "ziel": "",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "_uniqueId": "train_dn34v766t_1770828411336"
+    },
+    {
+      "_uniqueId": "train_az2z5swjk_1770833608343",
+      "linie": "s1",
+      "ziel": "k",
+      "plan": "",
+      "actual": "18:22",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": null,
+      "done": false,
+      "announcementType": "note"
+    },
+    {
+      "_uniqueId": "train_gxf3w3jpf_1770833616099",
+      "linie": "s1",
+      "ziel": "hih",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_66lc1ni1h_1770833599291",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_3yp57juqg_1770833618145",
+      "linie": "s1",
+      "ziel": "thrthrh",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_66lc1ni1h_1770833599291",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_6oe5j5mtl_1770834807988",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_grawr8sk0_1770834793968",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_w4slkwvts_1770834930938",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_52wvlwp62_1770834520110",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_ij2wa7l3x_1770834932369",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_52wvlwp62_1770834520110",
+      "done": false
+    },
+    {
+      "_uniqueId": "train_1nhs9txts_1770834935327",
+      "linie": "s45",
+      "ziel": "Fachschaftssitzung",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "weekday": "wednesday",
+      "projectId": "project_52wvlwp62_1770834520110",
+      "done": false
+    }
+  ],
+  "projects": [
+    {
+      "_uniqueId": "project_4d54fcjuk_1770834328541",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:25:28.541Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_m6fzh68di_1770834346526",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:25:46.526Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_9ao8r6p2f_1770834514727",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:28:34.727Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_wmijgv7ki_1770834516337",
+      "name": "",
+      "linie": "s1",
+      "deadline": "",
+      "createdAt": "2026-02-11T18:28:36.337Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_bnyc0twg9_1770834517503",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:28:37.503Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_ermzicfiw_1770834518641",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:28:38.641Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_52wvlwp62_1770834520110",
+      "name": "FLURUS",
+      "linie": "s45",
+      "deadline": "",
+      "createdAt": "2026-02-11T18:28:40.110Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_1cjkcgl4c_1770834523117",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:28:43.117Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_f7fox706f_1770834674718",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:31:14.718Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_8og1xdk7l_1770834677744",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:31:17.744Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_grawr8sk0_1770834793968",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T18:33:13.968Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_befmmd2tg_1770837893138",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T19:24:53.138Z"
+    }
+  ]
 }
