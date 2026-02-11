@@ -10,8 +10,8 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_ifgpq7b47_1770630241711"
+      "_uniqueId": "train_ifgpq7b47_1770630241711",
+      "plannedDate": "2026-02-09"
     },
     {
       "linie": "S7",
@@ -22,8 +22,8 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_j7w5o2ruz_1770633766020"
+      "_uniqueId": "train_j7w5o2ruz_1770633766020",
+      "plannedDate": "2026-02-09"
     },
     {
       "linie": "S4",
@@ -35,8 +35,8 @@
       ],
       "canceled": false,
       "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_hmorb8u8y_1770644986840"
+      "_uniqueId": "train_hmorb8u8y_1770644986840",
+      "plannedDate": "2026-02-09"
     },
     {
       "linie": "S8",
@@ -49,19 +49,8 @@
       ],
       "canceled": false,
       "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_0vwezc3lz_1770657976017"
-    },
-    {
-      "linie": "RE8",
-      "ziel": "",
-      "plan": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_f74ri39sg_1770662542825"
+      "_uniqueId": "train_0vwezc3lz_1770657976017",
+      "plannedDate": "2026-02-09"
     },
     {
       "linie": "S60",
@@ -71,13 +60,12 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-09",
-      "weekday": "monday",
       "_uniqueId": "train_12isrcun4_1770667893919",
-      "announcementType": "note",
-      "actual": "00:00"
+      "actual": "00:00",
+      "plannedDate": "2026-02-09"
     },
     {
-      "linie": "S9",
+      "linie": "S5",
       "ziel": "Test",
       "plan": "",
       "dauer": 0,
@@ -86,8 +74,8 @@
       ],
       "canceled": false,
       "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_j4v6miua4_1770757757554"
+      "_uniqueId": "train_j4v6miua4_1770757757554",
+      "plannedDate": "2026-02-10"
     },
     {
       "linie": "S9",
@@ -98,8 +86,8 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_7akihsmjj_1770757835431"
+      "_uniqueId": "train_7akihsmjj_1770757835431",
+      "plannedDate": "2026-02-10"
     },
     {
       "linie": "S5",
@@ -110,8 +98,8 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_4z10t28u0_1770757867158"
+      "_uniqueId": "train_4z10t28u0_1770757867158",
+      "plannedDate": "2026-02-10"
     },
     {
       "linie": "RE1",
@@ -121,22 +109,9 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-10",
-      "weekday": "tuesday",
       "_uniqueId": "train_174qx45a5_1770762440386",
-      "actual": "23:30"
-    },
-    {
-      "linie": "S5",
-      "ziel": "Testgergsrthgdethrzt",
-      "plan": "10:33",
-      "dauer": 1000,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "_uniqueId": "train_z0kxvcz8r_1770802388014",
-      "actual": "11:00",
-      "projectId": "project_52wvlwp62_1770834520110"
+      "actual": "23:30",
+      "plannedDate": "2026-02-10"
     },
     {
       "linie": "S6",
@@ -146,8 +121,8 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "_uniqueId": "train_dn34v766t_1770828411336"
+      "_uniqueId": "train_dn34v766t_1770828411336",
+      "plannedDate": "2026-02-11"
     },
     {
       "_uniqueId": "train_az2z5swjk_1770833608343",
@@ -159,10 +134,9 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
       "projectId": null,
       "done": false,
-      "announcementType": "note"
+      "plannedDate": "2026-02-11"
     },
     {
       "_uniqueId": "train_gxf3w3jpf_1770833616099",
@@ -174,9 +148,9 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
       "projectId": "project_66lc1ni1h_1770833599291",
-      "done": false
+      "done": false,
+      "plannedDate": "2026-02-11"
     },
     {
       "_uniqueId": "train_3yp57juqg_1770833618145",
@@ -188,9 +162,9 @@
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
       "projectId": "project_66lc1ni1h_1770833599291",
-      "done": false
+      "done": false,
+      "plannedDate": "2026-02-11"
     },
     {
       "_uniqueId": "train_6oe5j5mtl_1770834807988",
@@ -201,315 +175,246 @@
       "dauer": 0,
       "zwischenhalte": [],
       "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_grawr8sk0_1770834793968",
-      "done": false
+      "date": "2026-02-21",
+      "projectId": null,
+      "done": false,
+      "plannedDate": "2026-02-11"
     },
     {
-      "_uniqueId": "train_w4slkwvts_1770834930938",
-      "linie": "s45",
-      "ziel": "Fachschaftssitzung",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_52wvlwp62_1770834520110",
-      "done": false
-    },
-    {
-      "_uniqueId": "train_ij2wa7l3x_1770834932369",
-      "linie": "s45",
-      "ziel": "Fachschaftssitzung",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_52wvlwp62_1770834520110",
-      "done": false
-    },
-    {
-      "_uniqueId": "train_1nhs9txts_1770834935327",
-      "linie": "s45",
-      "ziel": "Fachschaftssitzung",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_52wvlwp62_1770834520110",
-      "done": false
-    },
-    {
-      "linie": "S2",
+      "_uniqueId": "train_xn1xipauk_1770839259326",
+      "linie": "s1",
       "ziel": "Hallo",
-      "plan": "12:12",
-      "dauer": 100,
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "_uniqueId": "train_oraolb17i_1770836759536",
-      "actual": "20:10"
-    }
-  ],
-  "trains": [
-    {
-      "linie": "S2",
-      "ziel": "haha",
-      "plan": "12:12",
-      "actual": "12:30",
-      "dauer": 120,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_ifgpq7b47_1770630241711"
+      "projectId": "project_wmijgv7ki_1770834516337",
+      "done": false,
+      "plannedDate": "2026-02-11"
     },
     {
-      "linie": "S7",
-      "ziel": "Tesla",
-      "plan": "12:00",
-      "actual": "12:00",
-      "dauer": 100,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_j7w5o2ruz_1770633766020"
-    },
-    {
-      "linie": "S4",
-      "ziel": "Hildesheim",
-      "plan": "",
-      "dauer": 6,
-      "zwischenhalte": [
-        ""
-      ],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_hmorb8u8y_1770644986840"
-    },
-    {
-      "linie": "S8",
-      "ziel": "Dörverden",
-      "plan": "11:00",
-      "actual": "22:10",
-      "dauer": 30,
-      "zwischenhalte": [
-        ""
-      ],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_0vwezc3lz_1770657976017"
-    },
-    {
-      "linie": "RE8",
-      "ziel": "",
-      "plan": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_f74ri39sg_1770662542825"
-    },
-    {
-      "linie": "S60",
-      "ziel": "ExPhys",
-      "plan": "22:00",
-      "dauer": 120,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-09",
-      "weekday": "monday",
-      "_uniqueId": "train_12isrcun4_1770667893919",
-      "announcementType": "note",
-      "actual": "00:00"
-    },
-    {
-      "linie": "S9",
-      "ziel": "Test",
-      "plan": "",
-      "dauer": 0,
-      "zwischenhalte": [
-        "regerger"
-      ],
-      "canceled": false,
-      "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_j4v6miua4_1770757757554"
-    },
-    {
-      "linie": "S9",
-      "ziel": "Flughafen BER",
+      "linie": "S5",
+      "ziel": "This project should have start date 15.02",
       "plan": "10:10",
-      "actual": "22:40",
-      "dauer": 1000,
+      "actual": "10:10",
+      "dauer": 100,
       "zwischenhalte": [],
       "canceled": false,
-      "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_7akihsmjj_1770757835431"
-    },
-    {
-      "linie": "S5",
-      "ziel": "Makelhaf",
-      "plan": "22:15",
-      "actual": "01:09",
-      "dauer": 101,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_4z10t28u0_1770757867158"
-    },
-    {
-      "linie": "RE1",
-      "ziel": "Bremen Hbf",
-      "plan": "23:30",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-10",
-      "weekday": "tuesday",
-      "_uniqueId": "train_174qx45a5_1770762440386",
-      "actual": "23:30"
-    },
-    {
-      "linie": "S5",
-      "ziel": "Testgergsrthgdethrzt",
-      "plan": "10:33",
-      "dauer": 1000,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "_uniqueId": "train_z0kxvcz8r_1770802388014",
-      "actual": "11:00",
-      "projectId": "project_m6fzh68di_1770834346526"
+      "date": "2026-02-20",
+      "plannedDate": "2026-02-15",
+      "_uniqueId": "train_pc2gd9moj_1770839422698",
+      "projectId": "project_9ao8r6p2f_1770834514727"
     },
     {
       "linie": "S6",
-      "ziel": "",
-      "plan": "",
+      "ziel": "Dont die",
+      "plan": "12:12",
+      "actual": "21:30",
       "dauer": 0,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "_uniqueId": "train_dn34v766t_1770828411336"
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_yyqs3ad6d_1770839947706",
+      "done": false
     },
     {
-      "_uniqueId": "train_az2z5swjk_1770833608343",
-      "linie": "s1",
-      "ziel": "k",
-      "plan": "",
-      "actual": "18:22",
-      "dauer": 0,
+      "linie": "s45",
+      "ziel": "Hallo",
+      "plan": "10:10",
+      "dauer": 10,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_xd3g9ibpl_1770839965316",
       "projectId": null,
       "done": false,
-      "announcementType": "note"
+      "actual": "10:10"
     },
     {
-      "_uniqueId": "train_gxf3w3jpf_1770833616099",
-      "linie": "s1",
-      "ziel": "hih",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
+      "linie": "s6",
+      "ziel": "Help me",
+      "plan": "10:00",
+      "dauer": 10000,
+      "zwischenhalte": [],
+      "canceled": true,
+      "date": "2026-02-11",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_97dm641on_1770839979081",
+      "projectId": "project_9ao8r6p2f_1770834514727",
+      "done": false,
+      "actual": "10:00"
+    },
+    {
+      "linie": "S5",
+      "ziel": "HBF",
+      "plan": "10:10",
+      "actual": "10:10",
+      "dauer": 100,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_66lc1ni1h_1770833599291",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_xi1qpgvok_1770840296327",
       "done": false
     },
     {
-      "_uniqueId": "train_3yp57juqg_1770833618145",
-      "linie": "s1",
-      "ziel": "thrthrh",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
+      "linie": "S5",
+      "ziel": "HBF",
+      "plan": "23:59",
+      "actual": "23:59",
+      "dauer": 100,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_66lc1ni1h_1770833599291",
-      "done": false
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_sqrnobsxu_1770840343442",
+      "done": false,
+      "projectId": "project_9ao8r6p2f_1770834514727"
     },
     {
-      "_uniqueId": "train_6oe5j5mtl_1770834807988",
       "linie": "s45",
-      "ziel": "Fachschaftssitzung",
+      "ziel": "From project editor",
       "plan": "",
-      "actual": "",
       "dauer": 0,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_grawr8sk0_1770834793968",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_a1kr0e1k5_1770840389527",
+      "projectId": null,
       "done": false
     },
     {
-      "_uniqueId": "train_w4slkwvts_1770834930938",
       "linie": "s45",
-      "ziel": "Fachschaftssitzung",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
+      "ziel": "This one should have a date (me)",
+      "plan": "09:59",
+      "dauer": 100,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-15",
+      "plannedDate": "2026-02-15",
+      "_uniqueId": "train_s9myexg2x_1770841100470",
+      "projectId": "project_9ao8r6p2f_1770834514727",
+      "done": false,
+      "actual": "09:59"
+    },
+    {
+      "linie": "s45",
+      "ziel": "This one too",
+      "plan": "20:10",
+      "dauer": 1000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-14",
+      "plannedDate": "2026-02-14",
+      "_uniqueId": "train_bnh95gjot_1770841158568",
+      "projectId": "project_9ao8r6p2f_1770834514727",
+      "done": false,
+      "actual": "20:10"
+    },
+    {
+      "linie": "s25",
+      "ziel": "Hello",
+      "plan": "10:10",
+      "dauer": 100,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_52wvlwp62_1770834520110",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_gvzdn87uy_1770841534759",
+      "projectId": "project_m6fzh68di_1770834346526",
+      "done": false,
+      "actual": "10:10"
+    },
+    {
+      "linie": "s25",
+      "ziel": "Die",
+      "plan": "21:29",
+      "dauer": 20,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-12",
+      "plannedDate": "2026-02-12",
+      "_uniqueId": "train_viqt1p9ea_1770841596692",
+      "projectId": "project_9ao8r6p2f_1770834514727",
+      "done": false,
+      "actual": "21:29"
+    },
+    {
+      "linie": "S25",
+      "ziel": "This one shouldnt have a planned time i think",
+      "plan": "20:20",
+      "actual": "20:20",
+      "dauer": 100,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-11",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_ve24cgaco_1770841648786",
+      "done": false,
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S7",
+      "ziel": "This one should have 11.2 as date tbh",
+      "plan": "10:10",
+      "actual": "20:20",
+      "dauer": 10000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-12",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_4h8xcccdu_1770841821876",
+      "done": false,
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "1",
+      "ziel": "And this one should have planned date as 20.2, and actual date 22.2",
+      "plan": "10:10",
+      "actual": "10:10",
+      "dauer": 100,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-22",
+      "plannedDate": "2026-02-20",
+      "_uniqueId": "train_fp0cdu3yl_1770841848526",
+      "done": false,
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S1",
+      "ziel": "perfect",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_9gx7pyywb_1770841893212",
+      "projectId": "project_4d54fcjuk_1770834328541",
       "done": false
     },
     {
-      "_uniqueId": "train_ij2wa7l3x_1770834932369",
-      "linie": "s45",
-      "ziel": "Fachschaftssitzung",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
+      "linie": "S6",
+      "ziel": "However this one shouldnt assume",
+      "plan": "12:20",
+      "dauer": 10000,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_52wvlwp62_1770834520110",
-      "done": false
-    },
-    {
-      "_uniqueId": "train_1nhs9txts_1770834935327",
-      "linie": "s45",
-      "ziel": "Fachschaftssitzung",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-11",
-      "weekday": "wednesday",
-      "projectId": "project_52wvlwp62_1770834520110",
-      "done": false
+      "plannedDate": "2026-02-11",
+      "_uniqueId": "train_1y1bbm0ff_1770842511778",
+      "projectId": "project_9ao8r6p2f_1770834514727",
+      "done": false,
+      "actual": "20:20"
     }
   ],
+  "trains": [],
   "projects": [
     {
       "_uniqueId": "project_4d54fcjuk_1770834328541",
@@ -523,15 +428,15 @@
       "_uniqueId": "project_m6fzh68di_1770834346526",
       "name": "",
       "linie": "s1",
-      "deadline": null,
+      "deadline": "",
       "createdAt": "2026-02-11T18:25:46.526Z",
       "tasks": []
     },
     {
       "_uniqueId": "project_9ao8r6p2f_1770834514727",
-      "name": "",
-      "linie": "s1",
-      "deadline": null,
+      "name": "Teltow Stadt",
+      "linie": "s3",
+      "deadline": "",
       "createdAt": "2026-02-11T18:28:34.727Z",
       "tasks": []
     },
@@ -557,14 +462,6 @@
       "linie": "s1",
       "deadline": null,
       "createdAt": "2026-02-11T18:28:38.641Z",
-      "tasks": []
-    },
-    {
-      "_uniqueId": "project_52wvlwp62_1770834520110",
-      "name": "FLURUS",
-      "linie": "s45",
-      "deadline": "",
-      "createdAt": "2026-02-11T18:28:40.110Z",
       "tasks": []
     },
     {
@@ -604,7 +501,24 @@
       "name": "",
       "linie": "s1",
       "deadline": null,
-      "createdAt": "2026-02-11T19:24:53.138Z"
+      "createdAt": "2026-02-11T19:24:53.138Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_9e5ym2x0h_1770838656905",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T19:37:36.905Z",
+      "tasks": []
+    },
+    {
+      "_uniqueId": "project_k3m89ewej_1770842780005",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-11T20:46:20.005Z",
+      "tasks": []
     }
   ]
 }

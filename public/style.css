@@ -14,20 +14,36 @@ html, body {
       -webkit-tap-highlight-color: transparent;
     }
 
-    :root {
-      --editor-drawer-width: clamp(20vw, 300px, 350px);
-      --project-drawer-width: clamp(25vw, 450px, 550px);
-      --announcements-drawer-width: 20vw;
-    }
-    
-    * {
-      -webkit-tap-highlight-color: transparent;
-    }
-    
-    button, input, textarea, select {
-      -webkit-tap-highlight-color: transparent;
+    /* Save Status Indicator */
+    #save-status-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6cda31, #b6f075);
+      width: 0;
+      z-index: 9999;
+      transition: width 0.3s ease-out, opacity 0.3s ease-out;
+      opacity: 0;
+      box-shadow: 0 2px 4px rgba(76, 175, 80, 0.5);
     }
 
+    #save-status-indicator.saving {
+      width: 90%;
+      opacity: 1;
+      transition: width 2s ease-out;
+    }
+
+    #save-status-indicator.saved {
+      width: 100%;
+      opacity: 1;
+      transition: width 0.3s ease-out;
+    }
+
+    #save-status-indicator.hide {
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+    }
     /* Empty editable fields - show a visible box only for line number */
     [data-editable="true"][data-field="linie"]:empty,
     [data-editable="true"][data-field="linie"][data-value=""] {
@@ -177,7 +193,7 @@ html, body {
       flex-direction: column;
       align-items: center;
       justify-content: start;
-      background: #2e3273;
+      background: #1d1f5d;
       border-right: 0.5px solid rgba(255, 255, 255, 0.64);
       border-color: rgba(255, 255, 255, 0.64);
     }
@@ -219,7 +235,7 @@ html, body {
       width: 100%;
       height: 5vh;
       padding: 1.2vh;
-      background: #2e3273;
+      background: none;
       border: none;
       outline: none;
       cursor: pointer;
@@ -565,7 +581,7 @@ html, body {
       overflow-y: auto;
       overflow-x: hidden;
       transition: right 0.2s ease;
-      z-index: 1200;
+      z-index: 1150;
       display: block;
       padding: 0;
     }
@@ -1911,6 +1927,9 @@ html, body {
     @media screen and (min-width: 769px) {
       :root {
         --nav-rail-width: 6vh;
+        --editor-drawer-width: clamp(20vw, 300px, 350px);
+      --project-drawer-width: clamp(25vw, 450px, 550px);
+      --announcements-drawer-width: 20vw;
       }
 
       .taskbar {
@@ -1956,6 +1975,15 @@ html, body {
 
       body.announcements-open .left-column {
         width: calc(100% - var(--announcements-drawer-width));
+      }
+
+      /* When both project drawer and editor drawer are open */
+      body.project-drawer-open.editor-drawer-open .left-column {
+        width: calc(100% - var(--project-drawer-width) - var(--editor-drawer-width) - 1vw);
+      }
+
+      body.project-drawer-open .right-panel-top.is-open {
+        right: var(--project-drawer-width);
       }
 
       /* Editor drawer content styles */
@@ -2414,6 +2442,10 @@ html, body {
   box-sizing: border-box;
 }
 
+.projects-page::-webkit-scrollbar {
+  display: none;
+}
+
 .projects-header {
   display: flex;
   align-items: center;
@@ -2533,7 +2565,7 @@ body.project-drawer-open .left-column {
   width: calc(100% - var(--project-drawer-width) - 1vw);
 }
 
-body.project-drawer-open .right-panel {
+body.project-drawer-open .right-panel.is-open {
   right: var(--project-drawer-width);
 }
 
@@ -2641,27 +2673,30 @@ body.project-drawer-open .right-panel {
 }
 
 .project-task-col-plan {
-      width: 13%;
+      width: 9%;
       font-weight: 300;
       flex-shrink: 0;
+      text-align: center;
 }
 
 .project-task-col-status {
-  width: 8%;
+  width: 7%;
   flex-shrink: 0;
   text-align: center;
 }
 
 .project-task-col-actual {
-  width: 13%;
+  width: 9%;
 font-weight: 500;
   flex-shrink: 0;
+  text-align: center;
 }
 
 .project-task-col-name {
   flex: 1;
   min-width: 0;
   font-weight: 400;
+  padding-left: 2%;
 }
 
 .project-tasks-list {
@@ -2681,7 +2716,7 @@ font-weight: 500;
   display: flex;
   align-items: center;
   height: 6vh;
-  padding: 1% 2%;
+  margin: 1% 2%;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -2709,16 +2744,38 @@ font-weight: 500;
 }
 
 .project-task-plan {
-  width: 12%;
+  width: 9%;
   font-size: 2.2vh;
+  text-align: center;
   color: #333;
   font-weight: 300;
   flex-shrink: 0;
 }
 
+.project-task-actual {
+  width: 9%;
+  text-align: center;
+  font-size: 2.2vh;
+  color: #333;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.project-task-name {
+  flex: 1;
+  padding-left: 2%;
+  font-size: 2.2vh;
+  color: #101010;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .project-task-status-dot {
-  width: 1.5vh;
-  height: 1.5vh;
+  width: 1vh;
+  height: 1vh;
   border-radius: 50%;
   background: #666;
   flex-shrink: 0;
@@ -2738,13 +2795,13 @@ font-weight: 500;
 }
 
 .project-task-status-dot::before {
-  top: -100%;
-  height: 100%;
+  top: -3vh;
+  height: 3vh;
 }
 
 .project-task-status-dot::after {
-  bottom: -100%;
-  height: 100%;
+  bottom: -3vh;
+  height: 3vh;
 }
 
 /* Hide the connecting line after the last active task */
@@ -2771,23 +2828,29 @@ font-weight: 500;
   background: var(--line-color, inherit);
 }
 
-.project-task-actual {
-  width: 10%;
-  font-size: 2.2vh;
-  color: #333;
-  font-weight: 500;
-  flex-shrink: 0;
+/* Project Progress Line */
+.project-progress-line {
+  display: flex;
+  align-items: center;
+  margin: 10px 15px;
+  font-size: 1.6vh;
+  color: #666;
+  gap: 10px;
 }
 
-.project-task-name {
+.project-progress-track {
   flex: 1;
-  font-size: 2.2vh;
-  color: #101010;
-  font-weight: 400;
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
+}
+
+.project-progress-fill {
+  height: 100%;
+  background: #4CAF50;
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }
 
 .project-task-add-input {
@@ -2816,7 +2879,7 @@ font-weight: 500;
 }
 
 .spacer {
-  flex: 1;
+  flex: 0.3;
 }
 
 .project-footer {

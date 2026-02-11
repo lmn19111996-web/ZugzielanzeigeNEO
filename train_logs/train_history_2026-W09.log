@@ -1,2 +1,3 @@
 {"trainKey":"s6|[prü] hm 1|00:00|2026-02-23","linie":"S6","ziel":"[PRÜ] HM 1","plan":"00:00","actual":"00:00","dauer":"","stops":"Prüfung","date":"2026-02-23","canceled":false}
 {"trainKey":"s46|werkzeugbestände prüfen|23:59|2026-02-28","linie":"S46","ziel":"Werkzeugbestände prüfen","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2026-02-28","canceled":false}
+{"trainKey":"s1|perfect|unknown|2026-02-23","linie":"S1","ziel":"perfect","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-23","canceled":false}

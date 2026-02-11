@@ -723,7 +723,6 @@
         if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
           e.preventDefault();
           closeAnnouncementsDrawer();
-          setWorkspaceMode('list');
         }
       };
       document.addEventListener('keydown', announcementDrawerEscHandler, true);
@@ -737,7 +736,6 @@
             return;
           }
           closeAnnouncementsDrawer();
-          setWorkspaceMode('list');
         }
       };
       document.addEventListener('click', announcementDrawerClickOutHandler, true);
@@ -767,7 +765,7 @@
     
     function openProjectDrawer() {
       closeAnnouncementsDrawer();
-      closeEditorDrawer();
+      // Keep editor drawer open so it can show to the left of project drawer
       const drawer = document.getElementById('project-drawer');
       if (drawer) {
         drawer.classList.add('is-open');
@@ -811,6 +809,12 @@
       // Esc handler
       projectDrawerEscHandler = (e) => {
         if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
+          // Check if train editor is open - if so, let it handle ESC first
+          const trainEditor = document.getElementById('focus-panel');
+          if (trainEditor && trainEditor.classList.contains('is-open')) {
+            return; // Let train editor handle ESC
+          }
+          
           // Check if we're editing (inputs present)
           const hasInputs = drawer.querySelector('input');
           if (hasInputs) {
@@ -832,6 +836,11 @@
           // Don't close if clicking inside task editor
           const taskEditor = document.getElementById('project-task-editor');
           if (taskEditor && taskEditor.contains(e.target)) {
+            return;
+          }
+          // Don't close if clicking inside train editor drawer
+          const trainEditor = document.getElementById('focus-panel');
+          if (trainEditor && trainEditor.contains(e.target)) {
             return;
           }
           closeProjectDrawer();
@@ -867,8 +876,12 @@
             year: 'numeric'
           }) : 'Open-Ended';
           
-          const taskCount = (project.tasks || []).length;
-          const completedTasks = (project.tasks || []).filter(t => t.actual).length;
+          // Get tasks for this project from spontaneousEntries (like project drawer does)
+          const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
+          const today = new Date().toISOString().split('T')[0];
+          
+          const taskCount = projectTasks.length;
+          const completedTasks = projectTasks.filter(t => t.date && t.date <= today).length;
           
           html += `<div class="project-card" data-project-id="${project._uniqueId}" style="border-left: 4px solid ${lineColor}">`;
           html += `<div class="project-card-header">`;
@@ -972,10 +985,20 @@
       // Populate tasks list
       const tasksList = clone.querySelector('[data-project="tasks-list"]');
       schedule.spontaneousEntries = schedule.spontaneousEntries || [];
-      const trains = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
+      
+      // Get tasks for this project and sort by actual date
+      const trains = schedule.spontaneousEntries
+        .filter(t => t.projectId === project._uniqueId)
+        .sort((a, b) => {
+          const dateA = a.date || '9999-12-31'; // Tasks without dates go to end
+          const dateB = b.date || '9999-12-31';
+          return dateA.localeCompare(dateB);
+        });
+      
+      const today = new Date().toISOString().split('T')[0];
       
       trains.forEach((train, index) => {
-        const taskHTML = renderProjectTask(train, index, trains.length, lineColor, project._uniqueId);
+        const taskHTML = renderProjectTask(train, index, trains.length, lineColor, project._uniqueId, today);
         const taskTemplate = document.createElement('template');
         taskTemplate.innerHTML = taskHTML.trim();
         tasksList.appendChild(taskTemplate.content.firstChild);
@@ -997,6 +1020,44 @@
       addRowTemplate.innerHTML = addRowHTML.trim();
       tasksList.appendChild(addRowTemplate.content.firstChild);
       
+      // Add progress line visualization - after the tasks list
+      const completedTasks = trains.filter(t => t.date && t.date <= today).length;
+      const totalTasks = trains.length;
+      const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+      
+      const progressLineHTML = `
+        <div class="project-progress-line">
+          <div class="project-progress-track">
+            <div class="project-progress-fill" style="width: ${progressPercent}%; background-color: ${lineColor};"></div>
+          </div>
+          <div class="project-progress-text">${completedTasks}/${totalTasks} bis heute</div>
+        </div>
+      `;
+      
+      const progressTemplate = document.createElement('template');
+      progressTemplate.innerHTML = progressLineHTML.trim();
+      
+      // Insert progress line after the tasks list but before the spacer
+      const progressLine = progressTemplate.content.firstChild;
+      tasksList.parentNode.insertBefore(progressLine, tasksList.nextElementSibling);
+      
+      // Auto-scroll to focus on current progress point (where colored tasks end)
+      if (trains.length > 0) {
+        const currentTaskIndex = trains.findIndex(t => !t.date || t.date > today);
+        if (currentTaskIndex > 0) {
+          // Scroll to show the transition point between colored and gray tasks
+          const taskRows = tasksList.querySelectorAll('.project-task-row:not(.project-task-add-row)');
+          if (taskRows[currentTaskIndex - 1]) {
+            setTimeout(() => {
+              taskRows[currentTaskIndex - 1].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+            }, 100);
+          }
+        }
+      }
+      
       // Populate created date
       const createdDateField = clone.querySelector('[data-project="created-date"]');
       createdDateField.textContent = 'Erstellt am ' + createdDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -1012,32 +1073,25 @@
       setupProjectDrawerListeners(project);
     }
 
-    function renderProjectTask(train, index, totalTasks, lineColor, projectId) {
+    function renderProjectTask(train, index, totalTasks, lineColor, projectId, today) {
       const rowClass = index % 2 === 0 ? 'project-task-row-bright' : 'project-task-row-dark';
-      const planDate = train.plan ? new Date(train.plan).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '';
-      const actualDate = train.actual ? new Date(train.actual).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : planDate;
+      // Use plannedDate (original date) and date (current date) instead of plan/actual which are times
+      const planDate = train.plannedDate ? new Date(train.plannedDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '';
+      const actualDate = train.date ? new Date(train.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : planDate;
       
-      // Determine if this train is the "current" task (first incomplete)
-      const isCompleted = !!train.actual;
-      const trains = schedule.spontaneousEntries.filter(t => t.projectId === projectId);
-      const firstIncompleteIndex = trains.findIndex(t => !t.actual);
-      const isCurrent = index === firstIncompleteIndex;
+      // Progress based on date: everything until today is colored, rest is gray
+      const isBeforeOrToday = train.date && train.date <= today;
       
-      // Calculate if task is before, at, or after current position
-      const beforeCurrent = firstIncompleteIndex >= 0 && index < firstIncompleteIndex;
-      const afterCurrent = firstIncompleteIndex >= 0 && index > firstIncompleteIndex;
-      
-      // Status dot styling - everything up to and including current is colored
-      const isActive = beforeCurrent || isCurrent;
+      // Status dot styling - tasks until today are colored, future tasks are gray
       let statusDotClass = 'project-task-status-dot';
-      if (isActive) {
+      if (isBeforeOrToday) {
         statusDotClass += ' project-task-status-active';
       }
       
-      const dotColor = isActive ? lineColor : '#666';
+      const dotColor = isBeforeOrToday ? lineColor : '#666';
       
       return `
-        <div class="project-task-row ${rowClass}" data-task-id="${train._uniqueId}" data-task-active="${isActive}">
+        <div class="project-task-row ${rowClass}" data-task-id="${train._uniqueId}" data-task-active="${isBeforeOrToday}">
           <span class="project-task-plan">${planDate}</span>
           <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;">
             <span class="${statusDotClass}" style="background-color: ${dotColor}; --line-color: ${dotColor};"></span>
@@ -1186,22 +1240,14 @@
             e.preventDefault();
             const taskName = addInput.textContent.trim();
             if (taskName) {
-              const now = new Date();
-              const newTrain = {
-                _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
-                linie: project.linie || 's1',
-                ziel: taskName,
-                plan: '',
-                actual: '',
-                dauer: 0,
-                zwischenhalte: [],
-                canceled: false,
-                date: now.toISOString().split('T')[0],
-                weekday: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()],
-                projectId: project._uniqueId,
-                done: false
-              };
+              // Use unified createNewTrainEntry with project-specific options
               schedule.spontaneousEntries = schedule.spontaneousEntries || [];
+              const newTrain = createNewTrainEntry({
+                linie: (project.linie || 's1').toUpperCase(),
+                ziel: taskName,
+                projectId: project._uniqueId
+              });
+              // Add to schedule (createNewTrainEntry doesn't automatically add it for project tasks)
               schedule.spontaneousEntries.push(newTrain);
               await saveSchedule();
               const freshSchedule = await fetchSchedule();
@@ -1230,7 +1276,8 @@
       }
       
       // Task row clicks
-      const taskRows = document.querySelectorAll('.project-task-row:not(.project-task-add-row)');
+      const drawer = document.getElementById('project-drawer');
+      const taskRows = drawer.querySelectorAll('.project-task-row:not(.project-task-add-row)');
       taskRows.forEach(row => {
         const taskId = row.getAttribute('data-task-id');
         
@@ -1239,11 +1286,15 @@
         if (removeBtn) {
           removeBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule();
-            Object.assign(schedule, freshSchedule);
-            renderProjectDrawer(project);
+            const taskToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
+            const taskName = taskToDelete ? taskToDelete.ziel : 'Aufgabe';
+            if (confirm(`Aufgabe "${taskName}" löschen?`)) {
+              schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
+              await saveSchedule();
+              const freshSchedule = await fetchSchedule();
+              Object.assign(schedule, freshSchedule);
+              renderProjectDrawer(project);
+            }
           });
         }
         
@@ -1254,16 +1305,18 @@
             console.log('Clicked on action button, returning');
             return;
           }
-          console.log('Opening task editor for:', taskId);
           openTaskEditor(project._uniqueId, taskId);
         });
       });
     }
 
     function openTaskEditor(projectId, taskId) {
-      const train = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
+      // Search in the same processed train data that the announcement panel uses
+      // This ensures we get the train with proper source:'local' field
+      const train = processedTrainData.allTrains.find(t => t._uniqueId === taskId);
       if (!train) return;
       
+      // Keep project drawer open, show editor to the left
       // Use the regular editor drawer - same as clicking a train
       renderFocusMode(train);
     }
@@ -1333,7 +1386,6 @@
             const drawer = document.getElementById('announcement-drawer');
             if (drawer && drawer.classList.contains('is-open')) {
               closeAnnouncementsDrawer();
-              setWorkspaceMode('list');
             } else {
               isAnnouncementsView = true;
               openAnnouncementsDrawer();
@@ -1376,6 +1428,16 @@
         renderBelegungsplan();
       } else {
         renderTrainList();
+      }
+    }
+    
+    // Conditional rendering - only render trains if in appropriate workspace mode, but always update header
+    function renderTrainsIfAppropriate() {
+      renderHeadlineTrain(); // Always update header
+      
+      // Only render train content if in train-related workspace modes
+      if (currentWorkspaceMode === 'list' || currentWorkspaceMode === 'occupancy') {
+        renderTrains();
       }
     }
 
@@ -2649,7 +2711,7 @@
             await saveSchedule();
             // Immediately re-process and re-render with the updated schedule data
             processTrainData(schedule);
-            renderTrains(); // Use unified render function
+            renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
             
             // Re-render focus panel and THEN restore scroll
             const trainId = train._uniqueId;
@@ -2742,12 +2804,18 @@
         lineValue.textContent = train.linie || '';
         lineValue.parentElement.setAttribute('data-value', train.linie || '');
         lineValue.parentElement.setAttribute('data-placeholder', 'S1, S2, ...');
+        if (isEditable) {
+          lineValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Populate Destination
         const destinationValue = clone.querySelector('[data-focus="destination"]');
         destinationValue.textContent = train.ziel || '';
         destinationValue.parentElement.setAttribute('data-value', train.ziel || '');
         destinationValue.parentElement.setAttribute('data-placeholder', 'Ziel eingeben');
+        if (isEditable) {
+          destinationValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Populate Date - long format display
         const dateValue = clone.querySelector('[data-focus="date"]');
@@ -2760,6 +2828,11 @@
         });
         dateValue.textContent = dateDisplay;
         dateValue.parentElement.setAttribute('data-value', train.date || now.toISOString().split('T')[0]);
+        
+        // Set data-editable for local trains only
+        if (isEditable && !isFixedSchedule) {
+          dateValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Make date non-editable for fixed schedule trains
         if (isFixedSchedule) {
@@ -2779,6 +2852,9 @@
         }
         arrivalPlanValue.parentElement.setAttribute('data-value', train.plan || '');
         arrivalPlanValue.parentElement.setAttribute('data-placeholder', '14:00');
+        if (isEditable) {
+          arrivalPlanValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Populate Arrival (Actual)
         const arrivalActualValue = clone.querySelector('[data-focus="arrival-actual"]');
@@ -2801,12 +2877,18 @@
         }
         arrivalActualValue.parentElement.setAttribute('data-value', train.actual || '');
         arrivalActualValue.parentElement.setAttribute('data-placeholder', '14:05');
+        if (isEditable) {
+          arrivalActualValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Populate Duration
         const durationValue = clone.querySelector('[data-focus="duration"]');
         durationValue.textContent = train.dauer ? `${train.dauer} Min` : 'Keine Dauer';
         durationValue.parentElement.setAttribute('data-value', train.dauer || '0');
         durationValue.parentElement.setAttribute('data-placeholder', '90');
+        if (isEditable) {
+          durationValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Populate Stops
         const stopsValue = clone.querySelector('[data-focus="stops"]');
@@ -2825,6 +2907,9 @@
         }
         stopsValue.parentElement.setAttribute('data-value', stopsArray.join('\n'));
         stopsValue.parentElement.setAttribute('data-placeholder', 'Eine Station pro Zeile...');
+        if (isEditable) {
+          stopsValue.parentElement.setAttribute('data-editable', 'true');
+        }
         
         // Populate Project dropdown
         const projectValue = clone.querySelector('[data-focus="project"]');
@@ -2925,7 +3010,7 @@
           processTrainData(freshSchedule);
           
           // Re-render the train list to show changes
-          renderTrains();
+          renderTrainsIfAppropriate(); // Only render if appropriate workspace
         }
         
         // Always re-render the panel to exit edit mode
@@ -3160,10 +3245,12 @@
           if (!hasInputs) {
             // Not in edit mode, close the drawer
             e.preventDefault();
+            e.stopPropagation(); // Prevent other ESC handlers from running
             desktopFocusedTrainId = null;
             panel.innerHTML = '';
             closeEditorDrawer();
           }
+          // If we have inputs, let the normal blur behavior work, don't close drawer
         }
       };
       
@@ -3320,21 +3407,23 @@
               train.canceled = !train.canceled;
               scheduleTrain.canceled = train.canceled;
               await saveSchedule();
-              renderTrains();
+              renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
               renderFocusMode(scheduleTrain);
               break;
               
             case 'delete':
-              // Remove from schedule
-              const index = sourceArray.indexOf(scheduleTrain);
-              if (index >= 0) {
-                sourceArray.splice(index, 1);
+              // Remove from schedule with confirmation
+              if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                const index = sourceArray.indexOf(scheduleTrain);
+                if (index >= 0) {
+                  sourceArray.splice(index, 1);
+                }
+                await saveSchedule();
+                desktopFocusedTrainId = null;
+                panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
+                closeEditorDrawer();
+                renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
               }
-              await saveSchedule();
-              desktopFocusedTrainId = null;
-              panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
-              closeEditorDrawer();
-              renderTrains(); // Refresh list
               break;
           }
         });
@@ -4767,7 +4856,7 @@
                 
                 await saveSchedule();
                 processTrainData(schedule);
-                renderTrains();
+                renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
                 
                 const trainId = train._uniqueId;
                 const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
@@ -4798,6 +4887,9 @@
 
     async function saveSchedule() {
       try {
+        // Show save status indicator
+        showSaveStatus();
+        
         // Auto-fill any empty actual times with plan times before saving
         const autoFillActual = (train) => {
           if (train.plan && !train.actual) {
@@ -4823,14 +4915,24 @@
           spontaneousEntries: schedule.spontaneousEntries
             .filter(t => t.linie && t.linie.trim() !== '')
             .map(t => {
-              // Spontaneous: keep date, can have weekday for reference but ensure date is primary
-              const { source, ...cleanTrain } = t;
-              return cleanTrain;
-            }),
-          trains: schedule.trains
-            .filter(t => t.linie && t.linie.trim() !== '')
-            .map(t => {
-              const { source, ...cleanTrain } = t;
+              // Spontaneous: keep date, remove processing fields  
+              // Set plannedDate during save only if user has entered a date
+              // Only assume today's date if train has been configured (not just name-only)
+              const { source, weekday, announcementType, ...cleanTrain } = t;
+              
+              // Check if train has been configured beyond just name
+              const isConfigured = cleanTrain.plan || cleanTrain.actual || 
+                                 (cleanTrain.dauer && cleanTrain.dauer > 0) ||
+                                 (cleanTrain.zwischenhalte && cleanTrain.zwischenhalte.length > 0 && cleanTrain.zwischenhalte[0] !== '');
+              
+              // If no date specified and train is configured, assume today
+              if (!cleanTrain.date && isConfigured) {
+                const today = new Date().toISOString().split('T')[0];
+                cleanTrain.date = today;
+                cleanTrain.plannedDate = today;
+              } else if (cleanTrain.date && !cleanTrain.plannedDate) {
+                cleanTrain.plannedDate = cleanTrain.date;
+              }
               return cleanTrain;
             }),
           projects: (schedule.projects || []).map(p => {
@@ -4842,7 +4944,6 @@
         console.log('💾 Saving schedule:', {
           fixedSchedule: dataToSave.fixedSchedule.length,
           spontaneousEntries: dataToSave.spontaneousEntries.length,
-          trains: dataToSave.trains.length,
           projects: dataToSave.projects.length
         });
         
@@ -4903,7 +5004,7 @@
         // Refresh the display
         const newSchedule = await fetchSchedule();
         processTrainData(newSchedule);
-        renderTrains(); // Use unified render function
+        renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
         renderComprehensiveAnnouncementPanel();
 
       } catch (error) {
@@ -5764,7 +5865,6 @@
       if (announcementDrawerCloseBtn) {
         announcementDrawerCloseBtn.addEventListener('click', () => {
           closeAnnouncementsDrawer();
-          setWorkspaceMode('list');
         });
       }
 
@@ -5986,6 +6086,35 @@
       });
     }, 5000);
 
+    // Save status indicator functions
+    function showSaveStatus() {
+      const indicator = document.getElementById('save-status-indicator');
+      if (indicator) {
+        // Remove all classes and inline styles
+        indicator.className = '';
+        indicator.style.cssText = '';
+        // Trigger reflow
+        void indicator.offsetWidth;
+        // Start animation
+        indicator.classList.add('saving');
+      }
+    }
+
+    function completeSaveStatus() {
+      const indicator = document.getElementById('save-status-indicator');
+      if (indicator) {
+        indicator.classList.remove('saving');
+        indicator.classList.add('saved');
+        setTimeout(() => {
+          indicator.classList.add('hide');
+          setTimeout(() => {
+            indicator.className = '';
+            indicator.style.cssText = '';
+          }, 500);
+        }, 300);
+      }
+    }
+
     // Function to start/stop refresh interval based on mode
     function updateRefreshInterval() {
       // Clear existing interval
@@ -5994,23 +6123,20 @@
         refreshIntervalId = null;
       }
       
-      // Only set up interval if in DB API mode (station selected)
-      if (currentEva) {
-        console.log('Starting auto-refresh interval (DB API mode)');
-        refreshIntervalId = setInterval(async () => {
-          if (isEditingTrain) {
-            console.log('Skipping refresh - train is being edited');
-            return;
-          }
-          const schedule = await fetchSchedule();
-          processTrainData(schedule);
-          renderTrains();
-          renderComprehensiveAnnouncementPanel();
-          checkTrainArrivals(); // Check for trains arriving in 15 minutes
-        }, 60000);
-      } else {
-        console.log('Auto-refresh interval disabled (local mode - using SSE only)');
-      }
+      // Set up 60-second auto-refresh for ALL modes (DB API and local)
+      console.log('Starting universal 60-second auto-refresh interval');
+      refreshIntervalId = setInterval(async () => {
+        if (isEditingTrain) {
+          console.log('Skipping refresh - train is being edited');
+          return;
+        }
+        console.log('\u23F0 Auto-refresh: Fetching latest schedule data');
+        const schedule = await fetchSchedule();
+        processTrainData(schedule);
+        renderTrainsIfAppropriate(); // Only render if appropriate workspace
+        renderComprehensiveAnnouncementPanel();
+        checkTrainArrivals(); // Check for trains arriving in 15 minutes
+      }, 60000);
     }
     
     // Initial setup - no interval in local mode
@@ -6021,6 +6147,9 @@
     
     eventSource.addEventListener('update', async (event) => {
       console.log('🔄 SSE update received at', new Date().toISOString());
+      
+      // Complete save status indicator (if saving)
+      completeSaveStatus();
       
       // Skip refresh if editing
       if (isEditingTrain) {
@@ -6034,7 +6163,7 @@
       
       // Only render trains if not in projects mode
       if (currentWorkspaceMode !== 'projects') {
-        renderTrains(); // Use unified render function
+        renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
         renderComprehensiveAnnouncementPanel();
       } else {
         // In projects mode, re-render the project drawer if it's open
@@ -6220,7 +6349,7 @@
         (async () => {
           const schedule = await fetchSchedule();
           processTrainData(schedule);
-          renderTrains(); // Use unified render function
+          renderTrainsIfAppropriate(); // Only render if appropriate workspace
           renderComprehensiveAnnouncementPanel();
           updateClock();
         })();
@@ -6239,7 +6368,7 @@
         (async () => {
           const schedule = await fetchSchedule();
           processTrainData(schedule);
-          renderTrains(); // Use unified render function
+          renderTrainsIfAppropriate(); // Only render if appropriate workspace
           renderComprehensiveAnnouncementPanel();
           updateClock();
         })();
@@ -6526,45 +6655,60 @@
       document.body.appendChild(overlay);
     }
 
-    function createNewTrainEntry() {
-      // Create a blank train object with current date but NO auto-filled time
+    function createNewTrainEntry(options = {}) {
+      // Create a blank train object with NO pre-filled dates
       const now = new Date();
-      const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
       const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
       
       const newTrain = {
-        linie: '',
-        ziel: '',
+        linie: options.linie || '',
+        ziel: options.ziel || '',
         plan: '',  // Empty - user must fill
         actual: undefined,
         dauer: 0,
         zwischenhalte: [],
         canceled: false,
-        date: currentDate,
+        date: '',  // Empty - user must fill
+        plannedDate: '',  // Will be set when user first saves a date
         weekday: weekday,
         source: 'local',
-        _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
+        _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+        ...(options.projectId && { projectId: options.projectId }),
+        done: false
       };
       
-      // Add to spontaneousEntries (like InputEnhanced does)
-      schedule.spontaneousEntries.push(newTrain);
-      
-      // Render in focus mode (will auto-detect mobile/desktop)
-      renderFocusMode(newTrain);
-      
-      // Auto-open line picker for mobile, auto-click for desktop
-      setTimeout(() => {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
+      // For non-project trains, add to schedule and render immediately
+      if (!options.projectId) {
+        // Add to spontaneousEntries (like InputEnhanced does)
+        schedule.spontaneousEntries.push(newTrain);
+        
+        // Render in focus mode (will auto-detect mobile/desktop)
+        renderFocusMode(newTrain);
+        
+        // Activate all fields for editing immediately
+        setTimeout(() => {
+          const panel = document.getElementById('focus-panel');
           const popup = document.getElementById('mobile-focus-popup');
-          if (popup) {
-            showLinePickerDropdown(newTrain, popup);
+          const container = popup && popup.classList.contains('open') ? popup : panel;
+          
+          if (container) {
+            // Trigger edit mode on the first editable field to convert all fields
+            const firstEditable = container.querySelector('[data-editable="true"]');
+            if (firstEditable) {
+              // Simulate mousedown to activate ALL fields
+              const mousedownEvent = new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+              });
+              firstEditable.dispatchEvent(mousedownEvent);
+            }
           }
-        } else {
-          const lineField = document.querySelector('[data-field="linie"]');
-          if (lineField) lineField.click();
-        }
-      }, 100);
+        }, 100);
+      }
+      
+      // Return the train object (needed for project task creation)
+      return newTrain;
     }
 
     // Show announcements view in mobile mode

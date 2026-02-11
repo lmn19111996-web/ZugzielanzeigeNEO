@@ -1,0 +1,4 @@
+{"trainKey":"s45|fachschaftssitzung|unknown|2026-02-21","linie":"s45","ziel":"Fachschaftssitzung","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s5|this project should have start date 15.02|10:10|2026-02-20","linie":"S5","ziel":"This project should have start date 15.02","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"1|and this one should have planned date as 20.2, and actual date 22.2|10:10|2026-02-20","linie":"1","ziel":"And this one should have planned date as 20.2, and actual date 22.2","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"1|and this one should have planned date as 20.2, and actual date 22.2|10:10|2026-02-22","linie":"1","ziel":"And this one should have planned date as 20.2, and actual date 22.2","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-22","canceled":false}
