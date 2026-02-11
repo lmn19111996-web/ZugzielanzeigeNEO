@@ -8,6 +8,7 @@
 // - Static files from /public
 
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const express = require('express');
 const axios = require('axios');
@@ -143,13 +144,13 @@ function getWeeklyLogFile(date = new Date()) {
 }
 
 // Comprehensive train logging - exports everything on every save
-function logTrainHistory(trains, scheduleType, additionalInfo = {}) {
+async function logTrainHistory(trains, scheduleType, additionalInfo = {}) {
   try {
     const timestamp = new Date().toISOString();
     
     // Log all trains for this schedule type, regardless of changes
     // This ensures the log is always up-to-date with current state
-    updateTrainStates(trains, scheduleType, timestamp);
+    await updateTrainStates(trains, scheduleType, timestamp);
     
   } catch (e) {
     console.error('Error logging train history:', e.message);
@@ -157,7 +158,7 @@ function logTrainHistory(trains, scheduleType, additionalInfo = {}) {
 }
 
 // Update or add all train states in the weekly log (comprehensive export on every save)
-function updateTrainStates(trains, scheduleType, timestamp) {
+async function updateTrainStates(trains, scheduleType, timestamp) {
   // Group trains by week based on their calculated dates
   const trainsByWeek = new Map();
   
@@ -198,20 +199,25 @@ function updateTrainStates(trains, scheduleType, timestamp) {
   });
   
   // Process each week separately
+  const writePromises = [];
   trainsByWeek.forEach((weekTrains, weekId) => {
-    const weekDate = parseWeekIdentifier(weekId);
-    const weekLogFile = getWeeklyLogFile(weekDate);
-    const existingLog = readLogAsStateMap(weekLogFile);
-    
-    // Add/update trains for this week
-    weekTrains.forEach(trainState => {
-      existingLog.set(trainState.trainKey, trainState);
-    });
-    
-    // Rewrite the log file for this week
-    rewriteLogFile(existingLog, weekLogFile);
-    // Condensed logging - only show total per save operation
+    const writePromise = (async () => {
+      const weekDate = parseWeekIdentifier(weekId);
+      const weekLogFile = getWeeklyLogFile(weekDate);
+      const existingLog = await readLogAsStateMap(weekLogFile);
+      
+      // Add/update trains for this week
+      weekTrains.forEach(trainState => {
+        existingLog.set(trainState.trainKey, trainState);
+      });
+      
+      // Rewrite the log file for this week
+      await rewriteLogFile(existingLog, weekLogFile);
+    })();
+    writePromises.push(writePromise);
   });
+  
+  await Promise.all(writePromises);
   
   const totalTrains = Array.from(trainsByWeek.values()).reduce((sum, trains) => sum + trains.length, 0);
   const weeksList = Array.from(trainsByWeek.keys()).join(', ');
@@ -237,16 +243,19 @@ function parseWeekIdentifier(weekId) {
 }
 
 // Read weekly log file and create a map of current train states
-function readLogAsStateMap(logFilePath = null) {
+async function readLogAsStateMap(logFilePath = null) {
   const stateMap = new Map();
   const logFile = logFilePath || getWeeklyLogFile();
   
   try {
-    if (!fs.existsSync(logFile)) {
+    // Check if file exists
+    try {
+      await fsPromises.access(logFile);
+    } catch {
       return stateMap;
     }
     
-    const content = fs.readFileSync(logFile, 'utf8');
+    const content = await fsPromises.readFile(logFile, 'utf8');
     const lines = content.trim().split('\n').filter(line => line.trim());
     
     lines.forEach(line => {
@@ -274,7 +283,7 @@ function readLogAsStateMap(logFilePath = null) {
 }
 
 // Rewrite the entire weekly log file with current train states
-function rewriteLogFile(stateMap, logFilePath = null) {
+async function rewriteLogFile(stateMap, logFilePath = null) {
   const logFile = logFilePath || getWeeklyLogFile();
   
   try {
@@ -294,7 +303,10 @@ function rewriteLogFile(stateMap, logFilePath = null) {
     
     const logContent = logEntries.join('\n') + '\n';
     
-    fs.writeFileSync(logFile, logContent, 'utf8');
+    // Ensure directory exists
+    await fsPromises.mkdir(TRAIN_LOG_DIR, { recursive: true });
+    
+    await fsPromises.writeFile(logFile, logContent, 'utf8');
     // Only log errors, not every successful write
     // const weekId = getWeekIdentifier();
     // console.log(`📝 Rewrote weekly log file (${weekId}) with ${stateMap.size} train entries`);
@@ -625,12 +637,15 @@ app.get('/api/health', (req, res) => {
 });
 
 // Read train history log (current week by default, or specified week)
-app.get('/api/train-history', (req, res) => {
-  const weekId = req.query.week || getWeekIdentifier();
-  const logFile = path.join(TRAIN_LOG_DIR, `train_history_${weekId}.log`);
-  
-  fs.readFile(logFile, 'utf8', (err, content) => {
-    if (err) {
+app.get('/api/train-history', async (req, res) => {
+  try {
+    const weekId = req.query.week || getWeekIdentifier();
+    const logFile = path.join(TRAIN_LOG_DIR, `train_history_${weekId}.log`);
+    
+    let content;
+    try {
+      content = await fsPromises.readFile(logFile, 'utf8');
+    } catch (err) {
       if (err.code === 'ENOENT') {
         return res.json({ 
           entries: [], 
@@ -638,38 +653,40 @@ app.get('/api/train-history', (req, res) => {
           week: weekId
         });
       }
-      return res.status(500).json({ error: 'Failed to read log file' });
+      throw err;
     }
     
-    try {
-      // Parse JSON lines
-      const lines = content.trim().split('\n').filter(line => line.trim());
-      const entries = lines.map(line => JSON.parse(line));
-      
-      // Optional filtering by query parameters
-      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
-      const filtered = limit ? entries.slice(-limit) : entries;
-      
-      res.json({ 
-        entries: filtered,
-        total: entries.length,
-        showing: filtered.length,
-        week: weekId
-      });
-    } catch (e) {
-      res.status(500).json({ error: 'Failed to parse log file', details: e.message });
-    }
-  });
+    // Parse JSON lines
+    const lines = content.trim().split('\n').filter(line => line.trim());
+    const entries = lines.map(line => JSON.parse(line));
+    
+    // Optional filtering by query parameters
+    const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
+    const filtered = limit ? entries.slice(-limit) : entries;
+    
+    res.json({ 
+      entries: filtered,
+      total: entries.length,
+      showing: filtered.length,
+      week: weekId
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to parse log file', details: e.message });
+  }
 });
 
 // List available weekly log files
-app.get('/api/train-history/weeks', (req, res) => {
+app.get('/api/train-history/weeks', async (req, res) => {
   try {
-    if (!fs.existsSync(TRAIN_LOG_DIR)) {
+    // Check if directory exists
+    try {
+      await fsPromises.access(TRAIN_LOG_DIR);
+    } catch {
       return res.json({ weeks: [] });
     }
     
-    const files = fs.readdirSync(TRAIN_LOG_DIR)
+    const files = await fsPromises.readdir(TRAIN_LOG_DIR);
+    const weeks = files
       .filter(file => file.startsWith('train_history_') && file.endsWith('.log'))
       .map(file => {
         const match = file.match(/train_history_(.+)\.log$/);
@@ -679,28 +696,32 @@ app.get('/api/train-history/weeks', (req, res) => {
       .sort()
       .reverse(); // Most recent first
     
-    res.json({ weeks: files, current: getWeekIdentifier() });
+    res.json({ weeks, current: getWeekIdentifier() });
   } catch (e) {
     res.status(500).json({ error: 'Failed to list weekly logs', details: e.message });
   }
 });
 
 // Fallback schedule (static file)
-app.get('/api/schedule', (req, res) => {
+app.get('/api/schedule', async (req, res) => {
   const filePath = path.join(PUBLIC_DIR, 'data.json');
-  fs.readFile(filePath, 'utf8', (err, content) => {
-    if (err) return res.status(500).json({ error: 'Failed to read schedule' });
-    try {
-      const data = JSON.parse(content);
-      res.json(data);
-    } catch (e) {
-      res.status(500).json({ error: 'Invalid schedule JSON' });
+  try {
+    const content = await fsPromises.readFile(filePath, 'utf8');
+    const data = JSON.parse(content);
+    res.json(data);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return res.status(404).json({ error: 'Schedule file not found' });
     }
-  });
+    if (err instanceof SyntaxError) {
+      return res.status(500).json({ error: 'Invalid schedule JSON' });
+    }
+    res.status(500).json({ error: 'Failed to read schedule' });
+  }
 });
 
 // Save local schedule (used by InputEnhanced.html)
-app.post('/api/schedule', (req, res) => {
+app.post('/api/schedule', async (req, res) => {
   try {
     const body = req.body;
     if (!body || typeof body !== 'object') {
@@ -714,15 +735,19 @@ app.post('/api/schedule', (req, res) => {
     };
     
     // Comprehensive logging: export all current train data on every save
+    const logPromises = [];
     if (toSave.fixedSchedule.length > 0) {
-      logTrainHistory(toSave.fixedSchedule, 'fixed');
+      logPromises.push(logTrainHistory(toSave.fixedSchedule, 'fixed'));
     }
     if (toSave.spontaneousEntries.length > 0) {
-      logTrainHistory(toSave.spontaneousEntries, 'spontaneous');
+      logPromises.push(logTrainHistory(toSave.spontaneousEntries, 'spontaneous'));
     }
     if (toSave.trains.length > 0) {
-      logTrainHistory(toSave.trains, 'legacy');
+      logPromises.push(logTrainHistory(toSave.trains, 'legacy'));
     }
+    
+    // Wait for all logging operations to complete
+    await Promise.all(logPromises);
     
     // Also ensure we log empty states to reflect deletions
     if (toSave.fixedSchedule.length === 0 && toSave.spontaneousEntries.length === 0 && toSave.trains.length === 0) {
@@ -730,12 +755,11 @@ app.post('/api/schedule', (req, res) => {
     }
     
     const filePath = path.join(PUBLIC_DIR, 'data.json');
-    fs.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8', (err) => {
-      if (err) return res.status(500).json({ error: 'Failed to write schedule' });
-      // Notify listeners
-      try { broadcastUpdate('manual-save'); } catch {}
-      res.json({ ok: true, savedAt: new Date().toISOString() });
-    });
+    await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
+    
+    // Notify listeners
+    try { broadcastUpdate('manual-save'); } catch {}
+    res.json({ ok: true, savedAt: new Date().toISOString() });
   } catch (e) {
     res.status(500).json({ error: e.message || 'Unexpected error' });
   }
@@ -847,15 +871,17 @@ async function periodicRefresh() {
 // setTimeout(periodicRefresh, 2000);
 
 // Start server
-app.listen(PORT, '0.0.0.0',() => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server listening on http://0.0.0.0:${PORT}`);
   console.log('📊 Weekly train logging enabled - creates separate log file for each week');
   console.log(`📁 Log directory: ${TRAIN_LOG_DIR}`);
   console.log(`📅 Current week: ${getWeekIdentifier()}`);
   
   // Create log directory if it doesn't exist
-  if (!fs.existsSync(TRAIN_LOG_DIR)) {
-    fs.mkdirSync(TRAIN_LOG_DIR, { recursive: true });
-    console.log('📁 Created train logs directory');
+  try {
+    await fsPromises.mkdir(TRAIN_LOG_DIR, { recursive: true });
+    console.log('📁 Ensured train logs directory exists');
+  } catch (e) {
+    console.warn('Could not create train logs directory:', e.message);
   }
 });
