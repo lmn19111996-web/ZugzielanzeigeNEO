@@ -964,10 +964,23 @@
       "linie": "NOTE",
       "type": "note",
       "name": "Neue Notiz",
-      "ziel": "",
-      "zwischenhalte": [],
+      "ziel": "give it a name",
+      "zwischenhalte": [
+        "MY NAME IS PINK AND IM GLAD TO MEET YOU"
+      ],
       "date": "2026-02-12",
       "_uniqueId": "note_1ssw8u2or_1770935475720",
+      "plannedDate": "2026-02-12"
+    },
+    {
+      "linie": "NOTE",
+      "type": "note",
+      "ziel": "gave you another chance",
+      "zwischenhalte": [
+        "fuck off"
+      ],
+      "date": "2026-02-12",
+      "_uniqueId": "note_xm6shd2y4_1770936649162",
       "plannedDate": "2026-02-12"
     }
   ],
@@ -980,7 +993,7 @@
       "deadline": "2025-10-10T10:10",
       "createdAt": "2026-02-11T18:28:34.727Z",
       "tasks": [],
-      "currentView": "aufgabe",
+      "currentView": "todo",
       "completedExpanded": true,
       "completedSectionOpen": true
     },
@@ -991,7 +1004,7 @@
       "deadline": "",
       "createdAt": "2026-02-12T16:45:09.412Z",
       "tasks": [],
-      "currentView": "aufgabe"
+      "currentView": "todo"
     },
     {
       "_uniqueId": "project_h76rv00pj_1770920049959",

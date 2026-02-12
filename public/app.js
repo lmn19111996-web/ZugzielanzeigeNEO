@@ -514,6 +514,8 @@
               if (!train.ziel) {
                 train.ziel = train.name;
               }
+              // Remove the name attribute after conversion
+              delete train.name;
             }
             return train;
           };
@@ -774,9 +776,22 @@
 
       // ESC key handler
       noteDrawerEscHandler = function(e) {
-        if (e.key === 'Escape') {
-          e.stopPropagation();
-          closeNoteDrawer();
+        if (e.key === 'Escape' && document.body.contains(drawer)) {
+          // Check if editor drawer is open - if so, let it handle ESC first
+          const editorDrawer = document.getElementById('focus-panel');
+          if (editorDrawer && editorDrawer.classList.contains('is-open')) {
+            return; // Let editor drawer handle ESC
+          }
+          
+          // Check if we're in edit mode
+          const hasInputs = drawer.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          if (!hasInputs) {
+            // Not in edit mode, close the drawer
+            e.preventDefault();
+            e.stopPropagation(); // Prevent other ESC handlers from running
+            closeNoteDrawer();
+          }
+          // If we have inputs, let the normal blur behavior work, don't close drawer
         }
       };
       document.addEventListener('keydown', noteDrawerEscHandler, true);
@@ -791,6 +806,11 @@
           }
           // Don't close if clicking any button (let button handlers do their thing)
           if (e.target.closest('button')) {
+            return;
+          }
+          // Don't close if clicking inside the editor drawer
+          const editorDrawer = document.getElementById('focus-panel');
+          if (editorDrawer && editorDrawer.contains(e.target)) {
             return;
           }
           e.stopPropagation();
@@ -891,8 +911,16 @@
       
       // Esc handler
       announcementDrawerEscHandler = (e) => {
-        if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
+        if (e.key === 'Escape' && document.body.contains(drawer)) {
+          // Check if editor drawer is open - if so, let it handle ESC first
+          const editorDrawer = document.getElementById('focus-panel');
+          if (editorDrawer && editorDrawer.classList.contains('is-open')) {
+            return; // Let editor drawer handle ESC
+          }
+          
+          // Announcements are read-only, no edit mode to check
           e.preventDefault();
+          e.stopPropagation(); // Prevent other ESC handlers from running
           closeAnnouncementsDrawer();
         }
       };
@@ -983,24 +1011,23 @@
       
       // Esc handler
       projectDrawerEscHandler = (e) => {
-        if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
-          // Check if train editor is open - if so, let it handle ESC first
-          const trainEditor = document.getElementById('focus-panel');
-          if (trainEditor && trainEditor.classList.contains('is-open')) {
-            return; // Let train editor handle ESC
+        if (e.key === 'Escape' && document.body.contains(drawer)) {
+          // Check if editor drawer is open - if so, let it handle ESC first
+          const editorDrawer = document.getElementById('focus-panel');
+          if (editorDrawer && editorDrawer.classList.contains('is-open')) {
+            return; // Let editor drawer handle ESC
           }
           
-          // Check if we're editing (inputs present)
-          const hasInputs = drawer.querySelector('input');
-          if (hasInputs) {
-            // Trigger blur to save the current input
-            hasInputs.blur();
-          } else {
-            // No inputs, close drawer
+          // Check if we're in edit mode
+          const hasInputs = drawer.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          if (!hasInputs) {
+            // Not in edit mode, close the drawer
             e.preventDefault();
+            e.stopPropagation(); // Prevent other ESC handlers from running
             closeProjectDrawer();
             renderProjectsPage();
           }
+          // If we have inputs, let the normal blur behavior work, don't close drawer
         }
       };
       document.addEventListener('keydown', projectDrawerEscHandler, true);
@@ -1529,9 +1556,11 @@
             input.addEventListener('keydown', async (e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
+                e.stopPropagation();
                 await save();
               } else if (e.key === 'Escape') {
                 e.preventDefault();
+                e.stopPropagation();
                 await save();
               }
             });
@@ -3191,6 +3220,8 @@
             }
           } else if (e.key === 'Escape') {
             // Cancel edit and revert
+            e.preventDefault();
+            e.stopPropagation();
             renderFocusMode(train);
           }
         });
@@ -5083,6 +5114,8 @@
                 e.preventDefault();
                 await updateValue(input.value);
               } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
                 renderMobileFocusPopup(train);
               }
             });
@@ -6511,8 +6544,7 @@
           const newNote = {
             linie: 'NOTE',
             type: 'note',
-            name: 'Neue Notiz',
-            ziel: '',
+            ziel: 'Neue Notiz',
             zwischenhalte: [],
             date: new Date().toISOString().split('T')[0],
             source: 'local',
@@ -7106,13 +7138,20 @@
       // Escape to exit focus mode
       if (e.key === 'Escape') {
         const focusPanel = document.getElementById('focus-panel');
-        if (focusPanel && focusPanel.innerHTML.trim() !== '') {
-          e.preventDefault();
-          desktopFocusedTrainId = null; // Clear desktop focus
-          focusPanel.innerHTML = '';
-          closeEditorDrawer();
-          // Remove selection from all train entries
-          document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+        if (focusPanel && focusPanel.innerHTML.trim() !== '' && document.body.contains(focusPanel)) {
+          // Check if we're in edit mode
+          const hasInputs = focusPanel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          if (!hasInputs) {
+            // Not in edit mode, close the drawer
+            e.preventDefault();
+            e.stopPropagation(); // Prevent other ESC handlers from running
+            desktopFocusedTrainId = null; // Clear desktop focus
+            focusPanel.innerHTML = '';
+            closeEditorDrawer();
+            // Remove selection from all train entries
+            document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+          }
+          // If we have inputs, let the normal blur behavior work, don't close drawer
         }
       }
       
