@@ -92,6 +92,19 @@
   </template>
   <!-- End of announcement template -->
 
+  <!-- Note template -->
+  <template id="note-template">
+    <div class="announcement-container">
+      <div class="announcement-panel note-panel">
+        <div class="announcement-headline note"></div>
+        <div class="announcement-destination" data-note="destination"></div>
+        <div class="announcement-date" data-note="date"></div>
+        <div class="announcement-content-panel" data-note="content"></div>
+      </div>
+    </div>
+  </template>
+  <!-- End of note template -->
+
   <!-- Konflikt announcement template -->
   <template id="konflikt-template">
     <div class="announcement-container">
@@ -163,11 +176,25 @@
         <div class="project-field-value" data-project="deadline" data-editable="true" data-input-type="datetime-local">Kein Fälligkeitsdatum</div>
       </div>
       
-      <div class="project-tasks-header">
+      <div class="project-info-section">
+        <div class="project-field-label">Ansicht</div>
+        <select class="project-view-selector" data-project="view-selector">
+          <option value="aufgabe">Aufgabe</option>
+          <option value="todo">To-Do Liste</option>
+        </select>
+      </div>
+      
+      <div class="project-tasks-header" data-project="tasks-header">
         <span class="project-task-col-plan">Gep.</span>
         <span class="project-task-col-status"></span>
         <span class="project-task-col-actual">Akt.</span>
         <span class="project-task-col-name">Aufgabe</span>
+      </div>
+      
+      <div class="project-tasks-header project-todos-header" data-project="todos-header" style="display: none;">
+        <span class="project-todo-col-due-date">Datum</span>
+        <span class="project-todo-col-checkbox"></span>
+        <span class="project-todo-col-name">To-Do</span>
       </div>
       
       <div class="project-tasks-list" data-project="tasks-list">
@@ -183,6 +210,41 @@
     </div>
   </template>
   <!-- End of project drawer template -->
+
+  <!-- Projects page template -->
+  <template id="projects-page-template">
+    <div class="projects-page">
+      <div class="projects-header">
+        <h2 class="projects-title">Projekte</h2>
+        <button class="project-create-btn" id="create-project-btn">+ Neues Projekt</button>
+      </div>
+      <div class="projects-list" data-projects="list">
+        <!-- Project cards will be inserted here -->
+      </div>
+    </div>
+  </template>
+  <!-- End of projects page template -->
+
+  <!-- Project card template -->
+  <template id="project-card-template">
+    <div class="project-card" data-project-id="" data-projects="card">
+      <div class="project-card-header">
+        <img src="" class="project-card-icon" alt="Line" onerror="this.style.display='none'" data-projects="icon">
+        <div class="project-card-name" data-projects="name">Unbenanntes Projekt</div>
+      </div>
+      <div style="display: flex; gap: 1vw; align-items: center; margin-top: 0.5vh;">
+        <div class="project-card-deadline" data-projects="deadline">Open-Ended</div>
+        <div class="project-card-progress" data-projects="progress">0 / 0 Aufgaben abgeschlossen</div>
+      </div>
+    </div>
+  </template>
+  <!-- End of project card template -->
+
+  <!-- Projects empty state template -->
+  <template id="projects-empty-template">
+    <div class="projects-empty">Keine Projekte vorhanden. Erstellen Sie ein neues Projekt.</div>
+  </template>
+  <!-- End of projects empty state template -->
 
   <!-- Mobile Focus Popup Template -->
   <div id="mobile-focus-popup" class="mobile-focus-popup">
@@ -258,9 +320,9 @@
             <button class="task-icon-button mobile-only" id="toggle-view-button" title="List View"><img src="list.png" alt="Toggle View"></button>
             <button class="task-icon-button nav-only" id="list-view-button" title="Listenansicht"><img src="list.png" alt="List View"></button>
             <button class="task-icon-button nav-only" id="occupancy-view-button" title="Belegungsplan"><img src="occupancy.svg" alt="Occupancy View"></button>
-            <button class="task-icon-button" id="pin-train-button" title="Pin Train to Announcements"><img src="pin.svg" alt="Pin Train"></button>
-            <button class="task-icon-button" id="announcements-button" title="Ankuendigungen"><img src="notes.png" alt="Announcements"></button>
-            <button class="task-icon-button nav-only" data-mode="projects" title="Projekte"><img src="project.svg" alt="Projects"></button>
+            <button class="task-icon-button" id="announcements-button" title="Ankuendigungen"><img src="announcement.png" alt="Announcements"></button>
+            <button class="task-icon-button" id="notes-button" title="Notizen"><img src="notes.png" alt="Notes"></button>
+            <button class="task-icon-button" data-mode="projects" title="Projekte"><img src="project.svg" alt="Projects"></button>
             <button class="task-icon-button nav-only" data-mode="meals" title="Mahlzeiten"><img src="meal.svg" alt="Meals"></button>
             <button class="task-icon-button nav-only" data-mode="groceries" title="Einkauf"><img src="grocery.svg" alt="Groceries"></button>
             <button class="task-icon-button nav-only" data-mode="inventory" title="Inventar"><img src="inventory.svg" alt="Inventory"></button>
@@ -285,6 +347,18 @@
         <button class="announcement-drawer-close" id="announcement-drawer-close" aria-label="Close announcements">✕</button>
       </div>
       <div class="right-panel-bottom" id="announcement-panel"></div>
+    </div>
+    
+    <!-- Note drawer -->
+    <div class="right-panel" id="note-drawer">
+      <div class="announcement-drawer-header">
+        <span class="announcement-drawer-title">Notizen</span>
+        <div class="note-header-buttons">
+          <button class="note-add-button" id="note-add-button" aria-label="Add note">+</button>
+          <button class="announcement-drawer-close" id="note-drawer-close" aria-label="Close notes">✕</button>
+        </div>
+      </div>
+      <div class="right-panel-bottom" id="note-panel"></div>
     </div>
   </div>
 

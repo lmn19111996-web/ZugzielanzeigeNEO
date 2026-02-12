@@ -41,11 +41,14 @@
       projects: [] // Array of project objects
     };
 
+    // Global accent color - matches current train line color on headline ribbon
+    let currentAccentColor = 'rgba(255, 255, 255, 0.64)'; // Default
+
     // Centralized train processing - creates categorized train lists used by all panels
     let processedTrainData = {
       allTrains: [],           // All trains from schedule
       localTrains: [],         // Local personal schedule trains only
-      noteTrains: [],          // Trains without plan time (announcements/notes)
+      noteTrains: [],          // Notes (objects with type='note')
       scheduledTrains: [],     // Trains with plan time
       futureTrains: [],        // Scheduled trains in the future or currently occupying
       currentTrain: null,      // First future/occupying train from PERSONAL SCHEDULE
@@ -70,11 +73,11 @@
       processedTrainData.allTrains = (schedule.trains || []).slice();
       processedTrainData.localTrains = (schedule.localTrains || []).slice();
       
-      // Separate notes from scheduled trains
-      processedTrainData.noteTrains = processedTrainData.allTrains.filter(t => !t.plan || t.plan.trim() === '');
+      // Separate notes (objects with type='note') from scheduled trains
+      processedTrainData.noteTrains = processedTrainData.allTrains.filter(t => t.type === 'note');
       
       processedTrainData.scheduledTrains = processedTrainData.allTrains
-        .filter(t => t.plan && t.plan.trim() !== '')
+        .filter(t => t.type !== 'note' && t.linie && t.plan && t.plan.trim() !== '')
         .sort((a, b) => {
           const ta = parseTime(a.actual || a.plan, now, a.date);
           const tb = parseTime(b.actual || b.plan, now, b.date);
@@ -503,6 +506,15 @@
             if (!train._uniqueId) {
               train._uniqueId = 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
             }
+            // Backward compatibility: Convert old format notes (name && !linie) to new format
+            if (train.name && !train.linie && train.type !== 'note') {
+              train.linie = 'NOTE';
+              train.type = 'note';
+              // Use name as ziel if ziel is empty
+              if (!train.ziel) {
+                train.ziel = train.name;
+              }
+            }
             return train;
           };
           
@@ -545,7 +557,7 @@
               const dateStr = targetDate.toLocaleDateString('sv-SE');
               const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][targetDate.getDay()];
               
-              const fixedForDay = (data.fixedSchedule || []).filter(t => t.weekday === weekday && t.linie);
+              const fixedForDay = (data.fixedSchedule || []).filter(t => t.weekday === weekday);
               const fixedAsTrains = fixedForDay.map(t => {
                 const normalized = {
                   ...t,
@@ -563,7 +575,7 @@
               fixedTrainsForDays.push(...fixedAsTrains);
             }
             
-            const spontaneousAll = (data.spontaneousEntries || []).filter(t => t.linie).map(t => {
+            const spontaneousAll = (data.spontaneousEntries || []).map(t => {
               const normalized = {
                 ...t,
                 source: 'local',
@@ -660,6 +672,7 @@
           // Apply line color to top ribbon bottom border
           if (topRibbon) {
             const lineColor = getLineColor(currentTrain.linie || 'S1');
+            currentAccentColor = lineColor; // Update global accent color
             topRibbon.style.borderBottom = `4px solid ${lineColor}`;
           }
         }
@@ -668,6 +681,7 @@
         firstTrainContainer.innerHTML = '';
         // Reset to default border color when no train
         if (topRibbon) {
+          currentAccentColor = 'rgba(255, 255, 255, 0.64)'; // Reset to default
           topRibbon.style.borderBottom = '3px solid rgba(255, 255, 255, 0.64)';
         }
       }
@@ -711,6 +725,159 @@
       }
     }
 
+    // Note drawer functions
+    let noteDrawerEscHandler = null;
+    let noteDrawerClickOutHandler = null;
+
+    function openNoteDrawer() {
+      const drawer = document.getElementById('note-drawer');
+      if (drawer) {
+        drawer.classList.add('is-open');
+        document.body.classList.add('notes-open');
+        
+        // Render notes when drawer opens
+        renderNotePanel();
+        
+        // Set up event handlers for closing
+        setupNoteDrawerCloseHandlers();
+      }
+    }
+
+    function closeNoteDrawer() {
+      const drawer = document.getElementById('note-drawer');
+      if (drawer) {
+        drawer.classList.remove('is-open');
+      }
+      document.body.classList.remove('notes-open');
+      
+      // Clean up event handlers
+      if (noteDrawerEscHandler) {
+        document.removeEventListener('keydown', noteDrawerEscHandler, true);
+        noteDrawerEscHandler = null;
+      }
+      if (noteDrawerClickOutHandler) {
+        document.removeEventListener('click', noteDrawerClickOutHandler, true);
+        noteDrawerClickOutHandler = null;
+      }
+    }
+
+    function setupNoteDrawerCloseHandlers() {
+      const drawer = document.getElementById('note-drawer');
+      
+      // Remove old handlers if they exist
+      if (noteDrawerEscHandler) {
+        document.removeEventListener('keydown', noteDrawerEscHandler, true);
+      }
+      if (noteDrawerClickOutHandler) {
+        document.removeEventListener('click', noteDrawerClickOutHandler, true);
+      }
+
+      // ESC key handler
+      noteDrawerEscHandler = function(e) {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          closeNoteDrawer();
+        }
+      };
+      document.addEventListener('keydown', noteDrawerEscHandler, true);
+
+      // Click outside handler
+      noteDrawerClickOutHandler = function(e) {
+        if (!drawer.contains(e.target)) {
+          // Don't close if clicking the notes button itself
+          const notesBtn = document.getElementById('notes-button');
+          if (notesBtn && notesBtn.contains(e.target)) {
+            return;
+          }
+          // Don't close if clicking any button (let button handlers do their thing)
+          if (e.target.closest('button')) {
+            return;
+          }
+          e.stopPropagation();
+          closeNoteDrawer();
+        }
+      };
+      document.addEventListener('click', noteDrawerClickOutHandler, true);
+    }
+
+    // Render note panel
+    function renderNotePanel() {
+      const panel = document.getElementById('note-panel');
+      const template = document.getElementById('note-template');
+      
+      if (!template) {
+        console.error('Note template not found');
+        return;
+      }
+
+      const noteTrains = processedTrainData.noteTrains;
+
+      if (noteTrains.length === 0) {
+        panel.innerHTML = '<div style=\"padding: 2vh; color: rgba(255,255,255,0.6); text-align: center;\">Keine Notizen</div>';
+        return;
+      }
+
+      panel.innerHTML = '';
+
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'width: 100%; height: 100%; background: #161B75; position: relative;';
+
+      const container = document.createElement('div');
+      container.className = 'announcement-content-wrapper';
+      container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; padding: 12px; overflow-y: auto; box-sizing: border-box; scrollbar-width: none; -ms-overflow-style: none;';
+
+      noteTrains.forEach(note => {
+        const clone = template.content.cloneNode(true);
+
+        // Set note headline color to current accent color
+        const headline = clone.querySelector('.announcement-headline.note');
+        if (headline) {
+          headline.style.background = currentAccentColor;
+        }
+
+        // Populate destination
+        const destination = clone.querySelector('[data-note=\"destination\"]');
+        destination.textContent = note.ziel || 'Unbenannte Notiz';
+
+        // Populate date in German long form
+        const dateEl = clone.querySelector('[data-note=\"date\"]');
+        if (dateEl && note.date) {
+          const noteDate = new Date(note.date);
+          const dateStr = noteDate.toLocaleDateString('de-DE', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+          dateEl.textContent = dateStr;
+        } else if (dateEl) {
+          dateEl.style.display = 'none';
+        }
+
+        // Populate content (zwischenhalte) - use line breaks instead of dots
+        const content = clone.querySelector('[data-note=\"content\"]');
+        if (note.zwischenhalte && note.zwischenhalte.length > 0) {
+          // Join with line breaks and use innerHTML to preserve them
+          content.innerHTML = note.zwischenhalte.map(stop => stop.replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>');
+        } else {
+          content.textContent = '';
+          content.style.display = 'none';
+        }
+
+        // Add click-to-edit functionality
+        const notePanel = clone.querySelector('.note-panel');
+        notePanel.style.cursor = 'pointer';
+        notePanel.addEventListener('click', () => {
+          renderFocusMode(note);
+        });
+
+        container.appendChild(clone);
+      });
+
+      wrapper.appendChild(container);
+      panel.appendChild(wrapper);
+    }
+
     function setupAnnouncementDrawerCloseHandlers() {
       const drawer = document.getElementById('announcement-drawer');
       
@@ -745,13 +912,17 @@
       document.addEventListener('click', announcementDrawerClickOutHandler, true);
     }
 
-    function openEditorDrawer() {
+    function openEditorDrawer(train = null) {
       const panel = document.getElementById('focus-panel');
       if (panel) {
         panel.classList.add('is-open');
         document.body.classList.add('editor-drawer-open');
       }
       closeAnnouncementsDrawer();
+      // Only close note drawer if we're not editing a note
+      if (!train || train.type !== 'note') {
+        closeNoteDrawer();
+      }
     }
 
     function closeEditorDrawer() {
@@ -860,16 +1031,24 @@
 
       const projects = schedule.projects || [];
       
-      let html = '<div class="projects-page">';
-      html += '<div class="projects-header">';
-      html += '<h2 class="projects-title">Projekte</h2>';
-      html += '<button class="project-create-btn" id="create-project-btn">+ Neues Projekt</button>';
-      html += '</div>';
-      html += '<div class="projects-list">';
+      // Clone the projects page template
+      const pageTemplate = document.getElementById('projects-page-template');
+      if (!pageTemplate) return;
+      
+      const pageClone = pageTemplate.content.cloneNode(true);
+      const projectsList = pageClone.querySelector('[data-projects="list"]');
       
       if (projects.length === 0) {
-        html += '<div class="projects-empty">Keine Projekte vorhanden. Erstellen Sie ein neues Projekt.</div>';
+        // Show empty state
+        const emptyTemplate = document.getElementById('projects-empty-template');
+        if (emptyTemplate) {
+          projectsList.appendChild(emptyTemplate.content.cloneNode(true));
+        }
       } else {
+        // Add project cards
+        const cardTemplate = document.getElementById('project-card-template');
+        if (!cardTemplate) return;
+        
         projects.forEach(project => {
           const lineColor = getLineColor(project.linie || 's1');
           const deadlineDate = project.deadline ? new Date(project.deadline) : null;
@@ -880,28 +1059,31 @@
             year: 'numeric'
           }) : 'Open-Ended';
           
-          // Get tasks for this project from spontaneousEntries (like project drawer does)
+          // Get tasks for this project from spontaneousEntries
           const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
           const today = new Date().toISOString().split('T')[0];
           
           const taskCount = projectTasks.length;
           const completedTasks = projectTasks.filter(t => t.date && t.date <= today).length;
           
-          html += `<div class="project-card" data-project-id="${project._uniqueId}" style="border-left: 4px solid ${lineColor}">`;
-          html += `<div class="project-card-header">`;
-          html += `<img src="${getTrainSVG(project.linie || 'S1')}" class="project-card-icon" alt="Line" onerror="this.style.display='none'">`;
-          html += `<div class="project-card-name">${project.name || 'Unbenanntes Projekt'}</div>`;
-          html += `</div>`;
-          html += `<div class="project-card-deadline">${deadlineStr}</div>`;
-          html += `<div class="project-card-progress">${completedTasks} / ${taskCount} Aufgaben abgeschlossen</div>`;
-          html += `</div>`;
+          // Clone card template and populate
+          const cardClone = cardTemplate.content.cloneNode(true);
+          const card = cardClone.querySelector('[data-projects="card"]');
+          
+          card.setAttribute('data-project-id', project._uniqueId);
+          card.style.borderLeft = `4px solid ${lineColor}`;
+          
+          cardClone.querySelector('[data-projects="icon"]').src = getTrainSVG(project.linie || 'S1');
+          cardClone.querySelector('[data-projects="name"]').textContent = project.name || 'Unbenanntes Projekt';
+          cardClone.querySelector('[data-projects="deadline"]').textContent = deadlineStr;
+          cardClone.querySelector('[data-projects="progress"]').textContent = `${completedTasks} / ${taskCount} Aufgaben abgeschlossen`;
+          
+          projectsList.appendChild(cardClone);
         });
       }
       
-      html += '</div>';
-      html += '</div>';
-      
-      trainListEl.innerHTML = html;
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
       
       // Add event listeners
       const createBtn = document.getElementById('create-project-btn');
@@ -988,76 +1170,131 @@
       deadlineField.setAttribute('data-field', 'deadline');
       deadlineField.setAttribute('data-value', project.deadline || '');
       
-      // Populate tasks list
+      // Set up view selector
+      const viewSelector = clone.querySelector('[data-project="view-selector"]');
+      viewSelector.value = project.currentView || 'aufgabe';
+      
+      // Get headers and tasks list
+      const tasksHeader = clone.querySelector('[data-project="tasks-header"]');
+      const todosHeader = clone.querySelector('[data-project="todos-header"]');
       const tasksList = clone.querySelector('[data-project="tasks-list"]');
+      
+      // Populate tasks or todos based on current view
       schedule.spontaneousEntries = schedule.spontaneousEntries || [];
       
-      // Get tasks for this project and sort by actual date
-      const trains = schedule.spontaneousEntries
-        .filter(t => t.projectId === project._uniqueId)
-        .sort((a, b) => {
-          const dateA = a.date || '9999-12-31'; // Tasks without dates go to end
-          const dateB = b.date || '9999-12-31';
-          return dateA.localeCompare(dateB);
+      if (viewSelector.value === 'todo') {
+        // Hide both headers in todo mode
+        tasksHeader.style.display = 'none';
+        todosHeader.style.display = 'none';
+        
+        // Hide spacer in todo mode (we need all the height)
+        const spacer = clone.querySelector('.spacer');
+        if (spacer) spacer.style.display = 'none';
+        
+        // Get todos (trains with type='todo') for this project
+        // Don't sort - keep natural creation order (data write order)
+        const allTodos = schedule.spontaneousEntries
+          .filter(t => t.projectId === project._uniqueId && t.type === 'todo');
+        
+        // Split into active (unchecked) and completed (checked)
+        const activeTodos = allTodos.filter(t => !t.todoChecked);
+        const completedTodos = allTodos.filter(t => t.todoChecked);
+        
+        // Render active todos
+        activeTodos.forEach((todo, index) => {
+          const todoHTML = renderProjectTodo(todo, index, lineColor, project._uniqueId);
+          const todoTemplate = document.createElement('template');
+          todoTemplate.innerHTML = todoHTML.trim();
+          tasksList.appendChild(todoTemplate.content.firstChild);
         });
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      trains.forEach((train, index) => {
-        const taskHTML = renderProjectTask(train, index, trains.length, lineColor, project._uniqueId, today);
-        const taskTemplate = document.createElement('template');
-        taskTemplate.innerHTML = taskHTML.trim();
-        tasksList.appendChild(taskTemplate.content.firstChild);
-      });
-      
-      // Add task creation row
-      const addRowHTML = `
-        <div class="project-task-row project-task-add-row">
-          <span class="project-task-plan"></span>
-          <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;"></span>
-          <span class="project-task-actual"></span>
-          <span class="project-task-name project-task-add-input" contenteditable="true" data-placeholder="+ Aufgabe hinzufügen"></span>
-          <span class="spacer"></span>
-        </div>
-      `;
-      const addRowTemplate = document.createElement('template');
-      addRowTemplate.innerHTML = addRowHTML.trim();
-      tasksList.appendChild(addRowTemplate.content.firstChild);
-      
-      // Add progress line visualization - after the tasks list
-      const completedTasks = trains.filter(t => t.date && t.date <= today).length;
-      const totalTasks = trains.length;
-      const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-      
-      const progressLineHTML = `
-        <div class="project-progress-line">
-          <div class="project-progress-track">
-            <div class="project-progress-fill" style="width: ${progressPercent}%; background-color: ${lineColor};"></div>
+        
+        // Add todo creation row (no spacer for todo list)
+        const addRowHTML = `
+          <div class="project-todo-row project-todo-add-row">
+            <span class="project-todo-due-date"></span>
+            <span class="project-todo-checkbox"></span>
+            <span class="project-todo-name project-todo-add-input" contenteditable="true" data-placeholder="+ To-Do hinzufügen"></span>
           </div>
-          <div class="project-progress-text">${completedTasks}/${totalTasks} bis heute</div>
-        </div>
-      `;
-      
-      const progressTemplate = document.createElement('template');
-      progressTemplate.innerHTML = progressLineHTML.trim();
-      
-      // Insert progress line after the tasks list but before the spacer
-      const progressLine = progressTemplate.content.firstChild;
-      tasksList.parentNode.insertBefore(progressLine, tasksList.nextElementSibling);
-      
-      // Auto-scroll to focus on current progress point (where colored tasks end)
-      if (trains.length > 0) {
-        const currentTaskIndex = trains.findIndex(t => !t.date || t.date > today);
-        if (currentTaskIndex > 0) {
-          // Scroll to show the transition point between colored and gray tasks
-          const taskRows = tasksList.querySelectorAll('.project-task-row:not(.project-task-add-row)');
-          if (taskRows[currentTaskIndex - 1]) {
-            setTimeout(() => {
-              taskRows[currentTaskIndex - 1].scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-              });
-            }, 100);
+        `;
+        const addRowTemplate = document.createElement('template');
+        addRowTemplate.innerHTML = addRowHTML.trim();
+        tasksList.appendChild(addRowTemplate.content.firstChild);
+      } else {
+        // Show tasks header, hide todos header
+        tasksHeader.style.display = 'flex';
+        todosHeader.style.display = 'none';
+        
+        // Show spacer in task mode
+        const spacer = clone.querySelector('.spacer');
+        if (spacer) spacer.style.display = '';
+        
+        // Get tasks for this project (excluding todos) and sort by actual date
+        const trains = schedule.spontaneousEntries
+          .filter(t => t.projectId === project._uniqueId && t.type !== 'todo')
+          .sort((a, b) => {
+            const dateA = a.date || '9999-12-31'; // Tasks without dates go to end
+            const dateB = b.date || '9999-12-31';
+            return dateA.localeCompare(dateB);
+          });
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        trains.forEach((train, index) => {
+          const taskHTML = renderProjectTask(train, index, trains.length, lineColor, project._uniqueId, today);
+          const taskTemplate = document.createElement('template');
+          taskTemplate.innerHTML = taskHTML.trim();
+          tasksList.appendChild(taskTemplate.content.firstChild);
+        });
+        
+        // Add task creation row
+        const addRowHTML = `
+          <div class="project-task-row project-task-add-row">
+            <span class="project-task-plan"></span>
+            <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;"></span>
+            <span class="project-task-actual"></span>
+            <span class="project-task-name project-task-add-input" contenteditable="true" data-placeholder="+ Aufgabe hinzufügen"></span>
+            <span class="spacer"></span>
+          </div>
+        `;
+        const addRowTemplate = document.createElement('template');
+        addRowTemplate.innerHTML = addRowHTML.trim();
+        tasksList.appendChild(addRowTemplate.content.firstChild);
+        
+        // Add progress line visualization - after the tasks list
+        const completedTasks = trains.filter(t => t.date && t.date <= today).length;
+        const totalTasks = trains.length;
+        const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        
+        const progressLineHTML = `
+          <div class="project-progress-line">
+            <div class="project-progress-track">
+              <div class="project-progress-fill" style="width: ${progressPercent}%; background-color: ${lineColor};"></div>
+            </div>
+            <div class="project-progress-text">${completedTasks}/${totalTasks} bis heute</div>
+          </div>
+        `;
+        
+        const progressTemplate = document.createElement('template');
+        progressTemplate.innerHTML = progressLineHTML.trim();
+        
+        // Insert progress line after the tasks list but before the spacer
+        const progressLine = progressTemplate.content.firstChild;
+        tasksList.parentNode.insertBefore(progressLine, tasksList.nextElementSibling);
+        
+        // Auto-scroll to focus on current progress point (where colored tasks end)
+        if (trains.length > 0) {
+          const currentTaskIndex = trains.findIndex(t => !t.date || t.date > today);
+          if (currentTaskIndex > 0) {
+            // Scroll to show the transition point between colored and gray tasks
+            const taskRows = tasksList.querySelectorAll('.project-task-row:not(.project-task-add-row)');
+            if (taskRows[currentTaskIndex - 1]) {
+              setTimeout(() => {
+                taskRows[currentTaskIndex - 1].scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center'
+                });
+              }, 100);
+            }
           }
         }
       }
@@ -1073,8 +1310,72 @@
       // Append to drawer
       drawer.appendChild(clone);
       
+      // If in todo mode, add completed section as a sibling to tasks-list
+      if (viewSelector.value === 'todo') {
+        const activeTodos = schedule.spontaneousEntries
+          .filter(t => t.projectId === project._uniqueId && t.type === 'todo' && !t.todoChecked);
+        const completedTodos = schedule.spontaneousEntries
+          .filter(t => t.projectId === project._uniqueId && t.type === 'todo' && t.todoChecked);
+        
+        if (completedTodos.length > 0) {
+          const isOpen = project.completedSectionOpen || false;
+          const arrowChar = isOpen ? '▼' : '▶';
+          const displayStyle = isOpen ? 'block' : 'none';
+          
+          const completedSectionHTML = `
+            <div class="project-completed-section">
+              <div class="project-completed-header" data-action="toggle-completed">
+                <span class="project-completed-arrow">${arrowChar}</span>
+                <span class="project-completed-title">Abgeschlossen (${completedTodos.length})</span>
+              </div>
+              <div class="project-completed-list" style="display: ${displayStyle};" data-section="completed-list">
+              </div>
+            </div>
+          `;
+          
+          // Insert completed section after tasks-list
+          const tasksListInDrawer = drawer.querySelector('[data-project="tasks-list"]');
+          const spacer = drawer.querySelector('.spacer');
+          const completedTemplate = document.createElement('template');
+          completedTemplate.innerHTML = completedSectionHTML.trim();
+          tasksListInDrawer.parentNode.insertBefore(completedTemplate.content.firstChild, spacer);
+          
+          // Render completed todos
+          const completedList = drawer.querySelector('[data-section="completed-list"]');
+          completedTodos.forEach((todo, index) => {
+            const todoHTML = renderProjectTodo(todo, index, lineColor, project._uniqueId);
+            const todoTemplate = document.createElement('template');
+            todoTemplate.innerHTML = todoHTML.trim();
+            completedList.appendChild(todoTemplate.content.firstChild);
+          });
+        }
+      }
+      
       // Set up event listeners
       setupProjectDrawerListeners(project);
+    }
+
+    function renderProjectTodo(todo, index, lineColor, projectId) {
+      const rowClass = index % 2 === 0 ? 'project-todo-row-bright' : 'project-todo-row-dark';
+      const checked = todo.todoChecked ? 'checked' : '';
+      
+      // Format due date as DD.MM if it exists
+      let dueDateStr = '';
+      if (todo.date) {
+        const dueDate = new Date(todo.date);
+        dueDateStr = dueDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+      }
+      
+      return `
+        <div class="project-todo-row ${rowClass}" data-task-id="${todo._uniqueId}" style="--line-color: ${lineColor};">
+          <span class="project-todo-due-date">${dueDateStr}</span>
+          <span class="project-todo-checkbox">
+            <input type="checkbox" ${checked} data-todo-action="toggle">
+          </span>
+          <span class="project-todo-name">${todo.ziel || 'Unbenanntes To-Do'}</span>
+          <img src="remove.svg" class="project-task-remove-icon" data-task-action="remove">
+        </div>
+      `;
     }
 
     function renderProjectTask(train, index, totalTasks, lineColor, projectId, today) {
@@ -1109,6 +1410,29 @@
     }
 
     function setupProjectDrawerListeners(project) {
+      // View selector change
+      const viewSelector = document.querySelector('[data-project="view-selector"]');
+      if (viewSelector) {
+        viewSelector.addEventListener('change', async () => {
+          // Preserve completed section state before re-rendering
+          const wasOpen = project.completedSectionOpen;
+          
+          // Save the selected view to the project
+          project.currentView = viewSelector.value;
+          await saveSchedule();
+          
+          // Re-render the drawer with the new view
+          const freshSchedule = await fetchSchedule();
+          Object.assign(schedule, freshSchedule);
+          const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+          if (freshProject) {
+            // Restore the completed section state
+            freshProject.completedSectionOpen = wasOpen;
+            renderProjectDrawer(freshProject);
+          }
+        });
+      }
+      
       // Close button
       const closeBtn = document.getElementById('project-drawer-close-btn');
       if (closeBtn) {
@@ -1176,6 +1500,9 @@
             }
             
             const save = async () => {
+              // Preserve completed section state before re-rendering
+              const wasOpen = project.completedSectionOpen;
+              
               // Save all fields
               const allInputs = document.querySelectorAll('#project-drawer [data-editable="true"] input');
               allInputs.forEach(inp => {
@@ -1191,6 +1518,8 @@
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
+                // Restore the completed section state
+                freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
               renderProjectsPage();
@@ -1230,6 +1559,9 @@
           const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
           
           if (newLine && newLine.trim() !== '') {
+            // Preserve completed section state before re-rendering
+            const wasOpen = project.completedSectionOpen;
+            
             project.linie = newLine.trim().toLowerCase();
             await saveSchedule();
             const freshSchedule = await fetchSchedule();
@@ -1237,6 +1569,8 @@
             // Re-fetch the project from the fresh schedule
             const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
             if (freshProject) {
+              // Restore the completed section state
+              freshProject.completedSectionOpen = wasOpen;
               renderProjectDrawer(freshProject);
             }
             renderProjectsPage();
@@ -1252,6 +1586,9 @@
             e.preventDefault();
             const taskName = addInput.textContent.trim();
             if (taskName) {
+              // Preserve completed section state before re-rendering
+              const wasOpen = project.completedSectionOpen;
+              
               // Use unified createNewTrainEntry with project-specific options
               schedule.spontaneousEntries = schedule.spontaneousEntries || [];
               const newTrain = createNewTrainEntry({
@@ -1267,6 +1604,8 @@
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
+                // Restore the completed section state
+                freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
               // Focus the next add input
@@ -1291,6 +1630,61 @@
         });
       }
       
+      // Todo add input
+      const todoAddInput = document.querySelector('.project-todo-add-input');
+      if (todoAddInput) {
+        todoAddInput.addEventListener('keydown', async (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const todoName = todoAddInput.textContent.trim();
+            if (todoName) {
+              // Preserve completed section state before re-rendering
+              const wasOpen = project.completedSectionOpen;
+              
+              schedule.spontaneousEntries = schedule.spontaneousEntries || [];
+              const newTodo = createNewTrainEntry({
+                linie: (project.linie || 's1').toUpperCase(),
+                ziel: todoName,
+                projectId: project._uniqueId
+              });
+              // Mark as todo
+              newTodo.type = 'todo';
+              newTodo.todoChecked = false;
+              
+              // Add to schedule
+              schedule.spontaneousEntries.push(newTodo);
+              await saveSchedule();
+              const freshSchedule = await fetchSchedule();
+              Object.assign(schedule, freshSchedule);
+              // Re-fetch the project from the fresh schedule
+              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (freshProject) {
+                // Restore the completed section state
+                freshProject.completedSectionOpen = wasOpen;
+                renderProjectDrawer(freshProject);
+              }
+              // Focus the next add input
+              setTimeout(() => {
+                const nextTodoInput = document.querySelector('.project-todo-add-input');
+                if (nextTodoInput) nextTodoInput.focus();
+              }, 100);
+            }
+          }
+        });
+        
+        // Placeholder handling
+        todoAddInput.addEventListener('focus', function() {
+          if (this.textContent === this.getAttribute('data-placeholder')) {
+            this.textContent = '';
+          }
+        });
+        todoAddInput.addEventListener('blur', function() {
+          if (this.textContent.trim() === '') {
+            this.textContent = '';
+          }
+        });
+      }
+      
       // Task row clicks
       const drawer = document.getElementById('project-drawer');
       const taskRows = drawer.querySelectorAll('.project-task-row:not(.project-task-add-row)');
@@ -1305,6 +1699,9 @@
             const taskToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
             const taskName = taskToDelete ? taskToDelete.ziel : 'Aufgabe';
             if (confirm(`Aufgabe "${taskName}" löschen?`)) {
+              // Preserve completed section state before re-rendering
+              const wasOpen = project.completedSectionOpen;
+              
               schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
               await saveSchedule();
               const freshSchedule = await fetchSchedule();
@@ -1312,6 +1709,8 @@
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
+                // Restore the completed section state
+                freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
             }
@@ -1328,6 +1727,88 @@
           openTaskEditor(project._uniqueId, taskId);
         });
       });
+      
+      // Todo row clicks and checkbox handling
+      const todoRows = drawer.querySelectorAll('.project-todo-row:not(.project-todo-add-row)');
+      todoRows.forEach(row => {
+        const todoId = row.getAttribute('data-task-id');
+        
+        // Checkbox toggle
+        const checkbox = row.querySelector('[data-todo-action="toggle"]');
+        if (checkbox) {
+          checkbox.addEventListener('change', async (e) => {
+            e.stopPropagation();
+            const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
+            if (todo) {
+              // Preserve completed section state before re-rendering
+              const wasOpen = project.completedSectionOpen;
+              
+              todo.todoChecked = checkbox.checked;
+              await saveSchedule();
+              const freshSchedule = await fetchSchedule();
+              Object.assign(schedule, freshSchedule);
+              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (freshProject) {
+                // Restore the completed section state
+                freshProject.completedSectionOpen = wasOpen;
+                renderProjectDrawer(freshProject);
+              }
+            }
+          });
+        }
+        
+        // Remove button (no confirmation for todos)
+        const removeBtn = row.querySelector('[data-task-action="remove"]');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            
+            // Preserve completed section state before re-rendering
+            const wasOpen = project.completedSectionOpen;
+            
+            schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== todoId);
+            await saveSchedule();
+            const freshSchedule = await fetchSchedule();
+            Object.assign(schedule, freshSchedule);
+            const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+            if (freshProject) {
+              // Restore the completed section state
+              freshProject.completedSectionOpen = wasOpen;
+              renderProjectDrawer(freshProject);
+            }
+          });
+        }
+        
+        // Click on todo row to open editor drawer
+        row.addEventListener('click', function(e) {
+          if (e.target.tagName === 'INPUT' || e.target.closest('[data-task-action]')) {
+            return;
+          }
+          openTaskEditor(project._uniqueId, todoId);
+        });
+      });
+      
+      // Collapsible completed section toggle
+      const completedHeader = drawer.querySelector('[data-action="toggle-completed"]');
+      if (completedHeader) {
+        completedHeader.addEventListener('click', async function() {
+          const completedList = drawer.querySelector('[data-section="completed-list"]');
+          const arrow = this.querySelector('.project-completed-arrow');
+          
+          if (completedList.style.display === 'none') {
+            completedList.style.display = 'block';
+            arrow.textContent = '▼';
+            project.completedSectionOpen = true;
+          } else {
+            completedList.style.display = 'none';
+            arrow.textContent = '▶';
+            project.completedSectionOpen = false;
+          }
+          
+          // Save the state
+          await saveSchedule();
+        });
+      }
     }
 
     function openTaskEditor(projectId, taskId) {
@@ -1381,6 +1862,7 @@
           currentViewMode = 'list';
           isAnnouncementsView = false;
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           hideWorkspacePlaceholder();
           renderTrains();
           break;
@@ -1388,6 +1870,7 @@
           currentViewMode = 'belegungsplan';
           isAnnouncementsView = false;
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           hideWorkspacePlaceholder();
           renderTrains();
           break;
@@ -1415,11 +1898,13 @@
           break;
         case 'db-api':
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           showWorkspacePlaceholder('DB API');
           showStationOverlay();
           break;
         case 'projects':
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           closeEditorDrawer();
           closeProjectDrawer();
           hideWorkspacePlaceholder();
@@ -1427,14 +1912,17 @@
           break;
         case 'meals':
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           showWorkspacePlaceholder('Mahlzeiten');
           break;
         case 'groceries':
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           showWorkspacePlaceholder('Einkauf');
           break;
         case 'inventory':
           closeAnnouncementsDrawer();
+          closeNoteDrawer();
           showWorkspacePlaceholder('Inventar');
           break;
         default:
@@ -2779,20 +3267,10 @@
         return;
       }
       
-      // Check if mobile (screen width <= 768px)
-      const isMobile = window.innerWidth <= 768;
-      const mobilePopup = document.getElementById('mobile-focus-popup');
-      
-      if (isMobile && mobilePopup) {
-        mobileFocusedTrainId = train._uniqueId; // Track mobile focused train
-        desktopFocusedTrainId = null; // Clear desktop focus
-        renderMobileFocusPopup(train);
-        return;
-      }
-      
-      // Desktop mode - simple, clean layout
-      desktopFocusedTrainId = train._uniqueId; // Track desktop focused train
-      mobileFocusedTrainId = null; // Clear mobile focus
+      // Use the editor drawer for both mobile and desktop
+      // It will be styled as fullscreen on mobile via CSS
+      desktopFocusedTrainId = train._uniqueId; // Track focused train
+      mobileFocusedTrainId = null; // Clear mobile focus (if any)
       const panel = document.getElementById('focus-panel');
       const template = document.getElementById('focus-template');
       
@@ -2801,7 +3279,7 @@
         return;
       }
       
-      openEditorDrawer();
+      openEditorDrawer(train);
       hideWorkspacePlaceholder();
       
       // Apply line color to editor drawer border
@@ -2949,6 +3427,63 @@
         // Append to panel
         panel.appendChild(clone);
         
+        // Determine the type of object being edited and show/hide fields accordingly
+        const isNote = train.type === 'note';
+        const isTodo = train.type === 'todo';
+        
+        if (isNote) {
+          // For notes: show only Ziel and Zwischenhalte
+          const hideFields = ['linie', 'date', 'plan', 'actual', 'dauer', 'projectId'];
+          hideFields.forEach(field => {
+            const fieldEl = panel.querySelector(`.editor-field[data-field="${field}"]`);
+            if (fieldEl) {
+              fieldEl.style.display = 'none';
+              // Remove from tab order
+              const input = fieldEl.querySelector('input, textarea, select');
+              if (input) input.setAttribute('tabindex', '-1');
+            }
+          });
+          const delayButtons = panel.querySelector('.editor-delay-buttons');
+          if (delayButtons) {
+            delayButtons.style.display = 'none';
+            delayButtons.querySelectorAll('button').forEach(btn => btn.setAttribute('tabindex', '-1'));
+          }
+        } else if (isTodo) {
+          // For todos: show only Ziel, Datum, and Zwischenhalte
+          const hideFields = ['linie', 'plan', 'actual', 'dauer', 'projectId'];
+          hideFields.forEach(field => {
+            const fieldEl = panel.querySelector(`.editor-field[data-field="${field}"]`);
+            if (fieldEl) {
+              fieldEl.style.display = 'none';
+              // Remove from tab order
+              const input = fieldEl.querySelector('input, textarea, select');
+              if (input) input.setAttribute('tabindex', '-1');
+            }
+          });
+          const delayButtons = panel.querySelector('.editor-delay-buttons');
+          if (delayButtons) {
+            delayButtons.style.display = 'none';
+            delayButtons.querySelectorAll('button').forEach(btn => btn.setAttribute('tabindex', '-1'));
+          }
+        }
+        // For trains and tasks: show all fields (default behavior, no hiding needed)
+        
+        // Update cancel button based on train state
+        const cancelBtn = panel.querySelector('[data-focus-action="cancel"]');
+        const deleteBtn = panel.querySelector('[data-focus-action="delete"]');
+        if (cancelBtn) {
+          if (train.canceled) {
+            cancelBtn.classList.add('reactivate');
+            cancelBtn.textContent = 'Reaktivieren';
+          } else {
+            cancelBtn.classList.remove('reactivate');
+            cancelBtn.textContent = 'Durchstreichen';
+          }
+        }
+        if (deleteBtn) {
+          deleteBtn.textContent = 'Löschen';
+        }
+        
         // Store train reference
         panel.dataset.trainId = train._uniqueId;
         panel.dataset.isEditable = isEditable;
@@ -2969,6 +3504,7 @@
         
       // Helper function to save all field changes and exit edit mode
       const saveAllFields = async () => {
+        console.log('💾 saveAllFields called for train:', train._uniqueId);
         const editableFields = panel.querySelectorAll('.editor-field');
         let hasChanges = false;
         
@@ -2980,9 +3516,12 @@
           const newValue = input.value;
           const oldValue = field.getAttribute('data-value');
           
+          console.log(`  Field ${fieldName}: "${oldValue}" -> "${newValue}"`);
+          
           // Only update if value changed
           if (newValue !== oldValue) {
             hasChanges = true;
+            console.log(`  → Change detected in ${fieldName}`);
             
             // Update train object
             if (fieldName === 'date') {
@@ -3005,18 +3544,23 @@
         
         // Find the train in schedule
         const trainId = panel.dataset.trainId;
+        console.log('  Looking for train with ID:', trainId);
         let scheduleTrain = schedule.fixedSchedule.find(t => t._uniqueId === trainId);
         if (!scheduleTrain) {
           scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+          console.log('  Found in spontaneousEntries:', !!scheduleTrain);
+        } else {
+          console.log('  Found in fixedSchedule');
         }
         
         if (!scheduleTrain) {
-          console.error('Train not found in schedule!');
+          console.error('❌ Train not found in schedule!');
           return;
         }
         
         // If changes were made, update schedule and save
         if (hasChanges) {
+          console.log('✅ Changes detected, saving...');
           // Update the schedule train with all changes
           Object.assign(scheduleTrain, train);
           
@@ -3031,6 +3575,16 @@
           
           // Re-render the train list to show changes
           renderTrainsIfAppropriate(); // Only render if appropriate workspace
+          
+          // Refresh note panel if it's open and this is a note
+          const isNote = train.type === 'note';
+          const noteDrawer = document.getElementById('note-drawer');
+          if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
+            console.log('  Refreshing note panel');
+            renderNotePanel();
+          }
+        } else {
+          console.log('  No changes detected');
         }
         
         // Always re-render the panel to exit edit mode
@@ -3171,8 +3725,22 @@
               if (keyEvent.key === 'Tab') {
                 keyEvent.preventDefault();
                 
-                // Define tab order
-                const tabOrder = ['linie', 'ziel', 'date', 'plan', 'actual', 'dauer', 'zwischenhalte', 'projectId'];
+                // Define tab order based on object type
+                let tabOrder;
+                const isNote = train.type === 'note';
+                const isTodo = train.type === 'todo';
+                
+                if (isNote) {
+                  // Notes: Ziel → Zwischenhalte → repeat
+                  tabOrder = ['ziel', 'zwischenhalte'];
+                } else if (isTodo) {
+                  // Todos: Ziel → Datum → Zwischenhalte → repeat
+                  tabOrder = ['ziel', 'date', 'zwischenhalte'];
+                } else {
+                  // Trains/Tasks: Full order
+                  tabOrder = ['linie', 'ziel', 'date', 'plan', 'actual', 'dauer', 'zwischenhalte', 'projectId'];
+                }
+                
                 const currentIndex = tabOrder.indexOf(fName);
                 let nextIndex = keyEvent.shiftKey ? currentIndex - 1 : currentIndex + 1;
                 
@@ -3282,19 +3850,34 @@
         document.removeEventListener('click', editorDrawerClickOutHandler, true);
       }
       
-      editorDrawerClickOutHandler = (e) => {
+      editorDrawerClickOutHandler = async (e) => {
         // Check if panel is open and has content
         if (panel && panel.classList.contains('is-open') && panel.innerHTML.trim() !== '') {
           // Check if we're in edit mode
           const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
           
-          // Don't close if clicking inside the panel or if in edit mode
-          if (!panel.contains(e.target) && !hasInputs) {
-            desktopFocusedTrainId = null;
-            panel.innerHTML = '';
-            closeEditorDrawer();
-            // Remove selection from all train entries
-            document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+          console.log('👆 Click detected. Inside panel:', panel.contains(e.target), 'Has inputs:', !!hasInputs);
+          
+          // Don't close if clicking inside the panel
+          if (!panel.contains(e.target)) {
+            console.log('  Click outside panel');
+            // If in edit mode, save first
+            if (hasInputs && typeof saveAllFields === 'function') {
+              console.log('  Saving before close...');
+              await saveAllFields();
+              // After saving, close the drawer
+              desktopFocusedTrainId = null;
+              panel.innerHTML = '';
+              closeEditorDrawer();
+              document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+            } else {
+              // Not in edit mode, just close
+              console.log('  Just closing (no edit mode)');
+              desktopFocusedTrainId = null;
+              panel.innerHTML = '';
+              closeEditorDrawer();
+              document.querySelectorAll('.train-entry').forEach(entry => entry.classList.remove('selected'));
+            }
           }
         }
       };
@@ -3443,6 +4026,16 @@
                 panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
                 closeEditorDrawer();
                 renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
+                
+                // Refresh note panel if this was a note
+                const isNote = train.type === 'note';
+                const noteDrawer = document.getElementById('note-drawer');
+                if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
+                  // Re-fetch and process to update notes list
+                  const freshSchedule = await fetchSchedule();
+                  processTrainData(freshSchedule);
+                  renderNotePanel();
+                }
               }
               break;
           }
@@ -5096,9 +5689,7 @@
       };
 
       // 1. Ankündigung: Notes without departure time (from processed data) - persist forever, no date filter
-      const noteTrains = processedTrainData.noteTrains
-        .map(t => ({ ...t, announcementType: 'note' }));
-      allAnnouncements.push(...noteTrains);
+      // NOTES ARE NOW IN SEPARATE DRAWER - excluded from announcements
 
       // 2. Use processed future trains for other announcement types - filter to today only
       const futureTrains = processedTrainData.futureTrains.filter(isToday);
@@ -5242,7 +5833,6 @@
       });
 
       console.log('Comprehensive announcements:', {
-        notes: noteTrains.length,
         cancelled: cancelledTrains.length,
         delayed: delayedTrains.length,
         zusatzfahrt: zusatzfahrtTrains.length,
@@ -5906,7 +6496,56 @@
         });
       }
 
-      const navModeButtons = document.querySelectorAll('.task-icon-button.nav-only[data-mode]');
+      // Note drawer event listeners
+      const noteDrawerCloseBtn = document.getElementById('note-drawer-close');
+      if (noteDrawerCloseBtn) {
+        noteDrawerCloseBtn.addEventListener('click', () => {
+          closeNoteDrawer();
+        });
+      }
+
+      const noteAddBtn = document.getElementById('note-add-button');
+      if (noteAddBtn) {
+        noteAddBtn.addEventListener('click', async () => {
+          // Create a new note object
+          const newNote = {
+            linie: 'NOTE',
+            type: 'note',
+            name: 'Neue Notiz',
+            ziel: '',
+            zwischenhalte: [],
+            date: new Date().toISOString().split('T')[0],
+            source: 'local',
+            _uniqueId: 'note_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
+          };
+          
+          // Add to spontaneousEntries
+          schedule.spontaneousEntries = schedule.spontaneousEntries || [];
+          schedule.spontaneousEntries.push(newNote);
+          
+          // Save and refresh
+          await saveSchedule();
+          const freshSchedule = await fetchSchedule();
+          Object.assign(schedule, freshSchedule);
+          processTrainData(schedule);
+          
+          // Open editor for the new note
+          renderFocusMode(newNote);
+          
+          // Refresh note panel
+          renderNotePanel();
+        });
+      }
+
+      // Notes button event listener
+      const notesBtn = document.getElementById('notes-button');
+      if (notesBtn) {
+        notesBtn.addEventListener('click', () => {
+          openNoteDrawer();
+        });
+      }
+
+      const navModeButtons = document.querySelectorAll('.task-icon-button[data-mode]');
       navModeButtons.forEach((button) => {
         button.addEventListener('click', () => {
           const mode = button.dataset.mode;
@@ -6711,8 +7350,7 @@
         weekday: weekday,
         source: 'local',
         _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
-        ...(options.projectId && { projectId: options.projectId }),
-        done: false
+        ...(options.projectId && { projectId: options.projectId })
       };
       
       // For non-project trains, add to schedule and render immediately

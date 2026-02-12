@@ -524,6 +524,7 @@ html, body {
       border-radius: 2%;
       transition: right 0.2s ease;
       z-index: 1100;
+      background: #0F1450;
     }
 
     .right-panel.is-open {
@@ -567,6 +568,33 @@ html, body {
       color: rgba(255, 255, 255, 0.5);
     }
 
+    /* Note header buttons container */
+    .note-header-buttons {
+      display: flex;
+      align-items: center;
+      gap: 1vh;
+    }
+
+    /* Note add button */
+    .note-add-button {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 2.5vh;
+      font-weight: 300;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+
+    .note-add-button:hover {
+      color: rgba(255, 255, 255, 1);
+    }
+
+    .note-add-button:active {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
     /* Editor drawer */
     .right-panel-top {
       position: fixed;
@@ -581,7 +609,7 @@ html, body {
       overflow-y: auto;
       overflow-x: hidden;
       transition: right 0.2s ease;
-      z-index: 1150;
+      z-index: 1050;
       display: block;
       padding: 0;
     }
@@ -611,7 +639,7 @@ html, body {
       background: #161B75;
       border-right: 0.5px solid rgba(255, 255, 255, 0.64);
       transform: translateX(-100%);
-      transition: transform 0.3s ease;
+      transition: transform 0.2s ease;
       z-index: 1300;
       display: flex;
       flex-direction: column;
@@ -1182,6 +1210,19 @@ html, body {
       position: relative;
     }
 
+    .note-panel {
+      width: 100%;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      flex: 1 1 auto;
+      min-width: 0;
+      position: relative;
+    }
+
     .announcement-headline {
       width: 100%;
       height: 2.5vh;
@@ -1224,6 +1265,11 @@ html, body {
     .announcement-headline.pinned {
       background: #161B75;
       color: #161B75;
+    }
+    
+    .announcement-headline.note {
+      background: linear-gradient(135deg, rgb(180, 160, 255) 0%, rgb(120, 100, 200) 100%);
+      color: white;
     }
     
     /* Unpin button styles - matches konflikt resolve button */
@@ -1478,6 +1524,23 @@ html, body {
       flex: 0 0 auto;
     }
 
+    .announcement-date {
+      width: 100%;
+      font-size: 1.6vh;
+      font-weight: 300;
+      color: rgba(100, 100, 100, 0.9);
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+      padding: 0 0.5vh 0.5vh 0.5vh;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+    }
+
     .announcement-content-panel {
       flex: 1 1 auto;
       width: 100%;
@@ -1566,7 +1629,7 @@ html, body {
       display: flex;
       flex-direction: column;
       transform: translateX(0);
-      transition: transform 0.3s ease;
+      transition: transform 0.2s ease;
       box-sizing: border-box;
     }
 
@@ -1924,6 +1987,168 @@ html, body {
       display: none;
     }
 
+    /* Editor drawer content styles - universal for both desktop and mobile */
+    .editor-container {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 2vh 0;
+      box-sizing: border-box;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .editor-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .editor-field {
+      padding: 1.5vh 1vw;
+      margin: 0 1vw;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+
+    .editor-field:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .editor-field-label {
+      font-size: 1.6vh;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 0.5vh;
+      font-weight: 300;
+    }
+
+    .editor-field-value {
+      font-size: 2vh;
+      color: rgb(255, 255, 255);
+      font-weight: 400;
+      min-height: 2.5vh;
+    }
+
+    .editor-field-multiline {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .editor-field-multiline .editor-field-value {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.5;
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .editor-field-multiline .editor-field-value::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Hide scrollbar in textarea when in edit mode */
+    .editor-field-multiline textarea {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .editor-field-multiline textarea::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Date and time input picker styling */
+    .editor-field input[type="date"]::-webkit-calendar-picker-indicator,
+    .editor-field input[type="time"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+
+    .editor-actions {
+      margin-top: auto;
+      padding: 2vh 2vw;
+      display: flex;
+      gap: 1vh;
+      flex-direction: row;
+    }
+
+    .editor-btn {
+      width: 100%;
+      padding: 1.2vh 0;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: rgba(255, 255, 255, 0.9);
+      font-family: inherit;
+      font-size: 1.8vh;
+      font-weight: 400;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.1s ease;
+    }
+
+    .editor-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .editor-btn-cancel {
+      background: rgba(255, 165, 0, 0.3);
+      color: rgb(255, 200, 100);
+    }
+
+    .editor-btn-cancel:hover {
+      background: rgba(255, 165, 0, 0.4);
+    }
+
+    .editor-btn-cancel.reactivate {
+      background: rgba(0, 200, 100, 0.3);
+      color: rgb(150, 255, 200);
+    }
+
+    .editor-btn-cancel.reactivate:hover {
+      background: rgba(0, 200, 100, 0.4);
+    }
+
+    .editor-btn-delete {
+      background: rgba(255, 80, 80, 0.3);
+      color: rgb(255, 150, 150);
+    }
+
+    .editor-btn-delete:hover {
+      background: rgba(255, 80, 80, 0.4);
+    }
+
+    .editor-delay-buttons {
+      display: flex;
+      gap: 1vh;
+      padding: 1vh 2vw;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .editor-btn-delay {
+      flex: 1;
+      padding: 1vh 0;
+      background: rgba(100, 150, 255, 0.2);
+      border: none;
+      color: rgba(150, 200, 255, 0.9);
+      font-family: inherit;
+      font-size: 1.6vh;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .editor-btn-delay:hover {
+      background: rgba(100, 150, 255, 0.3);
+    }
+
+    .editor-btn-delay:active {
+      background: rgba(100, 150, 255, 0.4);
+    }
+
     @media screen and (min-width: 769px) {
       :root {
         --nav-rail-width: 6vh;
@@ -1977,6 +2202,15 @@ html, body {
         width: calc(100% - var(--announcements-drawer-width));
       }
 
+      body.notes-open .left-column {
+        width: calc(100% - var(--announcements-drawer-width));
+      }
+
+      /* Editor drawer positioning when note drawer is open */
+      body.notes-open.editor-drawer-open .right-panel-top.is-open {
+        right: var(--announcements-drawer-width);
+      }
+
       /* When both project drawer and editor drawer are open */
       body.project-drawer-open.editor-drawer-open .left-column {
         width: calc(100% - var(--project-drawer-width) - var(--editor-drawer-width) - 1vw);
@@ -1984,159 +2218,6 @@ html, body {
 
       body.project-drawer-open .right-panel-top.is-open {
         right: var(--project-drawer-width);
-      }
-
-      /* Editor drawer content styles */
-      .editor-container {
-        height: 100%;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        padding: 2vh 0;
-        box-sizing: border-box;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .editor-container::-webkit-scrollbar {
-        display: none;
-      }
-
-      .editor-field {
-        padding: 1.5vh 1vw;
-        margin: 0 1vw;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        cursor: pointer;
-        transition: background 0.1s ease;
-      }
-
-      .editor-field:hover {
-        background: rgba(255, 255, 255, 0.05);
-      }
-
-      .editor-field-label {
-        font-size: 1.6vh;
-        color: rgba(255, 255, 255, 0.6);
-        margin-bottom: 0.5vh;
-        font-weight: 300;
-      }
-
-      .editor-field-value {
-        font-size: 2vh;
-        color: rgb(255, 255, 255);
-        font-weight: 400;
-        min-height: 2.5vh;
-      }
-
-      .editor-field-multiline {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .editor-field-multiline .editor-field-value {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        line-height: 1.5;
-        flex: 1;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .editor-field-multiline .editor-field-value::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Hide scrollbar in textarea when in edit mode */
-      .editor-field-multiline textarea {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .editor-field-multiline textarea::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Date and time input picker styling */
-      .editor-field input[type="date"]::-webkit-calendar-picker-indicator,
-      .editor-field input[type="time"]::-webkit-calendar-picker-indicator {
-        cursor: pointer;
-      }
-
-      .editor-actions {
-        margin-top: auto;
-        padding: 2vh 2vw;
-        display: flex;
-        gap: 1vh;
-        flex-direction: column;
-      }
-
-      .editor-btn {
-        width: 100%;
-        padding: 1.2vh 0;
-        background: rgba(255, 255, 255, 0.1);
-        border: none;
-        color: rgba(255, 255, 255, 0.9);
-        font-family: inherit;
-        font-size: 1.8vh;
-        font-weight: 400;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: background 0.1s ease;
-      }
-
-      .editor-btn:hover {
-        background: rgba(255, 255, 255, 0.15);
-      }
-
-      .editor-btn-cancel {
-        background: rgba(255, 165, 0, 0.3);
-        color: rgb(255, 200, 100);
-      }
-
-      .editor-btn-cancel:hover {
-        background: rgba(255, 165, 0, 0.4);
-      }
-
-      .editor-btn-delete {
-        background: rgba(255, 80, 80, 0.3);
-        color: rgb(255, 150, 150);
-      }
-
-      .editor-btn-delete:hover {
-        background: rgba(255, 80, 80, 0.4);
-      }
-
-      .editor-delay-buttons {
-        display: flex;
-        gap: 1vh;
-        padding: 1vh 2vw;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .editor-btn-delay {
-        flex: 1;
-        padding: 1vh 0;
-        background: rgba(100, 150, 255, 0.2);
-        border: none;
-        color: rgba(150, 200, 255, 0.9);
-        font-family: inherit;
-        font-size: 1.6vh;
-        font-weight: 500;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: background 0.2s ease;
-      }
-
-      .editor-btn-delay:hover {
-        background: rgba(100, 150, 255, 0.3);
-      }
-
-      .editor-btn-delay:active {
-        background: rgba(100, 150, 255, 0.4);
       }
     }
 
@@ -2150,6 +2231,66 @@ html, body {
       /* Hide the right panel (focus and announcements) */
       .right-panel {
         display: none;
+      }
+
+      /* Note drawer - fullscreen on mobile like announcements */
+      .right-panel[id="note-drawer"] {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        right: auto;
+        margin-top: 0;
+        border-radius: 0;
+        z-index: 3500;
+        transform: translateX(100%);
+        transition: transform 0.2s ease;
+      }
+
+      .right-panel[id="note-drawer"].is-open {
+        transform: translateX(0);
+      }
+
+      /* Announcement drawer - fullscreen on mobile */
+      .right-panel[id="announcement-drawer"] {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        right: auto;
+        margin-top: 0;
+        border-radius: 0;
+        z-index: 2000;
+        transform: translateX(100%);
+        transition: transform 0.2s ease;
+      }
+
+      .right-panel[id="announcement-drawer"].is-open {
+        transform: translateX(0);
+      }
+
+      /* Make editor drawer fullscreen on mobile */
+      .right-panel-top {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        right: auto;
+        margin-top: 0;
+        border-radius: 0;
+        z-index: 4000;
+        transform: translateX(100%);
+        transition: transform 0.2s ease;
+      }
+
+      .right-panel-top.is-open {
+        transform: translateX(0);
       }
 
       .mode-drawer,
@@ -2481,8 +2622,8 @@ html, body {
 
 .projects-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2vh 2vw;
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  gap: 2vh 1vw;
 }
 
 .projects-empty {
@@ -2512,7 +2653,6 @@ html, body {
   display: flex;
   align-items: center;
   gap: 1.5vw;
-  margin-bottom: 1.5vh;
 }
 
 .project-card-icon {
@@ -2525,19 +2665,21 @@ html, body {
   font-size: 2.8vh;
   font-weight: 500;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;  
+  line-clamp: 2;
+  overflow: hidden; 
 }
 
 .project-card-deadline {
   font-size: 2vh;
-  opacity: 0.8;
-  margin-bottom: 0.5vh;
+  opacity: 0.7;
 }
 
 .project-card-progress {
   font-size: 1.8vh;
+  font-weight: 400;
   opacity: 0.6;
 }
 
@@ -2638,6 +2780,36 @@ body.project-drawer-open .right-panel.is-open {
   background: rgba(0, 0, 0, 0.03);
 }
 
+.project-view-selector {
+  width: 100%;
+  padding: 1vh 3vh 1vh 1vh;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(64, 64, 64, 0.2);
+  color: #101010;
+  font-family: inherit;
+  font-size: 2vh;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%23101010" d="M4 6l4 4 4-4z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.5vh center;
+  background-size: 2vh;
+}
+
+.project-view-selector:focus {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(64, 64, 64, 0.4);
+}
+
+.project-view-selector option {
+  background: white;
+  color: #101010;
+}
+
 .project-field-label {
   font-size: 2vh;
   color: #333333;
@@ -2670,6 +2842,36 @@ body.project-drawer-open .right-panel.is-open {
   font-size: 2vh;
   color: #666;
   background: #f5f5f5;
+}
+
+.project-todos-header {
+  display: flex;
+  align-items: center;
+  height: 4vh;
+  padding: 2% 4% 1%;
+  font-size: 2vh;
+  color: #666;
+  background: #f5f5f5;
+}
+
+.project-todo-col-due-date {
+  width: 12%;
+  flex-shrink: 0;
+  text-align: center;
+  font-weight: 400;
+}
+
+.project-todo-col-checkbox {
+  width: 10%;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.project-todo-col-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 400;
+  padding-left: 2%;
 }
 
 .project-task-col-plan {
@@ -2743,6 +2945,160 @@ font-weight: 500;
   background: #dcdcdc;
 }
 
+.project-task-add-input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2%;
+  font-size: 2.2vh;
+  color: #101010;
+  font-weight: 400;
+  outline: none;
+}
+
+.project-task-add-input:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+  font-weight: 300;
+}
+
+/* Todo list specific styles */
+.project-todo-row,
+.project-todo-row-bright,
+.project-todo-row-dark {
+  display: flex;
+  align-items: center;
+  height: 4vh;
+  margin: 1% 2%;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.project-todo-row-bright {
+  background: #f5f5f5;
+}
+
+.project-todo-row-dark {
+  background: #e9e9e9;
+}
+
+.project-todo-row:hover,
+.project-todo-row-bright:hover,
+.project-todo-row-dark:hover {
+  background: #f1f0f0;
+}
+
+.project-todo-checkbox {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.project-todo-due-date {
+  width: 12%;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 2vh;
+  color: #666;
+  font-weight: 300;
+}
+
+.project-todo-checkbox input[type="checkbox"] {
+  width: 1.5vh;
+  height: 1.5vh;
+  cursor: pointer;
+  accent-color: var(--line-color, #666);
+}
+
+.project-todo-name {
+  flex: 1;
+  font-weight: 300;
+  min-width: 0;
+  padding-left: 2%;
+  font-size: 2.2vh;
+  color: #101010;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.project-todo-add-input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2%;
+  font-size: 2.2vh;
+  color: #101010;
+  outline: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.project-todo-add-input:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+  font-weight: 300;
+}
+
+.project-todo-add-row {
+  cursor: text;
+}
+
+.project-todo-add-row:hover {
+  background: #dcdcdc;
+}
+
+/* Completed todos collapsible section */
+.project-completed-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(64, 64, 64, 0.2);
+  min-height: 0;
+}
+
+/* When completed list is hidden, section should not grow */
+.project-completed-section:has(.project-completed-list[style*="display: none"]) {
+  flex: 0 0 auto;
+}
+
+.project-completed-header {
+  display: flex;
+  align-items: center;
+  padding: 1vh 4%;
+  cursor: pointer;
+  background: #f9f9f9;
+  transition: background 0.2s ease;
+}
+
+.project-completed-header:hover {
+  background: #f0f0f0;
+}
+
+.project-completed-arrow {
+  font-size: 1.8vh;
+  color: #666;
+  margin-right: 1vh;
+  transition: transform 0.2s ease;
+}
+
+.project-completed-title {
+  font-size: 2vh;
+  color: #666;
+  font-weight: 400;
+}
+
+.project-completed-list {
+  flex: 1;
+  overflow-y: auto;
+  background: #fafafa;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.project-completed-list::-webkit-scrollbar {
+  display: none;
+}
+
 .project-task-plan {
   width: 9%;
   font-size: 2.2vh;
@@ -2767,10 +3123,22 @@ font-weight: 500;
   font-size: 2.2vh;
   color: #101010;
   font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   min-width: 0;
+}
+
+.project-task-add-input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2%;
+  font-size: 2.2vh;
+  color: #101010;
+  font-weight: 400;
+  outline: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .project-task-status-dot {
@@ -2864,6 +3232,9 @@ font-weight: 500;
   font-weight: 300;
   font-style: italic;
   outline: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .project-task-add-input:empty::before {
@@ -2952,8 +3323,8 @@ font-weight: 500;
   }
   
   .project-drawer {
-    width: 90vw;
-    right: -90vw;
+    width: 100vw;
+    right: -100vw;
   }
   
   .project-drawer.is-open {
