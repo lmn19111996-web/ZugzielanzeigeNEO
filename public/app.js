@@ -12,6 +12,11 @@
     // Global refresh interval tracking
     let refreshIntervalId = null;
     let isEditingTrain = false;
+    let isEditingProject = false;
+    
+    // Critical mutex lock to prevent race conditions
+    // When true, prevents SSE updates from interrupting saves/fetches
+    let isDataOperationInProgress = false;
     
     // Track focused trains separately for desktop and mobile
     let desktopFocusedTrainId = null;
@@ -478,7 +483,13 @@
     }
 
     // Fetch data from server API
-    async function fetchSchedule() {
+    async function fetchSchedule(forceFetch = false) {
+      // Mutex lock: prevent concurrent fetch operations if not forced
+      if (!forceFetch && isDataOperationInProgress) {
+        console.log('⏸️ fetchSchedule blocked - data operation in progress');
+        return schedule; // Return current schedule without fetching
+      }
+      
       try {
         // Always fetch local schedule
         const fetchPromises = [
@@ -1474,6 +1485,10 @@
       if (deleteBtn) {
         deleteBtn.addEventListener('click', async () => {
           if (confirm('Möchten Sie dieses Projekt wirklich löschen?')) {
+            // Set editing flag and data lock
+            isEditingProject = true;
+            isDataOperationInProgress = true;
+            
             // Remove project
             schedule.projects = schedule.projects.filter(p => p._uniqueId !== project._uniqueId);
             // Make trains projectless (orphaned) instead of deleting them
@@ -1483,10 +1498,14 @@
               }
             });
             await saveSchedule();
-            const freshSchedule = await fetchSchedule();
+            const freshSchedule = await fetchSchedule(true);
             Object.assign(schedule, freshSchedule);
             closeProjectDrawer();
             renderProjectsPage();
+            
+            // Reset flags
+            isEditingProject = false;
+            isDataOperationInProgress = false;
           }
         });
       }
@@ -1527,6 +1546,9 @@
             }
             
             const save = async () => {
+              // Set data operation lock
+              isDataOperationInProgress = true;
+              
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
@@ -1540,7 +1562,9 @@
               });
               
               await saveSchedule();
-              const freshSchedule = await fetchSchedule();
+              
+              // Force fetch to get latest data
+              const freshSchedule = await fetchSchedule(true);
               Object.assign(schedule, freshSchedule);
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
@@ -1550,6 +1574,10 @@
                 renderProjectDrawer(freshProject);
               }
               renderProjectsPage();
+              
+              // Reset flags after save completes
+              isEditingProject = false;
+              isDataOperationInProgress = false;
             };
             
             input.addEventListener('blur', save);
@@ -1569,6 +1597,9 @@
             f.appendChild(input);
           });
           
+          // Set editing flag when entering edit mode
+          isEditingProject = true;
+          
           // Focus the clicked field's input
           setTimeout(() => {
             const thisInput = field.querySelector('input');
@@ -1584,6 +1615,11 @@
       if (symbol) {
         symbol.addEventListener('click', async function(e) {
           e.stopPropagation();
+          
+          // Set editing flag and data lock
+          isEditingProject = true;
+          isDataOperationInProgress = true;
+          
           const currentLine = project.linie || 's1';
           const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
           
@@ -1593,7 +1629,7 @@
             
             project.linie = newLine.trim().toLowerCase();
             await saveSchedule();
-            const freshSchedule = await fetchSchedule();
+            const freshSchedule = await fetchSchedule(true);
             Object.assign(schedule, freshSchedule);
             // Re-fetch the project from the fresh schedule
             const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
@@ -1604,6 +1640,10 @@
             }
             renderProjectsPage();
           }
+          
+          // Reset flags
+          isEditingProject = false;
+          isDataOperationInProgress = false;
         });
       }
       
@@ -1615,6 +1655,10 @@
             e.preventDefault();
             const taskName = addInput.textContent.trim();
             if (taskName) {
+              // Set editing flag and data lock
+              isEditingProject = true;
+              isDataOperationInProgress = true;
+              
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
@@ -1628,7 +1672,7 @@
               // Add to schedule (createNewTrainEntry doesn't automatically add it for project tasks)
               schedule.spontaneousEntries.push(newTrain);
               await saveSchedule();
-              const freshSchedule = await fetchSchedule();
+              const freshSchedule = await fetchSchedule(true);
               Object.assign(schedule, freshSchedule);
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
@@ -1642,6 +1686,10 @@
                 const nextAddInput = document.querySelector('.project-task-add-input');
                 if (nextAddInput) nextAddInput.focus();
               }, 100);
+              
+              // Reset flags
+              isEditingProject = false;
+              isDataOperationInProgress = false;
             }
           }
         });
@@ -1667,6 +1715,10 @@
             e.preventDefault();
             const todoName = todoAddInput.textContent.trim();
             if (todoName) {
+              // Set editing flag and data lock
+              isEditingProject = true;
+              isDataOperationInProgress = true;
+              
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
@@ -1683,7 +1735,7 @@
               // Add to schedule
               schedule.spontaneousEntries.push(newTodo);
               await saveSchedule();
-              const freshSchedule = await fetchSchedule();
+              const freshSchedule = await fetchSchedule(true);
               Object.assign(schedule, freshSchedule);
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
@@ -1697,6 +1749,10 @@
                 const nextTodoInput = document.querySelector('.project-todo-add-input');
                 if (nextTodoInput) nextTodoInput.focus();
               }, 100);
+              
+              // Reset flags
+              isEditingProject = false;
+              isDataOperationInProgress = false;
             }
           }
         });
@@ -1728,12 +1784,16 @@
             const taskToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
             const taskName = taskToDelete ? taskToDelete.ziel : 'Aufgabe';
             if (confirm(`Aufgabe "${taskName}" löschen?`)) {
+              // Set editing flag and data lock
+              isEditingProject = true;
+              isDataOperationInProgress = true;
+              
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
               schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
               await saveSchedule();
-              const freshSchedule = await fetchSchedule();
+              const freshSchedule = await fetchSchedule(true);
               Object.assign(schedule, freshSchedule);
               // Re-fetch the project from the fresh schedule
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
@@ -1742,6 +1802,10 @@
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
+              
+              // Reset flags
+              isEditingProject = false;
+              isDataOperationInProgress = false;
             }
           });
         }
@@ -1769,12 +1833,16 @@
             e.stopPropagation();
             const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
             if (todo) {
+              // Set editing flag and data lock
+              isEditingProject = true;
+              isDataOperationInProgress = true;
+              
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
               todo.todoChecked = checkbox.checked;
               await saveSchedule();
-              const freshSchedule = await fetchSchedule();
+              const freshSchedule = await fetchSchedule(true);
               Object.assign(schedule, freshSchedule);
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
@@ -1782,6 +1850,10 @@
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
+              
+              // Reset flags
+              isEditingProject = false;
+              isDataOperationInProgress = false;
             }
           });
         }
@@ -1792,12 +1864,16 @@
           removeBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             
+            // Set editing flag and data lock
+            isEditingProject = true;
+            isDataOperationInProgress = true;
+            
             // Preserve completed section state before re-rendering
             const wasOpen = project.completedSectionOpen;
             
             schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== todoId);
             await saveSchedule();
-            const freshSchedule = await fetchSchedule();
+            const freshSchedule = await fetchSchedule(true);
             Object.assign(schedule, freshSchedule);
             const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
             if (freshProject) {
@@ -1805,6 +1881,10 @@
               freshProject.completedSectionOpen = wasOpen;
               renderProjectDrawer(freshProject);
             }
+            
+            // Reset flags
+            isEditingProject = false;
+            isDataOperationInProgress = false;
           });
         }
         
@@ -3240,14 +3320,15 @@
           
           // Only save and exit if focus left all input fields
           if (!isStillInInputs) {
-            isEditingTrain = false; // Resume refresh
-            
             // SAVE SCROLL POSITION BEFORE ANY RENDERING
             const trainListEl = document.getElementById('train-list');
             const savedScroll = trainListEl ? trainListEl.scrollTop : 0;
             
-            // Auto-save
+            // Auto-save (will set isDataOperationInProgress lock)
             await saveSchedule();
+            
+            // Reset editing flag AFTER save completes
+            isEditingTrain = false;
             // Immediately re-process and re-render with the updated schedule data
             processTrainData(schedule);
             renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
@@ -3536,6 +3617,10 @@
       // Helper function to save all field changes and exit edit mode
       const saveAllFields = async () => {
         console.log('💾 saveAllFields called for train:', train._uniqueId);
+        
+        // Set lock to prevent concurrent operations
+        isDataOperationInProgress = true;
+        
         const editableFields = panel.querySelectorAll('.editor-field');
         let hasChanges = false;
         
@@ -3599,7 +3684,8 @@
           await saveSchedule();
           
           // CRITICAL: Re-fetch to rebuild trains/localTrains arrays with updated data
-          const freshSchedule = await fetchSchedule();
+          // Force fetch even during data operation lock since we control this flow
+          const freshSchedule = await fetchSchedule(true);
           
           // Process with the fresh schedule data
           processTrainData(freshSchedule);
@@ -3629,6 +3715,9 @@
         } else {
           console.error('Could not find updated train in processedTrainData!');
         }
+        
+        // Release data operation lock
+        isDataOperationInProgress = false;
       };
       
       // ============ LEGACY-STYLE EDIT MECHANISM ============
@@ -5484,8 +5573,6 @@
           );
           
           if (!isStillInInputs) {
-            isEditingTrain = false;
-            
             // Clear existing debounce timer
             if (mobileEditDebounceTimer) {
               clearTimeout(mobileEditDebounceTimer);
@@ -5519,6 +5606,8 @@
                 }, 100);
                 
                 pendingMobileSave = false;
+                // Reset editing flag AFTER save completes
+                isEditingTrain = false;
                 console.log('Mobile field edit auto-saved');
               }
             }, 800);
@@ -5540,6 +5629,7 @@
       }
       
       saveInProgress = true;
+      isDataOperationInProgress = true; // Lock data operations during save
       
       try {
         // Show save status indicator
@@ -5617,6 +5707,7 @@
         alert('Fehler beim Speichern: ' + error.message);
       } finally {
         saveInProgress = false;
+        isDataOperationInProgress = false; // Release lock after save completes
         
         // If another save was queued, execute it now
         if (saveQueued) {
@@ -6835,8 +6926,9 @@
       // Set up 60-second auto-refresh for ALL modes (DB API and local)
       console.log('Starting universal 60-second auto-refresh interval');
       refreshIntervalId = setInterval(async () => {
-        if (isEditingTrain) {
-          console.log('Skipping refresh - train is being edited');
+        // Block refresh if any edit operation or data operation is in progress
+        if (isEditingTrain || isEditingProject || isDataOperationInProgress) {
+          console.log('⏸️ Skipping refresh - edit or data operation in progress');
           return;
         }
         console.log('\u23F0 Auto-refresh: Fetching latest schedule data');
@@ -6860,9 +6952,10 @@
       // Complete save status indicator (if saving)
       completeSaveStatus();
       
-      // Skip refresh if editing
-      if (isEditingTrain) {
-        console.log('Skipping SSE refresh - train is being edited');
+      // CRITICAL: Block SSE updates if ANY edit or data operation is in progress
+      // This prevents race conditions where SSE overwrites user changes
+      if (isEditingTrain || isEditingProject || isDataOperationInProgress) {
+        console.log('⏸️ Skipping SSE refresh - edit or data operation in progress');
         return;
       }
       
