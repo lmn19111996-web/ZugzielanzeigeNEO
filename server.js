@@ -799,6 +799,14 @@ app.get('/api/schedule', async (req, res) => {
     const content = await fsPromises.readFile(filePath, 'utf8');
     const data = JSON.parse(content);
     
+    // Ensure metadata exists
+    if (!data._meta) {
+      data._meta = {
+        version: Date.now(),
+        lastSaved: new Date().toISOString()
+      };
+    }
+    
     // Cache the data
     scheduleCache = data;
     scheduleCacheTime = Date.now();
@@ -822,7 +830,48 @@ app.post('/api/schedule', async (req, res) => {
     if (!body || typeof body !== 'object') {
       return res.status(400).json({ error: 'Invalid JSON body' });
     }
+    
+    // Extract client's old and new versions (client-authoritative model)
+    const clientOldVersion = body._meta?.oldVersion;
+    const clientNewVersion = body._meta?.newVersion;
+    
+    // Load current data for version comparison
+    const filePath = path.join(PUBLIC_DIR, 'data.json');
+    let currentData = scheduleCache;
+    if (!currentData) {
+      try {
+        const content = await fsPromises.readFile(filePath, 'utf8');
+        currentData = JSON.parse(content);
+        // Ensure metadata
+        if (!currentData._meta) {
+          currentData._meta = { version: Date.now(), lastSaved: new Date().toISOString() };
+        }
+      } catch (err) {
+        // File doesn't exist yet, create new
+        currentData = { _meta: { version: Date.now(), lastSaved: new Date().toISOString() } };
+      }
+    }
+    
+    // Version validation: Check if client's old version matches server's current version
+    if (clientOldVersion !== undefined && clientOldVersion !== currentData._meta.version) {
+      console.log(`⚠️ Version conflict: clientOld=${clientOldVersion}, server=${currentData._meta.version}`);
+      return res.status(409).json({
+        ok: false,
+        conflict: true,
+        message: 'Data was modified by another user',
+        serverVersion: currentData._meta.version,
+        serverData: currentData
+      });
+    }
+    
+    // Accept client's new version (client-authoritative)
+    const newVersion = clientNewVersion || Date.now(); // Fallback to server-generated if not provided
+    
     const toSave = {
+      _meta: {
+        version: newVersion,
+        lastSaved: new Date().toISOString()
+      },
       fixedSchedule: Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [],
       spontaneousEntries: Array.isArray(body.spontaneousEntries) ? body.spontaneousEntries : [],
       trains: Array.isArray(body.trains) ? body.trains : [],
@@ -840,17 +889,23 @@ app.post('/api/schedule', async (req, res) => {
       logTrainHistory(toSave.trains, 'legacy');
     }
     
-    const filePath = path.join(PUBLIC_DIR, 'data.json');
     await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
     
-    // Invalidate cache after saving
+    // Update cache
     scheduleCache = toSave;
     scheduleCacheTime = Date.now();
     
-    // Notify listeners
-    try { broadcastUpdate('manual-save'); } catch {}
-    res.json({ ok: true, savedAt: new Date().toISOString() });
+    // Notify listeners with new version
+    try { broadcastUpdate('manual-save', newVersion); } catch {}
+    
+    console.log(`✅ Schedule saved: ${clientOldVersion} → ${newVersion}`);
+    res.json({ 
+      ok: true, 
+      version: newVersion,
+      savedAt: toSave._meta.lastSaved
+    });
   } catch (e) {
+    console.error('Save error:', e);
     res.status(500).json({ error: e.message || 'Unexpected error' });
   }
 });
@@ -919,14 +974,25 @@ app.get('/events', (req, res) => {
   });
 });
 
-function broadcastUpdate(source = 'unknown') {
+function broadcastUpdate(source = 'unknown', version = null) {
   const stack = new Error().stack.split('\n')[2].trim();
   console.log(`📡 Broadcasting SSE update to ${clients.size} client(s) - Source: ${source}`);
   console.log(`   Called from: ${stack}`);
+  
+  const payload = {
+    time: new Date().toISOString()
+  };
+  
+  // Include version if provided
+  if (version !== null) {
+    payload.version = version;
+    console.log(`   Version: ${version}`);
+  }
+  
   for (const { res } of clients) {
     try {
       res.write(`event: update\n`);
-      res.write(`data: {"time":"${new Date().toISOString()}"}\n\n`);
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
     } catch {
       // connection might be closed; let close handler clean up
     }

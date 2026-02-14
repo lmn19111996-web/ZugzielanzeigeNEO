@@ -177,10 +177,10 @@
 {"trainKey":"s7|this one should have 11.2 as date tbh|10:10|2026-02-11","linie":"S7","ziel":"This one should have 11.2 as date tbh","plan":"10:10","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s6|this one should have 11.2 as date tbh|10:10|2026-02-11","linie":"S6","ziel":"This one should have 11.2 as date tbh","plan":"10:10","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s7|this one shfeould have 11.2 as date tbh|10:10|2026-02-11","linie":"S7","ziel":"This one shfeould have 11.2 as date tbh","plan":"10:10","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
-{"trainKey":"s7|this one should have 11.2 as date tbh|10:10|2026-02-12","linie":"S7","ziel":"This one should have 11.2 as date tbh","plan":"10:10","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"s7|this one should have 11.2 as date tbh|10:10|2026-02-12","linie":"S7","ziel":"This one should have 11.2 as date tbh","plan":"10:10","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-12","canceled":true}
 {"trainKey":"s25|however this one shouldnt assume|12:20|2026-02-11","linie":"S25","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s5|however this one shouldnt assume|12:20|2026-02-11","linie":"S5","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
-{"trainKey":"s6|however this one shouldnt assume|12:20|2026-02-11","linie":"S6","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
+{"trainKey":"s6|however this one shouldnt assume|12:20|2026-02-11","linie":"S6","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:25","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s2|however this one shouldnt assume|12:20|2026-02-11","linie":"S2","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s|however this one shouldnt assume|12:20|2026-02-11","linie":"S","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s4|help|10:00|2026-02-11","linie":"s4","ziel":"Help","plan":"10:00","actual":"10:00","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
@@ -198,9 +198,42 @@
 {"trainKey":"s1|omg hiiii|10:10|2026-02-12","linie":"S1","ziel":"Omg hiiii","plan":"10:10","actual":"20:00","dauer":100,"stops":"","date":"2026-02-12","canceled":false}
 {"trainKey":"s5|slay|unknown|unknown","linie":"S5","ziel":"Slay","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"s5|slay|10:10|2026-02-12","linie":"S5","ziel":"Slay","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-12","canceled":false}
-{"trainKey":"s5|slay|10:10|2026-02-13","linie":"S5","ziel":"Slay","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s5|slay|10:10|2026-02-13","linie":"S5","ziel":"Slay","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-13","canceled":true}
 {"trainKey":"s1|hallo|unknown|unknown","linie":"S1","ziel":"Hallo","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"s1|hallo|10:10|2026-02-12","linie":"S1","ziel":"Hallo","plan":"10:10","actual":"10:10","dauer":"","stops":"","date":"2026-02-12","canceled":false}
 {"trainKey":"s25|die|21:29|2026-02-13","linie":"s25","ziel":"Die","plan":"21:29","actual":"21:29","dauer":20,"stops":"","date":"2026-02-13","canceled":false}
 {"trainKey":"s5|regerg|unknown|unknown","linie":"S5","ziel":"regerg","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"s25|this one shouldnt have a planned time i think1|20:20|2026-02-11","linie":"S25","ziel":"This one shouldnt have a planned time i think1","plan":"20:20","actual":"20:20","dauer":100,"stops":"","date":"2026-02-11","canceled":false}
+{"trainKey":"s3|my name is pink and its nice to meet you|unknown|unknown","linie":"S3","ziel":"my name is pink and its nice to meet you","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s3|youre recommended to me by some people|unknown|2026-02-12","linie":"S3","ziel":"youre recommended to me by some people","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"s3|hey oooooh is this illegal|unknown|2026-02-13","linie":"S3","ziel":"hey oooooh is this illegal","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s7|hey ooooh it feels illegal|unknown|unknown","linie":"S7","ziel":"hey ooooh it feels illegal","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|i've suffered quite a few times with paranoia|unknown|unknown","linie":"S7","ziel":"i've suffered quite a few times with paranoia","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|oh whats your name i dont know what i should call ya|unknown|unknown","linie":"S7","ziel":"oh whats your name i dont know what i should call ya","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|hell oooh heres 20 for ya|unknown|unknown","linie":"S7","ziel":"hell oooh heres 20 for ya","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|hey ooj we can hide around the corner|unknown|unknown","linie":"S7","ziel":"hey ooj we can hide around the corner","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|omg is this reallllll|unknown|unknown","linie":"S7","ziel":"omg is this reallllll","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|this is so fun ykkkkk|unknown|unknown","linie":"S7","ziel":"this is so fun ykkkkk","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|yall im so good|unknown|unknown","linie":"S7","ziel":"yall im so good","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|at making time tables and stuffs|unknown|unknown","linie":"S7","ziel":"at making time tables and stuffs","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|omg yay|unknown|unknown","linie":"S7","ziel":"omg yay","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|mom look at me im flying|unknown|unknown","linie":"S7","ziel":"mom look at me im flying","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|lol help all my todos are gone|unknown|unknown","linie":"S7","ziel":"lol help all my todos are gone","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|sf|unknown|unknown","linie":"S7","ziel":"sf","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|f|unknown|unknown","linie":"S7","ziel":"f","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|h|unknown|unknown","linie":"S7","ziel":"h","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|dt|unknown|unknown","linie":"S7","ziel":"dt","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|th|unknown|unknown","linie":"S7","ziel":"th","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|fzt|unknown|unknown","linie":"S7","ziel":"fzt","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|ert|unknown|unknown","linie":"S7","ziel":"ert","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|tzh|unknown|unknown","linie":"S7","ziel":"tzh","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|jr|unknown|unknown","linie":"S7","ziel":"jr","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|zj|unknown|unknown","linie":"S7","ziel":"zj","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|m|unknown|unknown","linie":"S7","ziel":"m","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|nt|unknown|unknown","linie":"S7","ziel":"nt","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|mtzjmzku|unknown|unknown","linie":"S7","ziel":"mtzjmzku","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|zki|unknown|unknown","linie":"S7","ziel":"zki","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|k|unknown|unknown","linie":"S7","ziel":"k","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s7|dgf|unknown|unknown","linie":"S7","ziel":"dgf","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"note|give it a name|unknown|2026-02-12","linie":"NOTE","ziel":"give it a name","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"note|gave you another chance|unknown|2026-02-12","linie":"NOTE","ziel":"gave you another chance","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-12","canceled":false}

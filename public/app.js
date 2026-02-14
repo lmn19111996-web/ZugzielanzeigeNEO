@@ -40,6 +40,10 @@
     
     // Global schedule object (like InputEnhanced)
     let schedule = {
+      _meta: {
+        version: 0,
+        lastSaved: null
+      },
       fixedSchedule: [],
       spontaneousEntries: [],
       trains: [],
@@ -554,6 +558,22 @@
           };
           
           // Store global schedule object (like InputEnhanced) with unique IDs
+          // Preserve metadata from server
+          if (data._meta) {
+            schedule._meta = {
+              version: data._meta.version,
+              lastSaved: data._meta.lastSaved
+            };
+            console.log(`📦 Loaded schedule version ${data._meta.version}`);
+          } else {
+            // Initialize metadata if missing
+            schedule._meta = {
+              version: Date.now(),
+              lastSaved: new Date().toISOString()
+            };
+            console.log('📦 Initialized new schedule metadata');
+          }
+          
           schedule.fixedSchedule = (data.fixedSchedule || []).map(assignId);
           schedule.spontaneousEntries = (data.spontaneousEntries || []).map(assignId);
           schedule.trains = (data.trains || []).map(assignId);
@@ -3324,25 +3344,29 @@
             const trainListEl = document.getElementById('train-list');
             const savedScroll = trainListEl ? trainListEl.scrollTop : 0;
             
-            // Auto-save (will set isDataOperationInProgress lock)
-            await saveSchedule();
-            
-            // Reset editing flag AFTER save completes
-            isEditingTrain = false;
-            // Immediately re-process and re-render with the updated schedule data
-            processTrainData(schedule);
-            renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
-            
-            // Re-render focus panel and THEN restore scroll
+            // Get train ID before any operations
             const trainId = train._uniqueId;
-            const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
+            
+            // OPTIMISTIC UI: Render immediately, then save in background
+            // 1. Refresh UI with the changes we just made
+            refreshUIOnly();
+            
+            // 2. Re-render focus panel with fresh train reference
+            const updatedTrain = processedTrainData.allTrains.find(t => 
               t._uniqueId === trainId
             );
             if (updatedTrain) {
               renderFocusMode(updatedTrain);
             }
             
-            // RESTORE SCROLL POSITION AFTER EVERYTHING
+            // 3. Save in background - no await, no callback needed
+            //    When save succeeds, version is updated automatically, no UI refresh needed
+            saveSchedule();
+            
+            // 4. Reset editing flag immediately (edit is done)
+            isEditingTrain = false;
+            
+            // RESTORE SCROLL POSITION AFTER RENDERING
             setTimeout(() => {
               if (trainListEl && savedScroll > 0) {
                 trainListEl.scrollTop = savedScroll;
@@ -3680,18 +3704,8 @@
           // Update the schedule train with all changes
           Object.assign(scheduleTrain, train);
           
-          // Save to server/localStorage
-          await saveSchedule();
-          
-          // CRITICAL: Re-fetch to rebuild trains/localTrains arrays with updated data
-          // Force fetch even during data operation lock since we control this flow
-          const freshSchedule = await fetchSchedule(true);
-          
-          // Process with the fresh schedule data
-          processTrainData(freshSchedule);
-          
-          // Re-render the train list to show changes
-          renderTrainsIfAppropriate(); // Only render if appropriate workspace
+          // OPTIMISTIC UI: Render immediately, then save in background
+          refreshUIOnly();
           
           // Refresh note panel if it's open and this is a note
           const isNote = train.type === 'note';
@@ -3700,6 +3714,9 @@
             console.log('  Refreshing note panel');
             renderNotePanel();
           }
+          
+          // Save in background - no await, no callback needed
+          saveSchedule();
         } else {
           console.log('  No changes detected');
         }
@@ -4093,10 +4110,24 @@
               break;
           }
           
-          // Debounce only the save operation to prevent multiple rapid saves
+          // Debounce to prevent multiple rapid operations
           clearTimeout(delayButtonTimeout);
-          delayButtonTimeout = setTimeout(async () => {
-            await saveSchedule();
+          delayButtonTimeout = setTimeout(() => {
+            // OPTIMISTIC UI: Render immediately, then save in background
+            // 1. Refresh UI with the delay change
+            refreshUIOnly();
+            
+            // 2. Update the editor drawer with fresh train reference
+            const updatedTrainAfterDelay = processedTrainData.allTrains.find(t => 
+              t._uniqueId === trainId
+            );
+            
+            if (updatedTrainAfterDelay) {
+              renderFocusMode(updatedTrainAfterDelay);
+            }
+            
+            // 3. Save in background - no await, no callback needed
+            saveSchedule();
           }, 500);
         });
       }
@@ -4129,33 +4160,53 @@
               // Toggle canceled state
               train.canceled = !train.canceled;
               scheduleTrain.canceled = train.canceled;
-              await saveSchedule();
-              renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
-              renderFocusMode(scheduleTrain);
+              
+              // OPTIMISTIC UI: Render immediately, then save in background
+              // 1. Refresh UI with cancel state change
+              refreshUIOnly();
+              
+              // 2. Find the updated train and re-render focus mode
+              const updatedTrainAfterCancel = processedTrainData.allTrains.find(t => 
+                t._uniqueId === trainId
+              );
+              
+              if (updatedTrainAfterCancel) {
+                renderFocusMode(updatedTrainAfterCancel);
+              } else {
+                console.error('Could not find train after cancel/reactivate');
+              }
+              
+              // 3. Save in background - no await, no callback needed
+              saveSchedule();
               break;
               
             case 'delete':
               // Remove from schedule with confirmation
               if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                // Remove from schedule
                 const index = sourceArray.indexOf(scheduleTrain);
                 if (index >= 0) {
                   sourceArray.splice(index, 1);
                 }
-                await saveSchedule();
+                
+                // OPTIMISTIC UI: Render immediately, then save in background
+                // 1. Refresh UI with train removed
+                refreshUIOnly();
+                
+                // 2. Clear focus panel
                 desktopFocusedTrainId = null;
                 panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
                 closeEditorDrawer();
-                renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
                 
-                // Refresh note panel if this was a note
+                // 3. Refresh note panel if this was a note
                 const isNote = train.type === 'note';
                 const noteDrawer = document.getElementById('note-drawer');
                 if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
-                  // Re-fetch and process to update notes list
-                  const freshSchedule = await fetchSchedule();
-                  processTrainData(freshSchedule);
                   renderNotePanel();
                 }
+                
+                // 4. Save in background - no await, no callback needed
+                saveSchedule();
               }
               break;
           }
@@ -5582,33 +5633,40 @@
             pendingMobileSave = true;
             
             // Schedule the actual save after 800ms of no input
-            mobileEditDebounceTimer = setTimeout(async () => {
+            mobileEditDebounceTimer = setTimeout(() => {
               if (pendingMobileSave) {
                 const trainListEl = document.getElementById('train-list');
                 const savedScroll = trainListEl ? trainListEl.scrollTop : 0;
                 
-                await saveSchedule();
-                processTrainData(schedule);
-                renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
-                
+                // Get train ID before operations
                 const trainId = train._uniqueId;
-                const updatedTrain = [...schedule.fixedSchedule, ...schedule.spontaneousEntries].find(t => 
+                
+                // OPTIMISTIC UI: Render immediately, then save in background
+                // 1. Refresh UI with changes
+                refreshUIOnly();
+                
+                // 2. Find updated train and re-render popup
+                const updatedTrain = processedTrainData.allTrains.find(t => 
                   t._uniqueId === trainId
                 );
                 if (updatedTrain) {
                   renderMobileFocusPopup(updatedTrain);
                 }
                 
+                // 3. Restore scroll
                 setTimeout(() => {
                   if (trainListEl && savedScroll > 0) {
                     trainListEl.scrollTop = savedScroll;
                   }
                 }, 100);
                 
+                // 4. Save in background - no await, no callback needed
+                saveSchedule();
+                
+                // 5. Reset flags immediately (edit is done)
                 pendingMobileSave = false;
-                // Reset editing flag AFTER save completes
                 isEditingTrain = false;
-                console.log('Mobile field edit auto-saved');
+                console.log('Mobile field edit applied (saving in background)');
               }
             }, 800);
           }
@@ -5647,9 +5705,21 @@
         schedule.spontaneousEntries.forEach(autoFillActual);
         schedule.trains.forEach(autoFillActual);
         
+        // CLIENT GENERATES NEW VERSION (client-authoritative)
+        const oldVersion = schedule._meta.version;
+        const newVersion = Date.now();
+        
+        // OPTIMISTICALLY update local version BEFORE sending
+        // This prevents SSE race condition where broadcast arrives before response
+        schedule._meta.version = newVersion;
+        
         // Filter: Only save trains that have a line number
         // AND ensure proper data format: fixed schedules have weekday only, spontaneous have date only
         const dataToSave = {
+          _meta: {
+            oldVersion: oldVersion,  // For server validation
+            newVersion: newVersion    // Client's new version
+          },
           fixedSchedule: schedule.fixedSchedule
             .filter(t => t.linie && t.linie.trim() !== '')
             .map(t => {
@@ -5686,7 +5756,7 @@
           })
         };
         
-        console.log('💾 Saving schedule:', {
+        console.log('💾 Saving schedule:', `${oldVersion} → ${newVersion}`, {
           fixedSchedule: dataToSave.fixedSchedule.length,
           spontaneousEntries: dataToSave.spontaneousEntries.length,
           projects: dataToSave.projects.length
@@ -5698,9 +5768,35 @@
           body: JSON.stringify(dataToSave)
         });
 
-        if (!res.ok) throw new Error('Failed to save schedule');
-
-        // Server will broadcast update event via SSE, which will trigger auto re-render
+        // Handle version conflict
+        if (res.status === 409) {
+          const conflict = await res.json();
+          console.error('⚠️ Version conflict detected:', conflict);
+          // Rollback optimistic version update
+          schedule._meta.version = oldVersion;
+          await handleVersionConflict(conflict);
+          return;
+        }
+        
+        if (!res.ok) {
+          // Rollback optimistic version update on error
+          schedule._meta.version = oldVersion;
+          throw new Error('Failed to save schedule');
+        }
+        
+        // Server confirms our version - we're already updated
+        const result = await res.json();
+        
+        // Handle out-of-order responses: only update if response is for current/newer version
+        if (result.version >= schedule._meta.version) {
+          schedule._meta.lastSaved = result.savedAt;
+          console.log(`✅ Save confirmed: version ${result.version}`);
+        } else {
+          console.warn(`⚠️ Ignoring delayed response for older version ${result.version} (current: ${schedule._meta.version})`);
+        }
+        
+        // NO fetch needed - we're already up to date!
+        // Server will broadcast SSE to other clients only
 
       } catch (error) {
         console.error('Error saving schedule:', error);
@@ -5716,6 +5812,109 @@
           await saveSchedule();
         }
       }
+    }
+
+    // Handle version conflict - server wins strategy
+    async function handleVersionConflict(conflict) {
+      console.warn('⚠️ Version conflict! Server version:', conflict.serverVersion, 'Local version:', schedule._meta.version);
+      
+      // Simple strategy: Server wins (replace local with server data)
+      const serverData = conflict.serverData;
+      
+      // Replace entire schedule with server data
+      Object.assign(schedule, serverData);
+      
+      // Re-process and re-render everything (no fetch needed - we have server data)
+      processTrainData(schedule);
+      refreshUIOnly();
+      
+      // Notify user
+      alert('⚠️ Deine Änderungen wurden von einer anderen Sitzung überschrieben.');
+    }
+
+    // Helper function to refresh UI without fetching
+    // Use this after successful saves when we already have the latest data
+    function refreshUIOnly() {
+      console.log('🔄 Refreshing UI (no fetch needed)...');
+      
+      // CRITICAL: Regenerate schedule.trains from fixedSchedule + spontaneousEntries
+      // processTrainData expects schedule.trains to exist!
+      regenerateTrainsFromSchedule();
+      
+      // Reprocess train data to rebuild computed arrays
+      processTrainData(schedule);
+      
+      // Re-render all affected UI components
+      if (currentWorkspaceMode !== 'projects') {
+        renderTrainsIfAppropriate(); // Renders headline + train list/occupancy
+        renderComprehensiveAnnouncementPanel();
+      } else {
+        // In projects mode, re-render project view
+        renderProjectsPage();
+      }
+      
+      console.log('✅ UI refreshed');
+    }
+    
+    // Helper to regenerate schedule.trains and schedule.localTrains from fixedSchedule + spontaneousEntries
+    function regenerateTrainsFromSchedule() {
+      const now = new Date();
+      const fixedTrainsForDays = [];
+      
+      // Expand fixedSchedule for next 7 days
+      for (let i = 0; i < 7; i++) {
+        const targetDate = new Date(now);
+        targetDate.setDate(targetDate.getDate() + i);
+        const dateStr = targetDate.toLocaleDateString('sv-SE');
+        const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][targetDate.getDay()];
+        
+        const fixedForDay = (schedule.fixedSchedule || []).filter(t => t.weekday === weekday);
+        const fixedAsTrains = fixedForDay.map(t => ({
+          ...t,
+          date: dateStr,
+          source: 'local',
+          isFixedSchedule: true,
+          _uniqueId: t._uniqueId // Preserve unique ID
+        }));
+        fixedTrainsForDays.push(...fixedAsTrains);
+      }
+      
+      // Add spontaneous entries
+      const spontaneousAll = (schedule.spontaneousEntries || []).map(t => ({
+        ...t,
+        source: 'local',
+        _uniqueId: t._uniqueId // Preserve unique ID
+      }));
+      
+      // Update schedule.trains and schedule.localTrains
+      schedule.trains = [...fixedTrainsForDays, ...spontaneousAll];
+      schedule.localTrains = [...fixedTrainsForDays, ...spontaneousAll];
+    }
+
+    // Helper function to refresh data and update all UI panels
+    // Use this when we need to fetch fresh data (version mismatch, conflicts, etc.)
+    async function refreshDataAndUI() {
+      console.log('🔄 Refreshing data and UI...');
+      
+      // Force fetch latest data (bypasses lock check)
+      const freshSchedule = await fetchSchedule(true);
+      
+      // Update global schedule with fresh data
+      Object.assign(schedule, freshSchedule);
+      
+      // Reprocess train data to rebuild computed arrays
+      processTrainData(schedule);
+      
+      // Re-render all affected UI components
+      if (currentWorkspaceMode !== 'projects') {
+        renderTrainsIfAppropriate(); // Renders headline + train list/occupancy
+        renderComprehensiveAnnouncementPanel();
+      } else {
+        // In projects mode, re-render project view
+        renderProjectsPage();
+      }
+      
+      console.log('✅ Data and UI refreshed');
     }
 
     // Delete train from schedule
@@ -6923,100 +7122,151 @@
         refreshIntervalId = null;
       }
       
-      // Set up 60-second auto-refresh for ALL modes (DB API and local)
-      console.log('Starting universal 60-second auto-refresh interval');
+      // Set up routine version check polling (30s interval)
+      // Verifies we're in sync with server, only updates UI if version mismatch
+      console.log('Starting routine version check polling (30s interval)');
       refreshIntervalId = setInterval(async () => {
-        // Block refresh if any edit operation or data operation is in progress
-        if (isEditingTrain || isEditingProject || isDataOperationInProgress) {
-          console.log('⏸️ Skipping refresh - edit or data operation in progress');
-          return;
+        try {
+          // Fetch schedule to check version
+          const res = await fetch('/api/schedule');
+          if (!res.ok) return;
+          
+          const serverData = await res.json();
+          const serverVersion = serverData._meta?.version;
+          
+          // VERSION CHECK: Only update if server has newer version
+          if (serverVersion && serverVersion > schedule._meta.version) {
+            console.log(`🔄 Polling detected newer version: local=${schedule._meta.version}, server=${serverVersion} - Updating...`);
+            
+            // Update schedule and regenerate
+            Object.assign(schedule, serverData);
+            regenerateTrainsFromSchedule();
+            processTrainData(schedule);
+            
+            // Re-render UI
+            if (currentWorkspaceMode !== 'projects') {
+              renderTrainsIfAppropriate();
+              renderComprehensiveAnnouncementPanel();
+            } else {
+              renderProjectsPage();
+            }
+            checkTrainArrivals();
+          }
+          // else: Version matches - silent success, no action needed
+          
+          // Also poll DB API if station selected
+          if (currentEva) {
+            const dbRes = await fetch(`/api/db-departures?eva=${currentEva}`);
+            if (!dbRes.ok) return;
+            
+            const dbData = await dbRes.json();
+            const dbTrains = (dbData.trains || []).map(t => ({
+              ...t,
+              source: 'db-api'
+            }));
+            
+            // Update display with DB trains
+            schedule.trains = dbTrains;
+            processTrainData(schedule);
+            renderTrainsIfAppropriate();
+            renderComprehensiveAnnouncementPanel();
+            checkTrainArrivals();
+          }
+        } catch (error) {
+          console.error('❌ Polling error:', error);
         }
-        console.log('\u23F0 Auto-refresh: Fetching latest schedule data');
-        const schedule = await fetchSchedule();
-        processTrainData(schedule);
-        renderTrainsIfAppropriate(); // Only render if appropriate workspace
-        renderComprehensiveAnnouncementPanel();
-        checkTrainArrivals(); // Check for trains arriving in 15 minutes
-      }, 60000);
+      }, 30000); // 30 seconds
     }
     
-    // Initial setup - no interval in local mode
+    // Initial setup
     updateRefreshInterval();
 
     // Set up Server-Sent Events for real-time updates
     const eventSource = new EventSource('/events');
     
     eventSource.addEventListener('update', async (event) => {
-      console.log('🔄 SSE update received at', new Date().toISOString());
+      console.log('📡 SSE update received at', new Date().toISOString());
+      
+      // Parse event data
+      const eventData = JSON.parse(event.data);
+      const serverVersion = eventData.version;
       
       // Complete save status indicator (if saving)
       completeSaveStatus();
       
-      // CRITICAL: Block SSE updates if ANY edit or data operation is in progress
-      // This prevents race conditions where SSE overwrites user changes
-      if (isEditingTrain || isEditingProject || isDataOperationInProgress) {
-        console.log('⏸️ Skipping SSE refresh - edit or data operation in progress');
-        return;
-      }
-      
-      // Fetch and update the GLOBAL schedule object
-      const freshSchedule = await fetchSchedule();
-      processTrainData(freshSchedule);
-      
-      // Only render trains if not in projects mode
-      if (currentWorkspaceMode !== 'projects') {
-        renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
-        renderComprehensiveAnnouncementPanel();
-      } else {
-        // In projects mode, re-render the project drawer if it's open
-        if (isProjectDrawerOpen && currentProjectId) {
-          const updatedProject = freshSchedule.projects.find(p => p._uniqueId === currentProjectId);
-          if (updatedProject) {
-            renderProjectDrawer(updatedProject);
+      // VERSION CHECK: Only fetch if server has NEWER version
+      // Use > instead of !== to handle out-of-order updates correctly
+      if (serverVersion && serverVersion > schedule._meta.version) {
+        console.log(`🔄 Server ahead: local=${schedule._meta.version}, server=${serverVersion} - Fetching...`);
+        
+        // Fetch and update the GLOBAL schedule object
+        const freshSchedule = await fetchSchedule(true);
+        Object.assign(schedule, freshSchedule);
+        processTrainData(schedule);
+        
+        // Only render trains if not in projects mode
+        if (currentWorkspaceMode !== 'projects') {
+          renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
+          renderComprehensiveAnnouncementPanel();
+        } else {
+          // In projects mode, re-render the project drawer if it's open
+          if (isProjectDrawerOpen && currentProjectId) {
+            const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
+            if (updatedProject) {
+              renderProjectDrawer(updatedProject);
+            }
+          }
+          // And re-render the projects page
+          renderProjectsPage();
+        }
+        checkTrainArrivals(); // Check for trains arriving in 15 minutes
+        
+        // Re-render the appropriate focused train based on which one is set
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile && mobileFocusedTrainId) {
+          // Mobile mode - only re-render if mobile popup is actually open
+          const popup = document.getElementById('mobile-focus-popup');
+          if (popup && popup.classList.contains('show')) {
+            const updatedTrain = processedTrainData.allTrains.find(t => 
+              t._uniqueId === mobileFocusedTrainId
+            );
+            
+            if (updatedTrain) {
+              renderMobileFocusPopup(updatedTrain);
+            } else {
+              // Train was deleted, close the popup
+              mobileFocusedTrainId = null;
+              popup.classList.remove('show');
+              setTimeout(() => popup.style.display = 'none', 300);
+            }
+          }
+        } else if (!isMobile && desktopFocusedTrainId) {
+          // Desktop mode - only re-render if desktop panel has content
+          const panel = document.getElementById('focus-panel');
+          if (panel && panel.innerHTML.trim() !== '') {
+            const updatedTrain = processedTrainData.allTrains.find(t => 
+              t._uniqueId === desktopFocusedTrainId
+            );
+            
+            if (updatedTrain) {
+              renderFocusMode(updatedTrain);
+            } else {
+              // Train was deleted, clear the panel
+              desktopFocusedTrainId = null;
+              panel.innerHTML = '';
+              closeEditorDrawer();
+            }
           }
         }
-        // And re-render the projects page
-        renderProjectsPage();
-      }
-      checkTrainArrivals(); // Check for trains arriving in 15 minutes
-      
-      // Re-render the appropriate focused train based on which one is set
-      const isMobile = window.innerWidth <= 768;
-      
-      if (isMobile && mobileFocusedTrainId) {
-        // Mobile mode - only re-render if mobile popup is actually open
-        const popup = document.getElementById('mobile-focus-popup');
-        if (popup && popup.classList.contains('show')) {
-          const updatedTrain = processedTrainData.allTrains.find(t => 
-            t._uniqueId === mobileFocusedTrainId
-          );
-          
-          if (updatedTrain) {
-            renderMobileFocusPopup(updatedTrain);
-          } else {
-            // Train was deleted, close the popup
-            mobileFocusedTrainId = null;
-            popup.classList.remove('show');
-            setTimeout(() => popup.style.display = 'none', 300);
-          }
-        }
-      } else if (!isMobile && desktopFocusedTrainId) {
-        // Desktop mode - only re-render if desktop panel has content
-        const panel = document.getElementById('focus-panel');
-        if (panel && panel.innerHTML.trim() !== '') {
-          const updatedTrain = processedTrainData.allTrains.find(t => 
-            t._uniqueId === desktopFocusedTrainId
-          );
-          
-          if (updatedTrain) {
-            renderFocusMode(updatedTrain);
-          } else {
-            // Train was deleted, clear the panel
-            desktopFocusedTrainId = null;
-            panel.innerHTML = '';
-            closeEditorDrawer();
-          }
-        }
+      } else if (serverVersion && serverVersion < schedule._meta.version) {
+        console.warn(`⚠️ Ignoring SSE with older version ${serverVersion} (current: ${schedule._meta.version})`);
+      } else if (serverVersion && serverVersion === schedule._meta.version) {
+        console.log(`✅ Version in sync: ${schedule._meta.version} - No fetch needed`);
+      } else if (!serverVersion) {
+        // Legacy SSE without version info - fallback to always fetch
+        console.log('⚠️ SSE without version info - fetching anyway');
+        await refreshDataAndUI();
       }
     });
     
