@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1771030226608,
-    "lastSaved": "2026-02-14T00:50:26.612Z"
+    "version": 1771031850074,
+    "lastSaved": "2026-02-14T01:17:30.078Z"
   },
   "fixedSchedule": [],
   "spontaneousEntries": [
@@ -336,7 +336,7 @@
     },
     {
       "linie": "s25",
-      "ziel": "Die",
+      "ziel": "OMG NICE",
       "plan": "21:29",
       "dauer": 20,
       "zwischenhalte": [],
@@ -452,7 +452,7 @@
       "dauer": 100,
       "zwischenhalte": [],
       "canceled": true,
-      "date": "2026-02-13",
+      "date": "2026-02-10",
       "plannedDate": "2026-02-12",
       "_uniqueId": "train_7c7ms7pwl_1770914722464",
       "projectId": "project_6oej3qm4n_1770914709412",
@@ -710,7 +710,7 @@
       "_uniqueId": "train_1c34qso0t_1770933468937",
       "projectId": "project_9ao8r6p2f_1770834514727",
       "type": "todo",
-      "todoChecked": true
+      "todoChecked": false
     },
     {
       "linie": "S7",
@@ -724,7 +724,7 @@
       "_uniqueId": "train_nstagtrcb_1770934295231",
       "projectId": "project_9ao8r6p2f_1770834514727",
       "type": "todo",
-      "todoChecked": true
+      "todoChecked": false
     },
     {
       "linie": "S7",
@@ -934,7 +934,7 @@
       "_uniqueId": "train_i8rlbh2nm_1770934299476",
       "projectId": "project_9ao8r6p2f_1770834514727",
       "type": "todo",
-      "todoChecked": false
+      "todoChecked": true
     },
     {
       "linie": "S7",
@@ -948,7 +948,7 @@
       "_uniqueId": "train_huelt967r_1770934299630",
       "projectId": "project_9ao8r6p2f_1770834514727",
       "type": "todo",
-      "todoChecked": false
+      "todoChecked": true
     },
     {
       "linie": "S7",
@@ -998,6 +998,116 @@
       "date": "2026-02-14",
       "plannedDate": "2026-02-14",
       "_uniqueId": "train_l8o2bpvmz_1771029508231"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Jo",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_ck0zse7h3_1771031058110",
+      "projectId": "project_3uxom6tfp_1771031048894"
+    },
+    {
+      "linie": "S1",
+      "ziel": "mom",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_ijqpt91hr_1771031136332",
+      "projectId": "project_3uxom6tfp_1771031048894",
+      "type": "todo",
+      "todoChecked": false
+    },
+    {
+      "linie": "S5",
+      "ziel": "lol",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_n5c8q3qbh_1771031271299",
+      "projectId": "project_6oej3qm4n_1770914709412"
+    },
+    {
+      "linie": "S5",
+      "ziel": "lollllll",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_ywfsojf1v_1771031276890",
+      "projectId": "project_6oej3qm4n_1770914709412"
+    },
+    {
+      "linie": "S7",
+      "ziel": "lets see if it workssss",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_79ugie1kh_1771031302133",
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S7",
+      "ziel": "me",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-15",
+      "plannedDate": "2026-02-15",
+      "_uniqueId": "train_nt8qnxskc_1771031445756",
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S7",
+      "ziel": "work",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_pddxjn9e2_1771031496724",
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S7",
+      "ziel": "please",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-15",
+      "plannedDate": "2026-02-15",
+      "_uniqueId": "train_ckz05rez4_1771031497730",
+      "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S7",
+      "ziel": "yyessss",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_9jr2w96fk_1771031499239",
+      "projectId": "project_9ao8r6p2f_1770834514727"
     }
   ],
   "trains": [],
@@ -1009,7 +1119,7 @@
       "deadline": "2025-10-10T10:10",
       "createdAt": "2026-02-11T18:28:34.727Z",
       "tasks": [],
-      "currentView": "todo",
+      "currentView": "aufgabe",
       "completedExpanded": true,
       "completedSectionOpen": true
     },
@@ -1020,7 +1130,7 @@
       "deadline": "",
       "createdAt": "2026-02-12T16:45:09.412Z",
       "tasks": [],
-      "currentView": "todo"
+      "currentView": "aufgabe"
     },
     {
       "_uniqueId": "project_h76rv00pj_1770920049959",
@@ -1046,6 +1156,15 @@
       "deadline": "",
       "createdAt": "2026-02-13T22:21:28.334Z",
       "tasks": []
+    },
+    {
+      "_uniqueId": "project_3uxom6tfp_1771031048894",
+      "name": "",
+      "linie": "s1",
+      "deadline": null,
+      "createdAt": "2026-02-14T01:04:08.894Z",
+      "tasks": [],
+      "currentView": "todo"
     }
   ]
 }

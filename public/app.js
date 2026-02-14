@@ -737,6 +737,15 @@
         
         // Set up event handlers for closing
         setupAnnouncementDrawerCloseHandlers();
+        
+        // Handle system back button (mobile)
+        announcementDrawerBackHandler = (e) => {
+          if (drawer.classList.contains('is-open')) {
+            closeAnnouncementsDrawer();
+          }
+        };
+        window.addEventListener('popstate', announcementDrawerBackHandler, true);
+        window.history.pushState({ drawer: 'announcements' }, '');
       }
     }
 
@@ -756,11 +765,16 @@
         document.removeEventListener('click', announcementDrawerClickOutHandler, true);
         announcementDrawerClickOutHandler = null;
       }
+      if (announcementDrawerBackHandler) {
+        window.removeEventListener('popstate', announcementDrawerBackHandler, true);
+        announcementDrawerBackHandler = null;
+      }
     }
 
     // Note drawer functions
     let noteDrawerEscHandler = null;
     let noteDrawerClickOutHandler = null;
+    let noteDrawerBackHandler = null;
 
     function openNoteDrawer() {
       const drawer = document.getElementById('note-drawer');
@@ -773,6 +787,15 @@
         
         // Set up event handlers for closing
         setupNoteDrawerCloseHandlers();
+        
+        // Handle system back button (mobile)
+        noteDrawerBackHandler = (e) => {
+          if (drawer.classList.contains('is-open')) {
+            closeNoteDrawer();
+          }
+        };
+        window.addEventListener('popstate', noteDrawerBackHandler, true);
+        window.history.pushState({ drawer: 'notes' }, '');
       }
     }
 
@@ -791,6 +814,10 @@
       if (noteDrawerClickOutHandler) {
         document.removeEventListener('click', noteDrawerClickOutHandler, true);
         noteDrawerClickOutHandler = null;
+      }
+      if (noteDrawerBackHandler) {
+        window.removeEventListener('popstate', noteDrawerBackHandler, true);
+        noteDrawerBackHandler = null;
       }
     }
 
@@ -976,6 +1003,20 @@
       if (panel) {
         panel.classList.add('is-open');
         document.body.classList.add('editor-drawer-open');
+        
+        // Handle system back button (mobile)
+        editorDrawerBackHandler = (e) => {
+          if (panel.classList.contains('is-open')) {
+            const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+            if (!hasInputs) {
+              desktopFocusedTrainId = null;
+              panel.innerHTML = '';
+              closeEditorDrawer();
+            }
+          }
+        };
+        window.addEventListener('popstate', editorDrawerBackHandler, true);
+        window.history.pushState({ drawer: 'editor' }, '');
       }
       closeAnnouncementsDrawer();
       // Only close note drawer if we're not editing a note
@@ -990,12 +1031,20 @@
         panel.classList.remove('is-open');
       }
       document.body.classList.remove('editor-drawer-open');
+      
+      // Clean up back button handler
+      if (editorDrawerBackHandler) {
+        window.removeEventListener('popstate', editorDrawerBackHandler, true);
+        editorDrawerBackHandler = null;
+      }
     }
 
     // ==================== PROJECT MANAGEMENT FUNCTIONS ====================
     
     let projectDrawerEscHandler = null;
     let projectDrawerClickOutHandler = null;
+    
+    let projectDrawerBackHandler = null;
     
     function openProjectDrawer() {
       closeAnnouncementsDrawer();
@@ -1004,6 +1053,16 @@
       if (drawer) {
         drawer.classList.add('is-open');
         document.body.classList.add('project-drawer-open');
+        
+        // Handle system back button (mobile)
+        projectDrawerBackHandler = (e) => {
+          if (drawer.classList.contains('is-open')) {
+            closeProjectDrawer();
+            renderProjectsPage();
+          }
+        };
+        window.addEventListener('popstate', projectDrawerBackHandler, true);
+        window.history.pushState({ drawer: 'project' }, '');
       }
       isProjectDrawerOpen = true;
       setupProjectDrawerCloseHandlers();
@@ -1026,6 +1085,10 @@
       if (projectDrawerClickOutHandler) {
         document.removeEventListener('click', projectDrawerClickOutHandler, true);
         projectDrawerClickOutHandler = null;
+      }
+      if (projectDrawerBackHandler) {
+        window.removeEventListener('popstate', projectDrawerBackHandler, true);
+        projectDrawerBackHandler = null;
       }
     }
     
@@ -1475,19 +1538,18 @@
           // Preserve completed section state before re-rendering
           const wasOpen = project.completedSectionOpen;
           
-          // Save the selected view to the project
+          // OPTIMISTIC UI: Update immediately, save in background
           project.currentView = viewSelector.value;
-          await saveSchedule();
           
-          // Re-render the drawer with the new view
-          const freshSchedule = await fetchSchedule();
-          Object.assign(schedule, freshSchedule);
+          // Re-render immediately with updated view
           const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
           if (freshProject) {
-            // Restore the completed section state
             freshProject.completedSectionOpen = wasOpen;
             renderProjectDrawer(freshProject);
           }
+          
+          // Save in background
+          saveSchedule();
         });
       }
       
@@ -1503,12 +1565,8 @@
       // Delete button
       const deleteBtn = document.getElementById('project-delete-btn');
       if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', () => {
           if (confirm('Möchten Sie dieses Projekt wirklich löschen?')) {
-            // Set editing flag and data lock
-            isEditingProject = true;
-            isDataOperationInProgress = true;
-            
             // Remove project
             schedule.projects = schedule.projects.filter(p => p._uniqueId !== project._uniqueId);
             // Make trains projectless (orphaned) instead of deleting them
@@ -1517,15 +1575,17 @@
                 train.projectId = null;
               }
             });
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule(true);
-            Object.assign(schedule, freshSchedule);
+            
+            // CRITICAL: Regenerate derived data after orphaning trains
+            regenerateTrainsFromSchedule();
+            processTrainData(schedule);
+            
+            // Re-render immediately
             closeProjectDrawer();
             renderProjectsPage();
             
-            // Reset flags
-            isEditingProject = false;
-            isDataOperationInProgress = false;
+            // Save in background
+            saveSchedule();
           }
         });
       }
@@ -1565,13 +1625,11 @@
               input.style.colorScheme = 'dark';
             }
             
-            const save = async () => {
-              // Set data operation lock
-              isDataOperationInProgress = true;
-              
+            const save = () => {
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
+              // OPTIMISTIC UI: Update immediately, save in background
               // Save all fields
               const allInputs = document.querySelectorAll('#project-drawer [data-editable="true"] input');
               allInputs.forEach(inp => {
@@ -1581,44 +1639,34 @@
                 }
               });
               
-              await saveSchedule();
-              
-              // Force fetch to get latest data
-              const freshSchedule = await fetchSchedule(true);
-              Object.assign(schedule, freshSchedule);
-              // Re-fetch the project from the fresh schedule
+              // Re-render immediately
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
-                // Restore the completed section state
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
               renderProjectsPage();
               
-              // Reset flags after save completes
-              isEditingProject = false;
-              isDataOperationInProgress = false;
+              // Save in background
+              saveSchedule();
             };
             
             input.addEventListener('blur', save);
-            input.addEventListener('keydown', async (e) => {
+            input.addEventListener('keydown', (e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
-                await save();
+                save();
               } else if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
-                await save();
+                save();
               }
             });
             
             f.innerHTML = '';
             f.appendChild(input);
           });
-          
-          // Set editing flag when entering edit mode
-          isEditingProject = true;
           
           // Focus the clicked field's input
           setTimeout(() => {
@@ -1633,12 +1681,8 @@
       // Symbol image opens prompt dialog to change line
       const symbol = document.querySelector('[data-project="symbol"]');
       if (symbol) {
-        symbol.addEventListener('click', async function(e) {
+        symbol.addEventListener('click', function(e) {
           e.stopPropagation();
-          
-          // Set editing flag and data lock
-          isEditingProject = true;
-          isDataOperationInProgress = true;
           
           const currentLine = project.linie || 's1';
           const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
@@ -1648,10 +1692,8 @@
             const wasOpen = project.completedSectionOpen;
             
             project.linie = newLine.trim().toLowerCase();
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule(true);
-            Object.assign(schedule, freshSchedule);
-            // Re-fetch the project from the fresh schedule
+            
+            // Re-render immediately
             const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
             if (freshProject) {
               // Restore the completed section state
@@ -1659,27 +1701,23 @@
               renderProjectDrawer(freshProject);
             }
             renderProjectsPage();
+            
+            // Save in background
+            saveSchedule();
           }
-          
-          // Reset flags
-          isEditingProject = false;
-          isDataOperationInProgress = false;
         });
       }
       
       // Task add input
       const addInput = document.querySelector('.project-task-add-input');
       if (addInput) {
-        addInput.addEventListener('keydown', async (e) => {
+        addInput.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
             const taskName = addInput.textContent.trim();
             if (taskName) {
-              // Set editing flag and data lock
-              isEditingProject = true;
-              isDataOperationInProgress = true;
-              
-              // Preserve completed section state before re-rendering
+              // OPTIMISTIC UI: Update immediately, save in background
+              // Preserve completed section state
               const wasOpen = project.completedSectionOpen;
               
               // Use unified createNewTrainEntry with project-specific options
@@ -1689,27 +1727,29 @@
                 ziel: taskName,
                 projectId: project._uniqueId
               });
-              // Add to schedule (createNewTrainEntry doesn't automatically add it for project tasks)
+              // Add to schedule
               schedule.spontaneousEntries.push(newTrain);
-              await saveSchedule();
-              const freshSchedule = await fetchSchedule(true);
-              Object.assign(schedule, freshSchedule);
-              // Re-fetch the project from the fresh schedule
+              
+              // CRITICAL: Regenerate derived data so click handlers can find the new train
+              regenerateTrainsFromSchedule();
+              processTrainData(schedule);
+              
+              // Re-render immediately
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
-                // Restore the completed section state
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
+              renderProjectsPage(); // Update main projects panel
+              
               // Focus the next add input
               setTimeout(() => {
                 const nextAddInput = document.querySelector('.project-task-add-input');
                 if (nextAddInput) nextAddInput.focus();
               }, 100);
               
-              // Reset flags
-              isEditingProject = false;
-              isDataOperationInProgress = false;
+              // Save in background
+              saveSchedule();
             }
           }
         });
@@ -1730,16 +1770,13 @@
       // Todo add input
       const todoAddInput = document.querySelector('.project-todo-add-input');
       if (todoAddInput) {
-        todoAddInput.addEventListener('keydown', async (e) => {
+        todoAddInput.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
             const todoName = todoAddInput.textContent.trim();
             if (todoName) {
-              // Set editing flag and data lock
-              isEditingProject = true;
-              isDataOperationInProgress = true;
-              
-              // Preserve completed section state before re-rendering
+              // OPTIMISTIC UI: Update immediately, save in background
+              // Preserve completed section state
               const wasOpen = project.completedSectionOpen;
               
               schedule.spontaneousEntries = schedule.spontaneousEntries || [];
@@ -1754,25 +1791,27 @@
               
               // Add to schedule
               schedule.spontaneousEntries.push(newTodo);
-              await saveSchedule();
-              const freshSchedule = await fetchSchedule(true);
-              Object.assign(schedule, freshSchedule);
-              // Re-fetch the project from the fresh schedule
+              
+              // CRITICAL: Regenerate derived data so click handlers can find the new todo
+              regenerateTrainsFromSchedule();
+              processTrainData(schedule);
+              
+              // Re-render immediately
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
-                // Restore the completed section state
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
+              renderProjectsPage(); // Update main projects panel
+              
               // Focus the next add input
               setTimeout(() => {
                 const nextTodoInput = document.querySelector('.project-todo-add-input');
                 if (nextTodoInput) nextTodoInput.focus();
               }, 100);
               
-              // Reset flags
-              isEditingProject = false;
-              isDataOperationInProgress = false;
+              // Save in background
+              saveSchedule();
             }
           }
         });
@@ -1799,33 +1838,31 @@
         // Remove button
         const removeBtn = row.querySelector('[data-task-action="remove"]');
         if (removeBtn) {
-          removeBtn.addEventListener('click', async (e) => {
+          removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const taskToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
             const taskName = taskToDelete ? taskToDelete.ziel : 'Aufgabe';
             if (confirm(`Aufgabe "${taskName}" löschen?`)) {
-              // Set editing flag and data lock
-              isEditingProject = true;
-              isDataOperationInProgress = true;
-              
               // Preserve completed section state before re-rendering
               const wasOpen = project.completedSectionOpen;
               
               schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
-              await saveSchedule();
-              const freshSchedule = await fetchSchedule(true);
-              Object.assign(schedule, freshSchedule);
-              // Re-fetch the project from the fresh schedule
+              
+              // CRITICAL: Regenerate derived data after removing train
+              regenerateTrainsFromSchedule();
+              processTrainData(schedule);
+              
+              // Re-render immediately
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
                 // Restore the completed section state
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
+              renderProjectsPage(); // Update main projects panel
               
-              // Reset flags
-              isEditingProject = false;
-              isDataOperationInProgress = false;
+              // Save in background
+              saveSchedule();
             }
           });
         }
@@ -1839,6 +1876,80 @@
           }
           openTaskEditor(project._uniqueId, taskId);
         });
+        
+        // Double-click on task row to edit name inline
+        row.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          
+          // Don't allow inline edit if clicking on action buttons
+          if (e.target.closest('[data-task-action]')) {
+            return;
+          }
+          
+          const nameSpan = row.querySelector('.project-task-name');
+          if (!nameSpan || nameSpan.querySelector('input')) return; // Already editing
+          
+          const currentName = nameSpan.textContent;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = currentName;
+          input.className = 'project-task-name-input';
+          input.style.width = '100%';
+          input.style.background = 'rgba(255, 255, 255, 0.1)';
+          input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+          input.style.borderRadius = '0.3vh';
+          input.style.padding = '0.5vh 1vh';
+          input.style.color = 'inherit';
+          input.style.fontSize = 'inherit';
+          input.style.fontFamily = 'inherit';
+          
+          const saveName = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== currentName) {
+              const task = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
+              if (task) {
+                // Preserve completed section state
+                const wasOpen = project.completedSectionOpen;
+                
+                // OPTIMISTIC UI: Update immediately
+                task.ziel = newName;
+                regenerateTrainsFromSchedule();
+                processTrainData(schedule);
+                
+                // Re-render both views
+                const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+                if (freshProject) {
+                  freshProject.completedSectionOpen = wasOpen;
+                  renderProjectDrawer(freshProject);
+                }
+                renderProjectsPage();
+                
+                // Save in background
+                saveSchedule();
+              }
+            } else {
+              nameSpan.textContent = currentName;
+            }
+          };
+          
+          input.addEventListener('blur', saveName);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              input.blur();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              nameSpan.textContent = currentName;
+              input.blur();
+            }
+          });
+          
+          nameSpan.textContent = '';
+          nameSpan.appendChild(input);
+          input.focus();
+          input.select();
+        });
       });
       
       // Todo row clicks and checkbox handling
@@ -1849,31 +1960,30 @@
         // Checkbox toggle
         const checkbox = row.querySelector('[data-todo-action="toggle"]');
         if (checkbox) {
-          checkbox.addEventListener('change', async (e) => {
+          checkbox.addEventListener('change', (e) => {
             e.stopPropagation();
             const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
             if (todo) {
-              // Set editing flag and data lock
-              isEditingProject = true;
-              isDataOperationInProgress = true;
-              
-              // Preserve completed section state before re-rendering
+              // OPTIMISTIC UI: Update immediately, save in background
+              // Preserve completed section state
               const wasOpen = project.completedSectionOpen;
               
               todo.todoChecked = checkbox.checked;
-              await saveSchedule();
-              const freshSchedule = await fetchSchedule(true);
-              Object.assign(schedule, freshSchedule);
+              
+              // CRITICAL: Regenerate derived data after modifying train
+              regenerateTrainsFromSchedule();
+              processTrainData(schedule);
+              
+              // Re-render immediately
               const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               if (freshProject) {
-                // Restore the completed section state
                 freshProject.completedSectionOpen = wasOpen;
                 renderProjectDrawer(freshProject);
               }
+              renderProjectsPage(); // Update main projects panel
               
-              // Reset flags
-              isEditingProject = false;
-              isDataOperationInProgress = false;
+              // Save in background
+              saveSchedule();
             }
           });
         }
@@ -1881,30 +1991,29 @@
         // Remove button (no confirmation for todos)
         const removeBtn = row.querySelector('[data-task-action="remove"]');
         if (removeBtn) {
-          removeBtn.addEventListener('click', async (e) => {
+          removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             
-            // Set editing flag and data lock
-            isEditingProject = true;
-            isDataOperationInProgress = true;
-            
-            // Preserve completed section state before re-rendering
+            // OPTIMISTIC UI: Update immediately, save in background
+            // Preserve completed section state
             const wasOpen = project.completedSectionOpen;
             
             schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== todoId);
-            await saveSchedule();
-            const freshSchedule = await fetchSchedule(true);
-            Object.assign(schedule, freshSchedule);
+            
+            // CRITICAL: Regenerate derived data after removing train
+            regenerateTrainsFromSchedule();
+            processTrainData(schedule);
+            
+            // Re-render immediately
             const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
             if (freshProject) {
-              // Restore the completed section state
               freshProject.completedSectionOpen = wasOpen;
               renderProjectDrawer(freshProject);
             }
+            renderProjectsPage(); // Update main projects panel
             
-            // Reset flags
-            isEditingProject = false;
-            isDataOperationInProgress = false;
+            // Save in background
+            saveSchedule();
           });
         }
         
@@ -3390,10 +3499,12 @@
     // Global handlers for editor drawer (prevent duplicate listener registration)
     let editorDrawerEscHandler = null;
     let editorDrawerClickOutHandler = null;
+    let editorDrawerBackHandler = null;
 
     // Global handlers for announcement drawer (prevent duplicate listener registration)
     let announcementDrawerEscHandler = null;
     let announcementDrawerClickOutHandler = null;
+    let announcementDrawerBackHandler = null;
 
     function renderFocusMode(train) {
       const now = new Date();
@@ -5690,8 +5801,8 @@
       isDataOperationInProgress = true; // Lock data operations during save
       
       try {
-        // Show save status indicator
-        showSaveStatus();
+        // OPTIMISTIC: Version is already updated before this function is called
+        // No need for save indicator with 0ms latency optimistic UI
         
         // Auto-fill any empty actual times with plan times before saving
         const autoFillActual = (train) => {
@@ -5851,6 +5962,14 @@
       } else {
         // In projects mode, re-render project view
         renderProjectsPage();
+      }
+      
+      // If project drawer is open, refresh it with updated data
+      if (isProjectDrawerOpen && currentProjectId) {
+        const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
+        if (updatedProject) {
+          renderProjectDrawer(updatedProject);
+        }
       }
       
       console.log('✅ UI refreshed');
@@ -7278,6 +7397,8 @@
     console.log('✅ Connected to server for real-time updates');
 
     // Station selection overlay functionality
+    let stationOverlayBackHandler = null;
+    
     function showStationOverlay() {
       const overlay = document.getElementById('station-overlay');
       const input = document.getElementById('station-input');
@@ -7289,6 +7410,15 @@
       sugg.innerHTML = '';
       sugg.style.display = 'none';
       input.focus();
+      
+      // Handle system back button (mobile)
+      stationOverlayBackHandler = (e) => {
+        if (!overlay.classList.contains('hidden')) {
+          overlay.classList.add('hidden');
+        }
+      };
+      window.addEventListener('popstate', stationOverlayBackHandler, true);
+      window.history.pushState({ overlay: 'station-chooser' }, '');
 
       let timer = null;
       let activeIndex = -1;
@@ -7395,6 +7525,12 @@
         localStorage.removeItem('selectedStationName');
         overlay.classList.add('hidden');
         
+        // Clean up back button handler
+        if (stationOverlayBackHandler) {
+          window.removeEventListener('popstate', stationOverlayBackHandler, true);
+          stationOverlayBackHandler = null;
+        }
+        
         // Stop auto-refresh for local mode (SSE handles updates)
         updateRefreshInterval();
         
@@ -7413,6 +7549,12 @@
         localStorage.setItem('selectedEva', currentEva);
         localStorage.setItem('selectedStationName', currentStationName);
         overlay.classList.add('hidden');
+        
+        // Clean up back button handler
+        if (stationOverlayBackHandler) {
+          window.removeEventListener('popstate', stationOverlayBackHandler, true);
+          stationOverlayBackHandler = null;
+        }
         
         // Start auto-refresh for DB API mode
         updateRefreshInterval();
@@ -7465,6 +7607,11 @@
           }
         } else if (e.key === 'Escape') {
           overlay.classList.add('hidden');
+          // Clean up back button handler
+          if (stationOverlayBackHandler) {
+            window.removeEventListener('popstate', stationOverlayBackHandler, true);
+            stationOverlayBackHandler = null;
+          }
         }
       });
 
@@ -7472,6 +7619,11 @@
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
           overlay.classList.add('hidden');
+          // Clean up back button handler
+          if (stationOverlayBackHandler) {
+            window.removeEventListener('popstate', stationOverlayBackHandler, true);
+            stationOverlayBackHandler = null;
+          }
         }
       });
     }
