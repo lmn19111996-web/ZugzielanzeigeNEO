@@ -258,6 +258,15 @@ html, body {
       object-fit: contain;
       filter: brightness(0) invert(1) opacity(0.7);
     }
+    
+    /* Hide task labels on desktop */
+    .task-icon-label {
+      display: none;
+    }
+    
+    .task-button-icon {
+      display: none;
+    }
 
     .task-icon-group {
       width: 100%;
@@ -520,15 +529,17 @@ html, body {
       position: fixed;
       top: 0;
       right: calc(-1 * var(--announcements-drawer-width));
-      box-shadow: 0px 0 10px rgb(0, 0, 0);
       border-radius: 2%;
-      transition: right 0.2s ease;
+      transition: right 0.2s ease, box-shadow 0.2s ease, visibility 0.2s ease;
       z-index: 1100;
       background: #0F1450;
+      visibility: hidden;
     }
 
     .right-panel.is-open {
       right: 0;
+      box-shadow: 0px 0 10px rgb(0, 0, 0);
+      visibility: visible;
     }
 
     /* Announcement drawer header */
@@ -603,19 +614,21 @@ html, body {
       width: var(--editor-drawer-width);
       height: 95vh;
       margin-top: 2.5vh;
-      box-shadow: 0 0 10px rgb(0, 0, 0);
       background: #0F1450;
       box-sizing: border-box;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: right 0.2s ease;
+      transition: right 0.2s ease, box-shadow 0.2s ease, visibility 0.2s ease;
       z-index: 1050;
       display: block;
       padding: 0;
+      visibility: hidden;
     }
 
     .right-panel-top.is-open {
       right: 0;
+      box-shadow: 0 0 10px rgb(0, 0, 0);
+      visibility: visible;
     }
 
     .now-card {
@@ -1110,6 +1123,11 @@ html, body {
       padding: 0.5vh 0.5vw;
       white-space: pre-wrap;
       word-wrap: break-word;
+      line-height: 1.4;
+    }
+
+    /* Ensure textarea in edit mode matches view mode line height */
+    .focus-inter-stops textarea {
       line-height: 1.4;
     }
 
@@ -2023,6 +2041,25 @@ html, body {
       font-weight: 300;
     }
 
+    .project-badge {
+      display: inline-block;
+      font-size: 1.4vh;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 400;
+      transition: color 0.2s ease;
+      margin-left: 1vh;
+      padding: 0.8vh 1.2vh;
+      margin-top: -0.8vh;
+      margin-bottom: -0.8vh;
+      border-radius: 3px;
+    }
+
+    .project-badge:hover {
+      color: white;
+    }
+
     .editor-field-value {
       font-size: 2vh;
       color: rgb(255, 255, 255);
@@ -2118,6 +2155,14 @@ html, body {
 
     .editor-btn-delete:hover {
       background: rgba(255, 80, 80, 0.4);
+    }
+
+    .editor-btn-save {
+      display: none;
+      background: rgba(100, 150, 255, 0.3); /* Blue color */
+      color: rgb(150, 200, 255);
+      pointer-events: none;
+      cursor: default;
     }
 
     .editor-delay-buttons {
@@ -2221,11 +2266,105 @@ html, body {
       }
     }
 
+    /* Hide add button on desktop */
+    #add-train-button {
+      display: none;
+    }
+
     /* Mobile responsive styles */
     @media screen and (max-width: 768px) {
-      /* Hide the clock section on mobile */
+      /* Scale down top ribbon for mobile */
       .top-ribbon {
+        display: flex;
+        height: 6vh;
+        padding-left: 0; /* Remove padding */
+        padding-right: 0; /* Remove padding */
+        padding-bottom: 2vh; /* Add spacing below ribbon */
+        width: 95vw; /* Take 95% of viewport width */
+        margin: 0 auto; /* Center it */
+      }
+      
+      .clockSlot {
+        width: 18vh;
+        padding-left: 2vw; /* Add padding to clock slot instead */
+      }
+      
+      .aclock {
+        width: 2.8vh;
+        height: 2.8vh;
+        border-width: 0.28vh;
+        margin-right: 1.5vh;
+      }
+      
+      .center {
+        width: 0.35vh;
+        height: 0.35vh;
+      }
+      
+      .clock {
+        font-size: 3.2vh;
+      }
+      
+      #first-train-container .train-symbol {
+        width: 5vh;
+        height: 5vh;
+      }
+      
+      #first-train-container .symbol-slot {
+        width: 5vh;
+      }
+      
+      #first-train-container .line-badge {
+        font-size: 2vh;
+      }
+      
+      #first-train-container .zugziel {
+        font-size: 3.5vh; /* Larger destination */
+        font-weight: 500;
+      }
+      
+      /* Hide time/departure block on mobile header train */
+      #first-train-container .right-block {
         display: none;
+      }
+      
+      /* Hide indicator dot on mobile header train */
+      #first-train-container .indicator-dot {
+        display: none;
+      }
+      
+      /* Adjust train-info to show line and destination side by side */
+      #first-train-container .train-info {
+        flex-direction: row;
+        align-items: center;
+        gap: 1.5vw;
+      }
+      
+      /* Separate mobile layout for header train - override grid layout */
+      #first-train-container .train-entry {
+        padding: 0;
+        display: flex; /* Override grid */
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start; /* Fix: Remove space-between */
+        height: auto;
+        min-height: auto;
+        border-bottom: none;
+        gap: 2vw; /* Add gap between clock and train info */
+      }
+      
+      #first-train-container .train-entry .train-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex: 1; /* Allow to expand and show content */
+        min-width: 0;
+        gap: 1.5vw;
+      }
+      
+      #first-train-container .train-entry::before,
+      #first-train-container .train-entry::after {
+        display: none; /* Remove pseudo-elements from regular train entries */
       }
 
       /* Hide the right panel (focus and announcements) */
@@ -2233,14 +2372,19 @@ html, body {
         display: none;
       }
 
-      /* Note drawer - fullscreen on mobile like announcements */
+      /* Show save button on mobile (non-functional, just visual indicator) */
+      .editor-btn-save {
+        display: block;
+      }
+
+      /* Note drawer - above taskbar on mobile */
       .right-panel[id="note-drawer"] {
         display: flex;
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh;
+        height: calc(100vh - 7vh); /* Stop at taskbar */
         right: auto;
         margin-top: 0;
         border-radius: 0;
@@ -2253,14 +2397,14 @@ html, body {
         transform: translateX(0);
       }
 
-      /* Announcement drawer - fullscreen on mobile */
+      /* Announcement drawer - above taskbar on mobile */
       .right-panel[id="announcement-drawer"] {
         display: flex;
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh;
+        height: calc(100vh - 7vh); /* Stop at taskbar */
         right: auto;
         margin-top: 0;
         border-radius: 0;
@@ -2271,6 +2415,69 @@ html, body {
 
       .right-panel[id="announcement-drawer"].is-open {
         transform: translateX(0);
+      }
+      
+      /* Mobile announcement panel styling - match new UI */
+      .announcement-container {
+        background: transparent;
+        box-shadow: none;
+        border-radius: 0;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        padding: 1.5vh 3vw 2vh 3vw;
+      }
+      
+      .announcement-panel {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto auto;
+        gap: 0.8vh 1vh;
+        align-items: start;
+      }
+      
+      /* Row 1: Headline spans full width */
+      .announcement-headline {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        height: auto;
+        padding: 0;
+        margin-bottom: 0.5vh;
+      }
+      
+      /* Row 2: Time and icon layout */
+      .announcement-group-icon-type {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1vh;
+        margin-bottom: 0;
+      }
+      
+      .announcement-time-slot {
+        grid-column: 1;
+        padding: 0;
+      }
+      
+      .announcement-line-icon {
+        grid-column: 2;
+        width: 5vh;
+        height: 5vh;
+        padding: 0;
+      }
+      
+      /* Row 3: Destination */
+      .announcement-destination {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        padding: 0;
+        font-size: 2.5vh;
+        white-space: normal;
+      }
+      
+      /* Content panel if present */
+      .announcement-content-panel {
+        grid-column: 1 / -1;
+        grid-row: 4;
       }
 
       /* Make editor drawer fullscreen on mobile */
@@ -2307,53 +2514,146 @@ html, body {
 
       /* Reorient container for taskbar on top */
       .container-task-panel {
-        flex-direction: column;
+        flex-direction: column-reverse; /* Taskbar at bottom */
         height: 100vh;
         display: flex;
       }
 
-      /* Horizontal taskbar at the top */
+      /* Horizontal taskbar at the bottom */
       .taskbar {
         width: 100%;
-        height: 6vh;
+        height: 7vh; /* Shorter taskbar */
         flex-direction: row;
         border-right: none;
-        border-bottom: 0.5px solid rgba(255, 255, 255, 0.64);
-        border-top: none;
-        justify-content: space-between;
+        border-bottom: none;
+        border-top: 0.5px solid rgba(255, 255, 255, 0.64);
+        justify-content: flex-start;
         flex-shrink: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .taskbar::-webkit-scrollbar {
+        display: none;
       }
 
       .task-button {
-        width: 7vh;
+        min-width: auto;
+        width: auto;
         height: 100%;
+        display: flex;
+        flex-direction: row; /* Icon next to text */
+        align-items: center;
+        justify-content: center;
+        gap: 1vh;
+        padding: 1.2vh 2vh;
+        font-size: 1.8vh;
+        white-space: nowrap;
+        border-radius: 1vh;
+        transition: background 0.2s ease;
+      }
+      
+      .task-button:active {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1vh;
       }
 
       .task-icon-button {
-        width: 7vh;
+        min-width: auto;
+        width: auto;
         height: 100%;
+        display: flex;
+        flex-direction: row; /* Icon next to text */
+        align-items: center;
+        justify-content: center;
+        gap: 1vh;
+        padding: 1.2vh 2vh;
+        border-radius: 1vh;
+        transition: background 0.2s ease;
+      }
+      
+      .task-icon-button:active {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1vh;
+      }
+      
+      .task-icon-button img {
+        width: 2.5vh; /* Smaller icons */
+        height: 2.5vh;
+        flex-shrink: 0;
       }
 
       .task-icon-group {
-        width: auto;
+        width: 100%;
         height: 100%;
         flex-direction: row;
         margin-bottom: 0;
         padding-bottom: 0;
-        padding-right: 1.5vh;
+        padding-right: 0;
         margin-right: 0;
         border-bottom: none;
         border-right: none;
+        gap: 0; /* No gap between buttons */
+      }
+      
+      /* Task icon labels - show on mobile */
+      .task-icon-label {
+        display: block;
+        font-size: 1.8vh;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.85);
+        text-align: center;
+        line-height: 1;
+      }
+      
+      /* Task button icon (plus sign) */
+      .task-button-icon {
+        display: block;
+        font-size: 2.5vh;
+        line-height: 1;
+      }
+      
+      /* Floating add button on mobile */
+      #add-train-button {
+        display: flex;
+        position: fixed;
+        bottom: 9vh; /* Above taskbar (7vh) with spacing */
+        right: 3vw;
+        width: 6vh; /* Smaller button */
+        height: 6vh; /* Smaller button */
+        border-radius: 1vh; /* Rounded corners */
+        background: #2e3273; /* Match app theme */
+        color: rgba(255, 255, 255, 0.7);
+        padding: 1vh;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0.4vh 1vh rgba(0, 0, 0, 0.3);
+        border: 0.3vh solid rgba(255, 255, 255, 0.3); /* Thicker border for accent color */
+        z-index: 1000;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      #add-train-button img {
+        width: 100%;
+        height: 100%;
+        filter: invert(1) opacity(0.7);
+      }
+      
+      #add-train-button:active {
+        background: #1f2478;
+        transform: scale(0.95);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      
+      #add-train-button .task-icon-label {
+        display: none;
       }
       
       /* Date selector on the right side */
       .date-selector {
-        display: flex;
-        align-items: center;
-        padding: 0 2vw;
-        font-size: 2.2vh;
-        color: rgba(255, 255, 255, 0.8);
-        cursor: pointer;
+        display: none; /* Hidden on mobile */
       }
 
       /* Adjust left panel height for horizontal taskbar */
@@ -2371,38 +2671,116 @@ html, body {
 
       /* Optimize train entries for mobile */
       .departure {
-        font-size: 2.5vh;
-        padding-left: 3vw;
+        font-size: 2.8vh;
+        padding-left: 0;
+        font-weight: 400;
       }
       
+      .delayed {
+        font-size: 2.2vh;
+        padding: 0.3vh 0.6vh;
+      }
+      
+      /* Announcement-style layout for train entries on mobile */
       .train-entry {
-        height: 6vh;
-        padding-right: 2vw;
-        padding-left: 3vw;
+        height: auto;
+        min-height: 9vh;
+        padding: 1.5vh 3vw 2vh 3vw;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto; /* Only 2 rows: time/icon and destination */
+        gap: 1vh 1vh;
+        align-items: start;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.853); /* Thicker separator */
+      }
+      
+      /* Row 1, Column 1: Time (from right-block) */
+      .train-entry > .right-block {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        min-width: auto;
+      }
+      
+      .right-block > .departure-slot {
+        display: flex;
+        align-items: center;
+        gap: 0.5vh;
+      }
+      
+      /* Row 1, Column 2: Line icon (from train-info > symbol-slot) */
+      .train-entry > .train-info {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      
+      /* Hide indicator dot and destination from train-info */
+      .train-info > .indicator-dot {
+        display: none;
+      }
+      
+      .train-info > .zugziel {
+        display: none;
       }
 
-      .indicator-dot {
-        margin-right: 2vw;
-        font-size: 2vh;
-      }
-
-      .symbol-slot {
-        width: 4vh;
+      /* Show only symbol-slot in train-info */
+      .train-info > .symbol-slot {
+        width: auto;
+        display: flex;
       }
 
       .train-symbol {
-        width: 4vh;
-        height: 4vh;
+        width: 5vh;
+        height: 5vh;
+      }
+      
+      .line-badge {
+        min-width: 5vh;
+        height: 5vh;
+        font-size: 2.2vh;
+        padding: 0.8vh 1.5vh;
+      }
+      
+      /* Hide line name row on mobile */
+      .train-entry::before {
+        display: none;
       }
 
-      .zugziel {
-        font-size: 3vh;
-        padding-left: 2vw;
-        padding-right: 2vw;
+      /* Row 2: Destination - reposition zugziel */
+      .train-entry::after {
+        content: attr(data-ziel);
+        grid-column: 1 / -1;
+        grid-row: 2;
+        font-size: 2.5vh;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.95);
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+        white-space: normal;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
+      .day-separator {
+        padding: 2vh 3vw; /* Add vertical padding */
+      }
+      
       .day-separator-date {
         font-size: 2vh;
+        margin-bottom: 1vh;
+      }
+      
+      .day-separator-line {
+        height: 1px; /* Thicker line for date separator */
+        background: rgba(255, 255, 255, 0.795);
       }
 
       /* Belegungsplan adjustments for mobile */
@@ -2591,6 +2969,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 2vw;
   margin-bottom: 3vh;
   padding-bottom: 2vh;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -2601,6 +2980,54 @@ html, body {
   font-weight: 500;
   margin: 0;
   letter-spacing: -0.02em;
+}
+
+.projects-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+  flex-shrink: 0;
+}
+
+.project-sort-container {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+}
+
+.project-sort-label {
+  font-size: 2vh;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+}
+
+.project-sort-selector {
+  background: none;
+  border: none;
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  font-weight: 400;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.project-sort-selector:hover {
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+
+.project-sort-selector:focus {
+  text-decoration-color: rgba(255, 255, 255, 0.8);
+}
+
+.project-sort-selector option {
+  background: #161B75;
+  color: white;
 }
 
 .project-create-btn {
@@ -2614,10 +3041,16 @@ html, body {
   border-radius: 0.6vh;
   cursor: pointer;
   transition: background 0.2s ease;
+  white-space: nowrap;
 }
 
 .project-create-btn:hover {
   background: rgba(0, 78, 157, 1);
+}
+
+/* Arrival label styling - slightly darker than departure */
+.arrival-label {
+  opacity: 0.5;
 }
 
 .projects-list {
@@ -2661,6 +3094,42 @@ html, body {
   flex-shrink: 0;
 }
 
+.project-card-icon-wrapper {
+  position: relative;
+  min-width: 6vh;
+  height: 6vh;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.project-card-icon-fallback {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: auto;
+  min-width: 3vh;
+  max-width: 12vh;
+  height: 3vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.6vh;
+  font-size: 2.2vh;
+  font-weight: 500;
+  font-stretch: condensed;
+  color: rgba(255, 255, 255, 0.925);
+  border: 0.2vh solid rgba(255, 255, 255, 0.912);
+  border-radius: 0.5vh;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
 .project-card-name {
   font-size: 2.8vh;
   font-weight: 500;
@@ -2690,17 +3159,19 @@ html, body {
   right: calc(-1 * var(--project-drawer-width));
   width: var(--project-drawer-width);
   height: 100vh;
-  box-shadow: 0 0 10px rgb(0, 0, 0);
   background: #f6f6f6;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: right 0.2s ease;
+  transition: right 0.2s ease, box-shadow 0.2s ease, visibility 0.2s ease;
   z-index: 1200;
+  visibility: hidden;
 }
 
 .project-drawer.is-open {
   right: 0;
+  box-shadow: 0 0 10px rgb(0, 0, 0);
+  visibility: visible;
 }
 
 body.project-drawer-open .left-column {
@@ -2733,6 +3204,42 @@ body.project-drawer-open .right-panel.is-open {
   height: 10vh;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.project-symbol-wrapper {
+  position: relative;
+  min-width: 10vh;
+  height: 10vh;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.project-drawer-symbol-fallback {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: auto;
+  min-width: 5vh;
+  max-width: 20vh;
+  height: 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.8vh;
+  font-size: 4vh;
+  font-weight: 500;
+  font-stretch: condensed;
+  color: rgba(255, 255, 255, 0.925);
+  border: 0.3vh solid rgba(255, 255, 255, 0.912);
+  border-radius: 0.8vh;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .project-drawer-title {
@@ -3295,13 +3802,32 @@ font-weight: 500;
     padding: 2vh 4vw;
   }
   
+  .projects-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
   .projects-title {
     font-size: 3.5vh;
+  }
+  
+  .projects-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5vh;
+  }
+  
+  .project-sort-container {
+    width: 100%;
+    justify-content: flex-start;
+    order: 2;
   }
   
   .project-create-btn {
     font-size: 2vh;
     padding: 1.5vh 4vw;
+    order: 1;
   }
   
   .projects-list {
@@ -3316,6 +3842,22 @@ font-weight: 500;
   .project-card-icon {
     width: 5vh;
     height: 5vh;
+  }
+  
+  .project-card-icon-wrapper {
+    min-width: 5vh;
+    height: 5vh;
+  }
+  
+  .project-card-icon-fallback {
+    width: auto;
+    min-width: 2.5vh;
+    max-width: 10vh;
+    height: 2.5vh;
+    padding: 0 0.5vh;
+    font-size: 1.8vh;
+    border-width: 0.15vh;
+    border-radius: 0.4vh;
   }
   
   .project-card-name {
@@ -3342,6 +3884,22 @@ font-weight: 500;
   .project-drawer-symbol {
     width: 6vh;
     height: 6vh;
+  }
+  
+  .project-symbol-wrapper {
+    min-width: 6vh;
+    height: 6vh;
+  }
+  
+  .project-drawer-symbol-fallback {
+    width: auto;
+    min-width: 3.5vh;
+    max-width: 15vh;
+    height: 3.5vh;
+    padding: 0 0.6vh;
+    font-size: 2.5vh;
+    border-width: 0.2vh;
+    border-radius: 0.5vh;
   }
   
   .project-task-col-plan,

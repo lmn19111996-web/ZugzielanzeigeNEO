@@ -60,11 +60,15 @@
       </div>
       
       <div class="editor-field" data-field="projectId" data-input-type="select" data-editable="true">
-        <div class="editor-field-label">Projekt</div>
+        <div class="editor-field-label">
+          Projekt
+          <span class="project-badge" style="display: none;">Zum Projekt →</span>
+        </div>
         <div class="editor-field-value" data-focus="project"></div>
       </div>
       
       <div class="editor-actions" data-focus="actions">
+        <button class="editor-btn editor-btn-save" tabindex="-1">Speichern</button>
         <button class="editor-btn editor-btn-cancel" data-focus-action="cancel" tabindex="-1">Durchstreichen</button>
         <button class="editor-btn editor-btn-delete" data-focus-action="delete" tabindex="-1">Löschen</button>
       </div>
@@ -166,7 +170,10 @@
   <template id="project-drawer-template">
     <div class="project-drawer-container">
       <div class="project-drawer-header" data-project="header">
-        <img src="s1.svg" class="project-drawer-symbol" data-project="symbol" alt="Line">
+        <div class="project-symbol-wrapper">
+          <img src="s1.svg" class="project-drawer-symbol" data-project="symbol" alt="Line">
+          <div class="project-drawer-symbol-fallback" data-project="symbol-fallback" style="display: none;">S1</div>
+        </div>
         <div class="project-drawer-title" data-project="name" data-editable="true">Unbenanntes Projekt</div>
         <button class="project-drawer-close" data-project="close-btn">✕</button>
       </div>
@@ -216,7 +223,19 @@
     <div class="projects-page">
       <div class="projects-header">
         <h2 class="projects-title">Projekte</h2>
-        <button class="project-create-btn" id="create-project-btn">+ Neues Projekt</button>
+        <div class="projects-actions">
+          <div class="project-sort-container">
+            <span class="project-sort-label">Sortieren nach:</span>
+            <select class="project-sort-selector" id="project-sort-selector">
+              <option value="creation">Erstellungsdatum</option>
+              <option value="name">Name</option>
+              <option value="line">Linie</option>
+              <option value="deadline">Fälligkeit</option>
+              <option value="tasks">Aufgabenanzahl</option>
+            </select>
+          </div>
+          <button class="project-create-btn" id="create-project-btn">+ Neues Projekt</button>
+        </div>
       </div>
       <div class="projects-list" data-projects="list">
         <!-- Project cards will be inserted here -->
@@ -229,7 +248,10 @@
   <template id="project-card-template">
     <div class="project-card" data-project-id="" data-projects="card">
       <div class="project-card-header">
-        <img src="" class="project-card-icon" alt="Line" onerror="this.style.display='none'" data-projects="icon">
+        <div class="project-card-icon-wrapper">
+          <img src="" class="project-card-icon" alt="Line" data-projects="icon">
+          <div class="project-card-icon-fallback" data-projects="icon-fallback" style="display: none;">S1</div>
+        </div>
         <div class="project-card-name" data-projects="name">Unbenanntes Projekt</div>
       </div>
       <div style="display: flex; gap: 1vw; align-items: center; margin-top: 0.5vh;">
@@ -314,18 +336,30 @@
       <div class="container-task-panel">
         <div class="taskbar">
           <div class="task-icon-group">
-            <button class="task-icon-button nav-only" id="mode-drawer-toggle"><img src="menu.svg" alt="Menu"></button>
-            <button class="task-button" id="add-train-button">+</button>
-            <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
-            <button class="task-icon-button mobile-only" id="toggle-view-button" title="List View"><img src="list.png" alt="Toggle View"></button>
-            <button class="task-icon-button nav-only" id="list-view-button" title="Listenansicht"><img src="list.png" alt="List View"></button>
-            <button class="task-icon-button nav-only" id="occupancy-view-button" title="Belegungsplan"><img src="occupancy.svg" alt="Occupancy View"></button>
-            <button class="task-icon-button" id="announcements-button" title="Ankuendigungen"><img src="announcement.png" alt="Announcements"></button>
-            <button class="task-icon-button" id="notes-button" title="Notizen"><img src="notes.png" alt="Notes"></button>
-            <button class="task-icon-button" data-mode="projects" title="Projekte"><img src="project.svg" alt="Projects"></button>
-            <button class="task-icon-button nav-only" data-mode="meals" title="Mahlzeiten"><img src="meal.svg" alt="Meals"></button>
-            <button class="task-icon-button nav-only" data-mode="groceries" title="Einkauf"><img src="grocery.svg" alt="Groceries"></button>
-            <button class="task-icon-button nav-only" data-mode="inventory" title="Inventar"><img src="inventory.svg" alt="Inventory"></button>
+            <button class="task-icon-button" id="station-select-button">
+              <img src="DB_logo_white_rgb_100px.svg" alt="Station Selection">
+              <span class="task-icon-label">Station</span>
+            </button>
+            <button class="task-icon-button nav-only" id="list-view-button" title="Listenansicht">
+              <img src="list.png" alt="List View">
+              <span class="task-icon-label">Liste</span>
+            </button>
+            <button class="task-icon-button nav-only" id="occupancy-view-button" title="Belegungsplan">
+              <img src="occupancy.svg" alt="Occupancy View">
+              <span class="task-icon-label">Belegung</span>
+            </button>
+            <button class="task-icon-button" id="announcements-button" title="Ankuendigungen">
+              <img src="announcement.png" alt="Announcements">
+              <span class="task-icon-label">Meldungen</span>
+            </button>
+            <button class="task-icon-button" id="notes-button" title="Notizen">
+              <img src="notes.png" alt="Notes">
+              <span class="task-icon-label">Notizen</span>
+            </button>
+            <button class="task-icon-button" data-mode="projects" title="Projekte">
+              <img src="project.svg" alt="Projects">
+              <span class="task-icon-label">Projekte</span>
+            </button>
           </div>
           <div class="date-selector mobile-only" id="date-selector">
             <span id="date-display">Heute</span>
@@ -337,6 +371,11 @@
         </div>
         <div class="mode-placeholder" id="mode-placeholder" aria-live="polite"></div>
       </div>
+      
+      <!-- Floating add button -->
+      <button class="task-button" id="add-train-button">
+        <img src="plus.svg" alt="Add">
+      </button>
       
     </div>
 

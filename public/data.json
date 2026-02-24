@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1771031850074,
-    "lastSaved": "2026-02-14T01:17:30.078Z"
+    "version": 1771891691543,
+    "lastSaved": "2026-02-24T00:08:11.572Z"
   },
   "fixedSchedule": [],
   "spontaneousEntries": [
@@ -703,10 +703,24 @@
       "ziel": "lol help all my todos are gone",
       "plan": "",
       "dauer": 0,
-      "zwischenhalte": [],
+      "zwischenhalte": [
+        "rh",
+        "",
+        "rthrt",
+        "h",
+        "tzj",
+        "rtz",
+        "j",
+        "rztjtzjtz",
+        "",
+        "",
+        "tzjtzjzt",
+        "",
+        ""
+      ],
       "canceled": false,
-      "date": "",
-      "plannedDate": "",
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
       "_uniqueId": "train_1c34qso0t_1770933468937",
       "projectId": "project_9ao8r6p2f_1770834514727",
       "type": "todo",
@@ -1028,26 +1042,28 @@
     {
       "linie": "S5",
       "ziel": "lol",
-      "plan": "",
+      "plan": "00:00",
       "dauer": 0,
       "zwischenhalte": [],
       "canceled": false,
-      "date": "",
-      "plannedDate": "",
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
       "_uniqueId": "train_n5c8q3qbh_1771031271299",
-      "projectId": "project_6oej3qm4n_1770914709412"
+      "projectId": "project_6oej3qm4n_1770914709412",
+      "actual": "00:00"
     },
     {
       "linie": "S5",
       "ziel": "lollllll",
-      "plan": "",
+      "plan": "12:12",
       "dauer": 0,
       "zwischenhalte": [],
       "canceled": false,
-      "date": "",
-      "plannedDate": "",
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
       "_uniqueId": "train_ywfsojf1v_1771031276890",
-      "projectId": "project_6oej3qm4n_1770914709412"
+      "projectId": "project_6oej3qm4n_1770914709412",
+      "actual": "12:12"
     },
     {
       "linie": "S7",
@@ -1108,6 +1124,153 @@
       "plannedDate": "",
       "_uniqueId": "train_9jr2w96fk_1771031499239",
       "projectId": "project_9ao8r6p2f_1770834514727"
+    },
+    {
+      "linie": "S5",
+      "ziel": "A test again",
+      "plan": "22:00",
+      "actual": "21:32",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_ta4ud0m2j_1771872762469",
+      "done": false,
+      "projectId": "project_6oej3qm4n_1770914709412"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Testing",
+      "plan": "21:18",
+      "actual": "21:18",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_gmz2cj7j6_1771877792642"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Tasty",
+      "plan": "21:31",
+      "actual": "21:31",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_mhwmubyns_1771878606596"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Hello",
+      "plan": "21:32",
+      "actual": "21:32",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_x9jpa9a55_1771878726353"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Nawr",
+      "plan": "21:33",
+      "actual": "21:33",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_lbm0cus1s_1771878736269"
+    },
+    {
+      "linie": "S60",
+      "ziel": "Seriously whats going on",
+      "plan": "21:35",
+      "actual": "21:35",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_d9w82b9j6_1771878802594"
+    },
+    {
+      "linie": "S5",
+      "ziel": "lol",
+      "plan": "22:00",
+      "actual": "23:55",
+      "dauer": 1000,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-24",
+      "plannedDate": "2026-02-24",
+      "_uniqueId": "train_he4k25gza_1771878863112",
+      "projectId": "project_6oej3qm4n_1770914709412"
+    },
+    {
+      "linie": "S1",
+      "ziel": "Minden (Westf)",
+      "plan": "21:50",
+      "actual": "21:50",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-23",
+      "plannedDate": "2026-02-23",
+      "_uniqueId": "train_fvxhtphpb_1771879766668"
+    },
+    {
+      "linie": "S5xxxx",
+      "ziel": "",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_j54kjhdgp_1771886461226"
+    },
+    {
+      "linie": "S5",
+      "ziel": "meow",
+      "plan": "",
+      "actual": "12:12",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-25",
+      "plannedDate": "2026-02-25",
+      "_uniqueId": "train_8b4taobjp_1771889809103",
+      "projectId": "project_6oej3qm4n_1770914709412"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Help",
+      "plan": "10:10",
+      "actual": "10:10",
+      "dauer": 20,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-25",
+      "plannedDate": "2026-02-25",
+      "_uniqueId": "train_b4qklpvvv_1771891392523"
+    },
+    {
+      "linie": "S3",
+      "ziel": "66",
+      "plan": "12:08",
+      "actual": "12:08",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-24",
+      "plannedDate": "2026-02-24",
+      "_uniqueId": "train_jvreu76yp_1771891683489"
     }
   ],
   "trains": [],
@@ -1115,11 +1278,11 @@
     {
       "_uniqueId": "project_9ao8r6p2f_1770834514727",
       "name": "Dienstwagen - Bitte nicht einsteigen. Do not enter.Dienstwagen - Bitte nicht einsteigen. Do not enter.",
-      "linie": "s7",
+      "linie": "s6",
       "deadline": "2025-10-10T10:10",
       "createdAt": "2026-02-11T18:28:34.727Z",
       "tasks": [],
-      "currentView": "aufgabe",
+      "currentView": "todo",
       "completedExpanded": true,
       "completedSectionOpen": true
     },
@@ -1165,6 +1328,14 @@
       "createdAt": "2026-02-14T01:04:08.894Z",
       "tasks": [],
       "currentView": "todo"
+    },
+    {
+      "_uniqueId": "project_1sctcl4nv_1771886476410",
+      "name": "50",
+      "linie": "s1",
+      "deadline": "",
+      "createdAt": "2026-02-23T22:41:16.410Z",
+      "tasks": []
     }
   ]
 }

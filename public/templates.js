@@ -53,6 +53,7 @@ const Templates = {
     return `
       <div class="${entryClasses.join(' ')}" 
            data-linie="${train.linie || ''}" 
+           data-ziel="${destinationText || ''}"
            data-plan="${train.plan || ''}" 
            data-date="${train.date || ''}" 
            data-unique-id="${train._uniqueId || ''}">
@@ -373,12 +374,14 @@ const Templates = {
   focusButtons() {
     return `
       <div class="focus-buttons">
-        <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">✕</button>
+        <div class="focus-buttons-row">
+          <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">✕</button>
+          <button class="focus-btn focus-btn-delete" data-focus-action="delete">Löschen</button>
+        </div>
         <button class="focus-btn focus-btn-minus5" data-focus-action="minus5">-5</button>
         <button class="focus-btn focus-btn-plus5" data-focus-action="plus5">+5</button>
         <button class="focus-btn focus-btn-plus10" data-focus-action="plus10">+10</button>
         <button class="focus-btn focus-btn-plus30" data-focus-action="plus30">+30</button>
-        <button class="focus-btn focus-btn-delete" data-focus-action="delete">Löschen</button>
       </div>
     `;
   },

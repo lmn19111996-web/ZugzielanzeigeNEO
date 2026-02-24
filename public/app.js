@@ -25,6 +25,8 @@
     // Track project editor state
     let currentProjectId = null;
     let isProjectDrawerOpen = false;
+    let currentProjectSortMode = 'creation'; // Track project sorting preference
+    let workspaceModeBeforeProjectDrawer = null; // Track workspace mode before opening project drawer
     
     // Mobile edit debounce timer
     let mobileEditDebounceTimer = null;
@@ -191,7 +193,7 @@
         's9': '#962d44',
         'fex': '#FF0000'
       };
-      return lineColors[line.toLowerCase()] || '#161B75';
+      return lineColors[line.toLowerCase()] || '#7D66AD';
     }
 
     function getCarriageSVG(dauer, isFEX = false) {
@@ -209,6 +211,19 @@
       const h = String(date.getHours()).padStart(2, '0');
       const m = String(date.getMinutes()).padStart(2, '0');
       return `${h}:${m}`;
+    }
+
+    // Alias for formatClock for semantic clarity in different contexts
+    function formatTime(date) {
+      return formatClock(date);
+    }
+
+    // Escape HTML special characters for safe innerHTML usage
+    function escapeHTML(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
     }
 
     function calculateArrivalTime(departureTime, durationMinutes, trainDate = null) {
@@ -361,9 +376,13 @@
       const seconds = diffSec % 60;
 
       const frag = document.createDocumentFragment();
+      const arrivalLabel = document.createElement('span');
+      arrivalLabel.className = 'arrival-label';
+      arrivalLabel.textContent = 'Ankunft in ';
       const countdownSpan = document.createElement('span');
       countdownSpan.className = 'countdown-time';
-      countdownSpan.textContent = `Ankunft in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      countdownSpan.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      frag.appendChild(arrivalLabel);
       frag.appendChild(countdownSpan);
       return frag;
     }
@@ -686,13 +705,16 @@
       if (currentTrain) {
         const existingEntry = firstTrainContainer.querySelector('.train-entry');
         
-        // Check if the train has changed (different linie, plan, actual, or destination)
+        // Check if the train has changed - compare all train attributes
         const existingDeparture = existingEntry ? existingEntry.querySelector('[data-departure]') : null;
         const trainChanged = !existingDeparture || 
                            !existingEntry ||
                            existingEntry.dataset.linie !== (currentTrain.linie || '') ||
                            existingDeparture.dataset.plan !== currentTrain.plan ||
                            existingDeparture.dataset.actual !== (currentTrain.actual || '') ||
+                           existingDeparture.dataset.date !== (currentTrain.date || '') ||
+                           existingDeparture.dataset.dauer !== String(currentTrain.dauer || '') ||
+                           existingDeparture.dataset.canceled !== String(currentTrain.canceled ? 'true' : 'false') ||
                            !existingEntry.querySelector('.zugziel') ||
                            existingEntry.querySelector('.zugziel').textContent !== (currentTrain.canceled ? 'Zug fällt aus' : currentTrain.ziel);
         
@@ -702,11 +724,17 @@
           firstTrainContainer.innerHTML = '';
           firstTrainContainer.appendChild(firstEntry);
           
-          // Apply line color to top ribbon bottom border
+          // Apply line color to top ribbon bottom border and update accent color
           if (topRibbon) {
             const lineColor = getLineColor(currentTrain.linie || 'S1');
-            currentAccentColor = lineColor; // Update global accent color
-            topRibbon.style.borderBottom = `4px solid ${lineColor}`;
+            topRibbon.style.borderBottom = `0.4vh solid ${lineColor}`;
+            currentAccentColor = lineColor; // Update global accent color for note headers
+            
+            // Update add button border color on mobile
+            const addBtn = document.getElementById('add-train-button');
+            if (addBtn) {
+              addBtn.style.borderColor = lineColor;
+            }
           }
         }
         // If train hasn't changed, updateClock() will handle the countdown update
@@ -714,8 +742,14 @@
         firstTrainContainer.innerHTML = '';
         // Reset to default border color when no train
         if (topRibbon) {
-          currentAccentColor = 'rgba(255, 255, 255, 0.64)'; // Reset to default
-          topRibbon.style.borderBottom = '3px solid rgba(255, 255, 255, 0.64)';
+          topRibbon.style.borderBottom = '0.3vh solid rgba(255, 255, 255, 0.64)';
+          currentAccentColor = 'rgba(255, 255, 255, 0.64)'; // Reset accent color
+          
+          // Reset add button border color
+          const addBtn = document.getElementById('add-train-button');
+          if (addBtn) {
+            addBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          }
         }
       }
     }
@@ -1058,7 +1092,7 @@
         projectDrawerBackHandler = (e) => {
           if (drawer.classList.contains('is-open')) {
             closeProjectDrawer();
-            renderProjectsPage();
+            restoreWorkspaceModeAfterProjectDrawer();
           }
         };
         window.addEventListener('popstate', projectDrawerBackHandler, true);
@@ -1092,6 +1126,25 @@
       }
     }
     
+    function restoreWorkspaceModeAfterProjectDrawer() {
+      // If we came from a specific workspace mode, restore it
+      if (workspaceModeBeforeProjectDrawer) {
+        if (workspaceModeBeforeProjectDrawer === 'train-editor') {
+          // Opened from train editor - just close project drawer, keep train editor open
+          // Do nothing, train editor is already open
+        } else if (workspaceModeBeforeProjectDrawer === 'projects') {
+          // If we were already in projects mode, re-render projects page
+          renderProjectsPage();
+        } else {
+          // Otherwise, restore the previous mode (list, occupancy, etc.)
+          setWorkspaceMode(workspaceModeBeforeProjectDrawer);
+        }
+        workspaceModeBeforeProjectDrawer = null;
+      } else {
+        // Fallback: if no previous mode was saved, assume projects
+        renderProjectsPage();
+      }
+    }
     function setupProjectDrawerCloseHandlers() {
       const drawer = document.getElementById('project-drawer');
       
@@ -1119,7 +1172,7 @@
             e.preventDefault();
             e.stopPropagation(); // Prevent other ESC handlers from running
             closeProjectDrawer();
-            renderProjectsPage();
+            restoreWorkspaceModeAfterProjectDrawer();
           }
           // If we have inputs, let the normal blur behavior work, don't close drawer
         }
@@ -1140,7 +1193,7 @@
             return;
           }
           closeProjectDrawer();
-          renderProjectsPage();
+          restoreWorkspaceModeAfterProjectDrawer();
         }
       };
       document.addEventListener('click', projectDrawerClickOutHandler, true);
@@ -1159,7 +1212,41 @@
       const pageClone = pageTemplate.content.cloneNode(true);
       const projectsList = pageClone.querySelector('[data-projects="list"]');
       
-      if (projects.length === 0) {
+      // Apply sorting based on currentProjectSortMode
+      const sortedProjects = [...projects].sort((a, b) => {
+        switch (currentProjectSortMode) {
+          case 'name':
+            const nameA = (a.name || 'Unbenanntes Projekt').toLowerCase();
+            const nameB = (b.name || 'Unbenanntes Projekt').toLowerCase();
+            return nameA.localeCompare(nameB);
+          
+          case 'line':
+            const lineA = (a.linie || 's1').toLowerCase();
+            const lineB = (b.linie || 's1').toLowerCase();
+            return lineA.localeCompare(lineB);
+          
+          case 'deadline':
+            // Projects without deadline go to end
+            if (!a.deadline && !b.deadline) return 0;
+            if (!a.deadline) return 1;
+            if (!b.deadline) return -1;
+            return new Date(a.deadline) - new Date(b.deadline);
+          
+          case 'tasks':
+            const tasksA = schedule.spontaneousEntries.filter(t => t.projectId === a._uniqueId).length;
+            const tasksB = schedule.spontaneousEntries.filter(t => t.projectId === b._uniqueId).length;
+            return tasksB - tasksA; // Descending order (more tasks first)
+          
+          case 'creation':
+          default:
+            // Sort by creation date (oldest first, which is write order)
+            const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+            const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+            return dateA - dateB;
+        }
+      });
+      
+      if (sortedProjects.length === 0) {
         // Show empty state
         const emptyTemplate = document.getElementById('projects-empty-template');
         if (emptyTemplate) {
@@ -1170,7 +1257,7 @@
         const cardTemplate = document.getElementById('project-card-template');
         if (!cardTemplate) return;
         
-        projects.forEach(project => {
+        sortedProjects.forEach(project => {
           const lineColor = getLineColor(project.linie || 's1');
           const deadlineDate = project.deadline ? new Date(project.deadline) : null;
           const deadlineStr = deadlineDate ? deadlineDate.toLocaleDateString('de-DE', {
@@ -1194,7 +1281,45 @@
           card.setAttribute('data-project-id', project._uniqueId);
           card.style.borderLeft = `4px solid ${lineColor}`;
           
-          cardClone.querySelector('[data-projects="icon"]').src = getTrainSVG(project.linie || 'S1');
+          const icon = cardClone.querySelector('[data-projects="icon"]');
+          const iconFallback = cardClone.querySelector('[data-projects="icon-fallback"]');
+          const lineName = (project.linie || 'S1').toUpperCase();
+          
+          icon.src = getTrainSVG(project.linie || 'S1');
+          iconFallback.textContent = lineName;
+          
+          // Adjust font size based on text length for project card fallback
+          const adjustCardFallbackFontSize = () => {
+            const textLength = lineName.length;
+            let fontSize;
+            
+            if (textLength <= 2) {
+              fontSize = '2.2vh';
+            } else if (textLength === 3) {
+              fontSize = '1.9vh';
+            } else if (textLength === 4) {
+              fontSize = '1.7vh';
+            } else if (textLength <= 6) {
+              fontSize = '1.5vh';
+            } else {
+              fontSize = '1.2vh';
+            }
+            
+            iconFallback.style.fontSize = fontSize;
+          };
+          
+          // Show fallback if image fails to load
+          icon.onerror = function() {
+            icon.style.display = 'none';
+            iconFallback.style.display = 'flex';
+            adjustCardFallbackFontSize();
+          };
+          
+          icon.onload = function() {
+            icon.style.display = 'block';
+            iconFallback.style.display = 'none';
+          };
+          
           cardClone.querySelector('[data-projects="name"]').textContent = project.name || 'Unbenanntes Projekt';
           cardClone.querySelector('[data-projects="deadline"]').textContent = deadlineStr;
           cardClone.querySelector('[data-projects="progress"]').textContent = `${completedTasks} / ${taskCount} Aufgaben abgeschlossen`;
@@ -1210,6 +1335,16 @@
       const createBtn = document.getElementById('create-project-btn');
       if (createBtn) {
         createBtn.addEventListener('click', createNewProject);
+      }
+      
+      // Add sort selector event listener
+      const sortSelector = document.getElementById('project-sort-selector');
+      if (sortSelector) {
+        sortSelector.value = currentProjectSortMode; // Set current value
+        sortSelector.addEventListener('change', () => {
+          currentProjectSortMode = sortSelector.value;
+          renderProjectsPage(); // Re-render with new sort order
+        });
       }
       
       // Add click handlers for project cards
@@ -1246,6 +1381,11 @@
         return;
       }
       
+      // Save the current workspace mode before opening project drawer
+      // Also track if we're opening from train editor (don't change workspace mode in that case)
+      const openedFromTrainEditor = !!desktopFocusedTrainId;
+      workspaceModeBeforeProjectDrawer = openedFromTrainEditor ? 'train-editor' : currentWorkspaceMode;
+      
       currentProjectId = projectId;
       renderProjectDrawer(project);
       openProjectDrawer();
@@ -1271,7 +1411,44 @@
       
       // Populate symbol image
       const symbol = clone.querySelector('[data-project="symbol"]');
+      const symbolFallback = clone.querySelector('[data-project="symbol-fallback"]');
+      const lineName = (project.linie || 's1').toUpperCase();
+      
       symbol.src = getTrainSVG(project.linie || 's1');
+      symbolFallback.textContent = lineName;
+      
+      // Adjust font size based on text length for fallback badge
+      const adjustFallbackFontSize = () => {
+        const textLength = lineName.length;
+        let fontSize;
+        
+        // Dynamic font sizing based on text length (scaled for smaller badge)
+        if (textLength <= 2) {
+          fontSize = '3.2vh';
+        } else if (textLength === 3) {
+          fontSize = '2.8vh';
+        } else if (textLength === 4) {
+          fontSize = '2.5vh';
+        } else if (textLength <= 6) {
+          fontSize = '2.2vh';
+        } else {
+          fontSize = '1.8vh';
+        }
+        
+        symbolFallback.style.fontSize = fontSize;
+      };
+      
+      // Show fallback if image fails to load
+      symbol.onerror = function() {
+        symbol.style.display = 'none';
+        symbolFallback.style.display = 'flex';
+        adjustFallbackFontSize();
+      };
+      
+      symbol.onload = function() {
+        symbol.style.display = 'block';
+        symbolFallback.style.display = 'none';
+      };
       
       // Populate project name
       const nameField = clone.querySelector('[data-project="name"]');
@@ -1558,7 +1735,7 @@
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
           closeProjectDrawer();
-          renderProjectsPage();
+          restoreWorkspaceModeAfterProjectDrawer();
         });
       }
       
@@ -1582,7 +1759,7 @@
             
             // Re-render immediately
             closeProjectDrawer();
-            renderProjectsPage();
+            restoreWorkspaceModeAfterProjectDrawer();
             
             // Save in background
             saveSchedule();
@@ -1678,34 +1855,42 @@
         });
       });
       
-      // Symbol image opens prompt dialog to change line
+      // Symbol image/fallback opens prompt dialog to change line
       const symbol = document.querySelector('[data-project="symbol"]');
-      if (symbol) {
-        symbol.addEventListener('click', function(e) {
-          e.stopPropagation();
+      const symbolFallback = document.querySelector('[data-project="symbol-fallback"]');
+      
+      const handleSymbolClick = function(e) {
+        e.stopPropagation();
+        
+        const currentLine = project.linie || 's1';
+        const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
+        
+        if (newLine && newLine.trim() !== '') {
+          // Preserve completed section state before re-rendering
+          const wasOpen = project.completedSectionOpen;
           
-          const currentLine = project.linie || 's1';
-          const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
+          project.linie = newLine.trim().toLowerCase();
           
-          if (newLine && newLine.trim() !== '') {
-            // Preserve completed section state before re-rendering
-            const wasOpen = project.completedSectionOpen;
-            
-            project.linie = newLine.trim().toLowerCase();
-            
-            // Re-render immediately
-            const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-            if (freshProject) {
-              // Restore the completed section state
-              freshProject.completedSectionOpen = wasOpen;
-              renderProjectDrawer(freshProject);
-            }
-            renderProjectsPage();
-            
-            // Save in background
-            saveSchedule();
+          // Re-render immediately
+          const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+          if (freshProject) {
+            // Restore the completed section state
+            freshProject.completedSectionOpen = wasOpen;
+            renderProjectDrawer(freshProject);
           }
-        });
+          renderProjectsPage();
+          
+          // Save in background
+          saveSchedule();
+        }
+      };
+      
+      if (symbol) {
+        symbol.addEventListener('click', handleSymbolClick);
+      }
+      
+      if (symbolFallback) {
+        symbolFallback.addEventListener('click', handleSymbolClick);
       }
       
       // Task add input
@@ -2024,6 +2209,80 @@
           }
           openTaskEditor(project._uniqueId, todoId);
         });
+        
+        // Double-click on todo row to edit name inline (same as tasks)
+        row.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          
+          // Don't allow inline edit if clicking on action buttons or checkbox
+          if (e.target.tagName === 'INPUT' || e.target.closest('[data-task-action]')) {
+            return;
+          }
+          
+          const nameSpan = row.querySelector('.project-todo-name');
+          if (!nameSpan || nameSpan.querySelector('input')) return; // Already editing
+          
+          const currentName = nameSpan.textContent;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = currentName;
+          input.className = 'project-todo-name-input';
+          input.style.width = '100%';
+          input.style.background = 'rgba(255, 255, 255, 0.1)';
+          input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+          input.style.borderRadius = '0.3vh';
+          input.style.padding = '0.5vh 1vh';
+          input.style.color = 'inherit';
+          input.style.fontSize = 'inherit';
+          input.style.fontFamily = 'inherit';
+          
+          const saveName = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== currentName) {
+              const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
+              if (todo) {
+                // Preserve completed section state
+                const wasOpen = project.completedSectionOpen;
+                
+                // OPTIMISTIC UI: Update immediately
+                todo.ziel = newName;
+                regenerateTrainsFromSchedule();
+                processTrainData(schedule);
+                
+                // Re-render both views
+                const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+                if (freshProject) {
+                  freshProject.completedSectionOpen = wasOpen;
+                  renderProjectDrawer(freshProject);
+                }
+                renderProjectsPage();
+                
+                // Save in background
+                saveSchedule();
+              }
+            } else {
+              nameSpan.textContent = currentName;
+            }
+          };
+          
+          input.addEventListener('blur', saveName);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              input.blur();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              nameSpan.textContent = currentName;
+              input.blur();
+            }
+          });
+          
+          nameSpan.textContent = '';
+          nameSpan.appendChild(input);
+          input.focus();
+          input.select();
+        });
       });
       
       // Collapsible completed section toggle
@@ -2088,7 +2347,8 @@
 
     function setWorkspaceMode(mode) {
       const isMobile = window.innerWidth <= 768;
-      currentWorkspaceMode = mode;
+      // Note: currentWorkspaceMode is only set for actual workspaces (list, occupancy, projects)
+      // Non-workspace modes (drawers/overlays) don't change it
 
       if (mode === 'add') {
         createNewTrainEntry();
@@ -2098,21 +2358,24 @@
       switch (mode) {
         case 'list':
           currentViewMode = 'list';
+          currentWorkspaceMode = 'list';
           isAnnouncementsView = false;
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           hideWorkspacePlaceholder();
-          renderTrains();
+          renderCurrentWorkspaceView();
           break;
         case 'occupancy':
           currentViewMode = 'belegungsplan';
+          currentWorkspaceMode = 'occupancy';
           isAnnouncementsView = false;
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           hideWorkspacePlaceholder();
-          renderTrains();
+          renderCurrentWorkspaceView();
           break;
         case 'announcements':
+          // Announcements is a drawer, not a workspace - don't change currentWorkspaceMode
           if (isMobile) {
             // Toggle announcements view (mobile)
             if (isAnnouncementsView) {
@@ -2135,20 +2398,23 @@
           }
           break;
         case 'db-api':
+          // db-api is an overlay, not a workspace - don't change currentWorkspaceMode
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           showWorkspacePlaceholder('DB API');
           showStationOverlay();
           break;
         case 'projects':
+          currentWorkspaceMode = 'projects';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           closeEditorDrawer();
           closeProjectDrawer();
           hideWorkspacePlaceholder();
-          renderProjectsPage();
+          renderCurrentWorkspaceView();
           break;
         case 'meals':
+          // Placeholder modes - not workspaces, don't change currentWorkspaceMode
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           showWorkspacePlaceholder('Mahlzeiten');
@@ -2168,7 +2434,9 @@
       }
     }
 
-    // Unified render function that calls the appropriate view
+    /**
+     * Unified render function that calls the appropriate view
+     */
     function renderTrains() {
       if (currentViewMode === 'belegungsplan') {
         renderBelegungsplan();
@@ -2177,13 +2445,67 @@
       }
     }
     
-    // Conditional rendering - only render trains if in appropriate workspace mode, but always update header
+    /**
+     * Conditional rendering - only render trains if in appropriate workspace mode, but always update header.
+     * @deprecated Use renderCurrentWorkspaceView() instead for most cases, as it handles all workspace modes uniformly.
+     * This function is kept for specific cases where you only want to update the train list without other panels.
+     */
     function renderTrainsIfAppropriate() {
       renderHeadlineTrain(); // Always update header
       
       // Only render train content if in train-related workspace modes
       if (currentWorkspaceMode === 'list' || currentWorkspaceMode === 'occupancy') {
         renderTrains();
+      }
+    }
+
+    /**
+     * Unified decision helper function that checks the current workspace mode
+     * and calls the correct rendering functions.
+     * 
+     * WORKSPACE MODES (main panel content):
+     * - 'list' or 'occupancy': Train workspace (list or belegungsplan view)
+     * - 'projects': Projects workspace
+     * 
+     * Non-workspace modes (drawers/overlays):
+     * - 'announcements', 'db-api', 'meals', 'groceries', 'inventory' are NOT workspaces
+     * 
+     * @param {Object} options - Optional configuration
+     * @param {boolean} options.includeAnnouncements - Whether to render announcements panel (default: true)
+     * @param {boolean} options.includeHeadline - Whether to render headline train (default: true)
+     */
+    function renderCurrentWorkspaceView(options = {}) {
+      const { 
+        includeAnnouncements = true,
+        includeHeadline = true 
+      } = options;
+      
+      // Render based on current workspace mode (only 3 actual workspaces)
+      switch (currentWorkspaceMode) {
+        case 'list':
+        case 'occupancy':
+          // Train workspace (list or occupancy view)
+          renderTrains();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+          
+        case 'projects':
+          // Projects workspace
+          if (includeHeadline) {
+            renderHeadlineTrain(); // Still show current train in headline
+          }
+          renderProjectsPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+          
+        default:
+          // Should not happen - defensive fallback
+          console.warn('Unknown workspace mode:', currentWorkspaceMode);
+          break;
       }
     }
 
@@ -3674,6 +3996,21 @@
         // Append to panel
         panel.appendChild(clone);
         
+        // Setup project badge (show next to label if project assigned)
+        const projectBadge = panel.querySelector('.project-badge');
+        if (projectBadge && train.projectId) {
+          // Show badge and attach click handler
+          projectBadge.style.display = 'inline';
+          projectBadge.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            openProjectEditor(train.projectId);
+          };
+        } else if (projectBadge) {
+          // Hide badge if no project
+          projectBadge.style.display = 'none';
+        }
+        
         // Determine the type of object being edited and show/hide fields accordingly
         const isNote = train.type === 'note';
         const isTodo = train.type === 'todo';
@@ -3690,6 +4027,10 @@
               if (input) input.setAttribute('tabindex', '-1');
             }
           });
+          // Hide project badge for notes
+          const projectBadge = panel.querySelector('.project-badge');
+          if (projectBadge) projectBadge.style.display = 'none';
+          
           const delayButtons = panel.querySelector('.editor-delay-buttons');
           if (delayButtons) {
             delayButtons.style.display = 'none';
@@ -3707,6 +4048,9 @@
               if (input) input.setAttribute('tabindex', '-1');
             }
           });
+          // Hide project badge for todos
+          const projectBadge = panel.querySelector('.project-badge');
+          if (projectBadge) projectBadge.style.display = 'none';
           const delayButtons = panel.querySelector('.editor-delay-buttons');
           if (delayButtons) {
             delayButtons.style.display = 'none';
@@ -3782,7 +4126,7 @@
             } else if (fieldName === 'dauer') {
               train.dauer = Number(newValue) || 0;
             } else if (fieldName === 'zwischenhalte') {
-              train.zwischenhalte = newValue.split('\n').filter(s => s.trim());
+              train.zwischenhalte = newValue.split('\n');
             } else if (fieldName === 'actual') {
               train.actual = newValue || undefined;
             } else if (fieldName === 'projectId') {
@@ -5104,7 +5448,7 @@
           stopsArray = train.zwischenhalte;
         } else if (typeof train.zwischenhalte === 'string') {
           // Handle both literal \n and actual newlines
-          stopsArray = train.zwischenhalte.split(/\\n|\n/).filter(s => s.trim());
+          stopsArray = train.zwischenhalte.split(/\\n|\n/);
         }
       }
       if (stopsArray.length === 0) {
@@ -5164,13 +5508,17 @@
         // Re-attach tap-to-edit listeners (edit one field at a time - iOS/Android style)
         popup.querySelectorAll('[data-editable=\"true\"]').forEach(field => {
           field.addEventListener('click', function(e) {
+            // Don't enter edit mode if clicking the project badge
+            if (e.target.closest('.project-badge')) {
+              return;
+            }
+            
             // Check if already in edit mode
             const isAlreadyInput = field.querySelector('input, textarea');
             if (isAlreadyInput) {
               return;
             }
             
-            const fieldName = field.getAttribute('data-field');
             const inputType = field.getAttribute('data-input-type');
             const currentValue = field.getAttribute('data-value');
             const placeholder = field.getAttribute('data-placeholder') || '';
@@ -5286,8 +5634,8 @@
                 train.dauer = Number(value) || 0;
                 scheduleTrain.dauer = Number(value) || 0;
               } else if (fieldName === 'zwischenhalte') {
-                train.zwischenhalte = value.split('\n').filter(s => s.trim());
-                scheduleTrain.zwischenhalte = value.split('\n').filter(s => s.trim());
+                train.zwischenhalte = value.split('\n');
+                scheduleTrain.zwischenhalte = value.split('\n');
               } else if (fieldName === 'actual') {
                 train.actual = value || undefined;
                 scheduleTrain.actual = value || undefined;
@@ -5956,13 +6304,7 @@
       processTrainData(schedule);
       
       // Re-render all affected UI components
-      if (currentWorkspaceMode !== 'projects') {
-        renderTrainsIfAppropriate(); // Renders headline + train list/occupancy
-        renderComprehensiveAnnouncementPanel();
-      } else {
-        // In projects mode, re-render project view
-        renderProjectsPage();
-      }
+      renderCurrentWorkspaceView();
       
       // If project drawer is open, refresh it with updated data
       if (isProjectDrawerOpen && currentProjectId) {
@@ -6025,13 +6367,7 @@
       processTrainData(schedule);
       
       // Re-render all affected UI components
-      if (currentWorkspaceMode !== 'projects') {
-        renderTrainsIfAppropriate(); // Renders headline + train list/occupancy
-        renderComprehensiveAnnouncementPanel();
-      } else {
-        // In projects mode, re-render project view
-        renderProjectsPage();
-      }
+      renderCurrentWorkspaceView();
       
       console.log('✅ Data and UI refreshed');
     }
@@ -6077,8 +6413,7 @@
         // Refresh the display
         const newSchedule = await fetchSchedule();
         processTrainData(newSchedule);
-        renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
-        renderComprehensiveAnnouncementPanel();
+        renderCurrentWorkspaceView();
 
       } catch (error) {
         console.error('Error deleting train:', error);
@@ -6804,7 +7139,61 @@
       document.getElementById("minute").style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
       document.getElementById("hour").style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
 
-      // Update headline train countdown every second
+      // Check if current headline train has expired or if a newer train has started
+      let needsHeadlineUpdate = false;
+      
+      if (processedTrainData.currentTrain) {
+        // Check 1: Has current train expired?
+        const currentOccEnd = getOccupancyEnd(processedTrainData.currentTrain, now);
+        if (currentOccEnd && now > currentOccEnd) {
+          needsHeadlineUpdate = true;
+        }
+        
+        // Check 2: Has a newer train started? (Edge case: overlapping trains)
+        if (!needsHeadlineUpdate && processedTrainData.localTrains) {
+          const currentTrainStart = parseTime(
+            processedTrainData.currentTrain.actual || processedTrainData.currentTrain.plan,
+            now,
+            processedTrainData.currentTrain.date
+          );
+          
+          // Check if any local train started more recently and is currently occupying
+          const newerOccupyingTrain = processedTrainData.localTrains.find(train => {
+            if (!train.plan || train.plan.trim() === '') return false;
+            const trainStart = parseTime(train.actual || train.plan, now, train.date);
+            const trainOccEnd = getOccupancyEnd(train, now);
+            
+            // Is this train currently occupying AND started after current train?
+            return trainStart && trainOccEnd && 
+                   trainStart <= now && trainOccEnd > now &&
+                   trainStart > currentTrainStart;
+          });
+          
+          if (newerOccupyingTrain) {
+            needsHeadlineUpdate = true;
+          }
+        }
+      } else {
+        // No current train - check if one has become available
+        if (processedTrainData.localTrains && processedTrainData.localTrains.length > 0) {
+          needsHeadlineUpdate = true;
+        }
+      }
+      
+      // If headline needs update, reprocess data and re-render
+      if (needsHeadlineUpdate) {
+        processTrainData(schedule);
+        renderHeadlineTrain();
+        
+        // If train list workspace is open, re-render it
+        if (currentWorkspaceMode === 'list' || currentWorkspaceMode === 'occupancy') {
+          renderTrains();
+        }
+        
+        return; // Skip countdown update since we just re-rendered
+      }
+
+      // Update headline train countdown every second (if no reprocess needed)
       const firstTrainContainer = document.getElementById('first-train-container');
       const existingEntry = firstTrainContainer.querySelector('.train-entry');
       if (existingEntry) {
@@ -6912,6 +7301,8 @@
         console.log('✅ Announcements button found, adding event listener');
         announcementsBtn.addEventListener('click', () => {
           console.log('📢 Announcements button clicked');
+          // Close note drawer if open (like how announcement drawer closes when note button is clicked)
+          closeNoteDrawer();
           const isMobile = window.innerWidth <= 768;
           if (isMobile) {
             // Toggle announcements view (mobile)
@@ -6982,7 +7373,15 @@
       const notesBtn = document.getElementById('notes-button');
       if (notesBtn) {
         notesBtn.addEventListener('click', () => {
-          openNoteDrawer();
+          const drawer = document.getElementById('note-drawer');
+          if (drawer && drawer.classList.contains('is-open')) {
+            // If note drawer is open, close it
+            closeNoteDrawer();
+          } else {
+            // If note drawer is closed, open it and close announcements
+            closeAnnouncementsDrawer();
+            openNoteDrawer();
+          }
         });
       }
 
@@ -7263,12 +7662,7 @@
             processTrainData(schedule);
             
             // Re-render UI
-            if (currentWorkspaceMode !== 'projects') {
-              renderTrainsIfAppropriate();
-              renderComprehensiveAnnouncementPanel();
-            } else {
-              renderProjectsPage();
-            }
+            renderCurrentWorkspaceView();
             checkTrainArrivals();
           }
           // else: Version matches - silent success, no action needed
@@ -7287,8 +7681,7 @@
             // Update display with DB trains
             schedule.trains = dbTrains;
             processTrainData(schedule);
-            renderTrainsIfAppropriate();
-            renderComprehensiveAnnouncementPanel();
+            renderCurrentWorkspaceView();
             checkTrainArrivals();
           }
         } catch (error) {
@@ -7323,20 +7716,15 @@
         Object.assign(schedule, freshSchedule);
         processTrainData(schedule);
         
-        // Only render trains if not in projects mode
-        if (currentWorkspaceMode !== 'projects') {
-          renderTrainsIfAppropriate(); // Only render trains if appropriate workspace
-          renderComprehensiveAnnouncementPanel();
-        } else {
-          // In projects mode, re-render the project drawer if it's open
-          if (isProjectDrawerOpen && currentProjectId) {
-            const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
-            if (updatedProject) {
-              renderProjectDrawer(updatedProject);
-            }
+        // Render current workspace view
+        renderCurrentWorkspaceView();
+        
+        // In projects mode, also refresh open project drawer if needed
+        if (currentWorkspaceMode === 'projects' && isProjectDrawerOpen && currentProjectId) {
+          const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
+          if (updatedProject) {
+            renderProjectDrawer(updatedProject);
           }
-          // And re-render the projects page
-          renderProjectsPage();
         }
         checkTrainArrivals(); // Check for trains arriving in 15 minutes
         
@@ -7537,8 +7925,7 @@
         (async () => {
           const schedule = await fetchSchedule();
           processTrainData(schedule);
-          renderTrainsIfAppropriate(); // Only render if appropriate workspace
-          renderComprehensiveAnnouncementPanel();
+          renderCurrentWorkspaceView();
           updateClock();
         })();
       }
@@ -7559,12 +7946,16 @@
         // Start auto-refresh for DB API mode
         updateRefreshInterval();
         
+        // Show loading animation
+        showSaveStatus();
+        
         (async () => {
           const schedule = await fetchSchedule();
           processTrainData(schedule);
-          renderTrainsIfAppropriate(); // Only render if appropriate workspace
-          renderComprehensiveAnnouncementPanel();
+          renderCurrentWorkspaceView();
           updateClock();
+          // Complete loading animation
+          completeSaveStatus();
         })();
       }
 

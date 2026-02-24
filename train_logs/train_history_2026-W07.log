@@ -180,7 +180,7 @@
 {"trainKey":"s7|this one should have 11.2 as date tbh|10:10|2026-02-12","linie":"S7","ziel":"This one should have 11.2 as date tbh","plan":"10:10","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-12","canceled":true}
 {"trainKey":"s25|however this one shouldnt assume|12:20|2026-02-11","linie":"S25","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s5|however this one shouldnt assume|12:20|2026-02-11","linie":"S5","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
-{"trainKey":"s6|however this one shouldnt assume|12:20|2026-02-11","linie":"S6","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:25","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
+{"trainKey":"s6|however this one shouldnt assume|12:20|2026-02-11","linie":"S6","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:25","dauer":10000,"stops":"","date":"2026-02-11","canceled":true}
 {"trainKey":"s2|however this one shouldnt assume|12:20|2026-02-11","linie":"S2","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s|however this one shouldnt assume|12:20|2026-02-11","linie":"S","ziel":"However this one shouldnt assume","plan":"12:20","actual":"20:20","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
 {"trainKey":"s4|help|10:00|2026-02-11","linie":"s4","ziel":"Help","plan":"10:00","actual":"10:00","dauer":10000,"stops":"","date":"2026-02-11","canceled":false}
@@ -237,3 +237,8 @@
 {"trainKey":"s7|dgf|unknown|unknown","linie":"S7","ziel":"dgf","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"note|give it a name|unknown|2026-02-12","linie":"NOTE","ziel":"give it a name","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-12","canceled":false}
 {"trainKey":"note|gave you another chance|unknown|2026-02-12","linie":"NOTE","ziel":"gave you another chance","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"s25|omg nice|21:29|2026-02-13","linie":"s25","ziel":"OMG NICE","plan":"21:29","actual":"21:29","dauer":20,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s5|slay|10:10|2026-02-10","linie":"S5","ziel":"Slay","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-10","canceled":true}
+{"trainKey":"s1|yall this one should exist|01:40|2026-02-14","linie":"S1","ziel":"YALL THIS ONE SHOULD EXIST","plan":"01:40","actual":"01:40","dauer":1000,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s7|me|unknown|2026-02-15","linie":"S7","ziel":"me","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s7|please|unknown|2026-02-15","linie":"S7","ziel":"please","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-15","canceled":false}
