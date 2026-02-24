@@ -7,7 +7,7 @@
     
     // Global view mode tracking
     let currentViewMode = 'belegungsplan';
-    let isAnnouncementsView = false;
+
     
     // Global refresh interval tracking
     let refreshIntervalId = null;
@@ -84,8 +84,16 @@
       processedTrainData.allTrains = (schedule.trains || []).slice();
       processedTrainData.localTrains = (schedule.localTrains || []).slice();
       
-      // Separate notes (objects with type='note') from scheduled trains
-      processedTrainData.noteTrains = processedTrainData.allTrains.filter(t => t.type === 'note');
+      // Separate notes (objects with type='note') from scheduled trains.
+      // Notes can be in schedule.trains (legacy) or schedule.spontaneousEntries (new format).
+      const notesFromTrains = processedTrainData.allTrains.filter(t => t.type === 'note');
+      const notesFromSpontaneous = (schedule.spontaneousEntries || []).filter(t => t.type === 'note');
+      // Deduplicate by _uniqueId in case both sources overlap
+      const noteIds = new Set(notesFromTrains.map(t => t._uniqueId));
+      processedTrainData.noteTrains = [
+        ...notesFromTrains,
+        ...notesFromSpontaneous.filter(t => !noteIds.has(t._uniqueId))
+      ];
       
       processedTrainData.scheduledTrains = processedTrainData.allTrains
         .filter(t => t.type !== 'note' && t.linie && t.plan && t.plan.trim() !== '')
@@ -2359,7 +2367,6 @@
         case 'list':
           currentViewMode = 'list';
           currentWorkspaceMode = 'list';
-          isAnnouncementsView = false;
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           hideWorkspacePlaceholder();
@@ -2368,7 +2375,6 @@
         case 'occupancy':
           currentViewMode = 'belegungsplan';
           currentWorkspaceMode = 'occupancy';
-          isAnnouncementsView = false;
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           hideWorkspacePlaceholder();
@@ -2376,25 +2382,13 @@
           break;
         case 'announcements':
           // Announcements is a drawer, not a workspace - don't change currentWorkspaceMode
-          if (isMobile) {
-            // Toggle announcements view (mobile)
-            if (isAnnouncementsView) {
-              isAnnouncementsView = false;
-              renderTrains(); // Go back to normal train list
-            } else {
-              isAnnouncementsView = true;
-              showAnnouncementsView();
-            }
+          // Toggle announcements drawer (both desktop and mobile)
+          const drawer = document.getElementById('announcement-drawer');
+          if (drawer && drawer.classList.contains('is-open')) {
+            closeAnnouncementsDrawer();
           } else {
-            // Toggle announcements drawer (desktop)
-            const drawer = document.getElementById('announcement-drawer');
-            if (drawer && drawer.classList.contains('is-open')) {
-              closeAnnouncementsDrawer();
-            } else {
-              isAnnouncementsView = true;
-              openAnnouncementsDrawer();
-              renderComprehensiveAnnouncementPanel();
-            }
+            openAnnouncementsDrawer();
+            renderComprehensiveAnnouncementPanel();
           }
           break;
         case 'db-api':
@@ -7257,6 +7251,14 @@
         });
       }
 
+      // Sidebar add button event listener (desktop)
+      const sidebarAddBtn = document.getElementById('sidebar-add-button');
+      if (sidebarAddBtn) {
+        sidebarAddBtn.addEventListener('click', () => {
+          createNewTrainEntry();
+        });
+      }
+
       // Station selection button event listener
       const stationSelectBtn = document.getElementById('station-select-button');
       if (stationSelectBtn) {
@@ -7301,20 +7303,14 @@
         console.log('✅ Announcements button found, adding event listener');
         announcementsBtn.addEventListener('click', () => {
           console.log('📢 Announcements button clicked');
-          // Close note drawer if open (like how announcement drawer closes when note button is clicked)
-          closeNoteDrawer();
-          const isMobile = window.innerWidth <= 768;
-          if (isMobile) {
-            // Toggle announcements view (mobile)
-            if (isAnnouncementsView) {
-              isAnnouncementsView = false;
-              renderTrains(); // Go back to normal train list
-            } else {
-              isAnnouncementsView = true;
-              showAnnouncementsView();
-            }
+          const drawer = document.getElementById('announcement-drawer');
+          if (drawer && drawer.classList.contains('is-open')) {
+            // If announcement drawer is open, close it
+            closeAnnouncementsDrawer();
           } else {
-            setWorkspaceMode('announcements');
+            // If announcement drawer is closed, open it and close notes
+            closeNoteDrawer();
+            openAnnouncementsDrawer();
           }
         });
       } else {
@@ -8313,161 +8309,7 @@
     }
 
     // Show announcements view in mobile mode
-    function showAnnouncementsView() {
-      console.log('🎯 showAnnouncementsView called');
-      const now = new Date();
-      
-      // Get all announcements using the same logic as renderComprehensiveAnnouncementPanel
-      const allAnnouncements = [];
-      
-      console.log('📊 processedTrainData:', processedTrainData);
-      
-      const todayDateStr = now.toLocaleDateString('sv-SE');
-      const isToday = (train) => {
-        if (!train.date) return false;
-        const trainDateStr = train.date.split('T')[0];
-        return trainDateStr === todayDateStr;
-      };
-      
-      // 0. PRIORITY: Pinned trains (if any exist) - sorted by time
-      if (pinnedTrains && pinnedTrains.length > 0) {
-        const sortedPinnedTrains = [...pinnedTrains].sort((a, b) => {
-          const aTime = parseTime(a.actual || a.plan, now, a.date);
-          const bTime = parseTime(b.actual || b.plan, now, b.date);
-          if (!aTime && !bTime) return 0;
-          if (!aTime) return 1;
-          if (!bTime) return -1;
-          return aTime - bTime;
-        });
-        
-        sortedPinnedTrains.forEach(train => {
-          allAnnouncements.push({ ...train, announcementType: 'pinned' });
-        });
-      }
-      
-      // 1. Notes without departure time - ALWAYS FIRST, sorted by their own order
-      const noteTrains = processedTrainData.noteTrains
-        .map(t => ({ ...t, announcementType: 'note' }));
-      
-      // 2. Future trains for other types
-      const futureTrains = processedTrainData.futureTrains.filter(isToday);
-      
-      // 3. Cancelled trains
-      const cancelledTrains = futureTrains
-        .filter(t => t.canceled)
-        .map(t => ({ ...t, announcementType: 'cancelled' }));
-      
-      // 4. Delayed trains
-      const delayedTrains = futureTrains
-        .filter(t => !t.canceled && t.actual && t.actual !== t.plan)
-        .filter(t => {
-          const delay = getDelay(t.plan, t.actual, now, t.date);
-          return delay > 0;
-        })
-        .map(t => ({ ...t, announcementType: 'delayed' }));
-      
-      // 5. Zusatzfahrt
-      const zusatzfahrtTrains = futureTrains
-        .filter(t => !t.canceled && t.ziel && t.ziel.trim().startsWith('[ZF]'))
-        .map(t => ({ ...t, announcementType: 'zusatzfahrt' }));
-      
-      // 6. Ersatzfahrt
-      const cancelledTrainsList = futureTrains.filter(t => t.canceled);
-      const ersatzfahrtTrains = futureTrains.filter(activeTrain => {
-        if (activeTrain.canceled) return false;
-        const activeStart = parseTime(activeTrain.actual || activeTrain.plan, now, activeTrain.date);
-        const activeDur = Number(activeTrain.dauer) || 0;
-        if (!activeStart || activeDur <= 0) return false;
-        const activeEnd = new Date(activeStart.getTime() + activeDur * 60000);
-        
-        return cancelledTrainsList.some(cancelledTrain => {
-          const cancelledStart = parseTime(cancelledTrain.plan, now, cancelledTrain.date);
-          const cancelledDur = Number(cancelledTrain.dauer) || 0;
-          if (!cancelledStart || cancelledDur <= 0) return false;
-          const cancelledEnd = new Date(cancelledStart.getTime() + cancelledDur * 60000);
-          return activeStart < cancelledEnd && activeEnd > cancelledStart;
-        });
-      }).map(t => ({ ...t, announcementType: 'ersatzfahrt' }));
-      
-      // 7. Konflikt
-      const allActiveTrains = processedTrainData.futureTrains.filter(t => !t.canceled);
-      const konfliktTrains = [];
-      for (let i = 0; i < allActiveTrains.length; i++) {
-        for (let j = i + 1; j < allActiveTrains.length; j++) {
-          const t1 = allActiveTrains[i];
-          const t2 = allActiveTrains[j];
-          const t1Start = parseTime(t1.actual || t1.plan, now, t1.date);
-          const t2Start = parseTime(t2.actual || t2.plan, now, t2.date);
-          const t1Dur = Number(t1.dauer) || 0;
-          const t2Dur = Number(t2.dauer) || 0;
-          if (!t1Start || !t2Start || t1Dur <= 0 || t2Dur <= 0) continue;
-          const t1End = new Date(t1Start.getTime() + t1Dur * 60000);
-          const t2End = new Date(t2Start.getTime() + t2Dur * 60000);
-          if (t1Start < t2End && t1End > t2Start) {
-            konfliktTrains.push({
-              ...t1,
-              announcementType: 'konflikt',
-              conflictWith: t2,
-              _uniqueId: t1._uniqueId + '_konflikt_' + t2._uniqueId
-            });
-            break;
-          }
-        }
-      }
-      
-      // Sort each category by time
-      const sortByTime = (arr) => {
-        return arr.sort((a, b) => {
-          const aTime = parseTime(a.plan, now, a.date);
-          const bTime = parseTime(b.plan, now, b.date);
-          if (!aTime && !bTime) return 0;
-          if (!aTime) return 1;
-          if (!bTime) return -1;
-          return aTime - bTime;
-        });
-      };
-      
-      // Add announcements in priority order (notes always first)
-      allAnnouncements.push(...noteTrains);
-      allAnnouncements.push(...sortByTime(cancelledTrains));
-      allAnnouncements.push(...sortByTime(delayedTrains));
-      allAnnouncements.push(...sortByTime(zusatzfahrtTrains));
-      allAnnouncements.push(...sortByTime(ersatzfahrtTrains));
-      allAnnouncements.push(...sortByTime(konfliktTrains));
-      
-      console.log('📢 Total announcements:', allAnnouncements.length);
-      console.log('📋 Announcements:', allAnnouncements);
-      
-      // Render announcements in the main train list panel
-      const trainListEl = document.getElementById('train-list');
-      trainListEl.innerHTML = '';
-      trainListEl.style.opacity = '0';
-      
-      if (allAnnouncements.length === 0) {
-        const template = document.createElement('template');
-        template.innerHTML = Templates.mobileNoAnnouncements().trim();
-        trainListEl.appendChild(template.content.firstChild);
-      } else {
-        allAnnouncements.forEach(announcement => {
-          const template = document.createElement('template');
-          template.innerHTML = Templates.mobileAnnouncementCard(announcement).trim();
-          const card = template.content.firstChild;
-          
-          card.addEventListener('click', () => {
-            renderFocusMode(announcement);
-          });
-          
-          trainListEl.appendChild(card);
-        });
-      }
-      
-      // Show the list with fade-in
-      setTimeout(() => {
-        trainListEl.style.opacity = '1';
-      }, 50);
-      
-      console.log('✅ Announcements rendered in train list panel');
-    }
+
 
 if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1771891691543,
-    "lastSaved": "2026-02-24T00:08:11.572Z"
+    "version": 1771898355464,
+    "lastSaved": "2026-02-24T01:59:15.790Z"
   },
   "fixedSchedule": [],
   "spontaneousEntries": [
@@ -1262,7 +1262,7 @@
     },
     {
       "linie": "S3",
-      "ziel": "66",
+      "ziel": "I wanna pee",
       "plan": "12:08",
       "actual": "12:08",
       "dauer": 0,
@@ -1271,6 +1271,29 @@
       "date": "2026-02-24",
       "plannedDate": "2026-02-24",
       "_uniqueId": "train_jvreu76yp_1771891683489"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Schwaßstraße",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_0j4gd51eb_1771897634014"
+    },
+    {
+      "linie": "NOTE",
+      "type": "note",
+      "ziel": "LOL REALLY",
+      "zwischenhalte": [
+        "EFJISREOGJSREOIGJSRG",
+        ""
+      ],
+      "date": "2026-02-24",
+      "_uniqueId": "note_0m6tsmsr7_1771897764110",
+      "plannedDate": "2026-02-24"
     }
   ],
   "trains": [],

@@ -740,9 +740,14 @@ html, body {
       transition: opacity 0.5s ease-in-out;
     }
 
-    /* Train entry styling - compact for dashboard */
+    /* ========================================
+       DESKTOP TRAIN ENTRY LAYOUT (Flexbox)
+       ========================================
+       Structure: [indicator] [symbol + destination] [time]
+       Layout: Horizontal flexbox, space-between
+    */
     .train-entry {
-      height: 7.5vh; /* More entries visible */
+      height: 7.5vh;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -876,6 +881,8 @@ html, body {
     .train-entry:hover {
       background-color: rgba(255, 255, 255, 0.1);
     }
+
+    /* End of desktop train-entry styles */
 
     /* Day separator */
     .day-separator {
@@ -2266,105 +2273,167 @@ html, body {
       }
     }
 
-    /* Hide add button on desktop */
+    /* Sidebar add button styling for desktop */
+    #sidebar-add-button {
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #sidebar-add-button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    #sidebar-add-button:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Hide floating add button on desktop */
     #add-train-button {
       display: none;
     }
 
     /* Mobile responsive styles */
     @media screen and (max-width: 768px) {
-      /* Scale down top ribbon for mobile */
+      /* ============================================================
+         MOBILE TOP RIBBON
+         Layout: [clock] .............. [line badge + destination]
+         Left: clockSlot (fixed width)
+         Right: #first-train-container (flex: 1, flex row)
+      */
       .top-ribbon {
         display: flex;
-        height: 6vh;
-        padding-left: 0; /* Remove padding */
-        padding-right: 0; /* Remove padding */
-        padding-bottom: 2vh; /* Add spacing below ribbon */
-        width: 95vw; /* Take 95% of viewport width */
-        margin: 0 auto; /* Center it */
+        flex-direction: row;
+        align-items: center;
+        height: auto;
+        margin: 1vh;
+        width: 97vw;
+        box-sizing: border-box;
       }
-      
+
       .clockSlot {
-        width: 18vh;
-        padding-left: 2vw; /* Add padding to clock slot instead */
+        width: auto;
+        flex-shrink: 0;
+        padding-left: 0;
+        gap: 1.5vw;
       }
-      
+
       .aclock {
-        width: 2.8vh;
-        height: 2.8vh;
-        border-width: 0.28vh;
-        margin-right: 1.5vh;
+        width: 2.5vh;
+        height: 2.5vh;
+        border-width: 0.2vh;
+        margin-right: 1vh;
       }
-      
+
       .center {
-        width: 0.35vh;
-        height: 0.35vh;
+        width: 0.3vh;
+        height: 0.3vh;
       }
-      
+
       .clock {
-        font-size: 3.2vh;
+        font-size: 2.7vh;
       }
-      
-      #first-train-container .train-symbol {
-        width: 5vh;
-        height: 5vh;
+
+    .hour {
+        width: 0.15vh;
+        height: 1vh;
+        background: white;
+        z-index: 3;
+    }
+
+    .minute {
+        width: 0.15vh;
+        height: 1.2vh;
+        background: white;
+        z-index: 2; 
+    }  
+
+      /* ============================================================
+         MOBILE HEADER TRAIN (inside #first-train-container)
+         Shows only: [line badge] [destination]
+         Hides everything else from the shared train-entry template
+      */
+
+      /* Container: sits naturally next to the clock.
+         flex: 0 1 auto means it shrinks to content width but doesn't grow.
+         max-width caps it so long destinations truncate cleanly. */
+      #first-train-container {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 60vw;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding-left: 2vw;
       }
-      
-      #first-train-container .symbol-slot {
-        width: 5vh;
-      }
-      
-      #first-train-container .line-badge {
-        font-size: 2vh;
-      }
-      
-      #first-train-container .zugziel {
-        font-size: 3.5vh; /* Larger destination */
-        font-weight: 500;
-      }
-      
-      /* Hide time/departure block on mobile header train */
-      #first-train-container .right-block {
-        display: none;
-      }
-      
-      /* Hide indicator dot on mobile header train */
-      #first-train-container .indicator-dot {
-        display: none;
-      }
-      
-      /* Adjust train-info to show line and destination side by side */
-      #first-train-container .train-info {
+
+      /* Override the mobile grid layout — header train is always flex.
+         width: 100% fills the container (bounded by container's max-width: 60vw). */
+      #first-train-container .train-entry {
+        display: flex;
         flex-direction: row;
         align-items: center;
         gap: 1.5vw;
-      }
-      
-      /* Separate mobile layout for header train - override grid layout */
-      #first-train-container .train-entry {
         padding: 0;
-        display: flex; /* Override grid */
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-start; /* Fix: Remove space-between */
         height: auto;
         min-height: auto;
         border-bottom: none;
-        gap: 2vw; /* Add gap between clock and train info */
+        width: 100%;
       }
-      
+
+      /* train-info: flex: 1 fills the container (bounded by max-width above),
+         min-width: 0 allows zugziel to truncate with text-overflow. */
       #first-train-container .train-entry .train-info {
         display: flex;
         flex-direction: row;
         align-items: center;
-        flex: 1; /* Allow to expand and show content */
-        min-width: 0;
         gap: 1.5vw;
+        flex: 1;
+        min-width: 0;
       }
-      
+
+      /* Hide: indicator dot */
+      #first-train-container .indicator-dot {
+        display: none;
+      }
+
+      /* Show: train symbol (SVG img for S-Bahn) and line-badge — both are the line indicator */
+      #first-train-container .train-symbol {
+        display: block;
+        width: 4.5vh;
+        height: 4.5vh;
+      }
+
+      /* Show: line badge (text fallback for non-SVG lines), sized for ribbon */
+      #first-train-container .line-badge {
+        font-size: 2vh;
+        flex-shrink: 0;
+      }
+
+      /* Show: destination text — must explicitly set display:block to win over
+         the general mobile rule `.train-info > .zugziel { display: none }` */
+      #first-train-container .zugziel {
+        display: block;
+        font-size: 3vh;
+        font-weight: 300;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+        padding-left: 0;
+      }
+
+      /* Hide: departure/time block */
+      #first-train-container .right-block {
+        display: none;
+      }
+
+      /* Suppress mobile grid pseudo-elements on the header train */
       #first-train-container .train-entry::before,
       #first-train-container .train-entry::after {
-        display: none; /* Remove pseudo-elements from regular train entries */
+        display: none;
       }
 
       /* Hide the right panel (focus and announcements) */
@@ -2377,7 +2446,7 @@ html, body {
         display: block;
       }
 
-      /* Note drawer - above taskbar on mobile */
+      /* Note drawer - full screen on mobile */
       .right-panel[id="note-drawer"] {
         display: flex;
         position: fixed;
@@ -2391,13 +2460,24 @@ html, body {
         z-index: 3500;
         transform: translateX(100%);
         transition: transform 0.2s ease;
+        background: #0F1450;
+        flex-direction: column;
       }
 
       .right-panel[id="note-drawer"].is-open {
         transform: translateX(0);
       }
+      
+      /* Note drawer content area - use desktop styles */
+      .right-panel[id="note-drawer"] .right-panel-bottom {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2vh;
+      }
 
-      /* Announcement drawer - above taskbar on mobile */
+      /* Announcement drawer - full screen on mobile */
       .right-panel[id="announcement-drawer"] {
         display: flex;
         position: fixed;
@@ -2411,73 +2491,26 @@ html, body {
         z-index: 2000;
         transform: translateX(100%);
         transition: transform 0.2s ease;
+        background: #0F1450;
+        flex-direction: column;
       }
 
       .right-panel[id="announcement-drawer"].is-open {
         transform: translateX(0);
       }
+
+      /* Announcement drawer content area */
+      .right-panel[id="announcement-drawer"] .right-panel-bottom {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2vh;
+      }
       
-      /* Mobile announcement panel styling - match new UI */
+      /* Keep desktop announcement container styles on mobile */
       .announcement-container {
-        background: transparent;
-        box-shadow: none;
-        border-radius: 0;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-        padding: 1.5vh 3vw 2vh 3vw;
-      }
-      
-      .announcement-panel {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-rows: auto auto auto;
-        gap: 0.8vh 1vh;
-        align-items: start;
-      }
-      
-      /* Row 1: Headline spans full width */
-      .announcement-headline {
-        grid-column: 1 / -1;
-        grid-row: 1;
-        height: auto;
-        padding: 0;
-        margin-bottom: 0.5vh;
-      }
-      
-      /* Row 2: Time and icon layout */
-      .announcement-group-icon-type {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 1vh;
-        margin-bottom: 0;
-      }
-      
-      .announcement-time-slot {
-        grid-column: 1;
-        padding: 0;
-      }
-      
-      .announcement-line-icon {
-        grid-column: 2;
-        width: 5vh;
-        height: 5vh;
-        padding: 0;
-      }
-      
-      /* Row 3: Destination */
-      .announcement-destination {
-        grid-column: 1 / -1;
-        grid-row: 3;
-        padding: 0;
-        font-size: 2.5vh;
-        white-space: normal;
-      }
-      
-      /* Content panel if present */
-      .announcement-content-panel {
-        grid-column: 1 / -1;
-        grid-row: 4;
+        margin: 0;
       }
 
       /* Make editor drawer fullscreen on mobile */
@@ -2552,6 +2585,11 @@ html, body {
         white-space: nowrap;
         border-radius: 1vh;
         transition: background 0.2s ease;
+      }
+
+      /* Hide sidebar add button on mobile */
+      #sidebar-add-button {
+        display: none !important;
       }
       
       .task-button:active {
@@ -2662,6 +2700,7 @@ html, body {
         overflow-y: auto;
         height: auto;
         min-height: 0;
+        padding-top: 2vh; /* Add upper spacing below ribbon */
       }
 
       /* Adjust overlay for mobile */
@@ -2669,32 +2708,44 @@ html, body {
         width: 90vw;
       }
 
-      /* Optimize train entries for mobile */
-      .departure {
-        font-size: 2.8vh;
-        padding-left: 0;
-        font-weight: 400;
-      }
-      
-      .delayed {
-        font-size: 2.2vh;
-        padding: 0.3vh 0.6vh;
-      }
-      
-      /* Announcement-style layout for train entries on mobile */
+      /* ========================================
+         MOBILE TRAIN ENTRY LAYOUT (Grid)
+         ========================================
+         Desktop uses: horizontal flexbox with [indicator][symbol+dest][time]
+         Mobile uses: 2x2 grid to reflow for better mobile UX
+         
+         Grid Structure:
+         Row 1, Col 1: Time (departure-slot)
+         Row 1, Col 2: Line icon (symbol-slot)
+         Row 2, Cols 1-2: Destination (via ::after pseudo-element reading data-ziel)
+         
+         Note: We hide the desktop .zugziel and use ::after to reposition destination
+      */
       .train-entry {
         height: auto;
         min-height: 9vh;
         padding: 1.5vh 3vw 2vh 3vw;
         display: grid;
         grid-template-columns: 1fr auto;
-        grid-template-rows: auto auto; /* Only 2 rows: time/icon and destination */
-        gap: 1vh 1vh;
+        grid-template-rows: auto auto;
         align-items: start;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.853); /* Thicker separator */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.853);
       }
       
-      /* Row 1, Column 1: Time (from right-block) */
+      /* Optimize departure time display */
+      .departure {
+        font-size: 3.5vh;
+        padding-left: 0;
+        font-weight: 400;
+      }
+      
+      .delayed {
+        font-size: 3.5vh;
+        padding: 0.3vh 0.6vh;
+      }
+      
+      /* Mobile Grid Positioning:
+         Row 1, Col 1: Time display */
       .train-entry > .right-block {
         grid-column: 1;
         grid-row: 1;
@@ -2710,7 +2761,7 @@ html, body {
         gap: 0.5vh;
       }
       
-      /* Row 1, Column 2: Line icon (from train-info > symbol-slot) */
+      /* Row 1, Col 2: Line icon */
       .train-entry > .train-info {
         grid-column: 2;
         grid-row: 1;
@@ -2719,45 +2770,46 @@ html, body {
         justify-content: flex-end;
       }
       
-      /* Hide indicator dot and destination from train-info */
+      /* Hide desktop elements that don't work in mobile grid */
       .train-info > .indicator-dot {
         display: none;
       }
       
       .train-info > .zugziel {
-        display: none;
+        display: none; /* Hidden because we use ::after instead */
       }
 
-      /* Show only symbol-slot in train-info */
+      /* Show only symbol-slot in mobile train-info */
       .train-info > .symbol-slot {
         width: auto;
         display: flex;
       }
 
+      /* Adjust icon sizes for mobile */
       .train-symbol {
-        width: 5vh;
-        height: 5vh;
+        width: 6vh;
+        height: 6vh;
       }
       
       .line-badge {
-        min-width: 5vh;
-        height: 5vh;
+        min-width: 6vh;
+        height: 6vh;
         font-size: 2.2vh;
         padding: 0.8vh 1.5vh;
       }
       
-      /* Hide line name row on mobile */
+      /* Hide any pseudo-elements from desktop */
       .train-entry::before {
         display: none;
       }
 
-      /* Row 2: Destination - reposition zugziel */
+      /* Row 2, Cols 1-2: Destination text (reads from data-ziel attribute) */
       .train-entry::after {
         content: attr(data-ziel);
         grid-column: 1 / -1;
         grid-row: 2;
-        font-size: 2.5vh;
-        font-weight: 500;
+        font-size: 3.5vh;
+        font-weight: 300;
         color: rgba(255, 255, 255, 0.95);
         letter-spacing: -0.02em;
         line-height: 1.3;
@@ -2768,6 +2820,8 @@ html, body {
         line-clamp: 2;
         -webkit-box-orient: vertical;
       }
+      
+      /* End of mobile train-entry grid layout */
 
       .day-separator {
         padding: 2vh 3vw; /* Add vertical padding */
