@@ -1054,6 +1054,9 @@
               desktopFocusedTrainId = null;
               panel.innerHTML = '';
               closeEditorDrawer();
+              // Stop the project drawer's popstate handler from also firing,
+              // so the project drawer stays open after closing the editor.
+              e.stopImmediatePropagation();
             }
           }
         };
@@ -6454,7 +6457,7 @@
       // Helper function to check if a train is today
       const todayDateStr = now.toLocaleDateString('sv-SE'); // YYYY-MM-DD format
       const isToday = (train) => {
-        if (!train.date) return false;
+        if (!train.date) return true; // No date = newly created / unspecified → treat as today
         const trainDateStr = train.date.split('T')[0]; // Handle ISO format
         return trainDateStr === todayDateStr;
       };
@@ -8057,7 +8060,7 @@
         
         const todayDateStr = now.toLocaleDateString('sv-SE');
         const isToday = (train) => {
-          if (!train.date) return false;
+          if (!train.date) return true; // No date = newly created / unspecified → treat as today
           const trainDateStr = train.date.split('T')[0];
           return trainDateStr === todayDateStr;
         };

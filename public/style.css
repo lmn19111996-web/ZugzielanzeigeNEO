@@ -246,7 +246,7 @@ html, body {
     }
 
     .task-icon-button:hover {
-      background: #1f2478;
+      background: #445e9e;
     }
     
     .task-icon-button:active {
@@ -2304,14 +2304,14 @@ html, body {
     @media screen and (max-width: 768px) {
       /* ============================================================
          MOBILE TOP RIBBON
-         Layout: [clock] .............. [line badge + destination]
-         Left: clockSlot (fixed width)
-         Right: #first-train-container (flex: 1, flex row)
+         Layout: [line badge + destination] (centered)
+         clockSlot is hidden — system clock shown by Android
       */
       .top-ribbon {
         display: flex;
         flex-direction: row;
         align-items: center;
+        justify-content: center;
         height: auto;
         margin: 1vh;
         width: 97vw;
@@ -2319,41 +2319,8 @@ html, body {
       }
 
       .clockSlot {
-        width: auto;
-        flex-shrink: 0;
-        padding-left: 0;
-        gap: 1.5vw;
+        display: none;
       }
-
-      .aclock {
-        width: 2.5vh;
-        height: 2.5vh;
-        border-width: 0.2vh;
-        margin-right: 1vh;
-      }
-
-      .center {
-        width: 0.3vh;
-        height: 0.3vh;
-      }
-
-      .clock {
-        font-size: 2.7vh;
-      }
-
-    .hour {
-        width: 0.15vh;
-        height: 1vh;
-        background: white;
-        z-index: 3;
-    }
-
-    .minute {
-        width: 0.15vh;
-        height: 1.2vh;
-        background: white;
-        z-index: 2; 
-    }  
 
       /* ============================================================
          MOBILE HEADER TRAIN (inside #first-train-container)
@@ -2361,17 +2328,16 @@ html, body {
          Hides everything else from the shared train-entry template
       */
 
-      /* Container: sits naturally next to the clock.
+      /* Container: centered in ribbon (clockSlot hidden).
          flex: 0 1 auto means it shrinks to content width but doesn't grow.
          max-width caps it so long destinations truncate cleanly. */
       #first-train-container {
         flex: 0 1 auto;
         min-width: 0;
-        max-width: 60vw;
+        max-width: 80vw;
         overflow: hidden;
         display: flex;
         align-items: center;
-        padding-left: 2vw;
       }
 
       /* Override the mobile grid layout — header train is always flex.

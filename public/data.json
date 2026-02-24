@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1771898355464,
-    "lastSaved": "2026-02-24T01:59:15.790Z"
+    "version": 1771933155491,
+    "lastSaved": "2026-02-24T11:39:15.514Z"
   },
   "fixedSchedule": [],
   "spontaneousEntries": [
@@ -1294,6 +1294,43 @@
       "date": "2026-02-24",
       "_uniqueId": "note_0m6tsmsr7_1771897764110",
       "plannedDate": "2026-02-24"
+    },
+    {
+      "linie": "S2",
+      "ziel": "Dieser Zug fällt aus",
+      "plan": "12:45",
+      "actual": "12:45",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": true,
+      "date": "2026-02-24",
+      "plannedDate": "2026-02-24",
+      "_uniqueId": "train_g9cy3v4ek_1771932483194"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Dörverden",
+      "plan": "12:46",
+      "actual": "12:46",
+      "dauer": 1,
+      "zwischenhalte": [],
+      "canceled": true,
+      "date": "2026-02-24",
+      "plannedDate": "2026-02-24",
+      "_uniqueId": "train_kegufe00w_1771933095249",
+      "projectId": "project_59yyaor0p_1771020721904"
+    },
+    {
+      "linie": "S6",
+      "ziel": "lel",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-25",
+      "plannedDate": "2026-02-25",
+      "_uniqueId": "train_7jbdp8fi5_1771933152608",
+      "projectId": "project_59yyaor0p_1771020721904"
     }
   ],
   "trains": [],
