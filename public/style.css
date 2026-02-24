@@ -2469,6 +2469,7 @@ html, body {
         transition: transform 0.2s ease;
         background: #0F1450;
         flex-direction: column;
+        visibility: visible;
       }
 
       .right-panel[id="note-drawer"].is-open {
@@ -2501,6 +2502,7 @@ html, body {
         transition: transform 0.2s ease;
         background: #0F1450;
         flex-direction: column;
+        visibility: visible;
       }
 
       .right-panel[id="announcement-drawer"].is-open {
@@ -2536,6 +2538,7 @@ html, body {
         z-index: 4000;
         transform: translateX(100%);
         transition: transform 0.2s ease;
+        visibility: visible;
       }
 
       .right-panel-top.is-open {
