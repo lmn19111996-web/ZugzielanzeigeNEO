@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1771933155491,
-    "lastSaved": "2026-02-24T11:39:15.514Z"
+    "version": 1771937551492,
+    "lastSaved": "2026-02-24T12:52:30.601Z"
   },
   "fixedSchedule": [],
   "spontaneousEntries": [
@@ -1331,6 +1331,18 @@
       "plannedDate": "2026-02-25",
       "_uniqueId": "train_7jbdp8fi5_1771933152608",
       "projectId": "project_59yyaor0p_1771020721904"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Hell nah",
+      "plan": "06:30",
+      "actual": "06:30",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-25",
+      "plannedDate": "2026-02-25",
+      "_uniqueId": "train_ou9ox6jhj_1771935263082"
     }
   ],
   "trains": [],

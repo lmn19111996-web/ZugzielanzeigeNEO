@@ -2208,6 +2208,9 @@ html, body {
     }
 
     @media screen and (min-width: 769px) {
+      /* Hide mobile-only elements on desktop */
+      .mobile-info-btn { display: none; }
+
       :root {
         --nav-rail-width: 6vh;
         --editor-drawer-width: clamp(20vw, 300px, 350px);
@@ -2694,6 +2697,189 @@ html, body {
       /* Adjust overlay for mobile */
       .overlay-card {
         width: 90vw;
+      }
+
+      /* ========================================
+         MOBILE SWIPE GESTURES
+         Each .train-entry is wrapped in .swipe-wrapper by JS.
+         The card slides over a color background that reveals on swipe.
+         Right swipe → cancel/reactivate  (red)
+         Left swipe  → add delay          (yellow→orange/red gradient)
+         A .swipe-hint label floats at the center of the revealed strip,
+         positioned by JS on every touchmove.
+      */
+      .swipe-wrapper {
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Solid bg so the card hides the color layer completely when not swiped */
+      .swipe-wrapper > .train-entry {
+        position: relative;
+        z-index: 1;
+        will-change: transform;
+        background: #161B75;
+      }
+
+      /* Pure color layer — no text, no layout. JS controls opacity. */
+      .swipe-bg {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        border-bottom: 1px solid rgba(255,255,255,0.853);
+      }
+
+      .swipe-bg-right {
+        background: #b03030;
+      }
+
+      /* Green background for reactivating a cancelled train */
+      .swipe-bg-reactivate {
+        background: #206040;
+      }
+
+      .swipe-bg-left {
+        /* yellow-orange on the far edge → vivid red near the card edge */
+        background: linear-gradient(to left, #e8a000, #d44000);
+      }
+
+      /* Floating action hint — JS sets left/right/transform to center it
+         in the revealed strip on every touchmove frame */
+      .swipe-hint {
+        position: absolute;
+        top: 50%;
+        pointer-events: none;
+        white-space: nowrap;
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 0.6vw;
+        color: #fff;
+        font-size: 2.2vh;
+        font-weight: 600;
+        z-index: 0;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      }
+
+      .swipe-hint-icon {
+        font-size: 3vh;
+        line-height: 1;
+        align-self: center;
+      }
+
+      .swipe-hint-num {
+        font-size: 4.5vh;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .swipe-hint-unit {
+        font-size: 2vh;
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      /* ========================================
+         MOBILE ENTRY SHELL + ACTION BAR
+         Shell wraps swipe-wrapper + collapsible action bar.
+      */
+      .mobile-entry-shell {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid rgba(255,255,255,0.853);
+      }
+
+      /* Shell owns the border; inner swipe-wrapper/entry don't */
+      .mobile-entry-shell .swipe-wrapper,
+      .mobile-entry-shell .swipe-bg {
+        border-bottom: none;
+      }
+
+      .mobile-entry-shell > .swipe-wrapper > .train-entry {
+        border-bottom: none;
+      }
+
+      .mobile-action-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5vh;
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+        padding: 0 3vw;
+        background: rgba(255,255,255,0.05);
+      }
+
+      .mobile-action-bar.is-open {
+        max-height: 8vh;
+        opacity: 1;
+        padding: 1.5vh 3vw;
+      }
+
+      /* Row of quick action buttons */
+      .mobile-action-btns {
+        display: flex;
+        flex-direction: row;
+        gap: 1vh;
+        align-items: center;
+      }
+
+      /* Mirror editor-btn design exactly */
+      .mobile-action-btn {
+        flex: 1;
+        padding: 1.2vh 0;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: rgba(255,255,255,0.9);
+        font-family: inherit;
+        font-size: 1.8vh;
+        font-weight: 400;
+        cursor: pointer;
+        border-radius: 4px;
+        text-align: center;
+      }
+
+      /* Mirror editor-btn-cancel: orange tint */
+      .mobile-cancel-btn {
+        background: rgba(255,165,0,0.3);
+        color: rgb(255,200,100);
+      }
+
+      /* Mirror editor-btn-cancel.reactivate: green tint */
+      .mobile-cancel-btn.reactivate {
+        background: rgba(0,200,100,0.3);
+        color: rgb(150,255,200);
+      }
+
+      /* Mirror editor-btn-delay: blue tint */
+      .mobile-delay-btn {
+        background: rgba(100,150,255,0.2);
+        color: rgba(150,200,255,0.9);
+      }
+
+      /* "Weitere Informationen" — text link inside .train-info on mobile list entries.
+         Hidden on desktop (via min-width rule) and on the header/first-train. */
+      .mobile-info-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.9vh 1.3vw;
+        margin-right: 2vw;
+        border: none;
+        background: rgba(0, 0, 0, 0.533);
+        color: rgba(255, 255, 255, 0.899);
+        border-radius: 1vw;
+        font-family: inherit;
+        font-size: 1.7vh;
+        cursor: pointer;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      /* Hide on the headline/header train */
+      #first-train-container .mobile-info-btn,
+      .first-train .mobile-info-btn {
+        display: none;
       }
 
       /* ========================================
@@ -3958,4 +4144,53 @@ font-weight: 500;
   .project-task-col-status {
     width: 5vw;
   }
+}
+
+/* ============================================================
+   SWIPE UNDO TOAST (mobile only — shown/hidden via JS)
+*/
+#swipe-undo-toast {
+  position: fixed;
+  bottom: calc(7vh + env(safe-area-inset-bottom, 0px) + 1.5vh);
+  left: 3vw;
+  right: 3vw;
+  background: #1a2550;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2vh 5vw;
+  z-index: 9000;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  visibility: hidden;
+  transform: translateY(200%);
+  transition: transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              visibility 0s linear 0.32s;
+  pointer-events: none;
+}
+
+#swipe-undo-toast.is-visible {
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              visibility 0s linear 0s;
+}
+
+.swipe-toast-label {
+  font-size: 2vh;
+  color: rgba(255,255,255,0.85);
+}
+
+#swipe-undo-btn {
+  font-size: 2vh;
+  font-weight: 700;
+  color: #6ab4ff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5vh 0;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
 }

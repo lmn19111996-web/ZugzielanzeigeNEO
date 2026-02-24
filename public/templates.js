@@ -59,6 +59,7 @@ const Templates = {
            data-unique-id="${train._uniqueId || ''}">
         <div class="train-info">
           <div class="${indicatorClass}"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
           <div class="symbol-slot">
             ${trainSymbolHTML}
           </div>
