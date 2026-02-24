@@ -57,6 +57,7 @@ html, body {
     #container {
       position: relative;
       height: 100vh;
+      height: 100dvh;
       width: 100vw;
       display: flex;
       flex-direction: row;
@@ -646,6 +647,7 @@ html, body {
       top: 0;
       left: 0;
       height: 100vh;
+      height: 100dvh;
       width: 18vw;
       min-width: 240px;
       max-width: 360px;
@@ -1629,6 +1631,7 @@ html, body {
       left: 0;
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       background: rgba(0, 0, 0, 0.5);
       z-index: 3000;
       opacity: 1;
@@ -1647,6 +1650,7 @@ html, body {
       left: 0;
       width: 35vw;
       height: 100vh;
+      height: 100dvh;
       background: #161B75;
       color: white;
       padding: 3vh 2vw;
@@ -1780,6 +1784,7 @@ html, body {
       left: 0;
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       background: #161B75; /* Opaque blocking layer */
       z-index: 5000;
       display: none;
@@ -1803,6 +1808,7 @@ html, body {
     /* Mobile-optimized focus mode styles from focus.html */
     .mobile-focus-container {
       height: 100vh;
+      height: 100dvh;
       width: 100%;
       display: flex;
       flex-direction: column;
@@ -2454,6 +2460,7 @@ html, body {
         left: 0;
         width: 100vw;
         height: calc(100vh - 7vh); /* Stop at taskbar */
+        height: calc(100dvh - 7vh - env(safe-area-inset-bottom, 0px)); /* Stop at taskbar */
         right: auto;
         margin-top: 0;
         border-radius: 0;
@@ -2485,6 +2492,7 @@ html, body {
         left: 0;
         width: 100vw;
         height: calc(100vh - 7vh); /* Stop at taskbar */
+        height: calc(100dvh - 7vh - env(safe-area-inset-bottom, 0px)); /* Stop at taskbar */
         right: auto;
         margin-top: 0;
         border-radius: 0;
@@ -2521,6 +2529,7 @@ html, body {
         left: 0;
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         right: auto;
         margin-top: 0;
         border-radius: 0;
@@ -2542,6 +2551,7 @@ html, body {
       .left-column {
         width: 100%;
         height: 100vh;
+        height: 100dvh;
         border-right: none;
       }
 
@@ -2549,6 +2559,7 @@ html, body {
       .container-task-panel {
         flex-direction: column-reverse; /* Taskbar at bottom */
         height: 100vh;
+        height: 100dvh;
         display: flex;
       }
 
@@ -2556,6 +2567,7 @@ html, body {
       .taskbar {
         width: 100%;
         height: 7vh; /* Shorter taskbar */
+        height: calc(7vh + env(safe-area-inset-bottom, 0px));
         flex-direction: row;
         border-right: none;
         border-bottom: none;
@@ -2565,6 +2577,7 @@ html, body {
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
       }
       
       .taskbar::-webkit-scrollbar {
@@ -2734,13 +2747,13 @@ html, body {
       
       /* Optimize departure time display */
       .departure {
-        font-size: 3.5vh;
+        font-size: 3vh;
         padding-left: 0;
         font-weight: 400;
       }
       
       .delayed {
-        font-size: 3.5vh;
+        font-size: 3vh;
         padding: 0.3vh 0.6vh;
       }
       
@@ -2808,7 +2821,7 @@ html, body {
         content: attr(data-ziel);
         grid-column: 1 / -1;
         grid-row: 2;
-        font-size: 3.5vh;
+        font-size: 2.8vh;
         font-weight: 300;
         color: rgba(255, 255, 255, 0.95);
         letter-spacing: -0.02em;
@@ -3213,6 +3226,7 @@ html, body {
   right: calc(-1 * var(--project-drawer-width));
   width: var(--project-drawer-width);
   height: 100vh;
+  height: 100dvh;
   background: #f6f6f6;
   box-sizing: border-box;
   overflow-y: auto;
