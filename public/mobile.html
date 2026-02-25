@@ -28,8 +28,19 @@
       </div>
       
       <div class="editor-field" data-field="date" data-input-type="date" data-editable="true">
-        <div class="editor-field-label">Datum</div>
+        <div class="editor-field-label">
+          Datum
+          <span class="recurrence-config-badge project-badge" data-focus-action="toggle-recurrence" style="display:none;">Wiederholung konfigurieren →</span>
+        </div>
         <div class="editor-field-value" data-focus="date"></div>
+      </div>
+
+      <div class="editor-field" data-field="recurrencePattern" style="display:none;">
+        <div class="editor-field-label">
+          Wiederholung
+          <span class="vorlage-link-badge project-badge" data-focus-action="toggle-mode" style="display:none;">Zur Vorlage →</span>
+        </div>
+        <div class="editor-field-value"></div>
       </div>
       
       <div class="editor-field" data-field="plan" data-input-type="time" data-editable="true">

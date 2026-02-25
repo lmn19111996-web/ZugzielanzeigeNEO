@@ -603,6 +603,9 @@
           schedule.trains = (data.trains || []).map(assignId);
           schedule.projects = (data.projects || []).map(assignProjectId);
 
+          // Expand recurring stems into real entries for the rolling window
+          materializeFromStems();
+
           // Build localTrains from spontaneousEntries (or legacy trains array)
           const entriesSource = data.spontaneousEntries || data.trains || [];
           localTrains = entriesSource.map(t => {
@@ -4244,13 +4247,14 @@
     let editorDrawerEscHandler = null;
     let editorDrawerClickOutHandler = null;
     let editorDrawerBackHandler = null;
+    let editorDrawerToggleHandler = null;
 
     // Global handlers for announcement drawer (prevent duplicate listener registration)
     let announcementDrawerEscHandler = null;
     let announcementDrawerClickOutHandler = null;
     let announcementDrawerBackHandler = null;
 
-    function renderFocusMode(train) {
+    function renderFocusMode(train, editMode = 'instance') {
       const now = new Date();
       
       // If suggestion panel is active for this train, don't re-render
@@ -4279,6 +4283,27 @@
       panel.style.borderBottomLeftRadius = '8px';
       
       try {
+        // Detect recurring train type
+        const isRecurring = !!train._templateId;
+        const isRecurringStem     = isRecurring && editMode === 'stem';
+        const isRecurringInstance = isRecurring && editMode === 'instance';
+
+        // In stem mode: override train fields with the stem template data so the
+        // editor is populated from the source-of-truth, not the child instance.
+        if (isRecurringStem) {
+          const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
+          if (stemObj) {
+            const { _uniqueId, _templateId } = train;
+            train = {
+              ...stemObj,
+              _uniqueId,
+              _templateId,
+              date:   stemObj.startDate || '',
+              source: 'local'
+            };
+          }
+        }
+
         // Only allow editing for local schedule trains
         const isEditable = train.source === 'local';
 
@@ -4410,7 +4435,7 @@
         panel.appendChild(clone);
         
         // Setup project badge (show next to label if project assigned)
-        const projectBadge = panel.querySelector('.project-badge');
+        const projectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
         if (projectBadge && train.projectId) {
           // Show badge and attach click handler
           projectBadge.style.display = 'inline';
@@ -4441,7 +4466,7 @@
             }
           });
           // Hide project badge for notes
-          const projectBadge = panel.querySelector('.project-badge');
+          const projectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
           if (projectBadge) projectBadge.style.display = 'none';
           
           const delayButtons = panel.querySelector('.editor-delay-buttons');
@@ -4462,7 +4487,7 @@
             }
           });
           // Hide project badge for todos
-          const projectBadge = panel.querySelector('.project-badge');
+          const projectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
           if (projectBadge) projectBadge.style.display = 'none';
           const delayButtons = panel.querySelector('.editor-delay-buttons');
           if (delayButtons) {
@@ -4471,6 +4496,98 @@
           }
         }
         // For trains and tasks: show all fields (default behavior, no hiding needed)
+
+
+
+        // ---- RECURRING TRAIN: stem mode — change labels, hide irrelevant fields ----
+        if (isRecurringStem) {
+          // VORLAGE identification badge at the top
+          const container = panel.querySelector('.editor-container');
+          if (container) {
+            const badge = document.createElement('div');
+            badge.className = 'editor-vorlage-badge';
+            badge.textContent = 'VORLAGE';
+            container.prepend(badge);
+          }
+
+          const dateLabel = panel.querySelector('.editor-field[data-field="date"] .editor-field-label');
+          if (dateLabel) dateLabel.textContent = 'Gültig ab';
+
+          ['actual'].forEach(f => {
+            const el = panel.querySelector(`.editor-field[data-field="${f}"]`);
+            if (el) el.style.display = 'none';
+          });
+          const delayButtons = panel.querySelector('.editor-delay-buttons');
+          if (delayButtons) delayButtons.style.display = 'none';
+          const cancelBtn = panel.querySelector('[data-focus-action="cancel"]');
+          if (cancelBtn) cancelBtn.style.display = 'none';
+
+          // Recurrence: configure the template field
+          const recFieldStem = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
+          if (recFieldStem) {
+            const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
+            const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
+            const patternLabels = { weekdays: 'Werktage (Mo\u2013Fr)', daily: 'T\u00e4glich', weekly: 'W\u00f6chentlich' };
+            recFieldStem.setAttribute('data-value', curPattern);
+            recFieldStem.setAttribute('data-input-type', 'recurrence-stem');
+            recFieldStem.setAttribute('data-editable', 'true');
+            recFieldStem.style.display = '';
+            recFieldStem.querySelector('.editor-field-value').textContent = patternLabels[curPattern] || curPattern;
+            const vorlageLinkStem = recFieldStem.querySelector('.vorlage-link-badge');
+            if (vorlageLinkStem) vorlageLinkStem.style.display = 'none';
+          }
+        }
+
+        // ---- ALL TRAINS in train editor mode: recurrence field below date, no label ----
+        if (!isRecurringStem) {
+          const dateFieldEl = panel.querySelector('.editor-field[data-field="date"]');
+          if (dateFieldEl) {
+            if (isRecurring) {
+              // Recurring instance: lock date + plan
+              dateFieldEl.removeAttribute('data-editable');
+              dateFieldEl.style.opacity = '0.5';
+              dateFieldEl.style.cursor = 'default';
+              dateFieldEl.title = 'Datum wird durch Vorlage bestimmt';
+
+              const planFieldEl = panel.querySelector('.editor-field[data-field="plan"]') ||
+                panel.querySelector('[data-focus="plan"]')?.closest('.editor-field');
+              if (planFieldEl) {
+                planFieldEl.removeAttribute('data-editable');
+                planFieldEl.style.opacity = '0.5';
+                planFieldEl.style.cursor = 'default';
+                planFieldEl.title = 'Abfahrtszeit wird durch Vorlage bestimmt';
+              }
+
+              const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
+              const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
+              const patternLabels = { weekdays: 'Werktage (Mo\u2013Fr)', daily: 'T\u00e4glich', weekly: 'W\u00f6chentlich' };
+
+              // Configure the template recurrence field
+              const recField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
+              if (recField) {
+                recField.setAttribute('data-value', curPattern);
+                recField.style.display = '';
+                recField.querySelector('.editor-field-value').textContent = patternLabels[curPattern] || curPattern;
+                const vorlageLinkBadge = recField.querySelector('.vorlage-link-badge');
+                if (vorlageLinkBadge) vorlageLinkBadge.style.display = 'inline';
+              }
+
+            } else if (isEditable) {
+              // Normal train: show the 'Wiederholung konfigurieren' badge in the Datum label
+              const recConfigBadge = dateFieldEl.querySelector('.recurrence-config-badge');
+              if (recConfigBadge) recConfigBadge.style.display = 'inline';
+              // The recurrencePattern field (from template) stays hidden until clicked
+              const recField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
+              if (recField) {
+                recField.setAttribute('data-value', 'none');
+                recField.setAttribute('data-input-type', 'recurrence');
+                recField.setAttribute('data-editable', 'true');
+                recField.querySelector('.editor-field-value').style.opacity = '0.6';
+                recField.querySelector('.editor-field-value').textContent = 'Keine Wiederholung';
+              }
+            }
+          }
+        }
         
         // Update cancel button based on train state
         const cancelBtn = panel.querySelector('[data-focus-action="cancel"]');
@@ -4489,7 +4606,8 @@
         }
         
         // Store train reference
-        panel.dataset.trainId = train._uniqueId;
+        panel.dataset.trainId  = train._uniqueId;
+        panel.dataset.editMode = editMode;
         panel.dataset.isEditable = isEditable;
         
         // Only add editing functionality for local trains
@@ -4544,6 +4662,8 @@
               train.actual = newValue || undefined;
             } else if (fieldName === 'projectId') {
               train.projectId = newValue || undefined;
+            } else if (fieldName === 'recurrencePattern') {
+              // Handled by the dedicated recurrence-change block below; skip generic assignment
             } else {
               train[fieldName] = newValue;
             }
@@ -4553,13 +4673,119 @@
         // Find the train in schedule
         const trainId = panel.dataset.trainId;
         console.log('  Looking for train with ID:', trainId);
+
+        // ---- STEM SAVE PATH ----
+        if (panel.dataset.editMode === 'stem' && train._templateId) {
+          const stemId  = train._templateId;
+          const stem    = (schedule.fixedSchedule || []).find(s => s._uniqueId === stemId);
+          if (stem) {
+            // Write every edited field value directly onto the stem
+            panel.querySelectorAll('.editor-field').forEach(field => {
+              const input = field.querySelector('input, textarea, select');
+              if (!input) return;
+              const fieldName = field.getAttribute('data-field');
+              const val = input.value;
+              if      (fieldName === 'linie')             stem.linie       = val;
+              else if (fieldName === 'ziel')              stem.ziel        = val;
+              else if (fieldName === 'plan')            { stem.plan = val; stem.actual = val; }
+              else if (fieldName === 'dauer')             stem.dauer       = Number(val) || 0;
+              else if (fieldName === 'zwischenhalte')     stem.zwischenhalte = val.split('\n').filter(l => l.trim());
+              else if (fieldName === 'date')              stem.startDate   = val;
+              else if (fieldName === 'projectId')         stem.projectId   = val || undefined;
+              else if (fieldName === 'recurrencePattern') stem.recurrence  = { ...stem.recurrence, pattern: val };
+            });
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            // Keep past skip records; clear future ones (they'll be re-evaluated fresh)
+            stem.skippedDates = (stem.skippedDates || []).filter(d => d <= todayStr);
+            // Remove future children so rematerialization regenerates them cleanly
+            schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
+              t => t._templateId !== stemId || t.date <= todayStr
+            );
+            // Rebuild from updated stem
+            materializeFromStems();
+            regenerateTrainsFromSchedule();
+            processTrainData(schedule);
+            refreshUIOnly();
+            saveSchedule();
+
+            // Stay in stem editor after save (don't jump to instance)
+            renderFocusMode(train, 'stem');
+          }
+          isDataOperationInProgress = false;
+          return;
+        }
+        // ---- END STEM SAVE PATH ----
+
         let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
         console.log('  Found in spontaneousEntries:', !!scheduleTrain);
-        
+
         if (!scheduleTrain) {
           console.error('❌ Train not found in schedule!');
           return;
         }
+
+        // ---- RECURRENCE CHANGE HANDLING (train editor only) ----
+        const recSel = panel.querySelector('.editor-field[data-field="recurrencePattern"] select');
+        if (recSel && panel.dataset.editMode !== 'stem') {
+          const newPattern = recSel.value;
+          const oldStemId  = train._templateId;
+          const oldStem    = oldStemId ? (schedule.fixedSchedule || []).find(s => s._uniqueId === oldStemId) : null;
+          const oldPattern = oldStem?.recurrence?.pattern || 'none';
+          const _tn = new Date();
+          const todayStr = `${_tn.getFullYear()}-${String(_tn.getMonth()+1).padStart(2,'0')}-${String(_tn.getDate()).padStart(2,'0')}`;
+
+          if (newPattern !== 'none' && oldPattern === 'none') {
+            // PROMOTE: normal train → recurring
+            const stemId   = 'stem_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            const entryDate = scheduleTrain.date || todayStr;
+            const newStem = {
+              _uniqueId:    stemId,
+              linie:        scheduleTrain.linie || '',
+              ziel:         scheduleTrain.ziel  || '',
+              plan:         scheduleTrain.plan  || '',
+              dauer:        scheduleTrain.dauer || 0,
+              zwischenhalte: Array.isArray(scheduleTrain.zwischenhalte) ? [...scheduleTrain.zwischenhalte] : [],
+              projectId:    scheduleTrain.projectId || undefined,
+              startDate:    entryDate,
+              recurrence:   { pattern: newPattern, days: [] },
+              skippedDates: [entryDate] // this instance already exists, don’t re-materialise
+            };
+            schedule.fixedSchedule = schedule.fixedSchedule || [];
+            schedule.fixedSchedule.push(newStem);
+            scheduleTrain._templateId = stemId;
+            train._templateId         = stemId;
+            hasChanges = true;
+            materializeFromStems();
+            console.log('↻ Promoted train to recurring, stem:', stemId);
+
+          } else if (newPattern === 'none' && oldPattern !== 'none') {
+            // DETACH: recurring instance → standalone
+            if (oldStem) {
+              oldStem.skippedDates = oldStem.skippedDates || [];
+              if (train.date && !oldStem.skippedDates.includes(train.date))
+                oldStem.skippedDates.push(train.date);
+            }
+            delete scheduleTrain._templateId;
+            delete train._templateId;
+            hasChanges = true;
+            console.log('✂ Detached recurring instance → standalone');
+
+          } else if (newPattern !== 'none' && oldPattern !== 'none' && newPattern !== oldPattern) {
+            // PATTERN CHANGE: update stem + rematerialise future
+            if (oldStem) {
+              oldStem.recurrence   = { ...oldStem.recurrence, pattern: newPattern };
+              oldStem.skippedDates = (oldStem.skippedDates || []).filter(d => d <= todayStr);
+              schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
+                t => t._templateId !== oldStemId || t.date <= todayStr
+              );
+              materializeFromStems();
+              hasChanges = true;
+              console.log('🔄 Recurrence pattern changed to', newPattern);
+            }
+          }
+        }
+        // ---- END RECURRENCE HANDLING ----
         
         // If changes were made, update schedule and save
         if (hasChanges) {
@@ -4607,7 +4833,7 @@
       editableFields.forEach(field => {
         field.addEventListener('mousedown', function(e) {
           // Check if already in edit mode
-          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea, [data-editable="true"] select');
           if (hasInputs) {
             return; // Already in edit mode, let natural focus work
           }
@@ -4629,8 +4855,8 @@
           const allEditableFields = panel.querySelectorAll('[data-editable="true"]');
           
           allEditableFields.forEach(f => {
-            // Skip if already an input
-            if (f.querySelector('input, textarea')) return;
+            // Skip if already converted to an interactive input
+            if (f.querySelector('input, textarea, select')) return;
             
             const fName = f.getAttribute('data-field');
             const inputType = f.getAttribute('data-input-type');
@@ -4640,7 +4866,56 @@
             
             // Create input or select based on type
             let input;
-            if (inputType === 'select') {
+            if (inputType === 'recurrence') {
+              // Recurrence pattern dropdown (for normal trains → promote to recurring)
+              input = document.createElement('select');
+              input.style.width = '100%';
+              input.style.background = '#0F1450';
+              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              input.style.borderRadius = '0';
+              input.style.padding = '0.5vh';
+              input.style.color = 'white';
+              input.style.fontFamily = 'inherit';
+              input.style.fontSize = '2vh';
+              input.style.outline = 'none';
+              input.style.cursor = 'pointer';
+              [
+                { value: 'none',     label: 'Keine Wiederholung' },
+                { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
+                { value: 'daily',    label: 'T\u00e4glich' },
+                { value: 'weekly',   label: 'W\u00f6chentlich' }
+              ].forEach(({ value, label }) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                input.appendChild(opt);
+              });
+              input.value = currentValue || 'none';
+            } else if (inputType === 'recurrence-stem') {
+              // Recurrence pattern dropdown for stem editor (no “Keine” option)
+              input = document.createElement('select');
+              input.style.width = '100%';
+              input.style.background = '#0F1450';
+              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              input.style.borderRadius = '0';
+              input.style.padding = '0.5vh';
+              input.style.color = 'white';
+              input.style.fontFamily = 'inherit';
+              input.style.fontSize = '2vh';
+              input.style.outline = 'none';
+              input.style.cursor = 'pointer';
+              [
+                { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
+                { value: 'daily',    label: 'T\u00e4glich' },
+                { value: 'weekly',   label: 'W\u00f6chentlich' }
+              ].forEach(({ value, label }) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                input.appendChild(opt);
+              });
+              input.value = currentValue || 'weekdays';
+            } else if (inputType === 'select') {
               // Special handling for project dropdown
               input = document.createElement('select');
               input.style.width = '100%';
@@ -4676,11 +4951,11 @@
               input.type = inputType;
             }
             
-            if (inputType !== 'select' && inputType !== 'textarea') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'textarea') {
               input.type = inputType;
             }
             
-            if (inputType !== 'select') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem') {
               input.value = currentValue;
               input.placeholder = placeholder;
               input.style.width = '100%';
@@ -4779,8 +5054,9 @@
             blurTimeout = setTimeout(async () => {
               const newFocus = document.activeElement;
               const isStillInInputs = newFocus && (
-                newFocus.tagName === 'INPUT' || 
-                newFocus.tagName === 'TEXTAREA'
+                newFocus.tagName === 'INPUT'    ||
+                newFocus.tagName === 'TEXTAREA' ||
+                newFocus.tagName === 'SELECT'
               ) && panel.contains(newFocus);
               
               // Only save and exit if focus left all input fields
@@ -4828,17 +5104,24 @@
       
       editorDrawerEscHandler = (e) => {
         if (e.key === 'Escape' && document.body.contains(panel)) {
-          // Check if we're in edit mode
-          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea, [data-editable="true"] select');
           if (!hasInputs) {
-            // Not in edit mode, close the drawer
             e.preventDefault();
-            e.stopPropagation(); // Prevent other ESC handlers from running
+            e.stopPropagation();
+            // If in stem mode and we came from an instance, return to that instance
+            const origId = panel.dataset.originalInstanceId;
+            if (panel.dataset.editMode === 'stem' && origId) {
+              const origTrain = processedTrainData.allTrains.find(t => t._uniqueId === origId);
+              if (origTrain) {
+                renderFocusMode(origTrain, 'instance');
+                return;
+              }
+            }
+            // Otherwise close the drawer
             desktopFocusedTrainId = null;
             panel.innerHTML = '';
             closeEditorDrawer();
           }
-          // If we have inputs, let the normal blur behavior work, don't close drawer
         }
       };
       
@@ -4854,7 +5137,7 @@
         // Check if panel is open and has content
         if (panel && panel.classList.contains('is-open') && panel.innerHTML.trim() !== '') {
           // Check if we're in edit mode
-          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+          const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea, [data-editable="true"] select');
           
           console.log('👆 Click detected. Inside panel:', panel.contains(e.target), 'Has inputs:', !!hasInputs);
           
@@ -5037,38 +5320,109 @@
               break;
               
             case 'delete':
-              // Remove from schedule with confirmation
-              if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
-                // Remove from schedule
-                const index = sourceArray.indexOf(scheduleTrain);
-                if (index >= 0) {
-                  sourceArray.splice(index, 1);
+              if (isRecurring) {
+                const currentEditMode = panel.dataset.editMode || 'instance';
+                const stemId = train._templateId;
+                if (currentEditMode === 'stem') {
+                  // Delete the entire stem + all future children
+                  if (confirm(`Vorlage "${train.linie} → ${train.ziel}" und alle zukünftigen Züge löschen?`)) {
+                    schedule.fixedSchedule = schedule.fixedSchedule.filter(s => s._uniqueId !== stemId);
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
+                      t => t._templateId !== stemId || t.date <= todayStr
+                    );
+                    refreshUIOnly();
+                    desktopFocusedTrainId = null;
+                    panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Vorlage gelöscht</div>';
+                    closeEditorDrawer();
+                    saveSchedule();
+                  }
+                } else {
+                  // Delete only this instance — record date as skipped
+                  if (confirm(`Zug ${train.linie} nach ${train.ziel} am ${train.date} löschen?`)) {
+                    schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
+                      t => t._uniqueId !== train._uniqueId
+                    );
+                    const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === stemId);
+                    if (stemObj) {
+                      stemObj.skippedDates = stemObj.skippedDates || [];
+                      if (!stemObj.skippedDates.includes(train.date)) stemObj.skippedDates.push(train.date);
+                    }
+                    refreshUIOnly();
+                    desktopFocusedTrainId = null;
+                    panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
+                    closeEditorDrawer();
+                    saveSchedule();
+                  }
                 }
-                
-                // OPTIMISTIC UI: Render immediately, then save in background
-                // 1. Refresh UI with train removed
-                refreshUIOnly();
-                
-                // 2. Clear focus panel
-                desktopFocusedTrainId = null;
-                panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
-                closeEditorDrawer();
-                
-                // 3. Refresh note panel if this was a note
-                const isNote = train.type === 'note';
-                const noteDrawer = document.getElementById('note-drawer');
-                if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
-                  renderNotePanel();
+              } else {
+                // Non-recurring delete (original logic)
+                if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                  const index = sourceArray.indexOf(scheduleTrain);
+                  if (index >= 0) {
+                    sourceArray.splice(index, 1);
+                  }
+                  
+                  // OPTIMISTIC UI: Render immediately, then save in background
+                  // 1. Refresh UI with train removed
+                  refreshUIOnly();
+                  
+                  // 2. Clear focus panel
+                  desktopFocusedTrainId = null;
+                  panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
+                  closeEditorDrawer();
+                  
+                  // 3. Refresh note panel if this was a note
+                  const isNote = train.type === 'note';
+                  const noteDrawer = document.getElementById('note-drawer');
+                  if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
+                    renderNotePanel();
+                  }
+                  
+                  // 4. Save in background - no await, no callback needed
+                  saveSchedule();
                 }
-                
-                // 4. Save in background - no await, no callback needed
-                saveSchedule();
               }
               break;
           }
         });
       }
-      
+
+      // ---- Panel click handler: mode toggle + recurrence toggle ----
+      if (editorDrawerToggleHandler) {
+        panel.removeEventListener('click', editorDrawerToggleHandler);
+        editorDrawerToggleHandler = null;
+      }
+      editorDrawerToggleHandler = (e) => {
+        // Handle instance ↔ stem mode toggle
+        const modeBtn = e.target.closest('[data-focus-action="toggle-mode"]');
+        if (modeBtn && isRecurring) {
+          e.stopPropagation();
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (panel.dataset.editMode === 'instance') {
+            panel.dataset.originalInstanceId = train._uniqueId;
+            renderFocusMode(train, 'stem');
+          } else {
+            const origId = panel.dataset.originalInstanceId;
+            const child = (origId && processedTrainData.allTrains.find(t => t._uniqueId === origId))
+              || processedTrainData.allTrains.find(t => t._templateId === train._templateId && t.date >= todayStr)
+              || processedTrainData.allTrains.find(t => t._templateId === train._templateId);
+            if (child) { renderFocusMode(child, 'instance'); } else { closeEditorDrawer(); }
+          }
+          return;
+        }
+        // Handle show/hide recurrence config (normal trains)
+        const recBtn = e.target.closest('[data-focus-action="toggle-recurrence"]');
+        if (recBtn) {
+          e.stopPropagation();
+          const recConfigField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
+          if (recConfigField) {
+            recConfigField.style.display = recConfigField.style.display === 'none' ? '' : 'none';
+          }
+        }
+      };
+      panel.addEventListener('click', editorDrawerToggleHandler);
+
     } catch (error) {
       console.error('Error rendering focus mode:', error);
       panel.innerHTML = '<div style="color: white; padding: 2vh;">Error loading train details.</div>';
@@ -5264,6 +5618,150 @@
 
       schedule.trains = [...spontaneousAll];
       schedule.localTrains = [...spontaneousAll];
+    }
+
+    // ==================== RECURRING TRAINS ====================
+
+    // Materialize recurring stems into real spontaneousEntries for a rolling 60-day window.
+    // Idempotent: skips dates whose _uniqueId already exists or is in stem.skippedDates.
+    function materializeFromStems() {
+      // Build local midnight Date for day offset i from a base midnight Date
+      const toLocalStr = d =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const localMidnight = (baseMs, offsetDays) => {
+        // Construct each day by year/month/day arithmetic to stay DST-safe
+        const b = new Date(baseMs);
+        return new Date(b.getFullYear(), b.getMonth(), b.getDate() + offsetDays);
+      };
+
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      const todayMs = todayMidnight.getTime();
+      const WINDOW_DAYS = 14;
+
+      // Normalise any legacy UTC-suffixed UIDs so they don't block new entries.
+      // Legacy UIDs look like stemId_YYYY-MM-DD where the date is the UTC date
+      // (which can differ from the local date in UTC+ zones).
+      const existingByUid = new Map(
+        (schedule.spontaneousEntries || []).map(t => [t._uniqueId, t])
+      );
+
+      const newEntries = [];
+
+      for (const stem of (schedule.fixedSchedule || [])) {
+        if (!stem._uniqueId || !stem.linie || !stem.linie.trim()) continue;
+
+        const skipped = new Set(stem.skippedDates || []);
+
+        // Parse startDate in LOCAL time; default to today
+        const startDateObj = stem.startDate
+          ? new Date(stem.startDate + 'T00:00:00')
+          : new Date(todayMidnight);
+        startDateObj.setHours(0, 0, 0, 0);
+
+        // Only skip days that are strictly before startDate AND before today.
+        // A future startDate correctly limits the window; a past one never limits it.
+        const effectiveStartMs = Math.max(startDateObj.getTime(), todayMs);
+
+        const { pattern = 'weekdays', days = [] } = stem.recurrence || {};
+        // For weekly: anchor DOW comes from startDate (local)
+        const stemDow = startDateObj.getDay(); // 0=Sun … 6=Sat
+
+        for (let i = 0; i < WINDOW_DAYS; i++) {
+          const d = localMidnight(todayMs, i);         // fresh Date each iteration
+          if (d.getTime() < effectiveStartMs) continue;
+
+          const dow = d.getDay();
+          let matches = false;
+          if      (pattern === 'daily')    matches = true;
+          else if (pattern === 'weekdays') matches = dow >= 1 && dow <= 5;
+          else if (pattern === 'weekly')   matches = dow === stemDow;
+          else if (pattern === 'custom')   matches = Array.isArray(days) && days.includes(dow);
+
+          if (!matches) continue;
+
+          const dateStr = toLocalStr(d);
+          if (skipped.has(dateStr)) continue;
+
+          const uid = `${stem._uniqueId}_${dateStr}`;
+
+          // Skip if an entry with the canonical UID already exists
+          if (existingByUid.has(uid)) continue;
+
+          // If a legacy UTC-suffixed entry covers the same date, skip (don't duplicate)
+          // but do NOT skip just because yesterday's UTC string matches — compare by
+          // stored .date field instead of by UID suffix.
+          const legacyCheck = [...existingByUid.values()].find(
+            t => t._templateId === stem._uniqueId && t.date === dateStr
+          );
+          if (legacyCheck) continue;
+
+          const entry = {
+            _uniqueId:     uid,
+            _templateId:   stem._uniqueId,
+            linie:         stem.linie,
+            ziel:          stem.ziel          || '',
+            plan:          stem.plan          || '',
+            actual:        stem.plan          || '',
+            dauer:         stem.dauer         || 0,
+            zwischenhalte: Array.isArray(stem.zwischenhalte) ? [...stem.zwischenhalte] : [],
+            projectId:     stem.projectId     || undefined,
+            canceled:      false,
+            date:          dateStr,
+            plannedDate:   dateStr,
+            source:        'local'
+          };
+          newEntries.push(entry);
+          existingByUid.set(uid, entry); // prevent intra-run duplicates
+        }
+      }
+
+      if (newEntries.length > 0) {
+        schedule.spontaneousEntries.push(...newEntries);
+        console.log(`🔁 Materialized ${newEntries.length} recurring train entries`);
+      }
+    }
+
+    // Create a new recurring stem and open it in the stem editor
+    function createNewRecurringEntry() {
+      const _tn = new Date();
+      const today = `${_tn.getFullYear()}-${String(_tn.getMonth()+1).padStart(2,'0')}-${String(_tn.getDate()).padStart(2,'0')}`;
+      const stemId = 'stem_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+
+      const newStem = {
+        _uniqueId: stemId,
+        linie: '',
+        ziel: '',
+        plan: '',
+        dauer: 0,
+        zwischenhalte: [],
+        startDate: today,
+        recurrence: { pattern: 'weekdays', days: [] },
+        skippedDates: []
+      };
+
+      schedule.fixedSchedule = schedule.fixedSchedule || [];
+      schedule.fixedSchedule.push(newStem);
+
+      // Synthetic child: anchors the editor panel; not in spontaneousEntries yet
+      const syntheticChild = {
+        _uniqueId:    stemId + '_' + today,
+        _templateId:  stemId,
+        linie: '', ziel: '', plan: '', actual: '',
+        dauer: 0, zwischenhalte: [], canceled: false,
+        date: today, plannedDate: today, source: 'local'
+      };
+
+      renderFocusMode(syntheticChild, 'stem');
+
+      // Activate all fields immediately
+      setTimeout(() => {
+        const panel = document.getElementById('focus-panel');
+        if (panel) {
+          const first = panel.querySelector('[data-editable="true"]');
+          if (first) first.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+        }
+      }, 100);
     }
 
     // Helper function to refresh data and update all UI panels

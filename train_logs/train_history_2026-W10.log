@@ -2,3 +2,51 @@
 {"trainKey":"s7|blatt / puffer whl|14:00|2026-03-02","linie":"S7","ziel":"Blatt / Puffer WHL","plan":"14:00","actual":"11:00","dauer":120,"stops":"","date":"2026-03-02","canceled":true}
 {"trainKey":"s5|volleyball|20:00|2026-03-02","linie":"S5","ziel":"Volleyball","plan":"20:00","actual":"20:00","dauer":"90","stops":"","date":"2026-03-02","canceled":true}
 {"trainKey":"s3|kreativität|22:00|2026-03-02","linie":"S3","ziel":"Kreativität","plan":"22:00","actual":"22:00","dauer":"120","stops":"","date":"2026-03-02","canceled":true}
+{"trainKey":"s5|fitness studio|20:00|2026-03-02","linie":"S5","ziel":"Fitness Studio","plan":"20:00","actual":"20:00","dauer":90,"stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s5|fitness studio|20:00|2026-03-03","linie":"S5","ziel":"Fitness Studio","plan":"20:00","actual":"20:00","dauer":90,"stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s5|fitness studio|20:00|2026-03-04","linie":"S5","ziel":"Fitness Studio","plan":"20:00","actual":"20:00","dauer":90,"stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s5|fitness studio|20:00|2026-03-05","linie":"S5","ziel":"Fitness Studio","plan":"20:00","actual":"20:00","dauer":90,"stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s5|fitness studio|20:00|2026-03-08","linie":"S5","ziel":"Fitness Studio","plan":"20:00","actual":"20:00","dauer":90,"stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-02","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-03","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-04","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-05","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-06","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-06","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-07","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-07","canceled":false}
+{"trainKey":"s5|sleep|09:00|2026-03-08","linie":"S5","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s6|sleep|09:00|2026-03-03","linie":"S6","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-02","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-03","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-04","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-05","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-06","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-06","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-07","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-07","canceled":false}
+{"trainKey":"s7|sleep|09:00|2026-03-08","linie":"S7","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":"","stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-02","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-03","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-04","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-05","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-06","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-06","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-07","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-07","canceled":false}
+{"trainKey":"s8|sleep|09:00|2026-03-08","linie":"S8","ziel":"Sleep","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-02","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-03","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-04","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-05","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-06","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-06","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-07","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-07","canceled":false}
+{"trainKey":"s1|eat|10:00|2026-03-08","linie":"S1","ziel":"Eat","plan":"10:00","actual":"10:00","dauer":120,"stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s2|sleep|12:12|2026-03-02","linie":"S2","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s2|sleep|12:12|2026-03-03","linie":"S2","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s2|sleep|12:12|2026-03-04","linie":"S2","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s2|sleep|12:12|2026-03-05","linie":"S2","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s2|sleep|12:12|2026-03-08","linie":"S2","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s7|sleep|12:12|2026-03-02","linie":"S7","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s7|sleep|12:12|2026-03-03","linie":"S7","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s7|sleep|12:12|2026-03-04","linie":"S7","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s7|sleep|12:12|2026-03-05","linie":"S7","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-05","canceled":false}
+{"trainKey":"s7|sleep|12:12|2026-03-08","linie":"S7","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-08","canceled":false}
+{"trainKey":"s7|sleep 1|12:12|2026-03-03","linie":"S7","ziel":"Sleep 1","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-03-03","canceled":false}
+{"trainKey":"s5|fatima|10:00|2026-03-02","linie":"S5","ziel":"Fatima","plan":"10:00","actual":"10:00","dauer":"","stops":"","date":"2026-03-02","canceled":false}
+{"trainKey":"s5|fatima|10:00|2026-03-04","linie":"S5","ziel":"Fatima","plan":"10:00","actual":"10:00","dauer":"","stops":"","date":"2026-03-04","canceled":false}
+{"trainKey":"s5|fatima|10:00|2026-03-06","linie":"S5","ziel":"Fatima","plan":"10:00","actual":"10:00","dauer":"","stops":"","date":"2026-03-06","canceled":false}

@@ -1830,6 +1830,22 @@
       background: rgba(255, 255, 255, 0.05);
     }
 
+    /* Stem editor: VORLAGE identification badge */
+    .editor-vorlage-badge {
+      display: inline-block;
+      font-size: 2vh;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: rgba(255, 210, 80, 0.9);
+      text-align: center;
+      border: 1px solid rgba(255, 210, 80, 0.45);
+      border-radius: 3px;
+      padding: 0.4vh 1vw;
+      margin: 1.2vh 1.7vw 0;
+      cursor: default;
+      user-select: none;
+    }
+
     .editor-field-label {
       font-size: 1.6vh;
       color: rgba(255, 255, 255, 0.6);
@@ -2012,6 +2028,37 @@
       cursor: default;
     }
 
+
+    .editor-field-recurrence-inline .editor-field-value {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Recurring badge in train list entries */
+    .train-recurring-badge {
+      font-size: 0.7em;
+      opacity: 0.7;
+      margin-left: 0.4em;
+      vertical-align: middle;
+    }
+
+    .editor-recurrence-select {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      font-family: inherit;
+      font-size: inherit;
+      padding: 0.5vh 1vw;
+      border-radius: 4px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .editor-recurrence-select option {
+      background: #161B75;
+      color: white;
+    }
+
     .editor-delay-buttons {
       display: flex;
       gap: 1vh;
@@ -2150,6 +2197,7 @@
         align-items: center;
         justify-content: center;
         margin: 1vh;
+        height: 6vh;
         width: 97vw;
         box-sizing: border-box;
       }
