@@ -1,10 +1,10 @@
-{"trainKey":"s8|heimkehr (hannover)|00:00|2025-12-20","linie":"S8","ziel":"Heimkehr (Hannover)","plan":"00:00","actual":"00:00","dauer":2880,"stops":"","date":"2025-12-20","canceled":false}
-{"trainKey":"s8|frankfurt|13:00|2025-12-19","linie":"S8","ziel":"FRANKFURT","plan":"13:00","actual":"13:00","dauer":1440,"stops":"","date":"2025-12-19","canceled":false}
+{"trainKey":"s8|heimkehr (hannover)|00:00|2025-12-20","linie":"S8","ziel":"Heimkehr (Hannover)","plan":"00:00","actual":"12:00","dauer":2000,"stops":"","date":"2025-12-20","canceled":false}
+{"trainKey":"s8|frankfurt|13:00|2025-12-19","linie":"S8","ziel":"FRANKFURT","plan":"13:00","actual":"13:00","dauer":1000,"stops":"","date":"2025-12-19","canceled":false}
 {"trainKey":"s4|minecraft night|unknown|2025-12-17","linie":"S4","ziel":"Minecraft Night","plan":"","actual":"","dauer":"","stops":"","date":"2025-12-17","canceled":false}
 {"trainKey":"s4|minecraft night|20:00|2025-12-17","linie":"S4","ziel":"Minecraft Night","plan":"20:00","actual":"20:00","dauer":720,"stops":"","date":"2025-12-17","canceled":false}
 {"trainKey":"s4|flurus weihnachtsfeier|00:00|2025-12-15","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2025-12-15","canceled":false}
 {"trainKey":"s4|flurus weihnachtsfeier|00:00|2025-12-16","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"00:00","actual":"17:00","dauer":300,"stops":"","date":"2025-12-16","canceled":false}
-{"trainKey":"s4|flurus weihnachtsfeier|17:00|2025-12-16","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"17:00","actual":"00:00","dauer":500,"stops":"","date":"2025-12-16","canceled":false}
+{"trainKey":"s4|flurus weihnachtsfeier|17:00|2025-12-16","linie":"S4","ziel":"FLURUS Weihnachtsfeier","plan":"17:00","actual":"17:00","dauer":300,"stops":"","date":"2025-12-16","canceled":false}
 {"trainKey":"s6|einführung i.d. physik|07:45|2025-12-15","linie":"S6","ziel":"Einführung i.d. Physik","plan":"07:45","actual":"07:45","dauer":45,"stops":"PWR 53 - V53.01","date":"2025-12-15","canceled":false}
 {"trainKey":"s7|technische mechanik i (übung)|14:00|2025-12-15","linie":"S7","ziel":"Technische Mechanik I (Übung)","plan":"14:00","actual":"14:00","dauer":90,"stops":"Einsatzort: Zuhause\n\nDieser Termin is für die folgenden Aufgaben vorgesehen\n\n- Mathe: Übungen zu Kapitel 1 bis einschließlich komplexen Zahlen. (2h)\n\n- Technische Mechanik I: Übungen bis einschließlich Kapitel 4: Schwerpunkt. (45m)","date":"2025-12-15","canceled":false}
 {"trainKey":"s6|werkstoffkunde|11:30|2025-12-15","linie":"S6","ziel":"Werkstoffkunde","plan":"11:30","actual":"11:30","dauer":"90","stops":"PWR 07 - V 7.02","date":"2025-12-15","canceled":false}
@@ -1571,3 +1571,10 @@
 {"trainKey":"re2|hải phòng|23:23|2025-12-18","linie":"RE2","ziel":"Hải Phòng","plan":"23:23","actual":"23:23","dauer":"","stops":"Hauptbahnhof","date":"2025-12-18","canceled":false}
 {"trainKey":"re5|phú thọ|23:34|2025-12-18","linie":"RE5","ziel":"Phú Thọ","plan":"23:34","actual":"23:34","dauer":"","stops":"Hauptbahnhof","date":"2025-12-18","canceled":false}
 {"trainKey":"re8|lạng sơn|23:45|2025-12-18","linie":"RE8","ziel":"Lạng Sơn","plan":"23:45","actual":"23:45","dauer":"","stops":"Hauptbahnhof","date":"2025-12-18","canceled":false}
+{"trainKey":"s7|mathematik i|10:30|2025-12-15","linie":"S7","ziel":"Mathematik I","plan":"10:30","actual":"10:30","dauer":90,"stops":"","date":"2025-12-15","canceled":false}
+{"trainKey":"s2|your lasagna is cooking|19:08|2025-12-17","linie":"S2","ziel":"Your lasagna is cooking","plan":"19:08","actual":"19:13","dauer":12,"stops":"","date":"2025-12-17","canceled":false}
+{"trainKey":"s2|alles putzen ...|19:00|2025-12-18","linie":"S2","ziel":"Alles Putzen ...","plan":"19:00","actual":"14:00","dauer":80,"stops":"","date":"2025-12-18","canceled":false}
+{"trainKey":"s45|flurus it (?)|17:30|2025-12-18","linie":"S45","ziel":"FLURUS IT (?)","plan":"17:30","actual":"17:30","dauer":300,"stops":"","date":"2025-12-18","canceled":true}
+{"trainKey":"ice578|frankfurt (main) hbf|13:23|2025-12-19","linie":"ICE578","ziel":"Frankfurt (Main) Hbf","plan":"13:23","actual":"13:23","dauer":77,"stops":"","date":"2025-12-19","canceled":false}
+{"trainKey":"fex|tm1 - hörsaaltest 2|23:59|2025-12-19","linie":"FEX","ziel":"TM1 - Hörsaaltest 2","plan":"23:59","actual":"23:55","dauer":"","stops":"","date":"2025-12-19","canceled":false}
+{"trainKey":"ice 1072|hannover hbf|14:02|2025-12-20","linie":"ICE 1072","ziel":"Hannover Hbf","plan":"14:02","actual":"14:02","dauer":134,"stops":"","date":"2025-12-20","canceled":false}

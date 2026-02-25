@@ -12,3 +12,19 @@
 {"trainKey":"s7|mathematik i|10:00|2026-01-18","linie":"S7","ziel":"Mathematik I","plan":"10:00","actual":"08:00","dauer":210,"stops":"","date":"2026-01-18","canceled":false}
 {"trainKey":"s7|technische mechanik i (übung)|14:00|2026-01-18","linie":"S7","ziel":"Technische Mechanik I (Übung)","plan":"14:00","actual":"14:00","dauer":180,"stops":"Dieser Termin ist für das Selbststudium TM1 vorgesehen.\nLiteratur: TM1","date":"2026-01-18","canceled":false}
 {"trainKey":"s7|mathematik i|19:00|2026-01-18","linie":"S7","ziel":"Mathematik I","plan":"19:00","actual":"19:00","dauer":240,"stops":"","date":"2026-01-18","canceled":false}
+{"trainKey":"s2|halbwocheneinkauf|15:00|2026-01-14","linie":"S2","ziel":"Halbwocheneinkauf","plan":"15:00","actual":"15:00","dauer":120,"stops":"","date":"2026-01-14","canceled":false}
+{"trainKey":"s7|projekt eagle|17:00|2026-01-14","linie":"S7","ziel":"Projekt EAGLE","plan":"17:00","actual":"21:00","dauer":60,"stops":"","date":"2026-01-14","canceled":false}
+{"trainKey":"s2|kochen|19:00|2026-01-14","linie":"S2","ziel":"Kochen","plan":"19:00","actual":"19:00","dauer":30,"stops":"","date":"2026-01-14","canceled":false}
+{"trainKey":"s2|thay băng|17:00|2026-01-14","linie":"S2","ziel":"Thay băng","plan":"17:00","actual":"17:00","dauer":30,"stops":"","date":"2026-01-14","canceled":false}
+{"trainKey":"s7|nachholtermin - tm1|22:00|2026-01-14","linie":"S7","ziel":"Nachholtermin - TM1","plan":"22:00","actual":"22:00","dauer":60,"stops":"","date":"2026-01-14","canceled":true}
+{"trainKey":"s7|physiktest|23:00|2026-01-14","linie":"S7","ziel":"Physiktest","plan":"23:00","actual":"23:00","dauer":60,"stops":"","date":"2026-01-14","canceled":true}
+{"trainKey":"s7|wk + ft|00:00|2026-01-15","linie":"S7","ziel":"WK + FT","plan":"00:00","actual":"00:00","dauer":30,"stops":"","date":"2026-01-15","canceled":true}
+{"trainKey":"s7|eagle treffen|11:30|2026-01-14","linie":"S7","ziel":"EAGLE Treffen","plan":"11:30","actual":"11:30","dauer":90,"stops":"","date":"2026-01-14","canceled":false}
+{"trainKey":"s46|spacenight technik treffen|13:30|2026-01-16","linie":"S46","ziel":"SPACENIGHT TECHNIK TREFFEN","plan":"13:30","actual":"13:30","dauer":240,"stops":"","date":"2026-01-16","canceled":false}
+{"trainKey":"s9|eagle treffen|11:30|2026-01-16","linie":"S9","ziel":"EAGLE Treffen","plan":"11:30","actual":"11:30","dauer":90,"stops":"","date":"2026-01-16","canceled":false}
+{"trainKey":"s9|eagle treffen|15:00|2026-01-17","linie":"S9","ziel":"EAGLE Treffen","plan":"15:00","actual":"15:00","dauer":180,"stops":"","date":"2026-01-17","canceled":false}
+{"trainKey":"s2|halbwocheneinkauf|09:00|2026-01-17","linie":"S2","ziel":"Halbwocheneinkauf","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-01-17","canceled":false}
+{"trainKey":"s2|kochen|11:00|2026-01-16","linie":"S2","ziel":"Kochen","plan":"11:00","actual":"11:00","dauer":45,"stops":"","date":"2026-01-16","canceled":false}
+{"trainKey":"s7|tz - cad|12:00|2026-01-17","linie":"S7","ziel":"TZ - CAD","plan":"12:00","actual":"12:00","dauer":180,"stops":"","date":"2026-01-17","canceled":false}
+{"trainKey":"s7|tz - cad|22:00|2026-01-17","linie":"S7","ziel":"TZ - CAD","plan":"22:00","actual":"22:00","dauer":120,"stops":"","date":"2026-01-17","canceled":false}
+{"trainKey":"s45|anfrage technik equipment|00:00|2026-01-15","linie":"S45","ziel":"Anfrage Technik Equipment","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-01-15","canceled":false}

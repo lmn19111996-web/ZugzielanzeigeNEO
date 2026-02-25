@@ -1,1 +1,8 @@
 {"trainKey":"s85|heimkehr|00:00|2025-12-24","linie":"S85","ziel":"HEIMKEHR","plan":"00:00","actual":"00:00","dauer":30240,"stops":"Frohe Weihnachten!","date":"2025-12-24","canceled":false}
+{"trainKey":"fex|supply mission 20.01.2026 - einkauf|14:30|2025-12-22","linie":"FEX","ziel":"Supply Mission 20.01.2026 - Einkauf","plan":"14:30","actual":"13:00","dauer":180,"stops":"","date":"2025-12-22","canceled":false}
+{"trainKey":"s2|aufräumen |13:30|2025-12-22","linie":"S2","ziel":"Aufräumen ","plan":"13:30","actual":"10:30","dauer":180,"stops":"","date":"2025-12-22","canceled":false}
+{"trainKey":"ice 597|münchen hbf|15:17|2025-12-24","linie":"ICE 597","ziel":"München Hbf","plan":"15:17","actual":"15:17","dauer":119,"stops":"","date":"2025-12-24","canceled":false}
+{"trainKey":"ey128/ey430|hanoi|21:10|2025-12-24","linie":"EY128/EY430","ziel":"HANOI","plan":"21:10","actual":"21:10","dauer":875,"stops":"","date":"2025-12-24","canceled":false}
+{"trainKey":"s6|[prü] praktomat abgabe 1|00:00|2025-12-28","linie":"S6","ziel":"[PRÜ] Praktomat Abgabe 1","plan":"00:00","actual":"00:00","dauer":1439,"stops":"","date":"2025-12-28","canceled":true}
+{"trainKey":"s75|mathematik i|19:00|2025-12-26","linie":"S75","ziel":"Mathematik I","plan":"19:00","actual":"19:00","dauer":180,"stops":"","date":"2025-12-26","canceled":false}
+{"trainKey":"s75|mathematik i|19:00|2025-12-28","linie":"S75","ziel":"Mathematik I","plan":"19:00","actual":"19:00","dauer":180,"stops":"","date":"2025-12-28","canceled":false}

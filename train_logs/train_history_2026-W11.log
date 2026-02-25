@@ -1,3 +1,4 @@
 {"trainKey":"s6|[prü] wk + ft|00:00|2026-03-11","linie":"S6","ziel":"[PRÜ] WK + FT","plan":"00:00","actual":"00:00","dauer":"","stops":"Prüfung","date":"2026-03-11","canceled":false}
 {"trainKey":"s46|technikbedarf bars|23:59|2026-03-15","linie":"S46","ziel":"Technikbedarf Bars","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2026-03-15","canceled":false}
 {"trainKey":"s46|helferausrüstung planen|23:59|2026-03-15","linie":"S46","ziel":"Helferausrüstung planen","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2026-03-15","canceled":false}
+{"trainKey":"fex|[prü] wk + ft|00:00|2026-03-11","linie":"FEX","ziel":"[PRÜ] WK + FT","plan":"00:00","actual":"00:00","dauer":"","stops":"Prüfung","date":"2026-03-11","canceled":false}

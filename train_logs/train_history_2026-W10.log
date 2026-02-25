@@ -1,0 +1,4 @@
+{"trainKey":"s75|musterprüfung|09:00|2026-03-02","linie":"S75","ziel":"Musterprüfung","plan":"09:00","actual":"10:00","dauer":180,"stops":"","date":"2026-03-02","canceled":true}
+{"trainKey":"s7|blatt / puffer whl|14:00|2026-03-02","linie":"S7","ziel":"Blatt / Puffer WHL","plan":"14:00","actual":"11:00","dauer":120,"stops":"","date":"2026-03-02","canceled":true}
+{"trainKey":"s5|volleyball|20:00|2026-03-02","linie":"S5","ziel":"Volleyball","plan":"20:00","actual":"20:00","dauer":"90","stops":"","date":"2026-03-02","canceled":true}
+{"trainKey":"s3|kreativität|22:00|2026-03-02","linie":"S3","ziel":"Kreativität","plan":"22:00","actual":"22:00","dauer":"120","stops":"","date":"2026-03-02","canceled":true}

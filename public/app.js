@@ -20,17 +20,12 @@
     
     // Track focused trains separately for desktop and mobile
     let desktopFocusedTrainId = null;
-    let mobileFocusedTrainId = null;
     
     // Track project editor state
     let currentProjectId = null;
     let isProjectDrawerOpen = false;
     let currentProjectSortMode = 'creation'; // Track project sorting preference
     let workspaceModeBeforeProjectDrawer = null; // Track workspace mode before opening project drawer
-    
-    // Mobile edit debounce timer
-    let mobileEditDebounceTimer = null;
-    let pendingMobileSave = false;
     
     // Notification tracking
     let lastTrainStatusById = new Map();
@@ -353,45 +348,47 @@
         return document.createTextNode('--:--:--');
       }
 
+      const hms = (sec) => {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      };
+
       // Check if currently occupying
       if (train.dauer) {
         const occEnd = getOccupancyEnd(train, now);
         if (train.actual && occEnd && parseTime(train.actual, now, train.date) <= now && occEnd > now) {
-          // Currently occupying - show time until end
+          // Occupying — white countdown to departure
           const diffSec = Math.round((occEnd - now) / 1000);
-          const hours = Math.floor(diffSec / 3600);
-          const minutes = Math.floor((diffSec % 3600) / 60);
-          const seconds = diffSec % 60;
-          
           const frag = document.createDocumentFragment();
-          const countdownSpan = document.createElement('span');
-          countdownSpan.className = 'countdown-time';
-          countdownSpan.textContent = `Abfahrt in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-          frag.appendChild(countdownSpan);
+          const label = document.createElement('span');
+          label.className = 'countdown-label';
+          label.textContent = 'Abfahrt in ';
+          const time = document.createElement('span');
+          time.className = 'countdown-time departing';
+          time.textContent = hms(diffSec);
+          frag.appendChild(label);
+          frag.appendChild(time);
           return frag;
         }
       }
 
-      // Show countdown to departure
-      const diffSec = Math.round((actualTime - now) / 1000);
-      
-      if (diffSec <= 0) {
-        return document.createTextNode('Zug fährt ab');
-      }
-
-      const hours = Math.floor(diffSec / 3600);
-      const minutes = Math.floor((diffSec % 3600) / 60);
-      const seconds = diffSec % 60;
-
+      // Countdown to arrival (pre-departure) — gray
+      const diffSec = Math.max(0, Math.round((actualTime - now) / 1000));
       const frag = document.createDocumentFragment();
-      const arrivalLabel = document.createElement('span');
-      arrivalLabel.className = 'arrival-label';
-      arrivalLabel.textContent = 'Ankunft in ';
-      const countdownSpan = document.createElement('span');
-      countdownSpan.className = 'countdown-time';
-      countdownSpan.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      frag.appendChild(arrivalLabel);
-      frag.appendChild(countdownSpan);
+      const label = document.createElement('span');
+      label.className = 'countdown-label';
+      label.textContent = 'Ankunft in ';
+      const prefix = document.createElement('span');
+      prefix.className = 'countdown-prefix';
+      prefix.textContent = 'in ';
+      const time = document.createElement('span');
+      time.className = 'countdown-time arriving';
+      time.textContent = hms(diffSec);
+      frag.appendChild(label);
+      frag.appendChild(prefix);
+      frag.appendChild(time);
       return frag;
     }
 
@@ -605,65 +602,17 @@
           schedule.spontaneousEntries = (data.spontaneousEntries || []).map(assignId);
           schedule.trains = (data.trains || []).map(assignId);
           schedule.projects = (data.projects || []).map(assignProjectId);
-          
-          // Handle both new and legacy formats
-          if (data.fixedSchedule || data.spontaneousEntries) {
-            const now = new Date();
-            const fixedTrainsForDays = [];
-            
-            for (let i = 0; i < 7; i++) {
-              const targetDate = new Date(now);
-              targetDate.setDate(targetDate.getDate() + i);
-              const dateStr = targetDate.toLocaleDateString('sv-SE');
-              const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][targetDate.getDay()];
-              
-              const fixedForDay = (data.fixedSchedule || []).filter(t => t.weekday === weekday);
-              const fixedAsTrains = fixedForDay.map(t => {
-                const normalized = {
-                  ...t,
-                  date: dateStr,
-                  source: 'local',
-                  _uniqueId: t._uniqueId // Preserve unique ID
-                };
-                // Normalize stops to zwischenhalte
-                if (t.stops && !t.zwischenhalte) {
-                  normalized.zwischenhalte = t.stops;
-                  delete normalized.stops;
-                }
-                return normalized;
-              });
-              fixedTrainsForDays.push(...fixedAsTrains);
+
+          // Build localTrains from spontaneousEntries (or legacy trains array)
+          const entriesSource = data.spontaneousEntries || data.trains || [];
+          localTrains = entriesSource.map(t => {
+            const normalized = { ...t, source: 'local', _uniqueId: t._uniqueId };
+            if (t.stops && !t.zwischenhalte) {
+              normalized.zwischenhalte = t.stops;
+              delete normalized.stops;
             }
-            
-            const spontaneousAll = (data.spontaneousEntries || []).map(t => {
-              const normalized = {
-                ...t,
-                source: 'local',
-                _uniqueId: t._uniqueId // Preserve unique ID
-              };
-              // Normalize stops to zwischenhalte
-              if (t.stops && !t.zwischenhalte) {
-                normalized.zwischenhalte = t.stops;
-                delete normalized.stops;
-              }
-              return normalized;
-            });
-            
-            localTrains = [...fixedTrainsForDays, ...spontaneousAll];
-          } else {
-            localTrains = (data.trains || []).map(t => {
-              const normalized = {
-                ...t,
-                source: 'local'
-              };
-              // Normalize stops to zwischenhalte
-              if (t.stops && !t.zwischenhalte) {
-                normalized.zwischenhalte = t.stops;
-                delete normalized.stops;
-              }
-              return normalized;
-            });
-          }
+            return normalized;
+          });
         }
         
         // Process DB API data if station selected
@@ -1402,6 +1351,120 @@
       openProjectDrawer();
     }
 
+    function renderProjectStatistics(trains, project) {
+      const now = new Date();
+      
+      // Get Monday and Sunday of current week
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dayOfWeek = today.getDay();
+      const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust when day is Sunday
+      const monday = new Date(today);
+      monday.setDate(diff);
+      monday.setHours(0, 0, 0, 0);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      
+      // Calculate statistics
+      let totalHours = 0;
+      let weekHours = 0;
+      let weekTasks = 0;
+      let weekCancelledTasks = 0;
+      let weekDelays = [];
+      
+      trains.forEach(train => {
+        const duration = Number(train.dauer) || 0;
+        
+        // Only count hours for tasks that have occurred up to today
+        if (train.date) {
+          const taskDate = new Date(train.date);
+          taskDate.setHours(0, 0, 0, 0);
+          
+          if (taskDate <= today) {
+            totalHours += duration / 60; // Convert minutes to hours
+          }
+        }
+        
+        // Check if task is in current week
+        if (train.date) {
+          const taskDate = new Date(train.date);
+          if (taskDate >= monday && taskDate <= sunday) {
+            weekTasks++;
+            weekHours += duration / 60;
+            
+            // Check for cancellation
+            if (train.canceled) {
+              weekCancelledTasks++;
+            }
+            
+            // Calculate delay (only for completed/past tasks)
+            if (train.plan && train.actual && !train.canceled) {
+              // Use parseTime to properly combine date and time for both planned and actual
+              const plannedDateTime = parseTime(train.plan, now, train.plannedDate || train.date);
+              const actualDateTime = parseTime(train.actual, now, train.date);
+              
+              if (plannedDateTime && actualDateTime) {
+                // Calculate delay in minutes (including both date and time difference)
+                const delayMinutes = (actualDateTime - plannedDateTime) / (1000 * 60);
+                
+                // Count all tasks, treating early completions as 0 delay for true average
+                weekDelays.push(Math.max(0, delayMinutes));
+              }
+            }
+          }
+        }
+      });
+      
+      // Calculate averages and rates
+      const cancellationRate = weekTasks > 0 ? (weekCancelledTasks / weekTasks * 100).toFixed(1) : 0;
+      const avgDelay = weekDelays.length > 0 
+        ? (weekDelays.reduce((sum, d) => sum + d, 0) / weekDelays.length).toFixed(0)
+        : 0;
+      
+      // Use yellow (warning) for high values, green (highlight) otherwise
+      const cancellationClass = cancellationRate > 20 ? 'warning' : 'highlight';
+      const delayClass = avgDelay > 60 ? 'warning' : 'highlight';
+      
+      // Create statistics board HTML
+      const isExpanded = project.statisticsExpanded || false;
+      const expandedClass = isExpanded ? 'expanded' : '';
+      const arrowChar = '▶';
+      
+      const statisticsHTML = `
+        <div class="project-statistics-board">
+          <div class="project-statistics-toggle" data-action="toggle-statistics">
+            <div class="project-statistics-toggle-text">
+              <span class="project-statistics-toggle-arrow ${expandedClass}">${arrowChar}</span>
+              <span>Statistik</span>
+            </div>
+          </div>
+          <div class="project-statistics-content ${expandedClass}">
+            <div class="project-stat-item">
+              <div class="project-stat-label">Gesamtstunden</div>
+              <div class="project-stat-value">${totalHours.toFixed(1)} h</div>
+            </div>
+            <div class="project-stat-item">
+              <div class="project-stat-label">Diese Woche</div>
+              <div class="project-stat-value">${weekHours.toFixed(1)} h</div>
+            </div>
+            <div class="project-stat-item">
+              <div class="project-stat-label">Abbruchrate (Woche)</div>
+              <div class="project-stat-value ${cancellationClass}">${cancellationRate}%</div>
+            </div>
+            <div class="project-stat-item">
+              <div class="project-stat-label">Ø Verspätung (Woche)</div>
+              <div class="project-stat-value ${delayClass}">${avgDelay} min</div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const template = document.createElement('template');
+      template.innerHTML = statisticsHTML.trim();
+      return template.content.firstChild;
+    }
+
     function renderProjectDrawer(project) {
       const drawer = document.getElementById('project-drawer');
       const template = document.getElementById('project-drawer-template');
@@ -1589,6 +1652,10 @@
         // Insert progress line after the tasks list but before the spacer
         const progressLine = progressTemplate.content.firstChild;
         tasksList.parentNode.insertBefore(progressLine, tasksList.nextElementSibling);
+        
+        // Add statistics board after progress line
+        const statisticsBoard = renderProjectStatistics(trains, project);
+        tasksList.parentNode.insertBefore(statisticsBoard, tasksList.nextElementSibling.nextElementSibling);
         
         // Auto-scroll to focus on current progress point (where colored tasks end)
         if (trains.length > 0) {
@@ -2317,6 +2384,28 @@
           await saveSchedule();
         });
       }
+      
+      // Statistics board toggle
+      const statisticsToggle = drawer.querySelector('[data-action="toggle-statistics"]');
+      if (statisticsToggle) {
+        statisticsToggle.addEventListener('click', async function() {
+          const statisticsContent = drawer.querySelector('.project-statistics-content');
+          const arrow = this.querySelector('.project-statistics-toggle-arrow');
+          
+          if (statisticsContent.classList.contains('expanded')) {
+            statisticsContent.classList.remove('expanded');
+            arrow.classList.remove('expanded');
+            project.statisticsExpanded = false;
+          } else {
+            statisticsContent.classList.add('expanded');
+            arrow.classList.add('expanded');
+            project.statisticsExpanded = true;
+          }
+          
+          // Save the state
+          await saveSchedule();
+        });
+      }
     }
 
     function openTaskEditor(projectId, taskId) {
@@ -2748,9 +2837,7 @@
     }
 
     function findScheduleTrainById(uniqueId) {
-      return schedule.fixedSchedule.find(t => t._uniqueId === uniqueId)
-        || schedule.spontaneousEntries.find(t => t._uniqueId === uniqueId)
-        || null;
+      return schedule.spontaneousEntries.find(t => t._uniqueId === uniqueId) || null;
     }
 
     function attachSwipeToEntry(entry) {
@@ -3516,10 +3603,6 @@
           existingTrain.canceled = true;
           
           // Update in schedule
-          const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === existingTrain._uniqueId);
-          if (fixedIndex >= 0) {
-            schedule.fixedSchedule[fixedIndex].canceled = true;
-          }
           const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === existingTrain._uniqueId);
           if (spontIndex >= 0) {
             schedule.spontaneousEntries[spontIndex].canceled = true;
@@ -3533,11 +3616,6 @@
       
       // Update in schedule
       const trainId = train._uniqueId;
-      const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
-      if (fixedIndex >= 0) {
-        schedule.fixedSchedule[fixedIndex].plan = slot.time;
-        schedule.fixedSchedule[fixedIndex].date = slot.date;
-      }
       const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
       if (spontIndex >= 0) {
         schedule.spontaneousEntries[spontIndex].plan = slot.time;
@@ -3924,45 +4002,31 @@
         let scheduleTrain = null;
         let sourceArray = null;
         
-        // Try fixedSchedule first
-        const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
-        
-        if (fixedIndex >= 0) {
-          scheduleTrain = schedule.fixedSchedule[fixedIndex];
-          sourceArray = 'fixedSchedule';
-        } else {
-          // Try spontaneousEntries (trains with specific dates)
-          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
-          
-          if (spontIndex >= 0) {
-            scheduleTrain = schedule.spontaneousEntries[spontIndex];
-            sourceArray = 'spontaneousEntries';
-          }
+        // Find train in spontaneousEntries
+        const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+        if (spontIndex >= 0) {
+          scheduleTrain = schedule.spontaneousEntries[spontIndex];
+          sourceArray = 'spontaneousEntries';
         }
-        
+
         if (!scheduleTrain) {
           console.error('❌ Could not find train in schedule!', {
             trainId: trainId,
             linie: train.linie,
             plan: train.plan,
-            weekday: train.weekday,
             date: train.date
           });
         }
-        
+
         // Update both the display train AND the schedule source
         if (field === 'date') {
-          // Only update date for spontaneous entries, not fixed schedules
-          const isFixedSchedule = scheduleTrain && scheduleTrain.weekday && !scheduleTrain.date;
-          if (!isFixedSchedule) {
-            train.date = value;
-            const dateObj = new Date(train.date);
-            const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
-            train.weekday = newWeekday;
-            if (scheduleTrain) {
-              scheduleTrain.date = value;
-              scheduleTrain.weekday = newWeekday;
-            }
+          train.date = value;
+          const dateObj = new Date(train.date);
+          const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+          train.weekday = newWeekday;
+          if (scheduleTrain) {
+            scheduleTrain.date = value;
+            scheduleTrain.weekday = newWeekday;
           }
         } else if (field === 'dauer') {
           train.dauer = Number(value) || 0;
@@ -3982,20 +4046,12 @@
         panel.dataset.currentTrain = JSON.stringify(train);
       };
       
-      // Check if this is a fixed schedule (repeating) train
-      const isFixedScheduleTrain = train.isFixedSchedule === true;
-      
       // Convert each field to input
       editableFields.forEach(field => {
         const fieldName = field.getAttribute('data-field');
         const inputType = field.getAttribute('data-input-type');
         const currentValue = field.getAttribute('data-value');
         const placeholder = field.getAttribute('data-placeholder') || '';
-        
-        // Skip date field for fixed schedule trains - keep it as display-only
-        if (fieldName === 'date' && isFixedScheduleTrain) {
-          return; // Don't create input element
-        }
         
         // Create input element (or textarea for stops)
         const input = inputType === 'textarea' 
@@ -4226,8 +4282,7 @@
       try {
         // Only allow editing for local schedule trains
         const isEditable = train.source === 'local';
-        const isFixedSchedule = train.isFixedSchedule === true;
-        
+
         // Clear panel and clone template
         panel.innerHTML = '';
         const clone = template.content.cloneNode(true);
@@ -4263,15 +4318,8 @@
         dateValue.parentElement.setAttribute('data-value', train.date || now.toISOString().split('T')[0]);
         
         // Set data-editable for local trains only
-        if (isEditable && !isFixedSchedule) {
+        if (isEditable) {
           dateValue.parentElement.setAttribute('data-editable', 'true');
-        }
-        
-        // Make date non-editable for fixed schedule trains
-        if (isFixedSchedule) {
-          dateValue.parentElement.removeAttribute('data-editable');
-          dateValue.parentElement.style.cursor = 'default';
-          dateValue.parentElement.style.opacity = '0.6';
         }
         
         // Populate Arrival (Plan)
@@ -4506,13 +4554,8 @@
         // Find the train in schedule
         const trainId = panel.dataset.trainId;
         console.log('  Looking for train with ID:', trainId);
-        let scheduleTrain = schedule.fixedSchedule.find(t => t._uniqueId === trainId);
-        if (!scheduleTrain) {
-          scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
-          console.log('  Found in spontaneousEntries:', !!scheduleTrain);
-        } else {
-          console.log('  Found in fixedSchedule');
-        }
+        let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+        console.log('  Found in spontaneousEntries:', !!scheduleTrain);
         
         if (!scheduleTrain) {
           console.error('❌ Train not found in schedule!');
@@ -4859,18 +4902,15 @@
           const trainId = panel.dataset.trainId;
           
           // Find train in schedule
-          let scheduleTrain = schedule.fixedSchedule.find(t => t._uniqueId === trainId);
-          if (!scheduleTrain) {
-            scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
-          }
-          
+          let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+
           if (!scheduleTrain) {
             console.error('Train not found in schedule!');
             return;
           }
-          
+
           const now = new Date();
-          
+
           // COPY LEGACY LOGIC EXACTLY
           switch (action) {
             case 'minus5':
@@ -4964,12 +5004,8 @@
           const trainId = panel.dataset.trainId;
           
           // Find train in schedule
-          let scheduleTrain = schedule.fixedSchedule.find(t => t._uniqueId === trainId);
-          let sourceArray = schedule.fixedSchedule;
-          if (!scheduleTrain) {
-            scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
-            sourceArray = schedule.spontaneousEntries;
-          }
+          let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+          let sourceArray = schedule.spontaneousEntries;
           
           if (!scheduleTrain) {
             console.error('Train not found in schedule!');
@@ -5056,8 +5092,7 @@
         
         // Only allow editing for local schedule trains
         const isEditable = train.source === 'local';
-        const isFixedSchedule = train.isFixedSchedule === true;
-        
+
         // Apply gradient background to content layer based on line color
         const lineColor = getLineColor(train.linie || 'S1');
       const content = popup.querySelector('.mobile-focus-content');
@@ -5113,7 +5148,7 @@
       dateField.setAttribute('data-input-type', 'date');
       
       // Only make date editable for spontaneous entries
-      if (isEditable && !isFixedSchedule) {
+      if (isEditable) {
         dateField.style.cursor = 'pointer';
         dateField.setAttribute('data-editable', 'true');
       } else {
@@ -5312,14 +5347,6 @@
         panel.appendChild(template.content.firstChild);
       }
       
-      // Show badge for fixed schedule trains (date not editable)
-      if (isEditable && isFixedSchedule) {
-        const template = document.createElement('template');
-        template.innerHTML = Templates.fixedScheduleBadge().trim();
-        panel.style.position = 'relative';
-        panel.appendChild(template.content.firstChild);
-      }
-
       // Only add editing functionality for local trains
       if (!isEditable) {
         return; // Don't add event listeners for non-editable trains
@@ -5389,20 +5416,11 @@
           const trainId = panel.dataset.trainId;
           let scheduleTrain = null;
           
-          // Try fixedSchedule first (original trains without date property)
-          const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
-          
-          if (fixedIndex >= 0) {
-            scheduleTrain = schedule.fixedSchedule[fixedIndex];
-          } else {
-            // Try spontaneousEntries (trains with specific dates)
-            const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
-            
-            if (spontIndex >= 0) {
-              scheduleTrain = schedule.spontaneousEntries[spontIndex];
-            }
+          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+          if (spontIndex >= 0) {
+            scheduleTrain = schedule.spontaneousEntries[spontIndex];
           }
-          
+
           if (!scheduleTrain) {
             alert('Fehler: Zug nicht im Stundenplan gefunden');
             return;
@@ -5508,8 +5526,7 @@
       
       // Only allow editing for local schedule trains
       const isEditable = train.source === 'local';
-      const isFixedSchedule = train.isFixedSchedule === true;
-      
+
       // Apply gradient background to content layer based on line color
       const lineColor = getLineColor(train.linie || 'S1');
       const content = popup.querySelector('.mobile-focus-content');
@@ -5635,7 +5652,7 @@
       dateField.setAttribute('data-field', 'date');
       dateField.setAttribute('data-value', train.date || now.toISOString().split('T')[0]);
       dateField.setAttribute('data-input-type', 'date');
-      if (isEditable && !isFixedSchedule) {
+      if (isEditable) {
         dateField.style.cursor = 'pointer';
         dateField.setAttribute('data-editable', 'true');
       } else {
@@ -5851,12 +5868,8 @@
         const template = document.createElement('template');
         template.innerHTML = Templates.mobileDbApiBadge().trim();
         popup.appendChild(template.content.firstChild);
-      } else if (isEditable && isFixedSchedule) {
-        const template = document.createElement('template');
-        template.innerHTML = Templates.mobileFixedScheduleBadge().trim();
-        popup.appendChild(template.content.firstChild);
       }
-      
+
       // Store reference to current train for editing using unique ID
       popup.dataset.trainId = train._uniqueId;
       popup.dataset.isEditable = isEditable;
@@ -5969,33 +5982,25 @@
             const updateValue = async (value) => {
               const trainId = popup.dataset.trainId;
               let scheduleTrain = null;
-              
-              const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
-              if (fixedIndex >= 0) {
-                scheduleTrain = schedule.fixedSchedule[fixedIndex];
-              } else {
-                const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
-                if (spontIndex >= 0) {
-                  scheduleTrain = schedule.spontaneousEntries[spontIndex];
-                }
+
+              const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+              if (spontIndex >= 0) {
+                scheduleTrain = schedule.spontaneousEntries[spontIndex];
               }
-              
+
               if (!scheduleTrain) {
                 console.error('❌ Could not find train in schedule!');
                 return;
               }
-              
+
               // Update values using PC logic
               if (fieldName === 'date') {
-                const isFixedSchedule = scheduleTrain.weekday && !scheduleTrain.date;
-                if (!isFixedSchedule) {
-                  train.date = value;
-                  const dateObj = new Date(train.date);
-                  const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
-                  train.weekday = newWeekday;
-                  scheduleTrain.date = value;
-                  scheduleTrain.weekday = newWeekday;
-                }
+                train.date = value;
+                const dateObj = new Date(train.date);
+                const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+                train.weekday = newWeekday;
+                scheduleTrain.date = value;
+                scheduleTrain.weekday = newWeekday;
               } else if (fieldName === 'dauer') {
                 train.dauer = Number(value) || 0;
                 scheduleTrain.dauer = Number(value) || 0;
@@ -6131,16 +6136,11 @@
           const trainId = train._uniqueId;
           let scheduleTrain = null;
           
-          const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
-          if (fixedIndex >= 0) {
-            scheduleTrain = schedule.fixedSchedule[fixedIndex];
-          } else {
-            const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
-            if (spontIndex >= 0) {
-              scheduleTrain = schedule.spontaneousEntries[spontIndex];
-            }
+          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+          if (spontIndex >= 0) {
+            scheduleTrain = schedule.spontaneousEntries[spontIndex];
           }
-          
+
           if (!scheduleTrain && action !== 'return' && action !== 'delete') {
             alert('Fehler: Zug nicht im Stundenplan gefunden');
             return;
@@ -6271,32 +6271,24 @@
       const updateValue = (field, value) => {
         const trainId = panel.dataset.trainId;
         let scheduleTrain = null;
-        
-        const fixedIndex = schedule.fixedSchedule.findIndex(t => t._uniqueId === trainId);
-        if (fixedIndex >= 0) {
-          scheduleTrain = schedule.fixedSchedule[fixedIndex];
-        } else {
-          const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
-          if (spontIndex >= 0) {
-            scheduleTrain = schedule.spontaneousEntries[spontIndex];
-          }
+
+        const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
+        if (spontIndex >= 0) {
+          scheduleTrain = schedule.spontaneousEntries[spontIndex];
         }
-        
+
         if (!scheduleTrain) {
           console.error('❌ Could not find train in schedule!');
         }
-        
+
         if (field === 'date') {
-          const isFixedSchedule = scheduleTrain && scheduleTrain.weekday && !scheduleTrain.date;
-          if (!isFixedSchedule) {
-            train.date = value;
-            const dateObj = new Date(train.date);
-            const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
-            train.weekday = newWeekday;
-            if (scheduleTrain) {
-              scheduleTrain.date = value;
-              scheduleTrain.weekday = newWeekday;
-            }
+          train.date = value;
+          const dateObj = new Date(train.date);
+          const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+          train.weekday = newWeekday;
+          if (scheduleTrain) {
+            scheduleTrain.date = value;
+            scheduleTrain.weekday = newWeekday;
           }
         } else if (field === 'dauer') {
           train.dauer = Number(value) || 0;
@@ -6315,18 +6307,12 @@
         panel.dataset.currentTrain = JSON.stringify(train);
       };
       
-      const isFixedScheduleTrain = train.isFixedSchedule === true;
-      
       editableFields.forEach(field => {
         const fieldName = field.getAttribute('data-field');
         const inputType = field.getAttribute('data-input-type');
         const currentValue = field.getAttribute('data-value');
         const placeholder = field.getAttribute('data-placeholder') || '';
-        
-        if (fieldName === 'date' && isFixedScheduleTrain) {
-          return;
-        }
-        
+
         const input = inputType === 'textarea' 
           ? document.createElement('textarea') 
           : document.createElement('input');
@@ -6526,7 +6512,6 @@
           return train;
         };
         
-        schedule.fixedSchedule.forEach(autoFillActual);
         schedule.spontaneousEntries.forEach(autoFillActual);
         schedule.trains.forEach(autoFillActual);
         
@@ -6662,7 +6647,7 @@
     function refreshUIOnly() {
       console.log('🔄 Refreshing UI (no fetch needed)...');
       
-      // CRITICAL: Regenerate schedule.trains from fixedSchedule + spontaneousEntries
+      // CRITICAL: Regenerate schedule.trains from spontaneousEntries
       // processTrainData expects schedule.trains to exist!
       regenerateTrainsFromSchedule();
       
@@ -6683,39 +6668,16 @@
       console.log('✅ UI refreshed');
     }
     
-    // Helper to regenerate schedule.trains and schedule.localTrains from fixedSchedule + spontaneousEntries
+    // Helper to regenerate schedule.trains and schedule.localTrains from spontaneousEntries
     function regenerateTrainsFromSchedule() {
-      const now = new Date();
-      const fixedTrainsForDays = [];
-      
-      // Expand fixedSchedule for next 7 days
-      for (let i = 0; i < 7; i++) {
-        const targetDate = new Date(now);
-        targetDate.setDate(targetDate.getDate() + i);
-        const dateStr = targetDate.toLocaleDateString('sv-SE');
-        const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][targetDate.getDay()];
-        
-        const fixedForDay = (schedule.fixedSchedule || []).filter(t => t.weekday === weekday);
-        const fixedAsTrains = fixedForDay.map(t => ({
-          ...t,
-          date: dateStr,
-          source: 'local',
-          isFixedSchedule: true,
-          _uniqueId: t._uniqueId // Preserve unique ID
-        }));
-        fixedTrainsForDays.push(...fixedAsTrains);
-      }
-      
-      // Add spontaneous entries
       const spontaneousAll = (schedule.spontaneousEntries || []).map(t => ({
         ...t,
         source: 'local',
-        _uniqueId: t._uniqueId // Preserve unique ID
+        _uniqueId: t._uniqueId
       }));
-      
-      // Update schedule.trains and schedule.localTrains
-      schedule.trains = [...fixedTrainsForDays, ...spontaneousAll];
-      schedule.localTrains = [...fixedTrainsForDays, ...spontaneousAll];
+
+      schedule.trains = [...spontaneousAll];
+      schedule.localTrains = [...spontaneousAll];
     }
 
     // Helper function to refresh data and update all UI panels
@@ -6745,13 +6707,6 @@
         const res = await fetch('/api/schedule');
         if (!res.ok) throw new Error('Failed to fetch schedule');
         const schedule = await res.json();
-
-        // Remove from fixed schedule
-        if (schedule.fixedSchedule) {
-          schedule.fixedSchedule = schedule.fixedSchedule.filter(t => 
-            !(t.linie === train.linie && t.plan === train.plan && t.weekday === train.weekday)
-          );
-        }
 
         // Remove from spontaneous entries
         if (schedule.spontaneousEntries) {

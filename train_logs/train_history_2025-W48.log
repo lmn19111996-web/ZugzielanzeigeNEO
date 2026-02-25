@@ -89,7 +89,7 @@
 {"trainKey":"fex|unknown|unknown|2025-11-24","linie":"FEX","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-24","canceled":false}
 {"trainKey":"s62|tm1 tutorium|09:45|2025-11-24","linie":"S62","ziel":"TM1 Tutorium","plan":"09:45","actual":"09:45","dauer":"90","stops":"PWR 06H - V 6.02 (PF06HEGV 6.02)","date":"2025-11-24","canceled":false}
 {"trainKey":"s2|kochen|19:15|2025-11-25","linie":"S2","ziel":"Kochen","plan":"19:15","actual":"17:30","dauer":45,"stops":"","date":"2025-11-25","canceled":false}
-{"trainKey":"s7|tz - cad anfangen|19:00|2025-11-28","linie":"S7","ziel":"TZ - CAD Anfangen","plan":"19:00","actual":"19:00","dauer":120,"stops":"","date":"2025-11-28","canceled":false}
+{"trainKey":"s7|tz - cad anfangen|19:00|2025-11-28","linie":"S7","ziel":"TZ - CAD Anfangen","plan":"19:00","actual":"20:16","dauer":180,"stops":"","date":"2025-11-28","canceled":false}
 {"trainKey":"s7|tm1 - hörsaaltest|21:10|2025-11-28","linie":"S7","ziel":"TM1 - Hörsaaltest","plan":"21:10","actual":"21:10","dauer":180,"stops":"","date":"2025-11-28","canceled":false}
 {"trainKey":"s7|tm1 - hörsaaltest|22:10|2025-11-27","linie":"S7","ziel":"TM1 - Hörsaaltest","plan":"22:10","actual":"22:10","dauer":120,"stops":"","date":"2025-11-27","canceled":false}
 {"trainKey":"s62|unknown|unknown|2025-11-24","linie":"S62","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-24","canceled":false}
@@ -130,7 +130,7 @@
 {"trainKey":"s45|unknown|unknown|2025-11-27","linie":"S45","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-27","canceled":false}
 {"trainKey":"s45|flurus it|unknown|2025-11-27","linie":"S45","ziel":"FLURUS IT","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-27","canceled":false}
 {"trainKey":"s1|usb mitbringen - cad kurs|12:00|2025-11-28","linie":"S1","ziel":"USB MITBRINGEN - CAD KURS","plan":"12:00","actual":"12:45","dauer":45,"stops":"Heute kein Mittagsschlaf.","date":"2025-11-28","canceled":false}
-{"trainKey":"s7|mathematik i|21:10|2025-11-28","linie":"S7","ziel":"Mathematik I","plan":"21:10","actual":"21:10","dauer":120,"stops":"","date":"2025-11-28","canceled":false}
+{"trainKey":"s7|mathematik i|21:10|2025-11-28","linie":"S7","ziel":"Mathematik I","plan":"21:10","actual":"22:16","dauer":60,"stops":"","date":"2025-11-28","canceled":true}
 {"trainKey":"s6|tm1 - hörsaaltest|22:10|2025-11-27","linie":"S6","ziel":"TM1 - Hörsaaltest","plan":"22:10","actual":"21:10","dauer":180,"stops":"","date":"2025-11-27","canceled":false}
 {"trainKey":"s6|[prü]physik abschlusstest|17:00|2025-11-26","linie":"S6","ziel":"[PRÜ]Physik Abschlusstest","plan":"17:00","actual":"18:50","dauer":90,"stops":"","date":"2025-11-26","canceled":false}
 {"trainKey":"s6|tm1 hörsaaltest|21:40|2025-11-26","linie":"S6","ziel":"TM1 Hörsaaltest","plan":"21:40","actual":"22:00","dauer":180,"stops":"","date":"2025-11-26","canceled":false}
@@ -141,5 +141,18 @@
 {"trainKey":"s7|[zf] exphys|11:30|2025-11-28","linie":"S7","ziel":"[ZF] ExPhys","plan":"11:30","actual":"11:30","dauer":60,"stops":"","date":"2025-11-28","canceled":false}
 {"trainKey":"s3|exphys - rotation|10:00|2025-11-29","linie":"S3","ziel":"ExPhys - Rotation","plan":"10:00","actual":"10:00","dauer":"120","stops":"","date":"2025-11-29","canceled":true}
 {"trainKey":"s3|exphys - rotation|14:00|2025-11-29","linie":"S3","ziel":"ExPhys - Rotation","plan":"14:00","actual":"14:00","dauer":"180","stops":"","date":"2025-11-29","canceled":false}
-{"trainKey":"s7|tz - fertig!|23:20|2025-11-29","linie":"S7","ziel":"TZ - Fertig!","plan":"23:20","actual":"12:00","dauer":60,"stops":"","date":"2025-11-29","canceled":false}
-{"trainKey":"s45|anmeldung weihnachtsfeier|14:00|2025-11-28","linie":"S45","ziel":"Anmeldung Weihnachtsfeier","plan":"14:00","actual":"14:00","dauer":600,"stops":"","date":"2025-11-28","canceled":false}
+{"trainKey":"s7|tz - fertig!|23:20|2025-11-29","linie":"S7","ziel":"TZ - Fertig!","plan":"23:20","actual":"00:10","dauer":60,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s45|anmeldung weihnachtsfeier|14:00|2025-11-28","linie":"S45","ziel":"Anmeldung Weihnachtsfeier","plan":"14:00","actual":"14:00","dauer":600,"stops":"","date":"2025-11-28","canceled":true}
+{"trainKey":"s2|wocheneinkauf|09:00|2025-11-29","linie":"S2","ziel":"Wocheneinkauf","plan":"09:00","actual":"11:00","dauer":100,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s2|kochen|11:00|2025-11-29","linie":"S2","ziel":"Kochen","plan":"11:00","actual":"12:00","dauer":120,"stops":"","date":"2025-11-29","canceled":true}
+{"trainKey":"s7|exphys - bis rotation|14:00|2025-11-29","linie":"S7","ziel":"ExPhys - Bis Rotation","plan":"14:00","actual":"14:00","dauer":120,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s2|aufräumen |16:10|2025-11-29","linie":"S2","ziel":"Aufräumen ","plan":"16:10","actual":"16:00","dauer":60,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s7|mathematik i|16:10|2025-11-29","linie":"S7","ziel":"Mathematik I","plan":"16:10","actual":"17:50","dauer":90,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s2|your chicken is cooling down|17:56|2025-11-29","linie":"S2","ziel":"Your chicken is cooling down","plan":"17:56","actual":"17:56","dauer":120,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s46|fludisplay2|23:00|2025-11-29","linie":"S46","ziel":"FLUDisplay2","plan":"23:00","actual":"23:00","dauer":60,"stops":"","date":"2025-11-29","canceled":false}
+{"trainKey":"s2|mittag|11:30|2025-11-30","linie":"S2","ziel":"Mittag","plan":"11:30","actual":"12:00","dauer":90,"stops":"","date":"2025-11-30","canceled":false}
+{"trainKey":"s7|mathematik i|13:30|2025-11-30","linie":"S7","ziel":"Mathematik I","plan":"13:30","actual":"13:50","dauer":160,"stops":"","date":"2025-11-30","canceled":false}
+{"trainKey":"s2|abend|16:30|2025-11-30","linie":"S2","ziel":"Abend","plan":"16:30","actual":"16:30","dauer":90,"stops":"","date":"2025-11-30","canceled":false}
+{"trainKey":"s4|movie night|20:00|2025-11-30","linie":"S4","ziel":"Movie Night","plan":"20:00","actual":"20:00","dauer":180,"stops":"","date":"2025-11-30","canceled":true}
+{"trainKey":"s7|technische mechanik i (übung)|21:00|2025-11-30","linie":"S7","ziel":"Technische Mechanik I (Übung)","plan":"21:00","actual":"21:10","dauer":120,"stops":"","date":"2025-11-30","canceled":true}
+{"trainKey":"s46|flurus abfahrtstafel|22:00|2025-11-30","linie":"S46","ziel":"FLURUS Abfahrtstafel","plan":"22:00","actual":"22:00","dauer":60,"stops":"","date":"2025-11-30","canceled":false}

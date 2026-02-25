@@ -109,6 +109,24 @@ html, body {
       font-size: 3.75vh;
     }
 
+    /* Desktop ribbon: "Ankunft in" label is gray, countdown time stays white */
+    #first-train-container .countdown-label {
+      color: rgba(255, 255, 255, 0.695);
+    }
+
+    /* FEX desktop ribbon: dark label to stay readable on white background */
+    #first-train-container .train-entry.fex-entry .countdown-label {
+      color: rgba(0,0,50,0.5);
+    }
+    #first-train-container .train-entry.fex-entry .countdown-time {
+      color: #161B75;
+    }
+
+    /* Desktop: hide the mobile-only "in " prefix */
+    #first-train-container .countdown-prefix {
+      display: none;
+    }
+
     .clock {
       font-size: 4.5vh;
       font-weight: 500;
@@ -873,6 +891,12 @@ html, body {
     .fex-entry {
       background: white;
       color: #161B75;
+    }
+
+    /* FEX: actual/delay badge inverted (white text on blue pill) */
+    .fex-entry .delayed {
+      background: #161B75;
+      color: white;
     }
 
     /* Train entry hover effect */
@@ -2073,6 +2097,57 @@ html, body {
       color: white;
     }
 
+    .recurrence-badge {
+      display: inline-block;
+      font-weight: 300;
+      font-size: 1.7vh;
+      color: rgba(255, 255, 255, 0.615);
+      user-select: none;
+      padding: 0.3vh 0;
+    }
+
+    .recurrence-badge--active {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .recurrence-badge:hover {
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .recurrence-picker {
+      position: absolute;
+      z-index: 2000;
+      background: #0F1450;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.6vh;
+      overflow: hidden;
+      min-width: 22vh;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      margin-top: 0.5vh;
+    }
+
+    .recurrence-picker-item {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: inherit;
+      font-size: 1.8vh;
+      text-align: left;
+      padding: 1.2vh 1.4vh;
+      cursor: pointer;
+    }
+
+    .recurrence-picker-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .recurrence-picker-item--selected {
+      color: white;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
     .editor-field-value {
       font-size: 2vh;
       color: rgb(255, 255, 255);
@@ -2315,7 +2390,6 @@ html, body {
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        height: auto;
         margin: 1vh;
         width: 97vw;
         box-sizing: border-box;
@@ -2331,13 +2405,13 @@ html, body {
          Hides everything else from the shared train-entry template
       */
 
-      /* Container: centered in ribbon (clockSlot hidden).
-         flex: 0 1 auto means it shrinks to content width but doesn't grow.
-         max-width caps it so long destinations truncate cleanly. */
+      /* Container fills the ribbon (clockSlot is hidden on mobile).
+         flex:1 lets it grow to full width so train-info (flex:1) pushes
+         the right-block (countdown) to the far right. */
       #first-train-container {
-        flex: 0 1 auto;
+        flex: 1;
         min-width: 0;
-        max-width: 80vw;
+        max-width: 93vw;
         overflow: hidden;
         display: flex;
         align-items: center;
@@ -2400,9 +2474,53 @@ html, body {
         padding-left: 0;
       }
 
-      /* Hide: departure/time block */
+      /* Show countdown on the right of the ribbon */
       #first-train-container .right-block {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      /* Hide "Abfahrt in" / "Ankunft in" labels — show only "in HH:MM:SS" prefix */
+      #first-train-container .countdown-label {
         display: none;
+      }
+
+      /* "in " prefix — shown only on mobile ribbon for arriving state */
+      #first-train-container .countdown-prefix {
+        display: inline;
+        color: rgba(255,255,255,0.7);
+        font-size: 2.8vh;
+      }
+
+      /* Arriving (train not yet here): bright-ish gray */
+      #first-train-container .countdown-time.arriving {
+        font-size: 2.8vh;
+        color: rgba(255,255,255,0.7);
+        letter-spacing: 0.03em;
+      }
+
+      /* Departing (occupying, countdown to end): white */
+      #first-train-container .countdown-time.departing {
+        font-size: 2.8vh;
+        font-weight: 500;
+        color: rgba(255,255,255,0.95);
+        letter-spacing: 0.03em;
+      }
+
+      /* FEX in mobile ribbon: white card, all text dark */
+      #first-train-container .train-entry.fex-entry {
+        background: white;
+        color: #161B75;
+      }
+      #first-train-container .train-entry.fex-entry .countdown-prefix {
+        color: rgba(0,0,50,0.5);
+      }
+      #first-train-container .train-entry.fex-entry .countdown-time.arriving {
+        color: rgba(0,0,50,0.6);
+      }
+      #first-train-container .train-entry.fex-entry .countdown-time.departing {
+        color: #161B75;
       }
 
       /* Suppress mobile grid pseudo-elements on the header train */
@@ -2719,6 +2837,24 @@ html, body {
         z-index: 1;
         will-change: transform;
         background: #161B75;
+      }
+
+      /* FEX on mobile list: white card, dark text */
+      .swipe-wrapper > .train-entry.fex-entry {
+        background: white;
+        color: #161B75;
+      }
+
+      /* FEX mobile: destination text must be dark (overrides any white inherit) */
+      .fex-entry .zugziel,
+      .fex-entry[data-ziel]::after {
+        color: #161B75;
+      }
+
+      /* FEX mobile: actual/delay badge inverted */
+      .fex-entry .delayed {
+        background: #161B75;
+        color: white;
       }
 
       /* Pure color layer — no text, no layout. JS controls opacity. */
@@ -3755,6 +3891,11 @@ font-weight: 500;
   color: #101010;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
 }
 
 .project-todo-add-input {
@@ -3862,6 +4003,11 @@ font-weight: 500;
   word-wrap: break-word;
   overflow-wrap: break-word;
   min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .project-task-add-input {
@@ -3961,6 +4107,89 @@ font-weight: 500;
   background: #4CAF50;
   border-radius: 4px;
   transition: width 0.3s ease;
+}
+
+/* Statistics Board */
+.project-statistics-board {
+  margin: 0 1vw;
+  border-top: 1px solid #ddd;
+}
+
+.project-statistics-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  user-select: none;
+}
+
+.project-statistics-toggle:hover {
+  background: #e9e9e9;
+}
+
+.project-statistics-toggle-text {
+  font-size: 1.8vh;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-statistics-toggle-arrow {
+  font-size: 1.4vh;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+.project-statistics-toggle-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.project-statistics-content {
+  display: none;
+  padding: 15px 10px 5px;
+  background: #ffffff;
+}
+
+.project-statistics-content.expanded {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.project-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.project-stat-label {
+  font-size: 1.6vh;
+  color: #666;
+  font-weight: 400;
+}
+
+.project-stat-value {
+  font-size: 2.2vh;
+  color: #333;
+  font-weight: 600;
+}
+
+.project-stat-value.highlight {
+  color: #589b3f;
+}
+
+.project-stat-value.warning {
+  color: #d29f07;
+}
+
+.project-stat-value.danger {
+  color: #F44336;
 }
 
 .project-task-add-input {

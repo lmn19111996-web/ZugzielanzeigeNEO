@@ -2,3 +2,53 @@
 {"trainKey":"s5|this project should have start date 15.02|10:10|2026-02-20","linie":"S5","ziel":"This project should have start date 15.02","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-20","canceled":false}
 {"trainKey":"1|and this one should have planned date as 20.2, and actual date 22.2|10:10|2026-02-20","linie":"1","ziel":"And this one should have planned date as 20.2, and actual date 22.2","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-20","canceled":false}
 {"trainKey":"1|and this one should have planned date as 20.2, and actual date 22.2|10:10|2026-02-22","linie":"1","ziel":"And this one should have planned date as 20.2, and actual date 22.2","plan":"10:10","actual":"10:10","dauer":100,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s45|fachschaftssitzung|17:30|2026-02-16","linie":"S45","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":60,"stops":"","date":"2026-02-16","canceled":true}
+{"trainKey":"s7|[ü] blatt 13|16:20|2026-02-16","linie":"S7","ziel":"[Ü] Blatt 13","plan":"16:20","actual":"09:00","dauer":120,"stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"fex|tết|unknown|2026-02-16","linie":"FEX","ziel":"Tết","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s2|halbwocheneinkauf - stadtmitte |09:40|2026-02-21","linie":"S2","ziel":"Halbwocheneinkauf - Stadtmitte ","plan":"09:40","actual":"17:30","dauer":60,"stops":"","date":"2026-02-21","canceled":true}
+{"trainKey":"s2|[zf] außerplanmäßiger einkauf|08:00|2026-02-16","linie":"S2","ziel":"[ZF] Außerplanmäßiger Einkauf","plan":"08:00","actual":"08:00","dauer":90,"stops":"","date":"2026-02-16","canceled":true}
+{"trainKey":"s7|[ü] blatt 14|21:00|2026-02-16","linie":"S7","ziel":"[Ü] Blatt 14","plan":"21:00","actual":"15:00","dauer":180,"stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s2|steak buldak|unknown|2026-02-16","linie":"S2","ziel":"Steak buldak","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s2|salmon steak w/ mushroom sauce|00:00|2026-02-16","linie":"S2","ziel":"Salmon steak w/ mushroom sauce","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s2|baked chicken w/ potatoes, veggies|unknown|2026-02-16","linie":"S2","ziel":"Baked chicken w/ potatoes, veggies","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s2|baked chicken w/ potatoes, veggies|unknown|2026-02-17","linie":"S2","ziel":"Baked chicken w/ potatoes, veggies","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-17","canceled":false}
+{"trainKey":"s2|salmon pasta|unknown|2026-02-17","linie":"S2","ziel":"Salmon pasta","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-17","canceled":false}
+{"trainKey":"s25|kartoffelsuppe w/ hackfleisch, karotten u. wurst|unknown|2026-02-16","linie":"S25","ziel":"Kartoffelsuppe w/ Hackfleisch, Karotten u. Wurst","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"fex|praktikum|20:00|2026-02-19","linie":"FEX","ziel":"Praktikum","plan":"20:00","actual":"10:00","dauer":60,"stops":"","date":"2026-02-19","canceled":false}
+{"trainKey":"fex|hát nhạc giáng sinh vs qt lel|19:00|2026-02-16","linie":"FEX","ziel":"Hát nhạc giáng sinh vs qt lel","plan":"19:00","actual":"19:00","dauer":60,"stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s2|hot pot|unknown|2026-02-21","linie":"S2","ziel":"Hot Pot","plan":"","actual":"00:00","dauer":1,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s25|baked chicken thighs w/ potatoes u. broccoli|unknown|2026-02-16","linie":"S25","ziel":"Baked Chicken Thighs w/ Potatoes u. Broccoli","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-16","canceled":false}
+{"trainKey":"s46|planung lichttechnik mit cräsch|14:00|2026-02-18","linie":"S46","ziel":"Planung Lichttechnik mit Cräsch","plan":"14:00","actual":"14:00","dauer":120,"stops":"","date":"2026-02-18","canceled":false}
+{"trainKey":"s7|formelsammlung|20:00|2026-02-17","linie":"S7","ziel":"Formelsammlung","plan":"20:00","actual":"20:30","dauer":120,"stops":"","date":"2026-02-17","canceled":false}
+{"trainKey":"s5|fitness studio|08:00|2026-02-18","linie":"S5","ziel":"Fitness Studio","plan":"08:00","actual":"16:00","dauer":90,"stops":"","date":"2026-02-18","canceled":false}
+{"trainKey":"s75|formelsammlung|11:00|2026-02-18","linie":"S75","ziel":"Formelsammlung","plan":"11:00","actual":"11:00","dauer":120,"stops":"","date":"2026-02-18","canceled":false}
+{"trainKey":"s75|musterprüfung 2|20:00|2026-02-21","linie":"S75","ziel":"Musterprüfung 2","plan":"20:00","actual":"20:16","dauer":90,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s25|mul-naengmyeon- cold noodles in chilled broth|unknown|2026-02-18","linie":"S25","ziel":"Mul-naengmyeon- Cold noodles in chilled broth","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-18","canceled":false}
+{"trainKey":"s2|mul-naengmyeon|unknown|2026-02-20","linie":"S2","ziel":"Mul-naengmyeon","plan":"","actual":"00:00","dauer":"","stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s2|rice skillet|unknown|2026-02-18","linie":"S2","ziel":"Rice Skillet","plan":"","actual":"20:00","dauer":"","stops":"","date":"2026-02-18","canceled":false}
+{"trainKey":"s2|rice skillet|unknown|2026-02-19","linie":"S2","ziel":"Rice Skillet","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-19","canceled":false}
+{"trainKey":"s2|hot pot|unknown|2026-02-22","linie":"S2","ziel":"Hot Pot","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s5|fitness studio|09:00|2026-02-21","linie":"S5","ziel":"Fitness Studio","plan":"09:00","actual":"09:30","dauer":90,"stops":"","date":"2026-02-21","canceled":true}
+{"trainKey":"note|eagle|unknown|2026-02-19","linie":"NOTE","ziel":"EAGLE","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-19","canceled":false}
+{"trainKey":"s6|musterprüfung 1|14:00|2026-02-19","linie":"S6","ziel":"Musterprüfung 1","plan":"14:00","actual":"14:00","dauer":120,"stops":"","date":"2026-02-19","canceled":false}
+{"trainKey":"s6|musterprüfung 3|22:00|2026-02-19","linie":"S6","ziel":"Musterprüfung 3","plan":"22:00","actual":"22:05","dauer":120,"stops":"","date":"2026-02-19","canceled":false}
+{"trainKey":"s6|musterprüfung 4|08:00|2026-02-20","linie":"S6","ziel":"Musterprüfung 4","plan":"08:00","actual":"10:00","dauer":120,"stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s6|musterprüfung 5|10:30|2026-02-21","linie":"S6","ziel":"Musterprüfung 5","plan":"10:30","actual":"11:01","dauer":90,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s6|musterprüfung 6|14:00|2026-02-20","linie":"S6","ziel":"Musterprüfung 6","plan":"14:00","actual":"14:00","dauer":90,"stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s6|musterprüfung 7|15:30|2026-02-20","linie":"S6","ziel":"Musterprüfung 7","plan":"15:30","actual":"15:45","dauer":90,"stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s6|musterprüfung 8|20:00|2026-02-21","linie":"S6","ziel":"Musterprüfung 8","plan":"20:00","actual":"15:40","dauer":90,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s6|musterprüfung 9|15:30|2026-02-21","linie":"S6","ziel":"Musterprüfung 9","plan":"15:30","actual":"21:50","dauer":90,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s6|musterprüfung 10|14:00|2026-02-21","linie":"S6","ziel":"Musterprüfung 10","plan":"14:00","actual":"14:00","dauer":90,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s2|kartoffeln wenden|13:05|2026-02-20","linie":"S2","ziel":"Kartoffeln wenden","plan":"13:05","actual":"13:05","dauer":"","stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s2|kartoffeln wenden + backfisch reintun|13:15|2026-02-20","linie":"S2","ziel":"Kartoffeln wenden + Backfisch reintun","plan":"13:15","actual":"13:15","dauer":"","stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s2|kartoffeln wenden|13:25|2026-02-20","linie":"S2","ziel":"Kartoffeln wenden","plan":"13:25","actual":"13:25","dauer":"","stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s2|fertig|13:35|2026-02-20","linie":"S2","ziel":"Fertig","plan":"13:35","actual":"13:35","dauer":"","stops":"","date":"2026-02-20","canceled":false}
+{"trainKey":"s6|zus hm1|21:40|2026-02-21","linie":"S6","ziel":"ZUS HM1","plan":"21:40","actual":"23:20","dauer":60,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s6|musterprüfung 11|17:45|2026-02-21","linie":"S6","ziel":"Musterprüfung 11","plan":"17:45","actual":"17:20","dauer":90,"stops":"","date":"2026-02-21","canceled":false}
+{"trainKey":"s6|musterprüfung 12|08:00|2026-02-22","linie":"S6","ziel":"Musterprüfung 12","plan":"08:00","actual":"08:00","dauer":90,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s6|musterprüfung 13|09:45|2026-02-22","linie":"S6","ziel":"Musterprüfung 13","plan":"09:45","actual":"09:45","dauer":90,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s6|musterprüfung 14|11:30|2026-02-22","linie":"S6","ziel":"Musterprüfung 14","plan":"11:30","actual":"11:30","dauer":90,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s6|musterprüfung 15|14:00|2026-02-22","linie":"S6","ziel":"Musterprüfung 15","plan":"14:00","actual":"14:00","dauer":90,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s6|musterprüfung 16|15:45|2026-02-22","linie":"S6","ziel":"Musterprüfung 16","plan":"15:45","actual":"15:45","dauer":90,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s6|musterprüfung -2|20:00|2026-02-22","linie":"S6","ziel":"Musterprüfung -2","plan":"20:00","actual":"19:10","dauer":90,"stops":"","date":"2026-02-22","canceled":false}
+{"trainKey":"s25|gourmet-dessert: mango dessert|unknown|2026-02-22","linie":"S25","ziel":"Gourmet-Dessert: Mango Dessert","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-22","canceled":false}

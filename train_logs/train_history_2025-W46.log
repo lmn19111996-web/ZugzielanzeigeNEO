@@ -52,3 +52,4 @@
 {"trainKey":"s7|[zf] isd labor|22:00|2025-11-15","linie":"S7","ziel":"[ZF] ISD Labor","plan":"22:00","actual":"21:00","dauer":90,"stops":"","date":"2025-11-15","canceled":false}
 {"trainKey":"s2|your broth is cooking|16:30|2025-11-15","linie":"S2","ziel":"Your broth is cooking","plan":"16:30","actual":"17:00","dauer":"","stops":"","date":"2025-11-15","canceled":false}
 {"trainKey":"s2|nấu bún ốc|19:30|2025-11-15","linie":"S2","ziel":"Nấu bún ốc","plan":"19:30","actual":"19:30","dauer":30,"stops":"","date":"2025-11-15","canceled":false}
+{"trainKey":"note|anmerkungen|unknown|2025-11-11","linie":"NOTE","ziel":"Anmerkungen","plan":"","actual":"","dauer":"","stops":"","date":"2025-11-11","canceled":false}

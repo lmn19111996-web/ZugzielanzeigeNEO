@@ -1,5 +1,5 @@
-{"trainKey":"s6|[prü] tz endabgabe|00:00|2026-02-04","linie":"S6","ziel":"[PRÜ] TZ Endabgabe","plan":"00:00","actual":"00:00","dauer":1439,"stops":"ILIAS + Persönliche Abgabe","date":"2026-02-04","canceled":false}
-{"trainKey":"fex|prüfungsphase wise25/26|00:00|2026-02-04","linie":"FEX","ziel":"Prüfungsphase WiSe25/26","plan":"00:00","actual":"00:00","dauer":"0","stops":"","date":"2026-02-04","canceled":false}
+{"trainKey":"s6|[prü] tz endabgabe|00:00|2026-02-04","linie":"S6","ziel":"[PRÜ] TZ Endabgabe","plan":"00:00","actual":"00:00","dauer":"","stops":"ILIAS + Persönliche Abgabe","date":"2026-02-04","canceled":false}
+{"trainKey":"fex|prüfungsphase wise25/26|00:00|2026-02-04","linie":"FEX","ziel":"Prüfungsphase WiSe25/26","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-02-04","canceled":false}
 {"trainKey":"s5|ski kurs|06:00|2026-02-04","linie":"S5","ziel":"Ski Kurs","plan":"06:00","actual":"06:00","dauer":720,"stops":"","date":"2026-02-04","canceled":false}
 {"trainKey":"s6|[prü] physik abschlusstest|00:00|2026-02-02","linie":"S6","ziel":"[PRÜ] Physik Abschlusstest","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-02-02","canceled":false}
 {"trainKey":"s7|mathematik i|10:00|2026-02-08","linie":"S7","ziel":"Mathematik I","plan":"10:00","actual":"08:00","dauer":210,"stops":"","date":"2026-02-08","canceled":false}
@@ -11,3 +11,40 @@
 {"trainKey":"10|ahlem|00:30|2026-02-08","linie":"10","ziel":"Ahlem","plan":"00:30","actual":"00:30","dauer":"","stops":"","date":"2026-02-08","canceled":false}
 {"trainKey":"s6|unknown|unknown|2026-02-08","linie":"S6","ziel":"","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-08","canceled":false}
 {"trainKey":"s6|birkenwerder|12:00|2026-02-08","linie":"S6","ziel":"Birkenwerder","plan":"12:00","actual":"12:00","dauer":10,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s46|angebote pa-equipment|23:59|2026-02-06","linie":"S46","ziel":"Angebote PA-Equipment","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2026-02-06","canceled":false}
+{"trainKey":"fex|tz ausdrücken|00:00|2026-02-03","linie":"FEX","ziel":"TZ Ausdrücken","plan":"00:00","actual":"12:00","dauer":"","stops":"","date":"2026-02-03","canceled":false}
+{"trainKey":"s6|checkliste sprechstunde tz|13:30|2026-02-02","linie":"S6","ziel":"CHECKLISTE Sprechstunde TZ","plan":"13:30","actual":"13:30","dauer":20,"stops":"","date":"2026-02-02","canceled":false}
+{"trainKey":"s46|sn-orga technik angebot|14:00|2026-02-03","linie":"S46","ziel":"SN-Orga Technik Angebot","plan":"14:00","actual":"14:00","dauer":60,"stops":"","date":"2026-02-03","canceled":false}
+{"trainKey":"s7|tz fertig|07:30|2026-02-03","linie":"S7","ziel":"TZ Fertig","plan":"07:30","actual":"07:30","dauer":"","stops":"","date":"2026-02-03","canceled":false}
+{"trainKey":"s2|skiausrüstung rückgabe|10:00|2026-02-05","linie":"S2","ziel":"Skiausrüstung Rückgabe","plan":"10:00","actual":"10:00","dauer":30,"stops":"","date":"2026-02-05","canceled":false}
+{"trainKey":"s2|halbwocheneinkauf|10:30|2026-02-04","linie":"S2","ziel":"Halbwocheneinkauf","plan":"10:30","actual":"10:30","dauer":90,"stops":"","date":"2026-02-04","canceled":false}
+{"trainKey":"s2|halbwocheneinkauf|10:30|2026-02-05","linie":"S2","ziel":"Halbwocheneinkauf","plan":"10:30","actual":"10:30","dauer":90,"stops":"","date":"2026-02-05","canceled":false}
+{"trainKey":"fex|tz abgabe|13:20|2026-02-05","linie":"FEX","ziel":"TZ Abgabe","plan":"13:20","actual":"13:50","dauer":20,"stops":"","date":"2026-02-05","canceled":false}
+{"trainKey":"s2|[zf] mittag + halbwocheneinkauf|12:26|2026-02-05","linie":"S2","ziel":"[ZF] Mittag + Halbwocheneinkauf","plan":"12:26","actual":"12:26","dauer":60,"stops":"","date":"2026-02-05","canceled":false}
+{"trainKey":"s1|[zf] halbwocheneinkauf|17:00|2026-02-05","linie":"S1","ziel":"[ZF] Halbwocheneinkauf","plan":"17:00","actual":"14:20","dauer":20,"stops":"","date":"2026-02-05","canceled":false}
+{"trainKey":"s2|[zf] halbwocheneinkauf|10:00|2026-02-06","linie":"S2","ziel":"[ZF] Halbwocheneinkauf","plan":"10:00","actual":"10:00","dauer":30,"stops":"","date":"2026-02-06","canceled":false}
+{"trainKey":"s2|zubereitung abendessen|11:00|2026-02-06","linie":"S2","ziel":"Zubereitung Abendessen","plan":"11:00","actual":"11:00","dauer":60,"stops":"","date":"2026-02-06","canceled":false}
+{"trainKey":"s1|mensa - mittagessen|12:00|2026-02-06","linie":"S1","ziel":"MENSA - Mittagessen","plan":"12:00","actual":"12:00","dauer":60,"stops":"","date":"2026-02-06","canceled":false}
+{"trainKey":"s2|lagerbestand kühlschrank |unknown|2026-02-08","linie":"S2","ziel":"Lagerbestand Kühlschrank ","plan":"","actual":"","dauer":1,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|exphys musterklausur|11:00|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"11:00","actual":"11:00","dauer":50,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|formelsammlung|12:00|2026-02-07","linie":"S75","ziel":"Formelsammlung","plan":"12:00","actual":"12:00","dauer":45,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|14:00|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"14:00","actual":"14:00","dauer":45,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|15:00|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"15:00","actual":"15:00","dauer":40,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|15:50|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"15:50","actual":"15:55","dauer":40,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|16:35|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"16:35","actual":"16:50","dauer":40,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s5|fitness studio|18:00|2026-02-08","linie":"S5","ziel":"Fitness Studio","plan":"18:00","actual":"18:00","dauer":90,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s2|[zf] ergänzungskauf|19:30|2026-02-07","linie":"S2","ziel":"[ZF] Ergänzungskauf","plan":"19:30","actual":"19:30","dauer":60,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|22:00|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"22:00","actual":"22:00","dauer":35,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|23:00|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"23:00","actual":"22:45","dauer":35,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|10:45|2026-02-08","linie":"S75","ziel":"ExPhys Musterklausur","plan":"10:45","actual":"10:45","dauer":35,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|exphys musterklausur|14:45|2026-02-08","linie":"S75","ziel":"ExPhys Musterklausur","plan":"14:45","actual":"14:45","dauer":35,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|exphys musterklausur|15:30|2026-02-08","linie":"S75","ziel":"ExPhys Musterklausur","plan":"15:30","actual":"15:30","dauer":35,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|exphys musterklausur|16:15|2026-02-08","linie":"S75","ziel":"ExPhys Musterklausur","plan":"16:15","actual":"16:15","dauer":35,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s2|kochen|11:30|2026-02-08","linie":"S2","ziel":"Kochen","plan":"11:30","actual":"11:30","dauer":90,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|zusammenfassung|19:15|2026-02-08","linie":"S75","ziel":"Zusammenfassung","plan":"19:15","actual":"17:00","dauer":45,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s3|pantohat modellierung|21:00|2026-02-08","linie":"S3","ziel":"Pantohat Modellierung","plan":"21:00","actual":"21:00","dauer":120,"stops":"","date":"2026-02-08","canceled":false}
+{"trainKey":"s75|formelsammlung|18:00|2026-02-07","linie":"S75","ziel":"Formelsammlung","plan":"18:00","actual":"18:25","dauer":30,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"s75|exphys musterklausur|17:40|2026-02-07","linie":"S75","ziel":"ExPhys Musterklausur","plan":"17:40","actual":"17:40","dauer":35,"stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"fex|1|unknown|2026-02-05","linie":"FEX","ziel":"1","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-05","canceled":false}
+{"trainKey":"fex|2|unknown|2026-02-07","linie":"FEX","ziel":"2","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-07","canceled":false}
+{"trainKey":"fex|3|unknown|2026-02-08","linie":"FEX","ziel":"3","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-08","canceled":false}

@@ -1,1 +1,3 @@
 {"trainKey":"s46|dj-verträge|23:59|2026-03-30","linie":"S46","ziel":"DJ-Verträge","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2026-03-30","canceled":false}
+{"trainKey":"fex|[prü] elektrotechnik|12:00|2026-03-31","linie":"FEX","ziel":"[PRÜ] Elektrotechnik","plan":"12:00","actual":"12:00","dauer":60,"stops":"","date":"2026-03-31","canceled":false}
+{"trainKey":"s6|eagle task 2|23:59|2026-03-31","linie":"S6","ziel":"EAGLE Task 2","plan":"23:59","actual":"23:59","dauer":"","stops":"","date":"2026-03-31","canceled":false}

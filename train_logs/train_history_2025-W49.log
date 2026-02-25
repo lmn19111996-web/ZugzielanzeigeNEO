@@ -30,7 +30,7 @@
 {"trainKey":"s6|technische mechanik i|15:45|2025-12-04","linie":"S6","ziel":"Technische Mechanik I","plan":"15:45","actual":"15:45","dauer":"90","stops":"PWR 07 - V 07.02","date":"2025-12-04","canceled":false}
 {"trainKey":"s7|tm1 - hörsaaltest|20:00|2025-12-04","linie":"S7","ziel":"TM1 - Hörsaaltest","plan":"20:00","actual":"20:00","dauer":120,"stops":"","date":"2025-12-04","canceled":true}
 {"trainKey":"s3|movie night prep|22:00|2025-12-04","linie":"S3","ziel":"Movie Night Prep","plan":"22:00","actual":"21:10","dauer":180,"stops":"","date":"2025-12-04","canceled":true}
-{"trainKey":"s45|flurus it|17:30|2025-12-04","linie":"S45","ziel":"FLURUS IT","plan":"17:30","actual":"17:10","dauer":500,"stops":"","date":"2025-12-04","canceled":false}
+{"trainKey":"s45|flurus it|17:30|2025-12-04","linie":"S45","ziel":"FLURUS IT","plan":"17:30","actual":"17:30","dauer":180,"stops":"","date":"2025-12-04","canceled":false}
 {"trainKey":"s5|fitness studio|07:30|2025-12-05","linie":"S5","ziel":"Fitness Studio","plan":"07:30","actual":"07:30","dauer":"90","stops":"","date":"2025-12-05","canceled":false}
 {"trainKey":"s6|höhere mathematik i|09:45|2025-12-05","linie":"S6","ziel":"Höhere Mathematik I","plan":"09:45","actual":"09:45","dauer":"90","stops":"PWR 53 - V 53.01","date":"2025-12-05","canceled":false}
 {"trainKey":"s1|usb mitbringen - cad kurs|12:00|2025-12-05","linie":"S1","ziel":"USB MITBRINGEN - CAD KURS","plan":"12:00","actual":"12:45","dauer":45,"stops":"Heute kein Mittagsschlaf.","date":"2025-12-05","canceled":false}
@@ -64,3 +64,20 @@
 {"trainKey":"s7|unknown|20:00|2025-12-06","linie":"S7","ziel":"","plan":"20:00","actual":"20:00","dauer":180,"stops":"","date":"2025-12-06","canceled":false}
 {"trainKey":"s7|unknown|14:00|2025-12-04","linie":"S7","ziel":"","plan":"14:00","actual":"14:00","dauer":"90","stops":"Mengen, Gruppe, Ringe und Körper\n\nKomplexe Zahlen","date":"2025-12-04","canceled":true}
 {"trainKey":"s7|mathe|14:00|2025-12-04","linie":"S7","ziel":"Mathe","plan":"14:00","actual":"14:00","dauer":60,"stops":"","date":"2025-12-04","canceled":false}
+{"trainKey":"s7|mathematik i|08:30|2025-12-01","linie":"S7","ziel":"Mathematik I","plan":"08:30","actual":"08:40","dauer":50,"stops":"","date":"2025-12-01","canceled":false}
+{"trainKey":"s2|zusatzeinkauf|18:34|2025-12-02","linie":"S2","ziel":"Zusatzeinkauf","plan":"18:34","actual":"18:34","dauer":"","stops":"","date":"2025-12-02","canceled":false}
+{"trainKey":"s7|mathematik i|11:30|2025-12-02","linie":"S7","ziel":"Mathematik I","plan":"11:30","actual":"23:45","dauer":100,"stops":"","date":"2025-12-02","canceled":false}
+{"trainKey":"s2|müll|07:55|2025-12-03","linie":"S2","ziel":"Müll","plan":"07:55","actual":"07:55","dauer":"","stops":"","date":"2025-12-03","canceled":false}
+{"trainKey":"s2|müll |07:55|2025-12-04","linie":"S2","ziel":"Müll ","plan":"07:55","actual":"07:55","dauer":"","stops":"","date":"2025-12-04","canceled":false}
+{"trainKey":"s7|mathematik i|20:00|2025-12-05","linie":"S7","ziel":"Mathematik I","plan":"20:00","actual":"20:30","dauer":180,"stops":"","date":"2025-12-05","canceled":false}
+{"trainKey":"s4|flulachs|11:30|2025-12-06","linie":"S4","ziel":"FLULachs","plan":"11:30","actual":"11:30","dauer":"240","stops":"","date":"2025-12-06","canceled":false}
+{"trainKey":"fex|chúc em thi tốt|16:00|2025-12-06","linie":"FEX","ziel":"Chúc em thi tốt","plan":"16:00","actual":"16:00","dauer":"","stops":"","date":"2025-12-06","canceled":false}
+{"trainKey":"s2|wocheneinkauf|09:00|2025-12-06","linie":"S2","ziel":"Wocheneinkauf","plan":"09:00","actual":"18:30","dauer":60,"stops":"","date":"2025-12-06","canceled":false}
+{"trainKey":"s7|experimentalphysik (übung)|17:00|2025-12-06","linie":"S7","ziel":"Experimentalphysik (Übung)","plan":"17:00","actual":"20:00","dauer":120,"stops":"","date":"2025-12-06","canceled":false}
+{"trainKey":"s7|mathematik i|14:00|2025-12-06","linie":"S7","ziel":"Mathematik I","plan":"14:00","actual":"22:00","dauer":120,"stops":"","date":"2025-12-06","canceled":false}
+{"trainKey":"s2|aufräumen|09:34|2025-12-07","linie":"S2","ziel":"Aufräumen","plan":"09:34","actual":"09:34","dauer":30,"stops":"","date":"2025-12-07","canceled":false}
+{"trainKey":"s7|exphys|14:00|2025-12-07","linie":"S7","ziel":"ExPhys","plan":"14:00","actual":"14:00","dauer":180,"stops":"","date":"2025-12-07","canceled":false}
+{"trainKey":"s7|scheinklausur i|19:50|2025-12-07","linie":"S7","ziel":"Scheinklausur I","plan":"19:50","actual":"19:50","dauer":60,"stops":"","date":"2025-12-07","canceled":false}
+{"trainKey":"s7|scheinklausur ii|21:00|2025-12-07","linie":"S7","ziel":"Scheinklausur II","plan":"21:00","actual":"21:00","dauer":50,"stops":"","date":"2025-12-07","canceled":false}
+{"trainKey":"s7|scheinklausur iii|22:00|2025-12-07","linie":"S7","ziel":"Scheinklausur III","plan":"22:00","actual":"22:00","dauer":50,"stops":"","date":"2025-12-07","canceled":false}
+{"trainKey":"s7|scheinklausur iv|23:00|2025-12-07","linie":"S7","ziel":"Scheinklausur IV","plan":"23:00","actual":"23:00","dauer":60,"stops":"","date":"2025-12-07","canceled":false}

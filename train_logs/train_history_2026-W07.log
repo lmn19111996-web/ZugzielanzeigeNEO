@@ -242,3 +242,44 @@
 {"trainKey":"s1|yall this one should exist|01:40|2026-02-14","linie":"S1","ziel":"YALL THIS ONE SHOULD EXIST","plan":"01:40","actual":"01:40","dauer":1000,"stops":"","date":"2026-02-14","canceled":false}
 {"trainKey":"s7|me|unknown|2026-02-15","linie":"S7","ziel":"me","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-15","canceled":false}
 {"trainKey":"s7|please|unknown|2026-02-15","linie":"S7","ziel":"please","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"fex|[prü] physik|16:00|2026-02-11","linie":"FEX","ziel":"[PRÜ] Physik","plan":"16:00","actual":"16:00","dauer":60,"stops":"Prüfung","date":"2026-02-11","canceled":false}
+{"trainKey":"1|wuthering heights release|18:00|2026-02-12","linie":"1","ziel":"Wuthering Heights Release","plan":"18:00","actual":"18:00","dauer":"","stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"s75|exphys musterklausur|14:25|2026-02-09","linie":"S75","ziel":"ExPhys Musterklausur","plan":"14:25","actual":"17:30","dauer":45,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s75|exphys formelsammlung|22:00|2026-02-09","linie":"S75","ziel":"ExPhys Formelsammlung","plan":"22:00","actual":"22:15","dauer":15,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s75|exphys musterklausur|22:20|2026-02-09","linie":"S75","ziel":"ExPhys Musterklausur","plan":"22:20","actual":"23:00","dauer":45,"stops":"","date":"2026-02-09","canceled":false}
+{"trainKey":"s75|exphys musterklausur|09:40|2026-02-10","linie":"S75","ziel":"ExPhys Musterklausur","plan":"09:40","actual":"10:00","dauer":60,"stops":"","date":"2026-02-10","canceled":false}
+{"trainKey":"s75|exphys musterklausur|10:30|2026-02-10","linie":"S75","ziel":"ExPhys Musterklausur","plan":"10:30","actual":"11:10","dauer":40,"stops":"","date":"2026-02-10","canceled":true}
+{"trainKey":"s7|korrektur aller kurzantwort-klausuren|11:30|2026-02-10","linie":"S7","ziel":"Korrektur aller Kurzantwort-Klausuren","plan":"11:30","actual":"11:50","dauer":60,"stops":"","date":"2026-02-10","canceled":false}
+{"trainKey":"s75|korrektur kurzantwortfrangen|14:00|2026-02-10","linie":"S75","ziel":"Korrektur Kurzantwortfrangen","plan":"14:00","actual":"14:00","dauer":60,"stops":"","date":"2026-02-10","canceled":false}
+{"trainKey":"s25|klausurvorbereitung|21:00|2026-02-10","linie":"S25","ziel":"Klausurvorbereitung","plan":"21:00","actual":"20:50","dauer":120,"stops":"","date":"2026-02-10","canceled":false}
+{"trainKey":"s5|bonus: fitness studio|09:30|2026-02-11","linie":"S5","ziel":"Bonus: Fitness Studio","plan":"09:30","actual":"09:30","dauer":30,"stops":"","date":"2026-02-11","canceled":false}
+{"trainKey":"s75|quadriken|09:00|2026-02-12","linie":"S75","ziel":"Quadriken","plan":"09:00","actual":"14:30","dauer":120,"stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"s45|dj vertrag schreiben, technikbedarf  hochladen|11:30|2026-02-12","linie":"S45","ziel":"DJ Vertrag schreiben, Technikbedarf  Hochladen","plan":"11:30","actual":"12:05","dauer":30,"stops":"","date":"2026-02-12","canceled":false}
+{"trainKey":"s5|fitness studio|17:00|2026-02-12","linie":"S5","ziel":"Fitness Studio","plan":"17:00","actual":"17:00","dauer":90,"stops":"","date":"2026-02-12","canceled":true}
+{"trainKey":"fex|4|unknown|2026-02-10","linie":"FEX","ziel":"4","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-10","canceled":false}
+{"trainKey":"fex|5|unknown|2026-02-11","linie":"FEX","ziel":"5","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-11","canceled":false}
+{"trainKey":"s7|[ü] blatt 11|10:00|2026-02-13","linie":"S7","ziel":"[Ü] Blatt 11","plan":"10:00","actual":"17:35","dauer":120,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s7|[ü] blatt 11|14:00|2026-02-13","linie":"S7","ziel":"[Ü] Blatt 11","plan":"14:00","actual":"22:00","dauer":120,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s7|[ü] blatt 12|20:00|2026-02-14","linie":"S7","ziel":"[Ü] Blatt 12","plan":"20:00","actual":"14:30","dauer":120,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"fex|praktikumplatz|22:00|2026-02-14","linie":"FEX","ziel":"Praktikumplatz","plan":"22:00","actual":"21:00","dauer":60,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s5|fitness studio|09:00|2026-02-14","linie":"S5","ziel":"Fitness Studio","plan":"09:00","actual":"09:00","dauer":90,"stops":"","date":"2026-02-14","canceled":true}
+{"trainKey":"s5|fitness studio|08:00|2026-02-13","linie":"S5","ziel":"Fitness Studio","plan":"08:00","actual":"09:22","dauer":75,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s2|wäsche|14:00|2026-02-13","linie":"S2","ziel":"Wäsche","plan":"14:00","actual":"14:00","dauer":"","stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s2|wäsche entnehmen|15:00|2026-02-13","linie":"S2","ziel":"Wäsche entnehmen","plan":"15:00","actual":"15:00","dauer":"","stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s2|wäsche abholen|16:00|2026-02-13","linie":"S2","ziel":"Wäsche abholen","plan":"16:00","actual":"16:00","dauer":"","stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s2|kochmittag|11:30|2026-02-13","linie":"S2","ziel":"Kochmittag","plan":"11:30","actual":"11:30","dauer":60,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"note|dev notes|unknown|2026-02-13","linie":"NOTE","ziel":"Dev Notes","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s2|samstagskoch|11:00|2026-02-14","linie":"S2","ziel":"Samstagskoch","plan":"11:00","actual":"13:00","dauer":60,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s7|zus werkstoffkunde (grobe planung)|18:00|2026-02-14","linie":"S7","ziel":"ZUS Werkstoffkunde (Grobe Planung)","plan":"18:00","actual":"19:10","dauer":30,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s7|[ü] blatt 12|16:20|2026-02-14","linie":"S7","ziel":"[Ü] Blatt 12","plan":"16:20","actual":"16:50","dauer":180,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s7|[ü] blatt 13|21:20|2026-02-14","linie":"S7","ziel":"[Ü] Blatt 13","plan":"21:20","actual":"22:20","dauer":90,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s7|[ü] blatt 13|09:00|2026-02-13","linie":"S7","ziel":"[Ü] Blatt 13","plan":"09:00","actual":"09:00","dauer":120,"stops":"","date":"2026-02-13","canceled":false}
+{"trainKey":"s7|[ü] blatt 13|09:00|2026-02-15","linie":"S7","ziel":"[Ü] Blatt 13","plan":"09:00","actual":"11:00","dauer":60,"stops":"","date":"2026-02-15","canceled":true}
+{"trainKey":"s7|[ü] blatt 14|11:20|2026-02-15","linie":"S7","ziel":"[Ü] Blatt 14","plan":"11:20","actual":"21:00","dauer":180,"stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s7|[ü] blatt 14|14:00|2026-02-15","linie":"S7","ziel":"[Ü] Blatt 14","plan":"14:00","actual":"17:00","dauer":120,"stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s7|werkstoffkunde - zus|20:00|2026-02-15","linie":"S7","ziel":"Werkstoffkunde - ZUS","plan":"20:00","actual":"20:00","dauer":60,"stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s5|do nothing|11:25|2026-02-14","linie":"S5","ziel":"Do Nothing","plan":"11:25","actual":"11:25","dauer":10,"stops":"","date":"2026-02-14","canceled":false}
+{"trainKey":"s2|baked chicken w/ potatoes, veggies|unknown|2026-02-15","linie":"S2","ziel":"Baked chicken w/ potatoes, veggies","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s2|wäsche|14:00|2026-02-15","linie":"S2","ziel":"Wäsche","plan":"14:00","actual":"14:00","dauer":"","stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s2|wäsche entnehmen|15:00|2026-02-15","linie":"S2","ziel":"Wäsche entnehmen","plan":"15:00","actual":"15:00","dauer":"","stops":"","date":"2026-02-15","canceled":false}
+{"trainKey":"s2|wäsche abholen|16:00|2026-02-15","linie":"S2","ziel":"Wäsche abholen","plan":"16:00","actual":"16:00","dauer":"","stops":"","date":"2026-02-15","canceled":false}

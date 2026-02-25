@@ -38,3 +38,112 @@
 {"trainKey":"s7|work|unknown|unknown","linie":"S7","ziel":"work","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"s7|yyessss|unknown|unknown","linie":"S7","ziel":"yyessss","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"s5|a test again|22:00|2026-02-23","linie":"S5","ziel":"A test again","plan":"22:00","actual":"22:00","dauer":1000,"stops":"","date":"2026-02-23","canceled":false}
+{"trainKey":"s3|kreativität|10:00|2026-02-24","linie":"S3","ziel":"Kreativität","plan":"10:00","actual":"23:00","dauer":60,"stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"s7|[zf] hm1 - quadriken|14:00|2026-02-24","linie":"S7","ziel":"[ZF] HM1 - Quadriken","plan":"14:00","actual":"13:30","dauer":180,"stops":"","date":"2026-02-24","canceled":true}
+{"trainKey":"s75|[ü] blatt 14 + quadriken|17:30|2026-02-24","linie":"S75","ziel":"[Ü] Blatt 14 + Quadriken","plan":"17:30","actual":"17:00","dauer":120,"stops":"","date":"2026-02-24","canceled":true}
+{"trainKey":"s3|kreativität|10:00|2026-02-25","linie":"S3","ziel":"Kreativität","plan":"10:00","actual":"10:00","dauer":"120","stops":"","date":"2026-02-25","canceled":true}
+{"trainKey":"s6|eagle taskvorstellung|10:50|2026-02-26","linie":"S6","ziel":"EAGLE Taskvorstellung","plan":"10:50","actual":"11:00","dauer":20,"stops":"","date":"2026-02-26","canceled":false}
+{"trainKey":"s75|hm1 - quadriken|20:00|2026-02-26","linie":"S75","ziel":"HM1 - Quadriken","plan":"20:00","actual":"20:00","dauer":"120","stops":"","date":"2026-02-26","canceled":true}
+{"trainKey":"s3|kreativität|22:30|2026-02-26","linie":"S3","ziel":"Kreativität","plan":"22:30","actual":"22:30","dauer":"90","stops":"","date":"2026-02-26","canceled":true}
+{"trainKey":"s4|girls night out|18:00|2026-02-27","linie":"S4","ziel":"Girls Night Out","plan":"18:00","actual":"20:00","dauer":"300","stops":"","date":"2026-02-27","canceled":true}
+{"trainKey":"s3|unknown|09:00|2026-02-28","linie":"S3","ziel":"","plan":"09:00","actual":"09:00","dauer":"180","stops":"","date":"2026-02-28","canceled":true}
+{"trainKey":"s3|unknown|13:00|2026-02-28","linie":"S3","ziel":"","plan":"13:00","actual":"13:00","dauer":"240","stops":"","date":"2026-02-28","canceled":true}
+{"trainKey":"s3|unknown|19:00|2026-02-28","linie":"S3","ziel":"","plan":"19:00","actual":"19:00","dauer":"240","stops":"","date":"2026-02-28","canceled":true}
+{"trainKey":"s75|unknown|22:30|2026-02-24","linie":"S75","ziel":"","plan":"22:30","actual":"22:00","dauer":"90","stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"fex|[prü] hm 1|09:00|2026-02-23","linie":"FEX","ziel":"[PRÜ] HM 1","plan":"09:00","actual":"09:30","dauer":120,"stops":"Prüfung","date":"2026-02-23","canceled":false}
+{"trainKey":"s2|tintenfischringe|unknown|unknown","linie":"S2","ziel":"Tintenfischringe","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|hähnchen cordon bleu|unknown|unknown","linie":"S2","ziel":"Hähnchen Cordon Bleu","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|ofen backfisch|unknown|unknown","linie":"S2","ziel":"Ofen Backfisch","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|sommerfrüchte|unknown|unknown","linie":"S2","ziel":"Sommerfrüchte","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|halbwocheneinkauf - vaihingen|11:00|2026-02-28","linie":"S2","ziel":"Halbwocheneinkauf - Vaihingen","plan":"11:00","actual":"11:00","dauer":60,"stops":"","date":"2026-02-28","canceled":false}
+{"trainKey":"fex|6|unknown|unknown","linie":"FEX","ziel":"6","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"fex|7|unknown|unknown","linie":"FEX","ziel":"7","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"fex|8|unknown|unknown","linie":"FEX","ziel":"8","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"fex|9|unknown|unknown","linie":"FEX","ziel":"9","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"fex|10|unknown|unknown","linie":"FEX","ziel":"10","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|prüfungsvorbereitung hm1|unknown|unknown","linie":"S2","ziel":"Prüfungsvorbereitung HM1","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|vorpraktikum einplanen|unknown|unknown","linie":"S2","ziel":"Vorpraktikum einplanen","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|praktikumbericht umformulieren|unknown|unknown","linie":"S2","ziel":"Praktikumbericht umformulieren","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|viết thư cho ngọc|unknown|unknown","linie":"S2","ziel":"Viết thư cho Ngọc","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|prüfungsvorbereitung wk+ft|unknown|unknown","linie":"S2","ziel":"Prüfungsvorbereitung WK+FT","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x matcha whey|unknown|unknown","linie":"S2","ziel":"1x Matcha Whey","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|4x fuel tank|unknown|unknown","linie":"S2","ziel":"4x Fuel Tank","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x sữa bột|unknown|unknown","linie":"S2","ziel":"1x Sữa bột","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|3x milchmixer|unknown|unknown","linie":"S2","ziel":"3x Milchmixer","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x kaffee|unknown|unknown","linie":"S2","ziel":"1x Kaffee","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|2x tee|unknown|unknown","linie":"S2","ziel":"2x Tee","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x milch|unknown|unknown","linie":"S2","ziel":"1x Milch","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x beer|unknown|unknown","linie":"S2","ziel":"1x Beer","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x erdbeerebonbon|unknown|unknown","linie":"S2","ziel":"1x Erdbeerebonbon","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x haferporridge|unknown|unknown","linie":"S2","ziel":"1x Haferporridge","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x schokoflockenn|unknown|unknown","linie":"S2","ziel":"1x Schokoflockenn","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|4x brotscheiben|unknown|unknown","linie":"S2","ziel":"4x Brotscheiben","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|japanese chicken nanban w/ egg salad u. tomatoes, cucumber|unknown|unknown","linie":"S25","ziel":"Japanese Chicken Nanban w/ Egg Salad u. Tomatoes, Cucumber","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|buldak w/ steak o. octopus u. buttergemüse|unknown|unknown","linie":"S25","ziel":"Buldak w/ Steak o. Octopus u. Buttergemüse","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|pad thai|unknown|unknown","linie":"S25","ziel":"Pad Thai","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|steak/lachssteaks/backfisch in champignonsoße oder hollandaise w/ kartoffelpüree u. buchsenbohnen|unknown|unknown","linie":"S25","ziel":"Steak/Lachssteaks/Backfisch in Champignonsoße oder Hollandaise w/ Kartoffelpüree u. Buchsenbohnen","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|frutti di mare pasta w/ chinakohl, cherry tomatoes|unknown|unknown","linie":"S25","ziel":"Frutti di Mare Pasta w/ Chinakohl, Cherry Tomatoes","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|pan-fried pork-belly u. fried eggs w/ rice, kohl, served w/ egg in fish sauce|unknown|unknown","linie":"S25","ziel":"Pan-fried pork-belly u. Fried Eggs w/ Rice, Kohl, served w/ Egg in Fish Sauce","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|salmon pasta|unknown|unknown","linie":"S25","ziel":"Salmon Pasta","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gourmet-frühstück: pho ga|unknown|unknown","linie":"S25","ziel":"Gourmet-Frühstück: Pho Ga","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gochujang drumsticks w/ eggs, brocolli u. kartoffelpüree|unknown|unknown","linie":"S25","ziel":"Gochujang Drumsticks w/ Eggs, Brocolli u. Kartoffelpüree","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gourmet-frühstück: kuchen u. macarons mit matcha latte/tee|unknown|unknown","linie":"S25","ziel":"Gourmet-Frühstück: Kuchen u. Macarons mit Matcha Latte/Tee","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gourmet-frühstück: egg benedicts|unknown|unknown","linie":"S25","ziel":"Gourmet-Frühstück: Egg Benedicts","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gourmet-lunch: bun oc|unknown|unknown","linie":"S25","ziel":"Gourmet-Lunch: Bun Oc","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|hot pot w/ pork/beef/seafood, chinakohl, enoki mushrooms, fish balls, fried tofu u. noodles|unknown|unknown","linie":"S25","ziel":"Hot Pot w/ Pork/Beef/Seafood, Chinakohl, Enoki Mushrooms, Fish Balls, Fried Tofu u. Noodles","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|bún nem|unknown|unknown","linie":"S25","ziel":"Bún Nem","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|schweinschnittzelauflauf in champignonssoße|unknown|unknown","linie":"S25","ziel":"Schweinschnittzelauflauf in Champignonssoße","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|korean style chicken popcorn/drumstick in hollandaise w/ kartoffel, rotkohl u. broccoli|unknown|unknown","linie":"S25","ziel":"Korean style Chicken Popcorn/Drumstick in Hollandaise w/ Kartoffel, Rotkohl u. Broccoli","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|notfallessen: salmon porridge|unknown|unknown","linie":"S25","ziel":"Notfallessen: Salmon Porridge","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|notfallessen: lasagna/instant-nudeln mit wurst|unknown|unknown","linie":"S25","ziel":"Notfallessen: Lasagna/Instant-Nudeln mit Wurst","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|notfallessen: pizza|unknown|unknown","linie":"S25","ziel":"Notfallessen: Pizza","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|haianese chicken rice w/ cucumber u. soup|unknown|unknown","linie":"S25","ziel":"Haianese Chicken Rice w/ Cucumber u. Soup","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|com rang: egg fried rice w/ bacon u. spring onions|unknown|unknown","linie":"S25","ziel":"Com Rang: Egg Fried Rice w/ Bacon u. Spring Onions","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|bolognese w/ broccoli|unknown|unknown","linie":"S25","ziel":"Bolognese w/ Broccoli","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|japchae: korean glass noodles|unknown|unknown","linie":"S25","ziel":"Japchae: Korean Glass Noodles","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gourmet dinner: italian charcuterie board w/ ham and cheese, aperol spritz|unknown|unknown","linie":"S25","ziel":"Gourmet Dinner: Italian Charcuterie Board w/ Ham and Cheese, Aperol Spritz","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|gourmet dinner: peanut butter ramen w/ marinated eggs, gochujang baked tofu|unknown|unknown","linie":"S25","ziel":"Gourmet Dinner: Peanut Butter Ramen w/ Marinated Eggs, Gochujang Baked Tofu","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|thit kho w/ stir-fried pak-choi u. rice|unknown|unknown","linie":"S25","ziel":"Thit Kho w/ stir-fried Pak-Choi u. Rice","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|salmon cubes w/ rice u. blumenkohl|unknown|unknown","linie":"S25","ziel":"Salmon Cubes w/ Rice u. Blumenkohl","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|creamy pasta w/ bacon u. parmesan|unknown|unknown","linie":"S25","ziel":"Creamy Pasta w/ Bacon u. Parmesan","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|notfallessen: caesar salad w/ bread u. pan-seared chicken breasts|unknown|unknown","linie":"S25","ziel":"Notfallessen: Caesar Salad w/ Bread u. pan-seared Chicken Breasts","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|korean kimchi soup w/ rice u. minced beef|unknown|unknown","linie":"S25","ziel":"Korean Kimchi Soup w/ Rice u. Minced Beef","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s25|boiled cabbage roll w/ beef, tofu u. mushroom fillings, served w/ rice|unknown|unknown","linie":"S25","ziel":"Boiled Cabbage Roll w/ Beef, Tofu u. Mushroom Fillings, served w/ Rice","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s46|internet anfragen|unknown|unknown","linie":"S46","ziel":"Internet anfragen","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s46|schlüssel baustromverteiler|unknown|unknown","linie":"S46","ziel":"Schlüssel Baustromverteiler","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s3|toxic - acapella|unknown|unknown","linie":"S3","ziel":"Toxic - Acapella","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s6|we have to celebrate|19:00|2026-02-23","linie":"S6","ziel":"WE HAVE TO CELEBRATE","plan":"19:00","actual":"19:00","dauer":200,"stops":"","date":"2026-02-23","canceled":false}
+{"trainKey":"s25|bún thịt nướng|unknown|unknown","linie":"S25","ziel":"Bún Thịt Nướng","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x waffeln|unknown|unknown","linie":"S2","ziel":"1x Waffeln","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x coco ananas|unknown|unknown","linie":"S2","ziel":"1x Coco Ananas","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|1x nuts|unknown|unknown","linie":"S2","ziel":"1x Nuts","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|lagerbestand gefrierschrank|unknown|unknown","linie":"S2","ziel":"Lagerbestand Gefrierschrank","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|sommerobst|unknown|unknown","linie":"S2","ziel":"Sommerobst","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|frühlingsrolle|unknown|unknown","linie":"S2","ziel":"Frühlingsrolle","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|beef rolls|unknown|unknown","linie":"S2","ziel":"Beef Rolls","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|backfisch|unknown|unknown","linie":"S2","ziel":"Backfisch","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|lachs|unknown|unknown","linie":"S2","ziel":"Lachs","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|fischkugeln|unknown|unknown","linie":"S2","ziel":"Fischkugeln","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"fex|anmeldung schlüsselqualifikationen|09:00|2026-02-23","linie":"FEX","ziel":"Anmeldung Schlüsselqualifikationen","plan":"09:00","actual":"09:00","dauer":100,"stops":"","date":"2026-02-23","canceled":false}
+{"trainKey":"s45|sn finanzplan treffen|17:30|2026-02-23","linie":"S45","ziel":"SN Finanzplan Treffen","plan":"17:30","actual":"17:30","dauer":90,"stops":"","date":"2026-02-23","canceled":false}
+{"trainKey":"s5|fitness studio|16:00|2026-02-24","linie":"S5","ziel":"Fitness Studio","plan":"16:00","actual":"16:34","dauer":60,"stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"s5|fitness studio|08:00|2026-02-25","linie":"S5","ziel":"Fitness Studio","plan":"08:00","actual":"08:00","dauer":90,"stops":"","date":"2026-02-25","canceled":false}
+{"trainKey":"s5|fitness studio|09:00|2026-02-27","linie":"S5","ziel":"Fitness Studio","plan":"09:00","actual":"09:00","dauer":90,"stops":"","date":"2026-02-27","canceled":false}
+{"trainKey":"s5|fitness studio|08:00|2026-02-28","linie":"S5","ziel":"Fitness Studio","plan":"08:00","actual":"08:00","dauer":90,"stops":"","date":"2026-02-28","canceled":false}
+{"trainKey":"s2|fuel tank|unknown|unknown","linie":"S2","ziel":"Fuel Tank","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|duschgel|unknown|unknown","linie":"S2","ziel":"duschgel","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|waschgel|unknown|unknown","linie":"S2","ziel":"waschgel","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s2|[zf] ergänzungskauf|17:30|2026-02-24","linie":"S2","ziel":"[ZF] Ergänzungskauf","plan":"17:30","actual":"17:30","dauer":20,"stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"s6|lol be late|unknown|unknown","linie":"S6","ziel":"LOL be late","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s6|lol be cancelled|unknown|unknown","linie":"S6","ziel":"LOL be cancelled","plan":"","actual":"","dauer":"","stops":"","date":"","canceled":false}
+{"trainKey":"s6|lol be cancelled|unknown|2026-02-25","linie":"S6","ziel":"LOL be cancelled","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-25","canceled":true}
+{"trainKey":"s6|lol be late|unknown|2026-02-26","linie":"S6","ziel":"LOL be late","plan":"","actual":"","dauer":"","stops":"","date":"2026-02-26","canceled":false}
+{"trainKey":"s6|lol be late|10:00|2026-02-26","linie":"S6","ziel":"LOL be late","plan":"10:00","actual":"13:30","dauer":"","stops":"","date":"2026-02-26","canceled":false}
+{"trainKey":"s6|lol be late|10:00|2026-02-27","linie":"S6","ziel":"LOL be late","plan":"10:00","actual":"13:30","dauer":"","stops":"","date":"2026-02-27","canceled":false}
+{"trainKey":"s1|zfa?|19:58|2026-02-24","linie":"S1","ziel":"ZFA?","plan":"19:58","actual":"19:58","dauer":1,"stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"s0|unknown|22:30|2026-02-24","linie":"S0","ziel":"","plan":"22:30","actual":"22:00","dauer":"90","stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"fex|unknown|22:30|2026-02-24","linie":"FEX","ziel":"","plan":"22:30","actual":"22:00","dauer":"90","stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"fex|lollll|22:30|2026-02-24","linie":"FEX","ziel":"LOLLLL","plan":"22:30","actual":"21:35","dauer":"90","stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"s4|lollll|22:30|2026-02-24","linie":"S4","ziel":"LOLLLL","plan":"22:30","actual":"21:35","dauer":"90","stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"9|fachschaftswochenende|00:00|2026-02-24","linie":"9","ziel":"Fachschaftswochenende","plan":"00:00","actual":"23:20","dauer":1000,"stops":"","date":"2026-02-24","canceled":false}
+{"trainKey":"9|fachschaftswochenende|23:20|2026-02-24","linie":"9","ziel":"Fachschaftswochenende","plan":"23:20","actual":"23:20","dauer":1000,"stops":"","date":"2026-02-24","canceled":false}

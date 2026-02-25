@@ -103,6 +103,24 @@ function asArray(x) {
   return Array.isArray(x) ? x : [x];
 }
 
+// Prune spontaneousEntries: remove past entries that have no projectId
+// These are already archived in weekly .log files and have zero runtime value.
+function pruneExpiredEntries(spontaneousEntries) {
+  if (!Array.isArray(spontaneousEntries)) return [];
+  const todayStr = fmtYYYYMMDD(new Date());
+  const before = spontaneousEntries.length;
+  const pruned = spontaneousEntries.filter(t => {
+    if (!t.date) return true;           // no date = note/undated, keep
+    if (t.projectId) return true;       // project task, always keep
+    return t.date >= todayStr;          // future/today, keep; past without project = drop
+  });
+  const removed = before - pruned.length;
+  if (removed > 0) {
+    console.log(`🧹 Pruned ${removed} expired entries (past, no projectId) from spontaneousEntries`);
+  }
+  return pruned;
+}
+
 // Get weekday name from date
 function getWeekdayName(date) {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -799,14 +817,6 @@ app.get('/api/schedule', async (req, res) => {
     const content = await fsPromises.readFile(filePath, 'utf8');
     const data = JSON.parse(content);
     
-    // Ensure metadata exists
-    if (!data._meta) {
-      data._meta = {
-        version: Date.now(),
-        lastSaved: new Date().toISOString()
-      };
-    }
-    
     // Cache the data
     scheduleCache = data;
     scheduleCacheTime = Date.now();
@@ -830,82 +840,79 @@ app.post('/api/schedule', async (req, res) => {
     if (!body || typeof body !== 'object') {
       return res.status(400).json({ error: 'Invalid JSON body' });
     }
-    
-    // Extract client's old and new versions (client-authoritative model)
-    const clientOldVersion = body._meta?.oldVersion;
-    const clientNewVersion = body._meta?.newVersion;
-    
-    // Load current data for version comparison
-    const filePath = path.join(PUBLIC_DIR, 'data.json');
-    let currentData = scheduleCache;
-    if (!currentData) {
-      try {
-        const content = await fsPromises.readFile(filePath, 'utf8');
-        currentData = JSON.parse(content);
-        // Ensure metadata
-        if (!currentData._meta) {
-          currentData._meta = { version: Date.now(), lastSaved: new Date().toISOString() };
-        }
-      } catch (err) {
-        // File doesn't exist yet, create new
-        currentData = { _meta: { version: Date.now(), lastSaved: new Date().toISOString() } };
-      }
-    }
-    
-    // Version validation: Check if client's old version matches server's current version
-    if (clientOldVersion !== undefined && clientOldVersion !== currentData._meta.version) {
-      console.log(`⚠️ Version conflict: clientOld=${clientOldVersion}, server=${currentData._meta.version}`);
-      return res.status(409).json({
-        ok: false,
-        conflict: true,
-        message: 'Data was modified by another user',
-        serverVersion: currentData._meta.version,
-        serverData: currentData
-      });
-    }
-    
-    // Accept client's new version (client-authoritative)
-    const newVersion = clientNewVersion || Date.now(); // Fallback to server-generated if not provided
-    
+
+    const rawSpontaneous = Array.isArray(body.spontaneousEntries) ? body.spontaneousEntries : [];
+
+    // Log history BEFORE pruning so all entries are archived
+    const fixedArr  = Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [];
+    const trainsArr = Array.isArray(body.trains) ? body.trains : [];
+    if (fixedArr.length > 0)      logTrainHistory(fixedArr, 'fixed');
+    if (rawSpontaneous.length > 0) logTrainHistory(rawSpontaneous, 'spontaneous');
+    if (trainsArr.length > 0)     logTrainHistory(trainsArr, 'legacy');
+
+    // Prune expired entries (past + no projectId) before persisting to disk
+    const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous);
+
     const toSave = {
       _meta: {
-        version: newVersion,
+        version: Date.now(),
         lastSaved: new Date().toISOString()
       },
-      fixedSchedule: Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [],
-      spontaneousEntries: Array.isArray(body.spontaneousEntries) ? body.spontaneousEntries : [],
-      trains: Array.isArray(body.trains) ? body.trains : [],
+      fixedSchedule: fixedArr,
+      spontaneousEntries: prunedSpontaneous,
+      trains: trainsArr,
       projects: Array.isArray(body.projects) ? body.projects : [],
     };
-    
-    // Accumulate train data in memory (lightweight - no disk I/O)
-    if (toSave.fixedSchedule.length > 0) {
-      logTrainHistory(toSave.fixedSchedule, 'fixed');
-    }
-    if (toSave.spontaneousEntries.length > 0) {
-      logTrainHistory(toSave.spontaneousEntries, 'spontaneous');
-    }
-    if (toSave.trains.length > 0) {
-      logTrainHistory(toSave.trains, 'legacy');
-    }
-    
+
+    const filePath = path.join(PUBLIC_DIR, 'data.json');
     await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
-    
-    // Update cache
+
+    // Cache the pruned version so next GET doesn't re-inflate it
     scheduleCache = toSave;
     scheduleCacheTime = Date.now();
-    
-    // Notify listeners with new version
-    try { broadcastUpdate('manual-save', newVersion); } catch {}
-    
-    console.log(`✅ Schedule saved: ${clientOldVersion} → ${newVersion}`);
-    res.json({ 
-      ok: true, 
-      version: newVersion,
-      savedAt: toSave._meta.lastSaved
+
+    // Notify listeners
+    try { broadcastUpdate('manual-save'); } catch {}
+    res.json({ ok: true, savedAt: toSave._meta.lastSaved, prunedCount: rawSpontaneous.length - prunedSpontaneous.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'Unexpected error' });
+  }
+});
+
+// One-time prune endpoint: strips expired entries from the current data.json on disk
+app.post('/api/prune', async (req, res) => {
+  try {
+    const filePath = path.join(PUBLIC_DIR, 'data.json');
+    const content = await fsPromises.readFile(filePath, 'utf8');
+    const data = JSON.parse(content);
+
+    const rawSpontaneous = Array.isArray(data.spontaneousEntries) ? data.spontaneousEntries : [];
+    const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous);
+    const removedCount = rawSpontaneous.length - prunedSpontaneous.length;
+
+    const toSave = {
+      ...data,
+      _meta: {
+        version: Date.now(),
+        lastSaved: new Date().toISOString()
+      },
+      spontaneousEntries: prunedSpontaneous,
+    };
+
+    await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
+
+    // Invalidate cache so next GET returns the pruned data
+    scheduleCache = toSave;
+    scheduleCacheTime = Date.now();
+
+    console.log(`🧹 /api/prune: removed ${removedCount} expired entries. Remaining: ${prunedSpontaneous.length}`);
+    res.json({
+      ok: true,
+      removedCount,
+      remainingCount: prunedSpontaneous.length,
+      prunedAt: toSave._meta.lastSaved
     });
   } catch (e) {
-    console.error('Save error:', e);
     res.status(500).json({ error: e.message || 'Unexpected error' });
   }
 });
@@ -974,25 +981,14 @@ app.get('/events', (req, res) => {
   });
 });
 
-function broadcastUpdate(source = 'unknown', version = null) {
+function broadcastUpdate(source = 'unknown') {
   const stack = new Error().stack.split('\n')[2].trim();
   console.log(`📡 Broadcasting SSE update to ${clients.size} client(s) - Source: ${source}`);
   console.log(`   Called from: ${stack}`);
-  
-  const payload = {
-    time: new Date().toISOString()
-  };
-  
-  // Include version if provided
-  if (version !== null) {
-    payload.version = version;
-    console.log(`   Version: ${version}`);
-  }
-  
   for (const { res } of clients) {
     try {
       res.write(`event: update\n`);
-      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+      res.write(`data: {"time":"${new Date().toISOString()}"}\n\n`);
     } catch {
       // connection might be closed; let close handler clean up
     }
