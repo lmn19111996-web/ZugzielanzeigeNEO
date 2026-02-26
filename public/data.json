@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1772057975094,
-    "lastSaved": "2026-02-25T22:19:35.094Z"
+    "version": 1772064858354,
+    "lastSaved": "2026-02-26T00:14:18.354Z"
   },
   "fixedSchedule": [
     {
@@ -102,18 +102,6 @@
     }
   ],
   "spontaneousEntries": [
-    {
-      "linie": "S6",
-      "ziel": "Elektrotechnik ",
-      "plan": "08:00",
-      "actual": "08:00",
-      "dauer": 90,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_n9c2g3lrm_1772034981285"
-    },
     {
       "linie": "S6",
       "ziel": "Elektrotechnik ",
@@ -225,31 +213,6 @@
       "_uniqueId": "train_8ohfbhfm0_1772035362041"
     },
     {
-      "linie": "9",
-      "ziel": "Empelde",
-      "plan": "10:00",
-      "actual": "10:00",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_fmfqd481b_1772048427678",
-      "recurrencePattern": "none"
-    },
-    {
-      "linie": "S5",
-      "ziel": "Fitness Studio",
-      "plan": "20:00",
-      "actual": "20:00",
-      "dauer": 90,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_nkpk3ruw4_1772050413475"
-    },
-    {
       "_uniqueId": "stem_lvezbsug2_1772051464938_2026-04-06",
       "linie": "S6",
       "ziel": "Konstruktionslehre",
@@ -291,31 +254,6 @@
       "plannedDate": "2026-04-06"
     },
     {
-      "linie": "S5",
-      "ziel": "Sleep",
-      "plan": "09:00",
-      "actual": "09:00",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_e8hmmvq8c_1772051575402"
-    },
-    {
-      "_uniqueId": "stem_y6boit9yl_1772052009953_2026-02-25",
-      "_templateId": "stem_y6boit9yl_1772052009953",
-      "linie": "S7",
-      "ziel": "Sleep",
-      "plan": "09:00",
-      "actual": "09:00",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25"
-    },
-    {
       "linie": "S8",
       "ziel": "Sleep",
       "plan": "09:00",
@@ -330,45 +268,6 @@
       "_uniqueId": "train_tfwjekrjm_1772052168793",
       "projectId": "project_bq8bhtcph_1772051967997",
       "_templateId": "stem_go0fym5fv_1772052199460"
-    },
-    {
-      "_uniqueId": "stem_vhpzu18gq_1772052271334_2026-02-25",
-      "_templateId": "stem_vhpzu18gq_1772052271334",
-      "linie": "S1",
-      "ziel": "Eat",
-      "plan": "10:00",
-      "actual": "10:00",
-      "dauer": 120,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25"
-    },
-    {
-      "linie": "S2",
-      "ziel": "Sleep",
-      "plan": "12:12",
-      "actual": "12:12",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_qjtu9cu79_1772052335037",
-      "_templateId": "stem_e8li0l7kq_1772052342737"
-    },
-    {
-      "linie": "S7",
-      "ziel": "Sleep",
-      "plan": "11:12",
-      "actual": "12:12",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_ge911nmyg_1772052446637",
-      "_templateId": "stem_o9asst165_1772052470926"
     },
     {
       "linie": "S5",
@@ -485,19 +384,6 @@
       "_templateId": "stem_tki7eyy2t_1772056862008"
     },
     {
-      "linie": "S2",
-      "ziel": "Sleep now",
-      "plan": "00:00",
-      "actual": "00:00",
-      "dauer": 400,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_5p468wxqf_1772056897804",
-      "_templateId": "stem_p86u1hyn5_1772056915339"
-    },
-    {
       "_uniqueId": "stem_wiiqqj6zo_1772056524605_2026-02-28",
       "_templateId": "stem_wiiqqj6zo_1772056524605",
       "linie": "S7",
@@ -588,19 +474,6 @@
       "_uniqueId": "train_fdesdlc5d_1772057330204",
       "projectId": "project_bq8bhtcph_1772051967997",
       "_templateId": "stem_2dzxlyk8e_1772057353456"
-    },
-    {
-      "linie": "S3",
-      "ziel": "Erkner",
-      "plan": "23:40",
-      "actual": "23:40",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-02-25",
-      "plannedDate": "2026-02-25",
-      "_uniqueId": "train_u71njfgd9_1772057502043",
-      "_templateId": "stem_0hieyhwq5_1772057514412"
     },
     {
       "linie": "S1",
@@ -784,6 +657,55 @@
       "canceled": false,
       "date": "2026-03-10",
       "plannedDate": "2026-03-10"
+    },
+    {
+      "_uniqueId": "stem_wiiqqj6zo_1772056524605_2026-03-11",
+      "_templateId": "stem_wiiqqj6zo_1772056524605",
+      "linie": "S7",
+      "ziel": "Sleep",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-03-11",
+      "plannedDate": "2026-03-11"
+    },
+    {
+      "_uniqueId": "stem_mnjj8dnec_1772057764071_2026-03-11",
+      "_templateId": "stem_mnjj8dnec_1772057764071",
+      "linie": "S1",
+      "ziel": "All aboard the stem train",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-03-11",
+      "plannedDate": "2026-03-11"
+    },
+    {
+      "linie": "S60",
+      "ziel": "Sporty",
+      "plan": "02:00",
+      "actual": "02:00",
+      "dauer": 10,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-02-26",
+      "plannedDate": "2026-02-26",
+      "_uniqueId": "train_b6nh2l89n_1772064000885"
+    },
+    {
+      "linie": "t",
+      "ziel": "",
+      "plan": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "",
+      "plannedDate": "",
+      "_uniqueId": "train_wjnznzmib_1772064856109"
     }
   ],
   "trains": [],

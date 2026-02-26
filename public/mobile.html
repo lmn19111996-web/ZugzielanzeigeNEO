@@ -328,6 +328,10 @@
               <img src="project.svg" alt="Projects">
               <span class="task-icon-label">Projekte</span>
             </button>
+            <button class="task-icon-button nav-only task-icon-button--star" data-mode="reviews" title="Rezensionen">
+              <span class="task-icon-star">★</span>
+              <span class="task-icon-label">Rezensionen</span>
+            </button>
           </div>
           <div class="date-selector mobile-only" id="date-selector">
             <span id="date-display">Heute</span>
@@ -367,6 +371,27 @@
       </div>
       <div class="right-panel-bottom" id="note-panel"></div>
     </div>
+
+    <!-- Review write drawer -->
+    <div class="review-write-drawer" id="review-write-drawer" aria-hidden="true">
+      <div class="review-write-drawer-header" id="review-write-drawer-header">
+        <span class="review-write-drawer-title" id="review-write-drawer-title">Wie war dein Tag?</span>
+        <button class="review-write-drawer-close-btn" id="review-write-drawer-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="review-write-drawer-body">
+        <div class="review-write-date" id="review-write-date"></div>
+        <div class="journal-star-row" id="review-write-stars">
+          <span class="journal-star" data-val="1">★</span>
+          <span class="journal-star" data-val="2">★</span>
+          <span class="journal-star" data-val="3">★</span>
+          <span class="journal-star" data-val="4">★</span>
+          <span class="journal-star" data-val="5">★</span>
+        </div>
+        <textarea id="review-write-text" class="review-write-textarea"
+                  placeholder="Schreib was dazu!"></textarea>
+        <button id="review-write-submit" class="review-write-submit-btn" disabled>Speichern</button>
+      </div>
+    </div>
   </div>
 
   <!-- Focus panel drawer (desktop) -->
@@ -390,6 +415,7 @@
     </div>
     <div class="mode-drawer-section">
       <button class="mode-drawer-item" data-mode="projects">Projekte</button>
+      <button class="mode-drawer-item" data-mode="reviews">Rezensionen</button>
       <button class="mode-drawer-item" data-mode="meals">Mahlzeiten</button>
       <button class="mode-drawer-item" data-mode="groceries">Einkauf</button>
       <button class="mode-drawer-item" data-mode="inventory">Inventar</button>
@@ -415,6 +441,33 @@
     <span class="swipe-toast-label">Änderung vorgenommen</span>
     <button id="swipe-undo-btn">Rückgängig</button>
   </div>
+
+  <!-- Journal Island: floating pill at top-right that expands to a review card -->
+  <div id="journal-island" class="journal-island" aria-label="Tagebuch öffnen">
+    <span class="journal-island-icon">★</span>
+    <span class="journal-island-label">Rezension</span>
+  </div>
+
+  <!-- Journal Card (hidden by default) -->
+  <div id="journal-card" class="journal-card" aria-hidden="true">
+    <div class="journal-card-header">
+      <span class="journal-card-title">Wie war dein Tag?</span>
+      <button class="journal-card-close" id="journal-card-close" aria-label="Schließen">✕</button>
+    </div>
+    <div class="journal-card-body">
+      <div class="journal-card-date" id="journal-card-date"></div>
+      <div class="journal-star-row" id="journal-star-row">
+        <span class="journal-star" data-val="1">★</span>
+        <span class="journal-star" data-val="2">★</span>
+        <span class="journal-star" data-val="3">★</span>
+        <span class="journal-star" data-val="4">★</span>
+        <span class="journal-star" data-val="5">★</span>
+      </div>
+      <textarea id="journal-text" class="journal-textarea" placeholder="Schreib was dazu!"></textarea>
+      <button id="journal-submit" class="journal-submit-btn" disabled>Speichern</button>
+    </div>
+  </div>
+  <!-- End of Journal Island -->
 
   <!-- script extracted to app.js -->
 <script src="templates.js"></script>

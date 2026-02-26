@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tagebuch</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f6f6f6">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #f0f2f5;
+      color: #111;
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+      font-stretch: condensed;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .jr-header {
+      background: #111;
+      color: #fff;
+      height: 8vh;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 3vw;
+      gap: 2vw;
+      border-bottom: 3px solid #ffcc00;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .jr-back-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 3vh;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .jr-back-btn:hover { opacity: 1; }
+
+    .jr-title {
+      font-size: 4.5vh;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      flex: 1;
+    }
+
+    .jr-header-badge {
+      background: #ffcc00;
+      color: #111;
+      font-size: 1.8vh;
+      font-weight: 700;
+      padding: 0.3vh 1vw;
+      border-radius: 2px;
+    }
+
+    /* ── Page body ───────────────────────────── */
+    .jr-body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3vh 3vw 8vh;
+    }
+
+    /* ── Stats row ───────────────────────────── */
+    .jr-stats-row {
+      display: flex;
+      gap: 2vw;
+      margin-bottom: 3vh;
+    }
+
+    .jr-stats-card {
+      background: #fff;
+      border-radius: 1.2vh;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      padding: 2.5vh 2.5vw;
+    }
+
+    /* Left: average rating */
+    .jr-avg-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 140px;
+      flex: 0 0 auto;
+    }
+
+    .jr-avg-number {
+      font-size: 10vh;
+      line-height: 1;
+      font-weight: 700;
+      color: #ffcc00;
+      text-shadow: 0 2px 8px rgba(255,204,0,0.25);
+    }
+
+    .jr-avg-stars {
+      display: flex;
+      gap: 0.3vh;
+      margin: 0.8vh 0 0.5vh;
+    }
+
+    .jr-avg-stars .star {
+      font-size: 2.8vh;
+      color: #e0e0e0;
+    }
+    .jr-avg-stars .star.filled { color: #ffcc00; }
+    .jr-avg-stars .star.half   { color: #ffcc00; opacity: 0.55; }
+
+    .jr-avg-label {
+      font-size: 1.8vh;
+      color: #888;
+      text-align: center;
+    }
+
+    .jr-avg-total {
+      font-size: 1.6vh;
+      color: #bbb;
+      margin-top: 0.4vh;
+    }
+
+    /* Right: bar chart */
+    .jr-bars-card {
+      flex: 1;
+    }
+
+    .jr-bars-title {
+      font-size: 2vh;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 1.5vh;
+    }
+
+    .jr-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 1.2vw;
+      margin-bottom: 1vh;
+    }
+
+    .jr-bar-label {
+      font-size: 2vh;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 0.3vw;
+      min-width: 60px;
+    }
+    .jr-bar-label .star { font-size: 1.8vh; color: #ffcc00; }
+
+    .jr-bar-track {
+      flex: 1;
+      height: 2vh;
+      min-height: 10px;
+      background: #f0f2f5;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .jr-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #ffcc00, #ffa500);
+      transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    }
+
+    .jr-bar-count {
+      min-width: 28px;
+      text-align: right;
+      font-size: 1.8vh;
+      color: #777;
+    }
+
+    /* ── Section title ───────────────────────── */
+    .jr-section-title {
+      font-size: 2.5vh;
+      font-weight: 600;
+      color: #333;
+      margin: 3vh 0 1.5vh;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      padding-bottom: 1vh;
+    }
+
+    /* ── Empty state ─────────────────────────── */
+    .jr-empty {
+      text-align: center;
+      color: #bbb;
+      font-size: 2.5vh;
+      padding: 6vh 0;
+    }
+
+    /* ── Review card ─────────────────────────── */
+    .jr-review-card {
+      background: #fff;
+      border-radius: 1.2vh;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      padding: 2vh 2.5vw;
+      margin-bottom: 1.5vh;
+      transition: box-shadow 0.15s;
+    }
+    .jr-review-card:hover { box-shadow: 0 3px 14px rgba(0,0,0,0.11); }
+
+    .jr-review-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5vw;
+      margin-bottom: 1vh;
+    }
+
+    .jr-review-date {
+      font-size: 1.8vh;
+      color: #888;
+      flex: 1;
+    }
+
+    .jr-review-stars {
+      display: flex;
+      gap: 0.3vw;
+    }
+    .jr-review-stars .star {
+      font-size: 2.4vh;
+      color: #e0e0e0;
+      cursor: default;
+    }
+    .jr-review-stars .star.filled { color: #ffcc00; }
+
+    /* edit mode star selector */
+    .jr-edit-stars .star { cursor: pointer; transition: transform 0.1s; }
+    .jr-edit-stars .star:hover { transform: scale(1.15); }
+
+    .jr-review-text {
+      font-size: 2.2vh;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .jr-review-text.empty { color: #bbb; font-style: italic; }
+
+    .jr-review-actions {
+      display: flex;
+      gap: 1vw;
+      margin-top: 1.2vh;
+      justify-content: flex-end;
+    }
+
+    .jr-btn {
+      background: transparent;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 0.6vh;
+      padding: 0.5vh 1.4vw;
+      font-family: inherit;
+      font-size: 1.8vh;
+      cursor: pointer;
+      color: #555;
+      transition: background 0.12s, color 0.12s;
+    }
+    .jr-btn:hover { background: #f5f5f5; }
+
+    .jr-btn-danger { color: #c0392b; border-color: rgba(192,57,43,0.25); }
+    .jr-btn-danger:hover { background: rgba(192,57,43,0.07); }
+
+    .jr-btn-primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    .jr-btn-primary:hover { background: #333; }
+
+    /* edit mode textarea */
+    .jr-edit-textarea {
+      width: 100%;
+      min-height: 10vh;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 0.6vh;
+      padding: 1vh 1.2vw;
+      font-family: inherit;
+      font-size: 2.2vh;
+      color: #111;
+      resize: vertical;
+      background: #fafafa;
+      margin-top: 1vh;
+    }
+    .jr-edit-textarea:focus { outline: none; border-color: #ffcc00; }
+
+    /* ── Responsive tweaks ───────────────────── */
+    @media (max-width: 600px) {
+      .jr-stats-row { flex-direction: column; }
+      .jr-avg-card { flex-direction: row; gap: 3vw; }
+      .jr-avg-number { font-size: 8vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="jr-header">
+    <button class="jr-back-btn" id="jr-back" title="Zurück">←</button>
+    <span class="jr-title">Tagebuch</span>
+    <span class="jr-header-badge" id="jr-count-badge">0 Einträge</span>
+  </header>
+
+  <!-- Page body -->
+  <main class="jr-body">
+
+    <!-- Stats -->
+    <div class="jr-stats-row">
+
+      <!-- Average card -->
+      <div class="jr-stats-card jr-avg-card" id="jr-avg-card">
+        <div class="jr-avg-number" id="jr-avg-num">–</div>
+        <div class="jr-avg-stars" id="jr-avg-stars">
+          <span class="star">★</span>
+          <span class="star">★</span>
+          <span class="star">★</span>
+          <span class="star">★</span>
+          <span class="star">★</span>
+        </div>
+        <div class="jr-avg-label">Ø Bewertung</div>
+        <div class="jr-avg-total" id="jr-avg-total">Noch keine Einträge</div>
+      </div>
+
+      <!-- Bar chart card -->
+      <div class="jr-stats-card jr-bars-card">
+        <div class="jr-bars-title">Bewertungsverteilung</div>
+        <div id="jr-bars-container">
+          <!-- generated by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Review list -->
+    <div class="jr-section-title">Alle Bewertungen</div>
+    <div id="jr-reviews-list">
+      <div class="jr-empty">Noch keine Bewertungen vorhanden.</div>
+    </div>
+
+  </main>
+
+  <script>
+    // ── Utilities ────────────────────────────────────────────────────────
+    function starsHTML(rating, interactive = false, name = '') {
+      let html = `<div class="jr-review-stars${interactive ? ' jr-edit-stars' : ''}">`;
+      for (let i = 1; i <= 5; i++) {
+        const filled = i <= rating ? ' filled' : '';
+        const attrs = interactive
+          ? ` data-val="${i}" role="button" tabindex="0" aria-label="${i} Stern${i>1?'e':''}"` : '';
+        html += `<span class="star${filled}"${attrs}>★</span>`;
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('de-DE', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    // ── Data ─────────────────────────────────────────────────────────────
+    let reviews = [];
+
+    async function loadReviews() {
+      try {
+        const res = await fetch('/api/journal');
+        const data = await res.json();
+        reviews = data.reviews || [];
+      } catch (e) {
+        console.error('Failed to load journal:', e);
+        reviews = [];
+      }
+      render();
+    }
+
+    async function saveEdit(id, rating, text) {
+      const res = await fetch(`/api/journal/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, text })
+      });
+      if (!res.ok) throw new Error('Speichern fehlgeschlagen');
+      const data = await res.json();
+      const idx = reviews.findIndex(r => r.id === id);
+      if (idx !== -1) reviews[idx] = data.entry;
+      render();
+    }
+
+    async function deleteReview(id) {
+      if (!confirm('Eintrag wirklich löschen?')) return;
+      const res = await fetch(`/api/journal/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Löschen fehlgeschlagen');
+      reviews = reviews.filter(r => r.id !== id);
+      render();
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────
+    function render() {
+      renderStats();
+      renderList();
+    }
+
+    function renderStats() {
+      const total = reviews.length;
+      document.getElementById('jr-count-badge').textContent = `${total} Eintrag${total !== 1 ? 'e' : ''}`;
+
+      const avgNum = document.getElementById('jr-avg-num');
+      const avgStars = document.getElementById('jr-avg-stars');
+      const avgTotal = document.getElementById('jr-avg-total');
+
+      if (total === 0) {
+        avgNum.textContent = '–';
+        avgTotal.textContent = 'Noch keine Einträge';
+        [...avgStars.querySelectorAll('.star')].forEach(s => s.classList.remove('filled', 'half'));
+        renderBars({});
+        return;
+      }
+
+      const sum = reviews.reduce((a, r) => a + r.rating, 0);
+      const avg = sum / total;
+      avgNum.textContent = avg.toFixed(1);
+      avgTotal.textContent = `${total} Bewertung${total !== 1 ? 'en' : ''}`;
+
+      // Colour avg stars
+      const stars = [...avgStars.querySelectorAll('.star')];
+      stars.forEach((s, i) => {
+        s.classList.remove('filled', 'half');
+        if (i + 1 <= Math.floor(avg)) s.classList.add('filled');
+        else if (i < avg) s.classList.add('half');
+      });
+
+      // Build counts
+      const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      reviews.forEach(r => counts[r.rating] = (counts[r.rating] || 0) + 1);
+      renderBars(counts, total);
+    }
+
+    function renderBars(counts, total) {
+      const container = document.getElementById('jr-bars-container');
+      container.innerHTML = '';
+      const max = total ? Math.max(...Object.values(counts)) : 1;
+      for (let star = 5; star >= 1; star--) {
+        const n = counts[star] || 0;
+        const pct = total ? Math.round((n / max) * 100) : 0;
+        const row = document.createElement('div');
+        row.className = 'jr-bar-row';
+        row.innerHTML = `
+          <div class="jr-bar-label"><span class="star">★</span>${star}</div>
+          <div class="jr-bar-track"><div class="jr-bar-fill" style="width:0%"></div></div>
+          <div class="jr-bar-count">${n}</div>`;
+        container.appendChild(row);
+        // Animate
+        requestAnimationFrame(() => {
+          row.querySelector('.jr-bar-fill').style.width = pct + '%';
+        });
+      }
+    }
+
+    function renderList() {
+      const list = document.getElementById('jr-reviews-list');
+      list.innerHTML = '';
+      if (reviews.length === 0) {
+        list.innerHTML = '<div class="jr-empty">Noch keine Bewertungen vorhanden.</div>';
+        return;
+      }
+      reviews.forEach(r => list.appendChild(buildCard(r)));
+    }
+
+    function buildCard(r) {
+      const card = document.createElement('div');
+      card.className = 'jr-review-card';
+      card.dataset.id = r.id;
+
+      card.innerHTML = `
+        <div class="jr-review-header">
+          <div class="jr-review-date">${formatDate(r.date)}</div>
+          ${starsHTML(r.rating)}
+        </div>
+        <div class="jr-review-text${!r.text ? ' empty' : ''}">${r.text ? escHtml(r.text) : 'Kein Text.'}</div>
+        <div class="jr-review-actions">
+          <button class="jr-btn jr-btn-danger" data-action="delete">Löschen</button>
+          <button class="jr-btn" data-action="edit">Bearbeiten</button>
+        </div>`;
+
+      card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteReview(r.id));
+      card.querySelector('[data-action="edit"]').addEventListener('click', () => enterEditMode(card, r));
+      return card;
+    }
+
+    function enterEditMode(card, r) {
+      let editRating = r.rating;
+
+      card.innerHTML = `
+        <div class="jr-review-header">
+          <div class="jr-review-date">${formatDate(r.date)}</div>
+          ${starsHTML(editRating, true)}
+        </div>
+        <textarea class="jr-edit-textarea" placeholder="Was war heute besonders?">${escHtml(r.text)}</textarea>
+        <div class="jr-review-actions">
+          <button class="jr-btn jr-btn-danger" data-action="cancel">Abbrechen</button>
+          <button class="jr-btn jr-btn-primary" data-action="save">Speichern</button>
+        </div>`;
+
+      // Interactive star rating
+      const starsEl = card.querySelector('.jr-edit-stars');
+      starsEl.addEventListener('click', e => {
+        const star = e.target.closest('.star');
+        if (!star) return;
+        editRating = Number(star.dataset.val);
+        [...starsEl.querySelectorAll('.star')].forEach((s, i) => {
+          s.classList.toggle('filled', i < editRating);
+        });
+      });
+
+      card.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+        card.replaceWith(buildCard(r));
+      });
+      card.querySelector('[data-action="save"]').addEventListener('click', async () => {
+        const text = card.querySelector('.jr-edit-textarea').value;
+        try {
+          await saveEdit(r.id, editRating, text);
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // ── Navigation ────────────────────────────────────────────────────────
+    document.getElementById('jr-back').addEventListener('click', () => {
+      history.length > 1 ? history.back() : (window.location.href = 'mobile.html');
+    });
+
+    // ── Boot ─────────────────────────────────────────────────────────────
+    loadReviews();
+  </script>
+</body>
+</html>

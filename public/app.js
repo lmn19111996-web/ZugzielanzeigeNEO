@@ -715,6 +715,7 @@
     }
 
     let currentWorkspaceMode = 'list';
+    let _reviewsFilterRating = 0; // 0 = all, 1-5 = specific star filter
 
     // Toggle between Belegungsplan and legacy list view
     function toggleViewMode() {
@@ -1317,6 +1318,221 @@
           openProjectEditor(projectId);
         });
       });
+    }
+
+    // ── Rezensionen workspace ────────────────────────────────────────
+    async function renderReviewsPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+
+      trainListEl.innerHTML = '';
+
+      let reviews = [];
+      try {
+        const res = await fetch('/api/journal');
+        const data = await res.json();
+        reviews = data.reviews || [];
+      } catch (e) {
+        console.error('Failed to load reviews:', e);
+      }
+
+      const page = document.createElement('div');
+      page.className = 'reviews-page';
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'reviews-page-header';
+      const titleEl = document.createElement('h2');
+      titleEl.className = 'reviews-page-title';
+      titleEl.textContent = 'Rezensionen';
+
+      const newBtn = document.createElement('button');
+      newBtn.className = 'reviews-new-btn';
+      newBtn.textContent = '+ Neue Rezension';
+      newBtn.addEventListener('click', function() {
+        if (typeof window.openReviewWriteDrawer === 'function') window.openReviewWriteDrawer(null, function() { renderReviewsPage(); });
+      });
+
+      header.append(titleEl, newBtn);
+      page.appendChild(header);
+
+      // Stats row
+      const statsRow = document.createElement('div');
+      statsRow.className = 'reviews-stats-row';
+
+      const total = reviews.length;
+      const avg = total ? reviews.reduce(function(a, r) { return a + r.rating; }, 0) / total : 0;
+
+      // Average card
+      const avgCard = document.createElement('div');
+      avgCard.className = 'reviews-avg-card';
+      const avgNumEl = document.createElement('div');
+      avgNumEl.className = 'reviews-avg-number';
+      avgNumEl.textContent = total ? avg.toFixed(1) : '–';
+      const avgStarsEl = document.createElement('div');
+      avgStarsEl.className = 'reviews-avg-stars';
+      for (let i = 1; i <= 5; i++) {
+        const s = document.createElement('span');
+        let cls = 'rv-star';
+        if (i <= Math.floor(avg)) cls += ' filled';
+        else if (i <= avg + 0.5 && i > avg) cls += ' half';
+        s.className = cls;
+        s.textContent = '★';
+        avgStarsEl.appendChild(s);
+      }
+      const avgLabelEl = document.createElement('div');
+      avgLabelEl.className = 'reviews-avg-label';
+      avgLabelEl.textContent = total ? '(' + total + ')' : 'Noch keine Einträge';
+      avgCard.append(avgNumEl, avgStarsEl, avgLabelEl);
+
+      // Bar chart card
+      const barsCard = document.createElement('div');
+      barsCard.className = 'reviews-bars-card';
+      const barsTitle = document.createElement('div');
+      barsTitle.className = 'reviews-bars-title';
+      barsTitle.textContent = 'Bewertungsverteilung';
+      barsCard.appendChild(barsTitle);
+
+      const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      reviews.forEach(function(r) { counts[r.rating] = (counts[r.rating] || 0) + 1; });
+      const maxCount = total ? Math.max.apply(null, Object.values(counts)) : 1;
+      for (let star = 5; star >= 1; star--) {
+        const n = counts[star] || 0;
+        const pct = total ? Math.round((n / maxCount) * 100) : 0;
+        const row = document.createElement('div');
+        row.className = 'rv-bar-row';
+        row.innerHTML = '<div class="rv-bar-label"><span class="rv-star">★</span>' + star + '</div>'
+          + '<div class="rv-bar-count">' + n + '</div>'
+          + '<div class="rv-bar-track"><div class="rv-bar-fill" style="width:0%"></div></div>';
+        barsCard.appendChild(row);
+        (function(fillEl, p) {
+          requestAnimationFrame(function() { fillEl.style.width = p + '%'; });
+        })(row.querySelector('.rv-bar-fill'), pct);
+      }
+
+      statsRow.append(avgCard, barsCard);
+      page.appendChild(statsRow);
+
+      // ── Filter bar ─────────────────────────────────────────
+      const filterBar = document.createElement('div');
+      filterBar.className = 'reviews-filter-bar';
+
+      function buildFilterBtn(label, rating) {
+        const btn = document.createElement('button');
+        btn.className = 'reviews-filter-btn' + (_reviewsFilterRating === rating ? ' active' : '');
+        btn.textContent = label;
+        btn.addEventListener('click', function() {
+          _reviewsFilterRating = rating;
+          renderReviewsPage();
+        });
+        return btn;
+      }
+
+      filterBar.appendChild(buildFilterBtn('Alle', 0));
+      for (let s = 5; s >= 1; s--) {
+        filterBar.appendChild(buildFilterBtn(s + ' ★', s));
+      }
+      page.appendChild(filterBar);
+
+      // Section title
+      const sectionTitle = document.createElement('div');
+      sectionTitle.className = 'reviews-section-title';
+      const filtered = _reviewsFilterRating ? reviews.filter(function(r) { return r.rating === _reviewsFilterRating; }) : reviews;
+      sectionTitle.textContent = _reviewsFilterRating
+        ? filtered.length + ' Rezension' + (filtered.length !== 1 ? 'en' : '') + ' mit ' + _reviewsFilterRating + ' ★'
+        : 'Alle Rezensionen';
+      page.appendChild(sectionTitle);
+
+      // Review list
+      const list = document.createElement('div');
+      list.className = 'reviews-list';
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'reviews-empty';
+        empty.textContent = reviews.length === 0 ? 'Noch keine Rezensionen vorhanden.' : 'Keine Rezensionen mit ' + _reviewsFilterRating + ' ★.';
+        list.appendChild(empty);
+      } else {
+        filtered.forEach(function(r) {
+          list.appendChild(buildReviewCard(r, function() { renderReviewsPage(); }));
+        });
+      }
+      page.appendChild(list);
+
+      trainListEl.appendChild(page);
+    }
+
+    function buildReviewCard(r, onRefresh) {
+      function esc(str) {
+        return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      }
+      function fmtDate(iso) {
+        if (!iso) return '';
+        return new Date(iso + 'T00:00:00').toLocaleDateString('de-DE', {
+          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+        });
+      }
+      function starsInner(rating, editable) {
+        let h = '';
+        for (let i = 1; i <= 5; i++) {
+          h += '<span class="rv-star' + (i <= rating ? ' filled' : '') + '"' 
+            + (editable ? ' data-val="' + i + '"' : '') + '>★</span>';
+        }
+        return h;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'rv-card';
+
+      function renderView() {
+        card.innerHTML = '<div class="rv-card-header">'
+          + '<div class="rv-card-date">' + fmtDate(r.date) + '</div>'
+          + '<div class="rv-dots-wrap">'
+          + '<button class="rv-dots-btn" aria-label="Optionen">'
+          + '<img class="rv-dots-icon" src="3dotsvertical.svg" alt=""></button>'
+          + '<div class="rv-dropdown" style="display:none;">'
+          + '<button class="rv-dropdown-item" data-action="edit">Bearbeiten</button>'
+          + '<button class="rv-dropdown-item rv-dropdown-delete" data-action="delete">Löschen</button>'
+          + '</div></div></div>'
+          + '<div class="rv-card-stars">' + starsInner(r.rating, false) + '</div>'
+          + '<div class="rv-card-text' + (!r.text ? ' empty' : '') + '">'
+          + (r.text ? esc(r.text) : 'Kein Text.') + '</div>';
+
+        const dotsBtn  = card.querySelector('.rv-dots-btn');
+        const dropdown = card.querySelector('.rv-dropdown');
+
+        dotsBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isOpen = dropdown.style.display !== 'none';
+          dropdown.style.display = isOpen ? 'none' : 'block';
+          if (!isOpen) {
+            function closeDropdown(e) {
+              if (!card.contains(e.target)) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeDropdown);
+              }
+            }
+            document.addEventListener('click', closeDropdown);
+          }
+        });
+
+        card.querySelector('[data-action="delete"]').addEventListener('click', async function() {
+          try {
+            const res = await fetch('/api/journal/' + r.id, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Fehler');
+            if (onRefresh) onRefresh();
+          } catch (e) { alert(e.message); }
+        });
+        card.querySelector('[data-action="edit"]').addEventListener('click', function() {
+          dropdown.style.display = 'none';
+          if (typeof window.openReviewWriteDrawer === 'function') {
+            window.openReviewWriteDrawer(r, function() { if (onRefresh) onRefresh(); });
+          }
+        });
+      }
+
+      renderView();
+      return card;
     }
 
     async function createNewProject() {
@@ -2450,7 +2666,7 @@
 
     function setWorkspaceMode(mode) {
       const isMobile = window.innerWidth <= 768;
-      // Note: currentWorkspaceMode is only set for actual workspaces (list, occupancy, projects)
+      // Note: currentWorkspaceMode is only set for actual workspaces (list, occupancy, projects, reviews)
       // Non-workspace modes (drawers/overlays) don't change it
 
       if (mode === 'add') {
@@ -2464,6 +2680,7 @@
           currentWorkspaceMode = 'list';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
@@ -2472,12 +2689,14 @@
           currentWorkspaceMode = 'occupancy';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
         case 'announcements':
           // Announcements is a drawer, not a workspace - don't change currentWorkspaceMode
           // Toggle announcements drawer (both desktop and mobile)
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           const drawer = document.getElementById('announcement-drawer');
           if (drawer && drawer.classList.contains('is-open')) {
             closeAnnouncementsDrawer();
@@ -2490,6 +2709,7 @@
           // db-api is an overlay, not a workspace - don't change currentWorkspaceMode
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           showWorkspacePlaceholder('DB API');
           showStationOverlay();
           break;
@@ -2499,6 +2719,17 @@
           closeNoteDrawer();
           closeEditorDrawer();
           closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
+        case 'reviews':
+          currentWorkspaceMode = 'reviews';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
@@ -2506,20 +2737,28 @@
           // Placeholder modes - not workspaces, don't change currentWorkspaceMode
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           showWorkspacePlaceholder('Mahlzeiten');
           break;
         case 'groceries':
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           showWorkspacePlaceholder('Einkauf');
           break;
         case 'inventory':
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           showWorkspacePlaceholder('Inventar');
           break;
         default:
           break;
+      }
+
+      // Sync island visibility whenever workspace mode changes
+      if (typeof window.updateJournalIslandVisibility === 'function') {
+        window.updateJournalIslandVisibility(currentWorkspaceMode);
       }
     }
 
@@ -2555,6 +2794,7 @@
      * WORKSPACE MODES (main panel content):
      * - 'list' or 'occupancy': Train workspace (list or belegungsplan view)
      * - 'projects': Projects workspace
+     * - 'reviews': Rezensionen workspace
      * 
      * Non-workspace modes (drawers/overlays):
      * - 'announcements', 'db-api', 'meals', 'groceries', 'inventory' are NOT workspaces
@@ -2586,6 +2826,17 @@
             renderHeadlineTrain(); // Still show current train in headline
           }
           renderProjectsPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+          
+        case 'reviews':
+          // Reviews workspace
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderReviewsPage();
           if (includeAnnouncements) {
             renderComprehensiveAnnouncementPanel();
           }
@@ -7741,3 +7992,409 @@ if ('serviceWorker' in navigator) {
         startNotifications();
       }
     })();
+// ══════════════════════════════════════════════════════════════
+//  Journal Island Widget
+// ══════════════════════════════════════════════════════════════
+(function initJournalIsland() {
+  const island   = document.getElementById('journal-island');
+  const card     = document.getElementById('journal-card');
+  const closeBtn = document.getElementById('journal-card-close');
+  const starRow  = document.getElementById('journal-star-row');
+  const textarea = document.getElementById('journal-text');
+  const submitBtn = document.getElementById('journal-submit');
+  const toast    = document.getElementById('journal-card-toast');
+  const dateEl   = document.getElementById('journal-card-date');
+
+  if (!island || !card) return;
+
+  // Hidden by default; updateJournalIslandVisibility() reveals it once the
+  // correct workspace mode is active and no entry exists for today.
+  island.style.display = 'none';
+
+  let selectedRating = 0;
+  let islandDone = false; // permanently hidden after today's submit
+
+  // ── Logical day: 06:00 – 05:59 next day ─────────────────────
+  function getLogicalDate() {
+    const d = new Date();
+    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  // ── Accent color applied when card opens ─────────────────────
+  function applyAccentToCard() {
+    const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
+      ? currentAccentColor : '#ffcc00';
+    const hdr = card.querySelector('.journal-card-header');
+    if (hdr) hdr.style.borderBottomColor = ac;
+    if (textarea) textarea.style.borderColor = ac;
+    if (submitBtn) submitBtn.style.background = ac;
+  }
+
+  // ── Reminder mode: 21:00–05:59 always expands label ─────────
+  function updateReminderMode() {
+    const h = new Date().getHours();
+    island.classList.toggle('is-reminder', h >= 21 || h < 6);
+  }
+  updateReminderMode();
+  setInterval(updateReminderMode, 60000);
+
+  // ── Workspace visibility ─────────────────────────────────────
+  window.updateJournalIslandVisibility = function(wsMode) {
+    if (islandDone) return;
+    island.style.display = (wsMode === 'list' || wsMode === 'occupancy') ? '' : 'none';
+  };
+
+  // ── Check if entry already exists for today ──────────────────
+  (async function initIslandState() {
+    try {
+      const res  = await fetch('/api/journal');
+      const data = await res.json();
+      const today = getLogicalDate();
+      const exists = (data.reviews || []).some(function(rv) { return rv.date === today; });
+      if (exists) {
+        islandDone = true;
+        island.style.display = 'none';
+      }
+    } catch (e) { /* silent */ }
+  })();
+
+  // ── Open / close card ────────────────────────────────────────
+  function openCard() {
+    island.classList.add('island-hidden');
+    card.classList.add('is-open');
+    card.setAttribute('aria-hidden', 'false');
+    if (dateEl) {
+      const d = new Date();
+      if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+      dateEl.textContent = d.toLocaleDateString('de-DE', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+    }
+    applyAccentToCard();
+    textarea.focus();
+  }
+
+  function closeCard() {
+    card.classList.remove('is-open');
+    card.setAttribute('aria-hidden', 'true');
+    if (!islandDone) {
+      setTimeout(function() { island.classList.remove('island-hidden'); }, 180);
+    }
+  }
+
+  island.addEventListener('click', openCard);
+  closeBtn.addEventListener('click', closeCard);
+
+  document.addEventListener('click', function(e) {
+    if (card.classList.contains('is-open') && !card.contains(e.target)
+        && e.target !== island && !island.contains(e.target)) {
+      closeCard();
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && card.classList.contains('is-open')) closeCard();
+  });
+
+  // ── Star interaction ─────────────────────────────────────────
+  const stars = Array.from(starRow.querySelectorAll('.journal-star'));
+
+  function paintStars(upTo) {
+    stars.forEach(function(s, i) {
+      s.classList.toggle('hovered', i < upTo);
+      s.classList.toggle('selected', i < upTo);
+    });
+  }
+
+  starRow.addEventListener('mousemove', function(e) {
+    const s = e.target.closest('.journal-star');
+    if (!s) return;
+    const val = Number(s.dataset.val);
+    stars.forEach(function(st, i) {
+      st.classList.toggle('hovered', i < val);
+      st.classList.remove('selected');
+    });
+  });
+
+  starRow.addEventListener('mouseleave', function() {
+    stars.forEach(function(s, i) {
+      s.classList.remove('hovered');
+      s.classList.toggle('selected', i < selectedRating);
+    });
+  });
+
+  starRow.addEventListener('click', function(e) {
+    const s = e.target.closest('.journal-star');
+    if (!s) return;
+    selectedRating = Number(s.dataset.val);
+    paintStars(selectedRating);
+    submitBtn.disabled = false;
+  });
+
+  // ── Submit ───────────────────────────────────────────────────
+  submitBtn.addEventListener('click', async function() {
+    if (!selectedRating) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '…';
+
+    const today = getLogicalDate();
+
+    try {
+      const res = await fetch('/api/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: selectedRating, text: textarea.value.trim(), date: today })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(function() { return {}; });
+        throw new Error(err.error || 'Fehler beim Speichern');
+      }
+
+      // Transition button to success state (same accent color as card)
+      const successColor = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
+        ? currentAccentColor : '#ffcc00';
+      submitBtn.textContent = '✓ Gespeichert';
+      submitBtn.style.background = successColor;
+      submitBtn.style.color = '#111';
+      islandDone = true;
+
+      setTimeout(function() {
+        closeCard();
+        island.style.display = 'none';
+      }, 1200);
+
+    } catch (e) {
+      // Show error briefly in button, then reset
+      submitBtn.textContent = e.message;
+      submitBtn.style.background = '#c0392b';
+      submitBtn.style.color = '#fff';
+      submitBtn.disabled = false;
+      setTimeout(function() {
+        submitBtn.textContent = 'Speichern';
+        submitBtn.style.background = '';
+        submitBtn.style.color = '';
+        submitBtn.disabled = false;
+      }, 2500);
+    }
+  });
+
+})();
+// ══════════════════════════════════════════════════════════════
+//  Review Write Drawer
+// ══════════════════════════════════════════════════════════════
+(function initReviewWriteDrawer() {
+  const drawer    = document.getElementById('review-write-drawer');
+  const closeBtn  = document.getElementById('review-write-drawer-close');
+  const titleEl   = document.getElementById('review-write-drawer-title') ||
+                    drawer && drawer.querySelector('.review-write-drawer-title');
+  const dateEl    = document.getElementById('review-write-date');
+  const starRow   = document.getElementById('review-write-stars');
+  const textarea  = document.getElementById('review-write-text');
+  const submitBtn = document.getElementById('review-write-submit');
+
+  if (!drawer) return;
+
+  let selectedRating = 0;
+  let _editEntry = null;   // non-null when editing an existing review
+  let _onSaved   = null;   // callback when save completes
+
+  // ── Esc / click-outside handlers (registered on open, removed on close) ──
+  let _escHandler = null;
+  let _clickOutHandler = null;
+
+  function getLogicalDate() {
+    const d = new Date();
+    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  function applyAccent() {
+    const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
+      ? currentAccentColor : '#ffcc00';
+    submitBtn.style.background = ac;
+    submitBtn.style.color = '#111';
+    const hdr = document.getElementById('review-write-drawer-header');
+    if (hdr) hdr.style.borderBottomColor = ac;
+  }
+
+  // ── Open (new or edit) ────────────────────────────────────────
+  function openDrawer(reviewEntry, onSaved) {
+    _editEntry = reviewEntry || null;
+    _onSaved   = onSaved || null;
+
+    // Title
+    if (titleEl) titleEl.textContent = _editEntry ? 'Rezension bearbeiten' : 'Wie war dein Tag?';
+
+    // Date
+    if (dateEl) {
+      if (_editEntry && _editEntry.date) {
+        const d = new Date(_editEntry.date + 'T00:00:00');
+        dateEl.textContent = d.toLocaleDateString('de-DE', {
+          weekday: 'long', day: 'numeric', month: 'long'
+        });
+      } else {
+        const d = new Date();
+        if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+        dateEl.textContent = d.toLocaleDateString('de-DE', {
+          weekday: 'long', day: 'numeric', month: 'long'
+        });
+      }
+    }
+
+    // Pre-fill stars + textarea when editing
+    selectedRating = _editEntry ? _editEntry.rating : 0;
+    paintStars(selectedRating);
+    textarea.value = _editEntry ? (_editEntry.text || '') : '';
+    submitBtn.disabled = _editEntry ? false : true;
+    submitBtn.textContent = 'Speichern';
+    submitBtn.style.background = '';
+    submitBtn.style.color = '';
+
+    applyAccent();
+
+    drawer.classList.add('is-open');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('review-write-drawer-open');
+
+    // Register close handlers
+    _escHandler = function(e) {
+      if (e.key === 'Escape' && drawer.classList.contains('is-open')) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeDrawer();
+      }
+    };
+    _clickOutHandler = function(e) {
+      if (!drawer.contains(e.target) && !e.target.closest('.reviews-new-btn')) {
+        e.stopPropagation();
+        closeDrawer();
+      }
+    };
+    document.addEventListener('keydown', _escHandler, true);
+    // Use a tiny timeout so the opening click doesn't immediately trigger close
+    setTimeout(function() {
+      document.addEventListener('click', _clickOutHandler, true);
+    }, 50);
+
+    if (textarea) setTimeout(function() { textarea.focus(); }, 100);
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('is-open');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('review-write-drawer-open');
+
+    if (_escHandler) {
+      document.removeEventListener('keydown', _escHandler, true);
+      _escHandler = null;
+    }
+    if (_clickOutHandler) {
+      document.removeEventListener('click', _clickOutHandler, true);
+      _clickOutHandler = null;
+    }
+  }
+
+  window.openReviewWriteDrawer  = openDrawer;
+  window.closeReviewWriteDrawer = closeDrawer;
+
+  closeBtn.addEventListener('click', closeDrawer);
+
+  // ── Star interaction ─────────────────────────────────────────
+  const stars = Array.from(starRow.querySelectorAll('.journal-star'));
+
+  function paintStars(upTo) {
+    stars.forEach(function(s, i) {
+      s.classList.toggle('selected', i < upTo);
+      s.classList.toggle('hovered', i < upTo);
+    });
+  }
+
+  starRow.addEventListener('mousemove', function(e) {
+    const s = e.target.closest('.journal-star');
+    if (!s) return;
+    const val = Number(s.dataset.val);
+    stars.forEach(function(st, i) {
+      st.classList.toggle('hovered', i < val);
+      st.classList.remove('selected');
+    });
+  });
+
+  starRow.addEventListener('mouseleave', function() {
+    stars.forEach(function(s, i) {
+      s.classList.remove('hovered');
+      s.classList.toggle('selected', i < selectedRating);
+    });
+  });
+
+  starRow.addEventListener('click', function(e) {
+    const s = e.target.closest('.journal-star');
+    if (!s) return;
+    selectedRating = Number(s.dataset.val);
+    paintStars(selectedRating);
+    submitBtn.disabled = false;
+  });
+
+  // ── Submit ───────────────────────────────────────────────────
+  submitBtn.addEventListener('click', async function() {
+    if (!selectedRating) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '…';
+
+    try {
+      let res;
+      if (_editEntry) {
+        // Update existing review
+        res = await fetch('/api/journal/' + _editEntry.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: selectedRating, text: textarea.value.trim() })
+        });
+      } else {
+        // Create new review
+        res = await fetch('/api/journal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: selectedRating, text: textarea.value.trim(), date: getLogicalDate() })
+        });
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(function() { return {}; });
+        throw new Error(err.error || 'Fehler beim Speichern');
+      }
+
+      const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
+        ? currentAccentColor : '#ffcc00';
+      submitBtn.textContent = '✓ Gespeichert';
+      submitBtn.style.background = ac;
+      submitBtn.style.color = '#111';
+
+      const savedCallback = _onSaved;
+      setTimeout(function() {
+        closeDrawer();
+        if (typeof savedCallback === 'function') {
+          savedCallback();
+        } else if (typeof renderReviewsPage === 'function' &&
+            typeof currentWorkspaceMode !== 'undefined' &&
+            currentWorkspaceMode === 'reviews') {
+          renderReviewsPage();
+        }
+      }, 1000);
+
+    } catch (e) {
+      submitBtn.textContent = e.message;
+      submitBtn.style.background = '#c0392b';
+      submitBtn.style.color = '#fff';
+      submitBtn.disabled = false;
+      setTimeout(function() {
+        submitBtn.textContent = 'Speichern';
+        submitBtn.style.background = '';
+        submitBtn.style.color = '';
+        applyAccent();
+      }, 2500);
+    }
+  });
+
+})();

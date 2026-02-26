@@ -277,6 +277,18 @@
       object-fit: contain;
       filter: brightness(0) invert(1) opacity(0.7);
     }
+
+    /* Reviews taskbar button — star icon centered & white */
+    .task-icon-button--star {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .task-icon-star {
+      font-size: 2.4vh;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.7);
+    }
     
     /* Hide task labels on desktop */
     .task-icon-label {
@@ -4230,3 +4242,780 @@ font-weight: 500;
   white-space: nowrap;
   letter-spacing: 0.01em;
 }
+
+/* ══════════════════════════════════════════════
+   Journal Island & Card
+   ══════════════════════════════════════════════ */
+
+/* Floating pill at top-right — vertically centred on the .now-card ribbon.
+   Default: compact circle showing only the star.
+   Hover / .is-reminder: expands to show the label. */
+.journal-island {
+  position: fixed;
+  top: 6vh;
+  transform: translateY(-50%);
+  right: 1.8vw;
+  z-index: 900;
+  background: rgba(255, 204, 0, 0.92);
+  color: #111;
+  border-radius: 99px;
+  /* uniform padding keeps it a perfect circle when label is hidden */
+  padding: 0.65vh;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+  transition: transform 0.18s ease, box-shadow 0.15s ease, background 0.15s, opacity 0.18s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.journal-island:hover {
+  /* keep the Y offset while scaling */
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.45);
+  background: rgba(255, 204, 0, 1);
+}
+
+.journal-island:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.journal-island-icon {
+  font-size: 2.2vh;
+  line-height: 1;
+  width: 2.2vh;
+  height: 2.2vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.journal-island-label {
+  /* collapsed by default; expands on hover or reminder mode */
+  font-size: 1.8vh;
+  font-weight: 600;
+  font-stretch: condensed;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+  transition: max-width 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+}
+
+/* expand label on hover or when reminder mode is active */
+.journal-island:hover .journal-island-label,
+.journal-island.is-reminder .journal-island-label {
+  max-width: 120px;
+  opacity: 1;
+  padding-left: 0.4vw;
+  padding-right: 0.7vw;
+}
+
+/* Hidden state - collapsed to icon only */
+.journal-island.island-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.8);
+}
+
+/* ── Expanded card ─────────────────────────── */
+.journal-card {
+  position: fixed;
+  top: 2vh;
+  right: 1.8vw;
+  z-index: 2400;
+  width: min(88vw, 360px);
+  background: #f5f5f5;
+  border-radius: 0.5vh;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-12px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.journal-card.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.journal-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2vh 1.5vw;
+  background: #111111;
+  border-bottom: 0.8vh solid rgba(255, 204, 0, 1);
+}
+
+.journal-card-title {
+  font-size: 2.2vh;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.journal-card-close {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 2vh;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s;
+}
+.journal-card-close:hover { color: #fff; }
+
+.journal-card-body {
+  padding: 1vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6vh;
+}
+
+/* Star selector */
+.journal-star-row {
+  display: flex;
+  gap: 0.8vw;
+  justify-content: center;
+  margin: 0.5vh 0;
+}
+
+.journal-star {
+  font-size: 3.5vh;
+  color: rgba(0, 0, 0, 0.648);
+  cursor: pointer;
+  transition: color 0.12s, transform 0.12s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+}
+
+.journal-star.hovered,
+.journal-star.selected {
+  color: #ffcc00;
+}
+
+.journal-star:hover {
+  transform: scale(1.15);
+}
+
+/* Date shown in the card body */
+.journal-card-date {
+  font-size: 1.7vh;
+  color: rgba(0, 0, 0, 0.45);
+  margin-bottom: 0.2vh;
+  text-align: center;
+}
+
+/* Textarea */
+.journal-textarea {
+  width: 100%;
+  min-height: 12vh;
+  max-height: 60vh;
+  background: rgb(231, 231, 231);
+  border: 2px solid transparent; /* color set by JS to currentAccentColor */
+  border-radius: 0.4vh;
+  color: #000000;
+  font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif;
+  font-size: 2vh;
+  padding: 0.2vh 0.25vw;
+  resize: vertical;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.journal-textarea::placeholder { color: rgba(0, 0, 0, 0.562);}
+.journal-textarea:focus {
+  outline: none;
+  border-color: rgba(255,204,0,0.5);
+  background: rgb(231, 231, 231);
+}
+
+/* Submit button */
+.journal-submit-btn {
+  width: 100%;
+  padding: 1.2vh;
+  background: #ffcc00;
+  color: #111;
+  border: none;
+  border-radius: 0.4vh;
+  font-family: inherit;
+  font-size: 2.2vh;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  letter-spacing: -0.01em;
+}
+.journal-submit-btn:not(:disabled):hover { background: #ffd633; }
+.journal-submit-btn:not(:disabled):active { transform: scale(0.98); }
+.journal-submit-btn:disabled {
+  opacity: 0.50;
+  cursor: not-allowed;
+}
+
+/* Toast inside card */
+.journal-card-toast {
+  font-size: 1.8vh;
+  color: #7cfc76;
+  text-align: center;
+  min-height: 2.4vh;
+  padding: 0 3vw 1.5vh;
+  transition: opacity 0.3s;
+}
+.journal-card-toast.error { color: #ff7070; }
+
+/* Hide the island and its card on mobile — no pinch-to-zoom environment */
+@media screen and (max-width: 768px) {
+  .journal-island,
+  .journal-card {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   Rezensionen (Reviews) Workspace Page
+   ══════════════════════════════════════════════ */
+
+.reviews-page {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 3vh 2vw;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.reviews-page::-webkit-scrollbar {
+  display: none;
+}
+
+.reviews-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  margin-bottom: 3vh;
+  padding-bottom: 2vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.reviews-page-title {
+  font-size: 4vh;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* ── Stats bar ─────────────────────────── */
+.reviews-stats-row {
+  display: flex;
+  gap: 2vw;
+  margin-bottom: 3vh;
+  flex-shrink: 0;
+}
+
+.reviews-avg-card {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 0.8vh;
+  padding: 2vh 2vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  flex: 0 0 auto;
+  gap: 0.4vh;
+}
+
+.reviews-avg-number {
+  font-size: 7vh;
+  line-height: 1;
+  font-weight: 700;
+  color: #ffcc00;
+}
+
+.reviews-avg-stars {
+  display: flex;
+  gap: 0.3vw;
+}
+
+.reviews-avg-stars .rv-star {
+  font-size: 2.2vh;
+  color: rgba(255,255,255,0.2);
+}
+.reviews-avg-stars .rv-star.filled { color: #ffcc00; }
+.reviews-avg-stars .rv-star.half   { color: #ffcc00; opacity: 0.5; }
+
+.reviews-avg-label {
+  font-size: 1.7vh;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
+
+.reviews-bars-card {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 0.8vh;
+  padding: 1.8vh 2vw;
+  flex: 1;
+}
+
+.reviews-bars-title {
+  font-size: 1.8vh;
+  font-weight: 500;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 1.2vh;
+}
+
+.rv-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  margin-bottom: 0.8vh;
+}
+
+.rv-bar-label {
+  font-size: 1.8vh;
+  color: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  gap: 0.3vw;
+  min-width: 48px;
+}
+.rv-bar-label .rv-star { font-size: 1.6vh; color: #ffcc00; }
+
+.rv-bar-track {
+  flex: 1;
+  height: 1.4vh;
+  min-height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.rv-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #ffcc00, #ffa500);
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+.rv-bar-count {
+  min-width: 24px;
+  text-align: center;
+  font-size: 1.7vh;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ── Section heading ───────────────────── */
+.reviews-section-title {
+  font-size: 2vh;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  margin: 0 0 1.5vh;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ── Review list ───────────────────────── */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  flex: 1;
+}
+
+.reviews-empty {
+  text-align: center;
+  padding: 5vh;
+  opacity: 0.4;
+  font-size: 2.2vh;
+}
+
+.rv-card {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 0.8vh;
+  padding: 1.8vh 1.5vw;
+  cursor: default;
+  transition: background 0.15s;
+}
+.rv-card:hover { background: rgba(255, 255, 255, 0.11); }
+
+.rv-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4vh;
+}
+
+.rv-card-date {
+  font-size: 1.8vh;
+  color: rgba(255,255,255,0.5);
+  flex: 1;
+}
+
+/* 3-dot menu wrapper */
+.rv-dots-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.rv-dots-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.2vh 0.3vw;
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  border-radius: 0.4vh;
+}
+.rv-dots-btn:hover { opacity: 0.85; background: rgba(255,255,255,0.07); }
+
+.rv-dots-icon {
+  width: 2.2vh;
+  height: 2.2vh;
+  filter: invert(1);
+  display: block;
+}
+
+.rv-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #1a2060;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0.6vh;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  z-index: 50;
+  min-width: 120px;
+  overflow: hidden;
+  animation: rv-dropdown-in 0.12s ease;
+}
+
+@keyframes rv-dropdown-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rv-dropdown-item {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  font-family: inherit;
+  font-stretch: condensed;
+  font-size: 2vh;
+  text-align: left;
+  padding: 1vh 1.2vw;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.rv-dropdown-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.rv-dropdown-delete { color: rgba(255,100,80,0.85); }
+.rv-dropdown-delete:hover { background: rgba(255,80,60,0.12); color: #ff8070; }
+
+/* Stars row sits on its own line, below the date */
+.rv-card-stars {
+  display: flex;
+  gap: 0.3vw;
+  margin-bottom: 0.8vh;
+}
+.rv-card-stars .rv-star {
+  font-size: 2.2vh;
+  color: rgba(255,255,255,0.18);
+}
+.rv-card-stars .rv-star.filled { color: #ffcc00; }
+
+.rv-card-text {
+  font-size: 2vh;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.rv-card-text.empty { color: rgba(255,255,255,0.25); font-style: italic; }
+
+.rv-card-actions {
+  display: flex;
+  gap: 1vw;
+  margin-top: 1.2vh;
+  justify-content: flex-end;
+}
+
+.rv-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 0.5vh;
+  padding: 0.5vh 1.2vw;
+  font-family: inherit;
+  font-stretch: condensed;
+  font-size: 1.8vh;
+  cursor: pointer;
+  color: rgba(255,255,255,0.65);
+  transition: background 0.12s, color 0.12s;
+}
+.rv-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+.rv-btn-danger { color: rgba(255,100,80,0.8); border-color: rgba(255,100,80,0.2); }
+.rv-btn-danger:hover { background: rgba(255,80,60,0.12); color: #ff8070; }
+
+.rv-btn-primary {
+  background: #ffcc00;
+  color: #111;
+  border-color: #ffcc00;
+  font-weight: 700;
+}
+.rv-btn-primary:hover { background: #ffd633; }
+
+/* Edit-mode components inside a review card */
+.rv-edit-stars { cursor: pointer; }
+.rv-edit-stars .rv-star { transition: transform 0.1s; }
+.rv-edit-stars .rv-star:hover { transform: scale(1.15); }
+
+/* ══════════════════════════════════════════════
+   Review Write Drawer
+   ══════════════════════════════════════════════ */
+
+/* Drawer shell — mirrors .project-drawer */
+.review-write-drawer {
+  position: fixed;
+  top: 0;
+  right: calc(-1 * var(--announcements-drawer-width));
+  width: var(--announcements-drawer-width);
+  height: 100vh;
+  height: 100dvh;
+  background: #f5f5f5;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: right 0.2s ease, box-shadow 0.2s ease, visibility 0.2s ease;
+  z-index: 1200;
+  visibility: hidden;
+}
+
+.review-write-drawer.is-open {
+  right: 0;
+  box-shadow: 0 0 10px rgb(0, 0, 0);
+  visibility: visible;
+}
+
+/* Header — mirrors .project-drawer-header */
+.review-write-drawer-header {
+  background: #111111;
+  color: #fff;
+  height: 9vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4%;
+  /* border-bottom color set dynamically via JS to currentAccentColor */
+  border-bottom: 1.2vh solid rgba(255, 204, 0, 1);
+  flex-shrink: 0;
+}
+
+.review-write-drawer-title {
+  font-size: 4vh;
+  font-weight: 500;
+  font-stretch: condensed;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.review-write-drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: rgb(99, 99, 99);
+  font-size: 3vh;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.review-write-drawer-close-btn:hover { color: #fff; }
+
+/* Body — light background, centered content */
+.review-write-drawer-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  padding: 2vh 1vw;
+  overflow-y: auto;
+}
+
+.review-write-date {
+  font-size: 2vh;
+  color: rgba(0, 0, 0, 0.45);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* Stars inside the drawer: dark defaults on white bg (journal-star CSS already covers this) */
+
+.review-write-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 18vh;
+  background: #ebebeb;
+  border: 2px solid transparent;
+  border-radius: 0.4vh;
+  color: #111;
+  font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif;
+  font-size: 2vh;
+  padding: 1vh 0.8vw;
+  resize: vertical;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  outline: none;
+}
+.review-write-textarea::placeholder { color: rgba(0, 0, 0, 0.4); }
+.review-write-textarea:focus { border-color: rgba(0, 0, 0, 0.2); }
+
+.review-write-submit-btn {
+  width: 100%;
+  padding: 1.4vh;
+  background: #ffcc00;
+  color: #111;
+  border: none;
+  border-radius: 0.4vh;
+  font-family: inherit;
+  font-size: 2.2vh;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.15s, color 0.2s;
+  letter-spacing: -0.01em;
+}
+.review-write-submit-btn:not(:disabled):hover { opacity: 0.9; }
+.review-write-submit-btn:not(:disabled):active { opacity: 0.8; }
+.review-write-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Neue Bewertung button in the reviews page header */
+.reviews-new-btn {
+  background: rgba(255, 204, 0, 0.15);
+  border: 1px solid rgba(255, 204, 0, 0.35);
+  color: #ffcc00;
+  border-radius: 0.5vh;
+  padding: 0.8vh 1.4vw;
+  font-family: inherit;
+  font-stretch: condensed;
+  font-size: 2vh;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.reviews-new-btn:hover {
+  background: rgba(255, 204, 0, 0.28);
+  border-color: rgba(255, 204, 0, 0.6);
+}
+
+/* ── Filter bar ─────────────────────────── */
+.reviews-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3vw;
+  margin-bottom: 1.8vh;
+  flex-shrink: 0;
+}
+
+.reviews-filter-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 99px;
+  padding: 0.5vh 1.2vw;
+  font-family: inherit;
+  font-stretch: condensed;
+  font-size: 1.9vh;
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .reviews-filter-bar {
+    gap: 2vw;
+    margin-bottom: 2vh;
+  }
+  .reviews-filter-btn {
+    padding: 1vh 3.5vw;
+    font-size: 2.2vh;
+  }
+}
+.reviews-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+.reviews-filter-btn.active {
+  background: #ffcc00;
+  color: #111;
+}
+
+/* ── Width adjustment when review-write drawer is open ─── */
+body.review-write-drawer-open .left-column {
+  width: calc(100% - var(--announcements-drawer-width) - 1vw);
+  transition: width 0.2s ease;
+}
+
+/* Mobile: review-write-drawer full screen (like note-drawer) */
+@media (max-width: 768px) {
+  .review-write-drawer {
+    top: 0;
+    left: 0;
+    right: auto !important;
+    width: 100vw !important;
+    height: calc(100dvh - 7vh - env(safe-area-inset-bottom, 0px)) !important;
+    margin-top: 0;
+    border-radius: 0;
+    z-index: 3500;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+    visibility: visible;
+  }
+  .review-write-drawer.is-open {
+    transform: translateX(0);
+    box-shadow: none;
+  }
+  .review-write-drawer-body {
+    padding: 2.5vh 5vw;
+  }
+  .review-write-drawer .journal-star-row {
+    gap: 4vw;
+    margin: 1.5vh 0;
+  }
+  .review-write-drawer .journal-star {
+    font-size: 6vh;
+  }
+}
+
+.rv-edit-textarea {
+  width: 100%;
+  min-height: 8vh;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 0.5vh;
+  color: #fff;
+  font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif;
+  font-size: 2vh;
+  padding: 0.8vh 1vw;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-top: 0.8vh;
+}
+.rv-edit-textarea::placeholder { color: rgba(255,255,255,0.25); }
+.rv-edit-textarea:focus { outline: none; border-color: rgba(255,204,0,0.45); }
+

@@ -917,6 +917,84 @@ app.post('/api/prune', async (req, res) => {
   }
 });
 
+// --- Journal / Review API ---
+const JOURNAL_FILE = path.join(__dirname, 'journal.json');
+
+async function readJournal() {
+  try {
+    const content = await fsPromises.readFile(JOURNAL_FILE, 'utf8');
+    return JSON.parse(content);
+  } catch (e) {
+    if (e.code === 'ENOENT') return { reviews: [] };
+    throw e;
+  }
+}
+
+async function writeJournal(data) {
+  await fsPromises.writeFile(JOURNAL_FILE, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// GET /api/journal - list all entries
+app.get('/api/journal', async (req, res) => {
+  try {
+    const data = await readJournal();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/journal - create new entry
+app.post('/api/journal', async (req, res) => {
+  try {
+    const { rating, text, date } = req.body || {};
+    const r = Number(rating);
+    if (!r || r < 1 || r > 5) return res.status(400).json({ error: 'rating must be 1–5' });
+    const data = await readJournal();
+    const now = new Date().toISOString();
+    const entryDate = date || now.split('T')[0];
+    const entry = { id: Date.now().toString(), date: entryDate, rating: r, text: text || '', createdAt: now, updatedAt: now };
+    data.reviews.unshift(entry);
+    await writeJournal(data);
+    res.json({ ok: true, entry });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT /api/journal/:id - update existing entry
+app.put('/api/journal/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating, text } = req.body || {};
+    const data = await readJournal();
+    const idx = data.reviews.findIndex(r => r.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Entry not found' });
+    if (rating !== undefined) data.reviews[idx].rating = Number(rating);
+    if (text !== undefined) data.reviews[idx].text = text;
+    data.reviews[idx].updatedAt = new Date().toISOString();
+    await writeJournal(data);
+    res.json({ ok: true, entry: data.reviews[idx] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/journal/:id - delete entry
+app.delete('/api/journal/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await readJournal();
+    const before = data.reviews.length;
+    data.reviews = data.reviews.filter(r => r.id !== id);
+    if (data.reviews.length === before) return res.status(404).json({ error: 'Entry not found' });
+    await writeJournal(data);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // DB departures API (real-time)
 let cachedData = { trains: [], metadata: null };
 let lastFetchOk = false;
