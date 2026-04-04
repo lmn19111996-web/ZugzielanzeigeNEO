@@ -44,8 +44,17 @@
       fixedSchedule: [],
       spontaneousEntries: [],
       trains: [],
-      projects: [] // Array of project objects
+      projects: [], // Array of project objects
+      // Logistics helper block
+      ingredients: [],    // Master ingredient names list (strings)
+      recipes: [],        // Recipe objects
+      inventory: { categories: [] }, // Inventory with storage categories
+      groceries: [],      // Grocery checklist items
+      mealPlan: []        // Meal plan day objects
     };
+
+    // Fixed units of measurement for ingredient quantities
+    const UNITS = ['Stück', 'ml', 'l', 'g', 'kg', 'EL', 'TL', 'Prise', 'Packung', 'Dose', 'Bund', 'Scheibe'];
 
     // Global accent color - matches current train line color on headline ribbon
     let currentAccentColor = 'rgba(255, 255, 255, 0.64)'; // Default
@@ -602,6 +611,24 @@
           schedule.spontaneousEntries = (data.spontaneousEntries || []).map(assignId);
           schedule.trains = (data.trains || []).map(assignId);
           schedule.projects = (data.projects || []).map(assignProjectId);
+          
+          // Load logistics data
+          schedule.ingredients = data.ingredients || [];
+          schedule.recipes = (data.recipes || []).map(r => {
+            if (!r._uniqueId) r._uniqueId = 'recipe_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            return r;
+          });
+          schedule.inventory = data.inventory && typeof data.inventory === 'object' ? data.inventory : { categories: [] };
+          if (schedule.inventory.categories) {
+            schedule.inventory.categories.forEach(cat => {
+              if (!cat._uniqueId) cat._uniqueId = 'inv_cat_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            });
+          }
+          schedule.groceries = (data.groceries || []).map(g => {
+            if (!g._uniqueId) g._uniqueId = 'grocery_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            return g;
+          });
+          schedule.mealPlan = data.mealPlan || [];
 
           // Expand recurring stems into real entries for the rolling window
           materializeFromStems();
@@ -2640,6 +2667,948 @@
 
     // ==================== END PROJECT MANAGEMENT FUNCTIONS ====================
 
+    // ==================== LOGISTICS HELPER BLOCK ====================
+    
+    // --- Shared datalist helpers ---
+    function updateIngredientDatalist() {
+      const dl = document.getElementById('ingredients-datalist');
+      if (!dl) return;
+      dl.innerHTML = '';
+      (schedule.ingredients || []).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        dl.appendChild(opt);
+      });
+    }
+    
+    function updateRecipeDatalist() {
+      const dl = document.getElementById('recipes-datalist');
+      if (!dl) return;
+      dl.innerHTML = '';
+      (schedule.recipes || []).forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.name || '';
+        dl.appendChild(opt);
+      });
+    }
+    
+    function ensureIngredient(name) {
+      if (!name || !name.trim()) return;
+      const trimmed = name.trim();
+      if (!schedule.ingredients) schedule.ingredients = [];
+      if (!schedule.ingredients.find(i => i.toLowerCase() === trimmed.toLowerCase())) {
+        schedule.ingredients.push(trimmed);
+        updateIngredientDatalist();
+      }
+    }
+    
+    function populateUnitSelect(selectEl, selectedUnit) {
+      selectEl.innerHTML = '';
+      UNITS.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u;
+        opt.textContent = u;
+        if (u === selectedUnit) opt.selected = true;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    // --- RECIPES ---
+    let currentRecipeId = null;
+    let recipeEditMode = false;
+
+    function renderRecipesPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+      
+      const pageTemplate = document.getElementById('recipes-page-template');
+      if (!pageTemplate) return;
+      
+      const pageClone = pageTemplate.content.cloneNode(true);
+      const recipesList = pageClone.querySelector('[data-recipes="list"]');
+      const searchInput = pageClone.querySelector('#recipe-search-input');
+      
+      const recipes = schedule.recipes || [];
+      
+      renderRecipeCards(recipesList, recipes);
+      
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
+      
+      // Search handler
+      const searchEl = document.getElementById('recipe-search-input');
+      if (searchEl) {
+        searchEl.addEventListener('input', () => {
+          const q = searchEl.value.toLowerCase().trim();
+          const filtered = recipes.filter(r => !q || (r.name || '').toLowerCase().includes(q));
+          const list = document.querySelector('[data-recipes="list"]');
+          if (list) renderRecipeCards(list, filtered);
+        });
+      }
+      
+      // Create button
+      const createBtn = document.getElementById('create-recipe-btn');
+      if (createBtn) {
+        createBtn.addEventListener('click', () => {
+          const newRecipe = {
+            _uniqueId: 'recipe_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+            name: 'Neues Rezept',
+            description: '',
+            image: null,
+            servings: 1,
+            ingredients: [],
+            createdAt: new Date().toISOString()
+          };
+          schedule.recipes.push(newRecipe);
+          updateRecipeDatalist();
+          renderRecipeDetail(newRecipe._uniqueId, true);
+        });
+      }
+      
+      updateIngredientDatalist();
+      updateRecipeDatalist();
+    }
+    
+    function renderRecipeCards(container, recipes) {
+      container.innerHTML = '';
+      const cardTemplate = document.getElementById('recipe-card-template');
+      if (!cardTemplate) return;
+      
+      if (recipes.length === 0) {
+        container.innerHTML = '<div class="logistics-empty">Keine Rezepte vorhanden.</div>';
+        return;
+      }
+      
+      recipes.forEach(recipe => {
+        const clone = cardTemplate.content.cloneNode(true);
+        const card = clone.querySelector('.recipe-card');
+        card.setAttribute('data-recipe-id', recipe._uniqueId);
+        
+        // Image
+        const imageDiv = clone.querySelector('[data-recipe="image"]');
+        if (recipe.image) {
+          imageDiv.innerHTML = `<img src="${recipe.image}" alt="${recipe.name || ''}" class="recipe-card-img">`;
+        }
+        
+        clone.querySelector('[data-recipe="name"]').textContent = recipe.name || 'Unbenanntes Rezept';
+        clone.querySelector('[data-recipe="meta"]').textContent = `${(recipe.ingredients || []).length} Zutaten`;
+        
+        card.addEventListener('click', () => {
+          renderRecipeDetail(recipe._uniqueId, false);
+        });
+        
+        container.appendChild(clone);
+      });
+    }
+    
+    function renderRecipeDetail(recipeId, editMode) {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+      
+      const recipe = schedule.recipes.find(r => r._uniqueId === recipeId);
+      if (!recipe) return;
+      
+      currentRecipeId = recipeId;
+      recipeEditMode = editMode;
+      
+      const template = document.getElementById('recipe-detail-template');
+      if (!template) return;
+      
+      const clone = template.content.cloneNode(true);
+      
+      // Populate fields
+      const nameEl = clone.querySelector('[data-recipe-detail="name"]');
+      nameEl.textContent = recipe.name || '';
+      
+      const servingsEl = clone.querySelector('[data-recipe-detail="servings"]');
+      servingsEl.value = recipe.servings || 1;
+      
+      const descEl = clone.querySelector('[data-recipe-detail="description"]');
+      descEl.textContent = recipe.description || '';
+      
+      // Image
+      const imageEl = clone.querySelector('[data-recipe-detail="image"]');
+      if (recipe.image) {
+        imageEl.innerHTML = `<img src="${recipe.image}" alt="${recipe.name || ''}" class="recipe-detail-img">`;
+      }
+      
+      // Ingredients list
+      const ingredientsList = clone.querySelector('[data-recipe-detail="ingredients"]');
+      (recipe.ingredients || []).forEach((ing, idx) => {
+        ingredientsList.appendChild(createIngredientRow(ing, idx, editMode));
+      });
+      
+      // Set edit/view mode
+      const editBtn = clone.querySelector('[data-recipe-action="edit"]');
+      const saveBtn = clone.querySelector('[data-recipe-action="save"]');
+      const addIngredientRow = clone.querySelector('[data-recipe-action="add-ingredient"]');
+      const uploadBtn = clone.querySelector('[data-recipe-action="trigger-upload"]');
+      
+      if (editMode) {
+        nameEl.contentEditable = 'true';
+        servingsEl.disabled = false;
+        descEl.contentEditable = 'true';
+        if (editBtn) editBtn.style.display = 'none';
+        if (saveBtn) saveBtn.style.display = '';
+        if (addIngredientRow) addIngredientRow.style.display = '';
+        if (uploadBtn) uploadBtn.style.display = '';
+        // Enable all ingredient inputs
+        clone.querySelectorAll('.recipe-ingredient-row input, .recipe-ingredient-row select').forEach(el => el.disabled = false);
+        clone.querySelectorAll('.recipe-ingredient-remove').forEach(el => el.style.display = '');
+      } else {
+        if (editBtn) editBtn.style.display = '';
+        if (saveBtn) saveBtn.style.display = 'none';
+        if (addIngredientRow) addIngredientRow.style.display = 'none';
+        if (uploadBtn) uploadBtn.style.display = 'none';
+      }
+      
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(clone);
+      
+      updateIngredientDatalist();
+      
+      // Event listeners
+      setupRecipeDetailListeners(recipe);
+    }
+    
+    function createIngredientRow(ingredient, index, editable) {
+      const template = document.getElementById('recipe-ingredient-row-template');
+      if (!template) {
+        const div = document.createElement('div');
+        div.textContent = `${ingredient.amount || ''} ${ingredient.unit || ''} ${ingredient.name || ''}`;
+        return div;
+      }
+      const clone = template.content.cloneNode(true);
+      const row = clone.querySelector('.recipe-ingredient-row');
+      row.setAttribute('data-ingredient-index', index);
+      
+      const amountInput = clone.querySelector('[data-ingredient="amount"]');
+      amountInput.value = ingredient.amount || '';
+      amountInput.disabled = !editable;
+      
+      const unitSelect = clone.querySelector('[data-ingredient="unit"]');
+      populateUnitSelect(unitSelect, ingredient.unit || 'Stück');
+      unitSelect.disabled = !editable;
+      
+      const nameInput = clone.querySelector('[data-ingredient="name"]');
+      nameInput.value = ingredient.name || '';
+      nameInput.disabled = !editable;
+      
+      const removeBtn = clone.querySelector('[data-ingredient-action="remove"]');
+      if (removeBtn) removeBtn.style.display = editable ? '' : 'none';
+      
+      return clone;
+    }
+    
+    function setupRecipeDetailListeners(recipe) {
+      // Back button
+      const backBtn = document.querySelector('[data-recipe-action="back"]');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          currentRecipeId = null;
+          recipeEditMode = false;
+          renderRecipesPage();
+        });
+      }
+      
+      // Edit button
+      const editBtn = document.querySelector('[data-recipe-action="edit"]');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          renderRecipeDetail(recipe._uniqueId, true);
+        });
+      }
+      
+      // Save button
+      const saveBtn = document.querySelector('[data-recipe-action="save"]');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          // Collect data from DOM
+          const nameEl = document.querySelector('[data-recipe-detail="name"]');
+          const servingsEl = document.querySelector('[data-recipe-detail="servings"]');
+          const descEl = document.querySelector('[data-recipe-detail="description"]');
+          
+          recipe.name = (nameEl ? nameEl.textContent.trim() : recipe.name) || 'Unbenanntes Rezept';
+          recipe.servings = parseInt(servingsEl ? servingsEl.value : 1) || 1;
+          recipe.description = descEl ? descEl.textContent.trim() : '';
+          
+          // Collect ingredients
+          const ingredientRows = document.querySelectorAll('.recipe-ingredient-row');
+          recipe.ingredients = [];
+          ingredientRows.forEach(row => {
+            const name = row.querySelector('[data-ingredient="name"]')?.value?.trim();
+            const amount = parseFloat(row.querySelector('[data-ingredient="amount"]')?.value) || 0;
+            const unit = row.querySelector('[data-ingredient="unit"]')?.value || 'Stück';
+            if (name) {
+              recipe.ingredients.push({ name, amount, unit });
+              ensureIngredient(name);
+            }
+          });
+          
+          updateRecipeDatalist();
+          await saveSchedule();
+          renderRecipeDetail(recipe._uniqueId, false);
+        });
+      }
+      
+      // Delete button
+      const deleteBtn = document.querySelector('[data-recipe-action="delete"]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          if (!confirm('Rezept wirklich löschen?')) return;
+          schedule.recipes = schedule.recipes.filter(r => r._uniqueId !== recipe._uniqueId);
+          updateRecipeDatalist();
+          await saveSchedule();
+          renderRecipesPage();
+        });
+      }
+      
+      // Add ingredient
+      const addIngRow = document.querySelector('[data-recipe-action="add-ingredient"]');
+      if (addIngRow) {
+        addIngRow.addEventListener('click', () => {
+          const list = document.querySelector('[data-recipe-detail="ingredients"]');
+          if (!list) return;
+          const idx = list.querySelectorAll('.recipe-ingredient-row').length;
+          list.appendChild(createIngredientRow({ name: '', amount: '', unit: 'Stück' }, idx, true));
+          updateIngredientDatalist();
+        });
+      }
+      
+      // Remove ingredient buttons (event delegation)
+      const ingredientsList = document.querySelector('[data-recipe-detail="ingredients"]');
+      if (ingredientsList) {
+        ingredientsList.addEventListener('click', (e) => {
+          const removeBtn = e.target.closest('[data-ingredient-action="remove"]');
+          if (removeBtn) {
+            removeBtn.closest('.recipe-ingredient-row').remove();
+          }
+        });
+      }
+      
+      // Image upload
+      const uploadTrigger = document.querySelector('[data-recipe-action="trigger-upload"]');
+      const uploadInput = document.querySelector('[data-recipe-action="upload-image"]');
+      if (uploadTrigger && uploadInput) {
+        uploadTrigger.addEventListener('click', () => uploadInput.click());
+        uploadInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          // Limit to 500KB for storage
+          if (file.size > 512000) {
+            alert('Bild zu groß (max 500KB). Bitte ein kleineres Bild wählen.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            recipe.image = ev.target.result;
+            const imageEl = document.querySelector('[data-recipe-detail="image"]');
+            if (imageEl) {
+              imageEl.innerHTML = `<img src="${recipe.image}" alt="${recipe.name || ''}" class="recipe-detail-img">`;
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    // --- INVENTORY ---
+    function renderInventoryPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+      
+      const pageTemplate = document.getElementById('inventory-page-template');
+      if (!pageTemplate) return;
+      
+      const pageClone = pageTemplate.content.cloneNode(true);
+      const columnsContainer = pageClone.querySelector('[data-inventory="columns"]');
+      
+      const categories = (schedule.inventory && schedule.inventory.categories) || [];
+      
+      if (categories.length === 0) {
+        columnsContainer.innerHTML = '<div class="logistics-empty">Keine Kategorien vorhanden. Erstelle eine neue Kategorie.</div>';
+      } else {
+        categories.forEach(cat => {
+          columnsContainer.appendChild(renderInventoryCategory(cat));
+        });
+      }
+      
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
+      
+      updateIngredientDatalist();
+      
+      // Create category button
+      const createBtn = document.getElementById('create-inventory-category-btn');
+      if (createBtn) {
+        createBtn.addEventListener('click', async () => {
+          const name = prompt('Name der Kategorie:');
+          if (!name || !name.trim()) return;
+          if (!schedule.inventory) schedule.inventory = { categories: [] };
+          if (!schedule.inventory.categories) schedule.inventory.categories = [];
+          schedule.inventory.categories.push({
+            _uniqueId: 'inv_cat_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+            name: name.trim(),
+            updatedAt: new Date().toISOString(),
+            items: []
+          });
+          await saveSchedule();
+          renderInventoryPage();
+        });
+      }
+    }
+    
+    function renderInventoryCategory(category) {
+      const template = document.getElementById('inventory-category-template');
+      if (!template) return document.createElement('div');
+      
+      const clone = template.content.cloneNode(true);
+      const col = clone.querySelector('.inventory-category');
+      col.setAttribute('data-category-id', category._uniqueId);
+      
+      clone.querySelector('[data-category="name"]').textContent = category.name || 'Kategorie';
+      
+      // Freshness tag
+      const freshnessTag = clone.querySelector('[data-category="freshness"]');
+      const isUpdatedToday = isSameDay(new Date(category.updatedAt), new Date());
+      freshnessTag.textContent = isUpdatedToday ? 'Aktualisiert' : 'Nicht aktualisiert';
+      freshnessTag.classList.toggle('freshness-ok', isUpdatedToday);
+      freshnessTag.classList.toggle('freshness-stale', !isUpdatedToday);
+      
+      // Items
+      const itemsList = clone.querySelector('[data-category="items"]');
+      (category.items || []).forEach((item, idx) => {
+        itemsList.appendChild(renderInventoryItem(item, idx, category._uniqueId));
+      });
+      
+      // Unit select for add row
+      const addUnitSelect = clone.querySelector('[data-add="unit"]');
+      if (addUnitSelect) populateUnitSelect(addUnitSelect, 'Stück');
+      
+      // Setup event listeners for this column
+      setupInventoryCategoryListeners(col, category);
+      
+      return clone;
+    }
+    
+    function isSameDay(d1, d2) {
+      return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+    }
+    
+    function renderInventoryItem(item, index, categoryId) {
+      const template = document.getElementById('inventory-item-row-template');
+      if (!template) return document.createElement('div');
+      
+      const clone = template.content.cloneNode(true);
+      const row = clone.querySelector('.inventory-item-row');
+      row.setAttribute('data-item-index', index);
+      row.setAttribute('data-category-id', categoryId);
+      
+      const rowClass = index % 2 === 0 ? 'inventory-item-row-bright' : 'inventory-item-row-dark';
+      row.classList.add(rowClass);
+      
+      clone.querySelector('[data-item="name"]').textContent = item.name || '';
+      clone.querySelector('[data-item="amount"]').textContent = item.amount || '';
+      clone.querySelector('[data-item="unit"]').textContent = item.unit || '';
+      
+      return clone;
+    }
+    
+    function setupInventoryCategoryListeners(colEl, category) {
+      // Refresh button
+      const refreshBtn = colEl.querySelector('[data-category-action="refresh"]');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          category.updatedAt = new Date().toISOString();
+          await saveSchedule();
+          renderInventoryPage();
+        });
+      }
+      
+      // Delete category
+      const deleteBtn = colEl.querySelector('[data-category-action="delete"]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          if (!confirm(`Kategorie "${category.name}" wirklich löschen?`)) return;
+          schedule.inventory.categories = schedule.inventory.categories.filter(c => c._uniqueId !== category._uniqueId);
+          await saveSchedule();
+          renderInventoryPage();
+        });
+      }
+      
+      // Add item
+      const addBtn = colEl.querySelector('[data-add="confirm"]');
+      if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+          const nameInput = colEl.querySelector('[data-add="name"]');
+          const amountInput = colEl.querySelector('[data-add="amount"]');
+          const unitSelect = colEl.querySelector('[data-add="unit"]');
+          
+          const name = nameInput?.value?.trim();
+          if (!name) return;
+          
+          const amount = parseFloat(amountInput?.value) || 0;
+          const unit = unitSelect?.value || 'Stück';
+          
+          category.items = category.items || [];
+          category.items.push({ name, amount, unit });
+          ensureIngredient(name);
+          
+          await saveSchedule();
+          renderInventoryPage();
+        });
+      }
+      
+      // Edit/remove items (event delegation)
+      const itemsList = colEl.querySelector('[data-category="items"]');
+      if (itemsList) {
+        itemsList.addEventListener('click', async (e) => {
+          const removeBtn = e.target.closest('[data-item-action="remove"]');
+          const editBtn = e.target.closest('[data-item-action="edit"]');
+          const row = e.target.closest('.inventory-item-row');
+          if (!row) return;
+          const idx = parseInt(row.getAttribute('data-item-index'));
+          
+          if (removeBtn) {
+            category.items.splice(idx, 1);
+            await saveSchedule();
+            renderInventoryPage();
+          } else if (editBtn) {
+            // Inline edit: convert to inputs
+            const nameSpan = row.querySelector('[data-item="name"]');
+            const amountSpan = row.querySelector('[data-item="amount"]');
+            const unitSpan = row.querySelector('[data-item="unit"]');
+            const item = category.items[idx];
+            
+            nameSpan.innerHTML = `<input type="text" class="inventory-inline-edit" value="${item.name || ''}" list="ingredients-datalist">`;
+            amountSpan.innerHTML = `<input type="number" class="inventory-inline-edit" value="${item.amount || ''}" step="any" min="0">`;
+            
+            const unitSelectHtml = `<select class="inventory-inline-edit">${UNITS.map(u => `<option value="${u}" ${u === item.unit ? 'selected' : ''}>${u}</option>`).join('')}</select>`;
+            unitSpan.innerHTML = unitSelectHtml;
+            
+            editBtn.textContent = '✓';
+            editBtn.setAttribute('data-item-action', 'save-edit');
+            
+            // Focus name input
+            const nameInput = nameSpan.querySelector('input');
+            if (nameInput) nameInput.focus();
+          }
+          
+          const saveEditBtn = e.target.closest('[data-item-action="save-edit"]');
+          if (saveEditBtn) {
+            const nameInput = row.querySelector('[data-item="name"] input');
+            const amountInput = row.querySelector('[data-item="amount"] input');
+            const unitSelect = row.querySelector('[data-item="unit"] select');
+            
+            const item = category.items[idx];
+            if (nameInput) item.name = nameInput.value.trim();
+            if (amountInput) item.amount = parseFloat(amountInput.value) || 0;
+            if (unitSelect) item.unit = unitSelect.value;
+            
+            if (item.name) ensureIngredient(item.name);
+            
+            await saveSchedule();
+            renderInventoryPage();
+          }
+        });
+      }
+      
+      // Category name edit (double-click)
+      const nameEl = colEl.querySelector('[data-category="name"]');
+      if (nameEl) {
+        nameEl.addEventListener('dblclick', () => {
+          nameEl.contentEditable = 'true';
+          nameEl.focus();
+          const handleBlur = async () => {
+            nameEl.contentEditable = 'false';
+            nameEl.removeEventListener('blur', handleBlur);
+            category.name = nameEl.textContent.trim() || 'Kategorie';
+            await saveSchedule();
+          };
+          nameEl.addEventListener('blur', handleBlur);
+          nameEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); }
+          });
+        });
+      }
+    }
+
+    // --- GROCERIES ---
+    function renderGroceriesPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+      
+      const pageTemplate = document.getElementById('groceries-page-template');
+      if (!pageTemplate) return;
+      
+      const pageClone = pageTemplate.content.cloneNode(true);
+      
+      const groceries = schedule.groceries || [];
+      const activeItems = groceries.filter(g => !g.checked);
+      const completedItems = groceries.filter(g => g.checked);
+      
+      // Render active items
+      const activeList = pageClone.querySelector('[data-groceries="active"]');
+      activeItems.forEach((item, idx) => {
+        activeList.appendChild(renderGroceryItem(item, false));
+      });
+      
+      // Unit select for add row
+      const addUnitSelect = pageClone.querySelector('#grocery-add-unit');
+      if (addUnitSelect) populateUnitSelect(addUnitSelect, 'Stück');
+      
+      // Completed section
+      const completedSection = pageClone.querySelector('[data-groceries="completed-section"]');
+      if (completedItems.length > 0) {
+        completedSection.style.display = '';
+        const completedTitle = completedSection.querySelector('.groceries-completed-title');
+        if (completedTitle) completedTitle.textContent = `Erledigt (${completedItems.length})`;
+        
+        const completedList = pageClone.querySelector('[data-groceries="completed"]');
+        completedItems.forEach(item => {
+          completedList.appendChild(renderGroceryItem(item, true));
+        });
+      }
+      
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
+      
+      updateIngredientDatalist();
+      setupGroceriesListeners();
+    }
+    
+    function renderGroceryItem(item, isCompleted) {
+      const template = document.getElementById('grocery-item-template');
+      if (!template) return document.createElement('div');
+      
+      const clone = template.content.cloneNode(true);
+      const row = clone.querySelector('.grocery-item-row');
+      row.setAttribute('data-grocery-id', item._uniqueId);
+      if (isCompleted) row.classList.add('grocery-item-completed');
+      
+      const checkbox = clone.querySelector('[data-grocery-action="toggle"]');
+      checkbox.checked = !!item.checked;
+      
+      clone.querySelector('[data-grocery="name"]').textContent = item.name || '';
+      clone.querySelector('[data-grocery="amount"]').textContent = item.amount ? item.amount : '';
+      clone.querySelector('[data-grocery="unit"]').textContent = item.unit && item.amount ? item.unit : '';
+      
+      return clone;
+    }
+    
+    function setupGroceriesListeners() {
+      // Add item
+      const addBtn = document.getElementById('grocery-add-btn');
+      if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+          const nameInput = document.getElementById('grocery-add-name');
+          const amountInput = document.getElementById('grocery-add-amount');
+          const unitSelect = document.getElementById('grocery-add-unit');
+          
+          const name = nameInput?.value?.trim();
+          if (!name) return;
+          
+          const amount = parseFloat(amountInput?.value) || 0;
+          const unit = unitSelect?.value || 'Stück';
+          
+          schedule.groceries.push({
+            _uniqueId: 'grocery_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+            name,
+            amount: amount || null,
+            unit: amount ? unit : null,
+            checked: false
+          });
+          ensureIngredient(name);
+          
+          await saveSchedule();
+          renderGroceriesPage();
+        });
+      }
+      
+      // Also allow Enter key in the name field
+      const nameInput = document.getElementById('grocery-add-name');
+      if (nameInput) {
+        nameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const addBtn = document.getElementById('grocery-add-btn');
+            if (addBtn) addBtn.click();
+          }
+        });
+      }
+      
+      // Toggle/remove items (event delegation on active list)
+      const activeList = document.querySelector('[data-groceries="active"]');
+      if (activeList) {
+        activeList.addEventListener('click', async (e) => {
+          const row = e.target.closest('.grocery-item-row');
+          if (!row) return;
+          const id = row.getAttribute('data-grocery-id');
+          
+          if (e.target.closest('[data-grocery-action="toggle"]')) {
+            const item = schedule.groceries.find(g => g._uniqueId === id);
+            if (item) { item.checked = true; await saveSchedule(); renderGroceriesPage(); }
+          }
+          if (e.target.closest('[data-grocery-action="remove"]')) {
+            schedule.groceries = schedule.groceries.filter(g => g._uniqueId !== id);
+            await saveSchedule();
+            renderGroceriesPage();
+          }
+        });
+      }
+      
+      // Completed list interactions
+      const completedList = document.querySelector('[data-groceries="completed"]');
+      if (completedList) {
+        completedList.addEventListener('click', async (e) => {
+          const row = e.target.closest('.grocery-item-row');
+          if (!row) return;
+          const id = row.getAttribute('data-grocery-id');
+          
+          if (e.target.closest('[data-grocery-action="toggle"]')) {
+            const item = schedule.groceries.find(g => g._uniqueId === id);
+            if (item) { item.checked = false; await saveSchedule(); renderGroceriesPage(); }
+          }
+          if (e.target.closest('[data-grocery-action="remove"]')) {
+            schedule.groceries = schedule.groceries.filter(g => g._uniqueId !== id);
+            await saveSchedule();
+            renderGroceriesPage();
+          }
+        });
+      }
+      
+      // Toggle completed section visibility
+      const toggleHeader = document.querySelector('[data-groceries-action="toggle-completed"]');
+      if (toggleHeader) {
+        toggleHeader.addEventListener('click', () => {
+          const list = document.querySelector('[data-groceries="completed"]');
+          const arrow = toggleHeader.querySelector('.groceries-completed-arrow');
+          if (list) {
+            const isHidden = list.style.display === 'none';
+            list.style.display = isHidden ? '' : 'none';
+            if (arrow) arrow.textContent = isHidden ? '▼' : '▶';
+          }
+        });
+      }
+    }
+    
+    function addToGroceries(items) {
+      // items: array of { name, amount, unit }
+      items.forEach(item => {
+        schedule.groceries.push({
+          _uniqueId: 'grocery_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+          name: item.name,
+          amount: item.amount || null,
+          unit: item.unit || null,
+          checked: false
+        });
+      });
+    }
+
+    // --- MEAL PLANNER ---
+    let mealPlanWeekOffset = 0; // 0 = current week, -1 = previous, +1 = next
+    
+    function renderMealPlanPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+      
+      const pageTemplate = document.getElementById('mealplan-page-template');
+      if (!pageTemplate) return;
+      
+      const pageClone = pageTemplate.content.cloneNode(true);
+      
+      // Calculate week dates
+      const today = new Date();
+      const monday = getMonday(today);
+      monday.setDate(monday.getDate() + (mealPlanWeekOffset * 7));
+      
+      // Week label
+      const weekLabel = pageClone.querySelector('[data-mealplan="week-label"]');
+      const weekNum = getWeekNumber(monday);
+      weekLabel.textContent = `KW ${weekNum}`;
+      
+      // Generate day tiles
+      const grid = pageClone.querySelector('[data-mealplan="grid"]');
+      const dayTemplate = document.getElementById('mealplan-day-template');
+      
+      const dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const dayClone = dayTemplate.content.cloneNode(true);
+        const tile = dayClone.querySelector('.mealplan-day-tile');
+        tile.setAttribute('data-mealplan-date', dateStr);
+        
+        // Check if today
+        if (isSameDay(date, new Date())) tile.classList.add('mealplan-day-today');
+        
+        const header = dayClone.querySelector('[data-mealplan-day="header"]');
+        header.textContent = `${dayNames[i]}, ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`;
+        
+        // Find meals for this day
+        const dayPlan = (schedule.mealPlan || []).find(d => d.date === dateStr);
+        const mealsContainer = dayClone.querySelector('[data-mealplan-day="meals"]');
+        
+        if (dayPlan && dayPlan.meals && dayPlan.meals.length > 0) {
+          dayPlan.meals.forEach((meal, mealIdx) => {
+            const mealEl = document.createElement('div');
+            mealEl.className = 'mealplan-meal-entry';
+            mealEl.innerHTML = `
+              <span class="mealplan-meal-name">${meal.recipeName || 'Unbekannt'}</span>
+              <span class="mealplan-meal-servings">× ${meal.servings || 1}</span>
+              <button class="mealplan-meal-remove" data-meal-action="remove" data-meal-index="${mealIdx}">✕</button>
+            `;
+            mealsContainer.appendChild(mealEl);
+          });
+        }
+        
+        grid.appendChild(dayClone);
+      }
+      
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
+      
+      updateRecipeDatalist();
+      setupMealPlanListeners();
+    }
+    
+    function getMonday(d) {
+      const date = new Date(d);
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      date.setDate(diff);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }
+    
+    function getWeekNumber(d) {
+      const date = new Date(d);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+      const week1 = new Date(date.getFullYear(), 0, 4);
+      return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    }
+    
+    function setupMealPlanListeners() {
+      // Week navigation
+      const prevBtn = document.querySelector('[data-mealplan-action="prev-week"]');
+      const nextBtn = document.querySelector('[data-mealplan-action="next-week"]');
+      if (prevBtn) prevBtn.addEventListener('click', () => { mealPlanWeekOffset--; renderMealPlanPage(); });
+      if (nextBtn) nextBtn.addEventListener('click', () => { mealPlanWeekOffset++; renderMealPlanPage(); });
+      
+      // Add recipe to day (event delegation on all day tiles)
+      document.querySelectorAll('.mealplan-day-tile').forEach(tile => {
+        const dateStr = tile.getAttribute('data-mealplan-date');
+        
+        // Add recipe input
+        const addInput = tile.querySelector('[data-mealplan-day-action="add"]');
+        if (addInput) {
+          addInput.addEventListener('change', async () => {
+            const recipeName = addInput.value.trim();
+            if (!recipeName) return;
+            
+            const recipe = schedule.recipes.find(r => r.name === recipeName);
+            
+            // Find or create day entry
+            if (!schedule.mealPlan) schedule.mealPlan = [];
+            let dayPlan = schedule.mealPlan.find(d => d.date === dateStr);
+            if (!dayPlan) {
+              dayPlan = { date: dateStr, meals: [] };
+              schedule.mealPlan.push(dayPlan);
+            }
+            
+            dayPlan.meals.push({
+              recipeId: recipe ? recipe._uniqueId : null,
+              recipeName: recipeName,
+              servings: recipe ? recipe.servings || 1 : 1
+            });
+            
+            // Check ingredients against inventory
+            if (recipe && recipe.ingredients && recipe.ingredients.length > 0) {
+              await checkAndPromptMissingIngredients(recipe, dayPlan.meals[dayPlan.meals.length - 1].servings);
+            }
+            
+            await saveSchedule();
+            renderMealPlanPage();
+          });
+        }
+        
+        // Remove meal (event delegation)
+        const mealsContainer = tile.querySelector('[data-mealplan-day="meals"]');
+        if (mealsContainer) {
+          mealsContainer.addEventListener('click', async (e) => {
+            const removeBtn = e.target.closest('[data-meal-action="remove"]');
+            if (!removeBtn) return;
+            const mealIdx = parseInt(removeBtn.getAttribute('data-meal-index'));
+            
+            const dayPlan = schedule.mealPlan.find(d => d.date === dateStr);
+            if (dayPlan && dayPlan.meals) {
+              dayPlan.meals.splice(mealIdx, 1);
+              if (dayPlan.meals.length === 0) {
+                schedule.mealPlan = schedule.mealPlan.filter(d => d.date !== dateStr);
+              }
+              await saveSchedule();
+              renderMealPlanPage();
+            }
+          });
+        }
+      });
+    }
+    
+    // --- CONNECTED LOGISTICS WORKFLOW ---
+    async function checkAndPromptMissingIngredients(recipe, servings) {
+      const needed = (recipe.ingredients || []).map(ing => ({
+        name: ing.name,
+        amount: (ing.amount || 0) * (servings || 1),
+        unit: ing.unit || 'Stück'
+      }));
+      
+      // Check inventory for each ingredient
+      const allInventoryItems = [];
+      if (schedule.inventory && schedule.inventory.categories) {
+        schedule.inventory.categories.forEach(cat => {
+          (cat.items || []).forEach(item => {
+            allInventoryItems.push(item);
+          });
+        });
+      }
+      
+      const missing = [];
+      needed.forEach(need => {
+        // Find matching item in inventory (case-insensitive)
+        const invItem = allInventoryItems.find(
+          inv => inv.name && inv.name.toLowerCase() === need.name.toLowerCase() && inv.unit === need.unit
+        );
+        
+        if (!invItem) {
+          // Not in inventory at all
+          missing.push({ name: need.name, amount: need.amount, unit: need.unit });
+        } else if ((invItem.amount || 0) < need.amount) {
+          // Not enough
+          const deficit = need.amount - (invItem.amount || 0);
+          missing.push({ name: need.name, amount: deficit, unit: need.unit });
+        }
+      });
+      
+      if (missing.length === 0) return;
+      
+      // Build a dialog
+      const missingText = missing.map(m => `• ${m.amount} ${m.unit} ${m.name}`).join('\n');
+      const shouldAdd = confirm(
+        `Folgende Zutaten fehlen oder sind nicht ausreichend:\n\n${missingText}\n\nZur Einkaufsliste hinzufügen?`
+      );
+      
+      if (shouldAdd) {
+        addToGroceries(missing);
+        await saveSchedule();
+      }
+    }
+
+    // ==================== END LOGISTICS HELPER BLOCK ====================
+
 
     function showWorkspacePlaceholder(label) {
       const placeholder = document.getElementById('mode-placeholder');
@@ -2672,6 +3641,12 @@
       if (mode === 'add') {
         createNewTrainEntry();
         return;
+      }
+
+      // Reset recipe detail view when navigating away from recipes
+      if (mode !== 'recipes') {
+        currentRecipeId = null;
+        recipeEditMode = false;
       }
 
       switch (mode) {
@@ -2734,23 +3709,44 @@
           renderCurrentWorkspaceView();
           break;
         case 'meals':
-          // Placeholder modes - not workspaces, don't change currentWorkspaceMode
+          currentWorkspaceMode = 'meals';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
           if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
-          showWorkspacePlaceholder('Mahlzeiten');
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
           break;
         case 'groceries':
+          currentWorkspaceMode = 'groceries';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
           if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
-          showWorkspacePlaceholder('Einkauf');
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
           break;
         case 'inventory':
+          currentWorkspaceMode = 'inventory';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
           if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
-          showWorkspacePlaceholder('Inventar');
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
+        case 'recipes':
+          currentWorkspaceMode = 'recipes';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
           break;
         default:
           break;
@@ -2840,6 +3836,30 @@
           if (includeAnnouncements) {
             renderComprehensiveAnnouncementPanel();
           }
+          break;
+          
+        case 'recipes':
+          if (includeHeadline) renderHeadlineTrain();
+          if (currentRecipeId) {
+            renderRecipeDetail(currentRecipeId, recipeEditMode);
+          } else {
+            renderRecipesPage();
+          }
+          break;
+          
+        case 'inventory':
+          if (includeHeadline) renderHeadlineTrain();
+          renderInventoryPage();
+          break;
+          
+        case 'groceries':
+          if (includeHeadline) renderHeadlineTrain();
+          renderGroceriesPage();
+          break;
+          
+        case 'meals':
+          if (includeHeadline) renderHeadlineTrain();
+          renderMealPlanPage();
           break;
           
         default:
@@ -5754,7 +6774,13 @@
           projects: (schedule.projects || []).map(p => {
             const { ...cleanProject } = p;
             return cleanProject;
-          })
+          }),
+          // Logistics helper block
+          ingredients: schedule.ingredients || [],
+          recipes: schedule.recipes || [],
+          inventory: schedule.inventory || { categories: [] },
+          groceries: schedule.groceries || [],
+          mealPlan: schedule.mealPlan || []
         };
         
         console.log('💾 Saving schedule:', `${oldVersion} → ${newVersion}`, {

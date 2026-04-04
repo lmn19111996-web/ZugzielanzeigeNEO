@@ -862,6 +862,12 @@ app.post('/api/schedule', async (req, res) => {
       spontaneousEntries: prunedSpontaneous,
       trains: trainsArr,
       projects: Array.isArray(body.projects) ? body.projects : [],
+      // Logistics helper block
+      ingredients: Array.isArray(body.ingredients) ? body.ingredients : [],
+      recipes: Array.isArray(body.recipes) ? body.recipes : [],
+      inventory: body.inventory && typeof body.inventory === 'object' ? body.inventory : { categories: [] },
+      groceries: Array.isArray(body.groceries) ? body.groceries : [],
+      mealPlan: Array.isArray(body.mealPlan) ? body.mealPlan : [],
     };
 
     const filePath = path.join(PUBLIC_DIR, 'data.json');

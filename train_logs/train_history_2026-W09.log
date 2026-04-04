@@ -204,3 +204,5 @@
 {"trainKey":"s5|fatima|10:00|unknown","linie":"S5","ziel":"Fatima","plan":"10:00","actual":"","dauer":"","stops":"","date":"","canceled":false}
 {"trainKey":"s5|fatima|10:00|2026-02-25","linie":"S5","ziel":"Fatima","plan":"10:00","actual":"10:00","dauer":"","stops":"","date":"2026-02-25","canceled":false}
 {"trainKey":"s5|fatima|10:00|2026-02-26","linie":"S5","ziel":"Fatima","plan":"10:00","actual":"10:00","dauer":"","stops":"","date":"2026-02-26","canceled":false}
+{"trainKey":"s5|strausberg nord|20:00|2026-02-25","linie":"S5","ziel":"Strausberg Nord","plan":"20:00","actual":"20:00","dauer":100,"stops":"","date":"2026-02-25","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-02-25","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-02-25","canceled":false}

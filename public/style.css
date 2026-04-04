@@ -289,6 +289,10 @@
       line-height: 1;
       color: rgba(255, 255, 255, 0.7);
     }
+    .task-icon-emoji {
+      font-size: 2.2vh;
+      line-height: 1;
+    }
     
     /* Hide task labels on desktop */
     .task-icon-label {
@@ -4435,6 +4439,1041 @@ font-weight: 500;
   box-sizing: border-box;
 }
 .journal-textarea::placeholder { color: rgba(0, 0, 0, 0.562);}
+
+/* ============ LOGISTICS HELPER BLOCK STYLES ============ */
+
+/* Shared logistics layout */
+.logistics-page {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 3vh 2vw;
+  box-sizing: border-box;
+}
+
+.logistics-page::-webkit-scrollbar {
+  display: none;
+}
+
+.logistics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  margin-bottom: 3vh;
+  padding-bottom: 2vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap;
+}
+
+.logistics-title {
+  font-size: 4vh;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.logistics-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.logistics-create-btn {
+  background: rgba(0, 78, 157, 0.8);
+  border: none;
+  color: white;
+  font-family: inherit;
+  font-size: 2.2vh;
+  font-weight: 400;
+  padding: 1.5vh 2vw;
+  border-radius: 0.6vh;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.logistics-create-btn:hover {
+  background: rgba(0, 78, 157, 1);
+}
+
+.logistics-search {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 1.2vh 1.5vw;
+  border-radius: 0.6vh;
+  outline: none;
+  min-width: 200px;
+}
+
+.logistics-search::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.logistics-search:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.logistics-back-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-size: 2.2vh;
+  cursor: pointer;
+  padding: 1vh 0;
+  transition: color 0.2s;
+}
+
+.logistics-back-btn:hover {
+  color: white;
+}
+
+.logistics-edit-btn,
+.logistics-save-btn,
+.logistics-delete-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 1vh 1.5vw;
+  border-radius: 0.6vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logistics-edit-btn:hover { background: rgba(0, 78, 157, 0.6); }
+.logistics-save-btn { background: rgba(0, 120, 80, 0.6); }
+.logistics-save-btn:hover { background: rgba(0, 120, 80, 0.9); }
+.logistics-delete-btn:hover { background: rgba(200, 40, 40, 0.6); }
+
+.logistics-nav-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 0.8vh 1.5vw;
+  border-radius: 0.6vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logistics-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.logistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 2vh 1.5vw;
+}
+
+.logistics-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 5vh;
+  opacity: 0.6;
+  font-size: 2.2vh;
+}
+
+/* --- RECIPE CARDS --- */
+.recipe-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.8vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.recipe-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.recipe-card-image {
+  width: 100%;
+  height: 18vh;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.recipe-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recipe-card-image-placeholder {
+  font-size: 5vh;
+  opacity: 0.3;
+}
+
+.recipe-card-body {
+  padding: 1.5vh 1.2vw;
+}
+
+.recipe-card-name {
+  font-size: 2.4vh;
+  font-weight: 500;
+  margin-bottom: 0.5vh;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.recipe-card-meta {
+  font-size: 1.8vh;
+  opacity: 0.6;
+}
+
+/* --- RECIPE DETAIL --- */
+.recipe-detail-content {
+  padding-bottom: 4vh;
+}
+
+.recipe-detail-header-row {
+  display: flex;
+  gap: 2vw;
+  margin-bottom: 3vh;
+  align-items: flex-start;
+}
+
+.recipe-detail-image-wrapper {
+  flex-shrink: 0;
+  width: 20vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.recipe-detail-image {
+  width: 20vh;
+  height: 20vh;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0.8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.recipe-detail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.8vh;
+}
+
+.recipe-image-upload-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-size: 1.8vh;
+  padding: 0.8vh 0;
+  border-radius: 0.4vh;
+  cursor: pointer;
+  text-align: center;
+}
+
+.recipe-image-upload-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.recipe-detail-title-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipe-detail-name {
+  font-size: 3.5vh;
+  font-weight: 500;
+  margin: 0 0 1vh 0;
+  outline: none;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.recipe-detail-name[contenteditable="true"] {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.recipe-detail-servings {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  font-size: 2vh;
+  opacity: 0.8;
+}
+
+.recipe-servings-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 0.5vh 0.8vw;
+  border-radius: 0.4vh;
+  width: 6vh;
+  text-align: center;
+}
+
+.recipe-servings-input:disabled {
+  background: none;
+  border-color: transparent;
+}
+
+.recipe-detail-section {
+  margin-bottom: 3vh;
+}
+
+.recipe-detail-section-title {
+  font-size: 2.4vh;
+  font-weight: 500;
+  margin: 0 0 1.5vh 0;
+  padding-bottom: 0.8vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Recipe ingredient rows */
+.recipe-ingredient-row {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 0.8vh 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.recipe-ingredient-amount {
+  width: 8vh;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 0.6vh 0.5vw;
+  border-radius: 0.4vh;
+  text-align: right;
+}
+
+.recipe-ingredient-unit {
+  width: 10vh;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 0.6vh 0.3vw;
+  border-radius: 0.4vh;
+}
+
+.recipe-ingredient-unit option {
+  background: #161B75;
+  color: white;
+}
+
+.recipe-ingredient-name {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 0.6vh 0.8vw;
+  border-radius: 0.4vh;
+}
+
+.recipe-ingredient-amount:disabled,
+.recipe-ingredient-unit:disabled,
+.recipe-ingredient-name:disabled {
+  background: none;
+  border-color: transparent;
+  opacity: 0.9;
+}
+
+.recipe-ingredient-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 2.2vh;
+  cursor: pointer;
+  padding: 0 0.5vw;
+  transition: color 0.2s;
+}
+
+.recipe-ingredient-remove:hover {
+  color: rgba(255, 80, 80, 0.9);
+}
+
+.recipe-ingredient-add-row {
+  padding: 1.2vh 0;
+  cursor: pointer;
+}
+
+.recipe-ingredient-add-text {
+  font-size: 2vh;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s;
+}
+
+.recipe-ingredient-add-row:hover .recipe-ingredient-add-text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.recipe-detail-description {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  border-radius: 0.6vh;
+  padding: 2vh 1.5vw;
+  min-height: 15vh;
+  font-size: 2vh;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.recipe-detail-description[contenteditable="true"] {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* --- INVENTORY --- */
+.inventory-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2vh 1.5vw;
+  align-items: start;
+}
+
+.inventory-category {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0.8vh;
+  overflow: hidden;
+}
+
+.inventory-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5vh 1.2vw;
+  background: rgba(255, 255, 255, 0.04);
+  gap: 0.8vw;
+  flex-wrap: wrap;
+}
+
+.inventory-category-name {
+  font-size: 2.4vh;
+  font-weight: 500;
+  margin: 0;
+  outline: none;
+  cursor: default;
+  flex: 1;
+  min-width: 0;
+}
+
+.inventory-category-name[contenteditable="true"] {
+  cursor: text;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.inventory-category-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  flex-shrink: 0;
+}
+
+.inventory-freshness-tag {
+  font-size: 1.6vh;
+  padding: 0.4vh 1vw;
+  border-radius: 2vh;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.freshness-ok {
+  background: rgba(0, 180, 80, 0.25);
+  color: rgba(100, 255, 160, 0.9);
+}
+
+.freshness-stale {
+  background: rgba(200, 80, 0, 0.25);
+  color: rgba(255, 180, 100, 0.9);
+}
+
+.inventory-refresh-btn,
+.inventory-delete-category-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.8vh;
+  width: 3.5vh;
+  height: 3.5vh;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.inventory-refresh-btn:hover {
+  background: rgba(0, 180, 80, 0.3);
+  border-color: rgba(0, 180, 80, 0.5);
+  color: white;
+}
+
+.inventory-delete-category-btn:hover {
+  background: rgba(200, 40, 40, 0.3);
+  border-color: rgba(200, 40, 40, 0.5);
+  color: white;
+}
+
+.inventory-items-list {
+  padding: 0;
+}
+
+.inventory-item-row {
+  display: flex;
+  align-items: center;
+  padding: 1vh 1.2vw;
+  gap: 0.8vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+}
+
+.inventory-item-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.inventory-item-row-bright {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.inventory-item-row-dark {
+  background: transparent;
+}
+
+.inventory-item-name {
+  flex: 1;
+  font-size: 2vh;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-item-amount {
+  font-size: 2vh;
+  font-weight: 500;
+  min-width: 4vh;
+  text-align: right;
+}
+
+.inventory-item-unit {
+  font-size: 1.8vh;
+  opacity: 0.7;
+  min-width: 5vh;
+}
+
+.inventory-item-actions {
+  display: flex;
+  gap: 0.4vw;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.inventory-item-row:hover .inventory-item-actions {
+  opacity: 1;
+}
+
+.inventory-item-edit,
+.inventory-item-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.8vh;
+  cursor: pointer;
+  padding: 0.3vh 0.3vw;
+  transition: color 0.2s;
+}
+
+.inventory-item-edit:hover { color: rgba(100, 180, 255, 0.9); }
+.inventory-item-remove:hover { color: rgba(255, 80, 80, 0.9); }
+
+.inventory-inline-edit {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 0.3vh 0.5vw;
+  border-radius: 0.3vh;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inventory-inline-edit option {
+  background: #161B75;
+  color: white;
+}
+
+.inventory-item-add-row {
+  display: flex;
+  align-items: center;
+  padding: 1vh 1.2vw;
+  gap: 0.6vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.inventory-add-name {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  font-family: inherit;
+  font-size: 1.8vh;
+  padding: 0.7vh 0.6vw;
+  border-radius: 0.4vh;
+}
+
+.inventory-add-name::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.inventory-add-amount {
+  width: 6vh;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  font-family: inherit;
+  font-size: 1.8vh;
+  padding: 0.7vh 0.4vw;
+  border-radius: 0.4vh;
+  text-align: right;
+}
+
+.inventory-add-amount::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.inventory-add-unit {
+  width: auto;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  font-family: inherit;
+  font-size: 1.8vh;
+  padding: 0.7vh 0.3vw;
+  border-radius: 0.4vh;
+}
+
+.inventory-add-unit option {
+  background: #161B75;
+  color: white;
+}
+
+.inventory-add-btn {
+  background: rgba(0, 78, 157, 0.8);
+  border: none;
+  color: white;
+  font-size: 2vh;
+  width: 3.5vh;
+  height: 3.5vh;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.inventory-add-btn:hover {
+  background: rgba(0, 78, 157, 1);
+}
+
+/* --- GROCERIES --- */
+.groceries-active-list,
+.groceries-completed-list {
+  padding: 0;
+}
+
+.grocery-item-row {
+  display: flex;
+  align-items: center;
+  padding: 1.2vh 1vw;
+  gap: 1vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s;
+}
+
+.grocery-item-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.grocery-item-completed {
+  opacity: 0.5;
+}
+
+.grocery-item-completed .grocery-item-name {
+  text-decoration: line-through;
+}
+
+.grocery-item-checkbox {
+  width: 2.2vh;
+  height: 2.2vh;
+  cursor: pointer;
+  accent-color: rgba(0, 180, 80, 0.8);
+  flex-shrink: 0;
+}
+
+.grocery-item-name {
+  flex: 1;
+  font-size: 2.2vh;
+  min-width: 0;
+}
+
+.grocery-item-amount {
+  font-size: 2vh;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.grocery-item-unit {
+  font-size: 1.8vh;
+  opacity: 0.6;
+  min-width: 4vh;
+}
+
+.grocery-item-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 2vh;
+  cursor: pointer;
+  padding: 0 0.4vw;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.grocery-item-row:hover .grocery-item-remove {
+  opacity: 1;
+}
+
+.grocery-item-remove:hover {
+  color: rgba(255, 80, 80, 0.9);
+}
+
+.groceries-add-row {
+  display: flex;
+  align-items: center;
+  padding: 1.5vh 1vw;
+  gap: 0.8vw;
+  margin-top: 1vh;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.groceries-add-name {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 1vh 1vw;
+  border-radius: 0.5vh;
+}
+
+.groceries-add-name::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.groceries-add-amount {
+  width: 7vh;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 1vh 0.5vw;
+  border-radius: 0.5vh;
+  text-align: right;
+}
+
+.groceries-add-amount::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.groceries-add-unit {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-family: inherit;
+  font-size: 2vh;
+  padding: 1vh 0.5vw;
+  border-radius: 0.5vh;
+}
+
+.groceries-add-unit option {
+  background: #161B75;
+  color: white;
+}
+
+.groceries-add-btn {
+  background: rgba(0, 78, 157, 0.8);
+  border: none;
+  color: white;
+  font-size: 2.2vh;
+  width: 4vh;
+  height: 4vh;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.groceries-add-btn:hover {
+  background: rgba(0, 78, 157, 1);
+}
+
+.groceries-completed-section {
+  margin-top: 2vh;
+}
+
+.groceries-completed-header {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1.5vh 1vw;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.groceries-completed-header:hover {
+  opacity: 0.9;
+}
+
+.groceries-completed-arrow {
+  font-size: 1.6vh;
+}
+
+.groceries-completed-title {
+  font-size: 2vh;
+  font-weight: 400;
+}
+
+/* --- MEAL PLANNER --- */
+.mealplan-week-label {
+  font-size: 2.4vh;
+  font-weight: 500;
+  min-width: 8vh;
+  text-align: center;
+}
+
+.mealplan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5vh 1vw;
+}
+
+.mealplan-day-tile {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0.8vh;
+  overflow: hidden;
+  min-height: 15vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mealplan-day-today {
+  border: 1.5px solid rgba(0, 180, 240, 0.5);
+}
+
+.mealplan-day-header {
+  padding: 1.2vh 1vw;
+  font-size: 2vh;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mealplan-day-meals {
+  flex: 1;
+  padding: 0.5vh 0;
+}
+
+.mealplan-meal-entry {
+  display: flex;
+  align-items: center;
+  padding: 0.8vh 1vw;
+  gap: 0.6vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.mealplan-meal-name {
+  flex: 1;
+  font-size: 1.9vh;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mealplan-meal-servings {
+  font-size: 1.6vh;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.mealplan-meal-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 1.6vh;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.mealplan-meal-entry:hover .mealplan-meal-remove {
+  opacity: 1;
+}
+
+.mealplan-meal-remove:hover {
+  color: rgba(255, 80, 80, 0.9);
+}
+
+.mealplan-day-add {
+  padding: 0.8vh 1vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mealplan-add-recipe {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-family: inherit;
+  font-size: 1.8vh;
+  padding: 0.7vh 0.6vw;
+  border-radius: 0.4vh;
+  box-sizing: border-box;
+}
+
+.mealplan-add-recipe::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.mealplan-add-recipe:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* --- MOBILE RESPONSIVE --- */
+@media (max-width: 768px) {
+  .logistics-page {
+    padding: 2vh 3vw;
+  }
+  
+  .logistics-header {
+    margin-bottom: 2vh;
+    padding-bottom: 1.5vh;
+  }
+  
+  .logistics-title {
+    font-size: 3.2vh;
+  }
+  
+  .logistics-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.5vh 2vw;
+  }
+  
+  .logistics-search {
+    min-width: 120px;
+    width: 100%;
+    order: 10;
+  }
+  
+  .recipe-card-image {
+    height: 14vh;
+  }
+  
+  .recipe-detail-header-row {
+    flex-direction: column;
+  }
+  
+  .recipe-detail-image-wrapper {
+    width: 100%;
+  }
+  
+  .recipe-detail-image {
+    width: 100%;
+    height: 25vh;
+  }
+  
+  .recipe-ingredient-row {
+    flex-wrap: wrap;
+    gap: 0.5vw;
+  }
+  
+  .recipe-ingredient-amount {
+    width: 25%;
+  }
+  
+  .recipe-ingredient-unit {
+    width: 30%;
+  }
+  
+  .recipe-ingredient-name {
+    width: 100%;
+    flex: none;
+  }
+  
+  .inventory-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .mealplan-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .groceries-add-row {
+    flex-wrap: wrap;
+  }
+  
+  .groceries-add-name {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* ============ END LOGISTICS HELPER BLOCK STYLES ============ */
 .journal-textarea:focus {
   outline: none;
   border-color: rgba(255,204,0,0.5);
