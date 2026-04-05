@@ -1,12 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="design-tokens.css">
     <title>Focus Mode As HTML</title>
     <meta name="theme-color" content="#161B75">
     <style>
         html, body {
-            background: #161B75;
+            background: var(--color-bg-primary);
             color: white;
             font-family: "Bahnschrift Condensed", sans-serif-condensed, sans-serif;
             font-stretch: condensed;
@@ -190,7 +191,7 @@
 
     .focus-delayed {
       background: white;
-      color: #161B75;
+      color: var(--color-bg-primary);
       border-radius: 2px;
       line-height: 1;
       padding: 1px 2px;

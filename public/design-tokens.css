@@ -1,0 +1,146 @@
+/* ================================================================
+   ZUGZIELANZEIGE NEO — DESIGN TOKENS
+   ================================================================
+   Single source of truth for all colors, typography, and surface
+   values used across the app.  Reference this file before writing
+   any new styles.  All tokens are defined as CSS custom properties
+   on :root and can be consumed in any CSS rule with var(--token).
+   ================================================================ */
+
+:root {
+
+  /* ============================================================
+     CORE PALETTE — "Bahnblau"
+     Deep navy blues that form the structural identity of the app.
+     Use the deeper shades for panels/drawers, lighter for the
+     main page background.
+  ============================================================ */
+
+  --color-bg-primary:           #161B75;  /* Main app background (body, page) */
+  --color-bg-panel:             #0F1450;  /* Drawers, right-panel, announcement bg */
+  --color-bg-taskbar:           #1d1f5d;  /* Taskbar / left nav rail */
+  --color-bg-card:              #171d5e;  /* Floating cards, now-card */
+  --color-bg-button:            #2e3273;  /* Task button default */
+  --color-bg-button-hover:      #1f2478;  /* Task button :hover */
+  --color-bg-icon-button-hover: #445e9e;  /* Icon button :hover (taskbar icons) */
+
+
+  /* ============================================================
+     TEXT / CONTENT — White scale on dark background
+     Use progressively dimmer alphas to establish visual hierarchy.
+  ============================================================ */
+
+  --color-text-primary:     white;                      /* Headings, departure times */
+  --color-text-secondary:   rgba(255, 255, 255, 0.80);  /* Sub‑labels, nav items */
+  --color-text-muted:       rgba(255, 255, 255, 0.70);  /* Date separators, drawer sub-titles */
+  --color-text-label:       rgba(255, 255, 255, 0.60);  /* Editor field labels, empty states */
+  --color-text-placeholder: rgba(255, 255, 255, 0.50);  /* Time markers, belegungsplan axis */
+
+
+  /* ============================================================
+     STRUCTURAL DIVIDERS & BORDERS
+     Three levels of emphasis for borders and separators.
+  ============================================================ */
+
+  --color-divider:        rgba(255, 255, 255, 0.64);  /* Main column borders, task-icon-group border */
+  --color-border-subtle:  rgba(255, 255, 255, 0.20);  /* Panel borders, recurrence picker border */
+  --color-border-faint:   rgba(255, 255, 255, 0.10);  /* Editor field separators */
+
+
+  /* ============================================================
+     INTERACTIVE SURFACE LAYERS (white-alpha on dark bg)
+     Ordered from lightest (1) to most opaque (7).
+     Use these for button backgrounds, hover states, and
+     selection highlights — never pick a raw alpha by hand.
+  ============================================================ */
+
+  --color-surface-1: rgba(255, 255, 255, 0.05);  /* Subtle item bg (mode-drawer-item) */
+  --color-surface-2: rgba(255, 255, 255, 0.08);  /* Project card bg */
+  --color-surface-3: rgba(255, 255, 255, 0.10);  /* Default button / input bg */
+  --color-surface-4: rgba(255, 255, 255, 0.12);  /* Hover on cards / list items */
+  --color-surface-5: rgba(255, 255, 255, 0.15);  /* Active hover (strong) */
+  --color-surface-6: rgba(255, 255, 255, 0.20);  /* Selected state / suggestion items */
+  --color-surface-7: rgba(255, 255, 255, 0.30);  /* Strong selected / slot button selected */
+
+
+  /* ============================================================
+     SEMANTIC STATE COLORS
+     Tinted button and text pairs for each action category.
+     -bg  = use for button/badge background
+     -text = use for button/badge label
+  ============================================================ */
+
+  /* Cancel / warning (orange) */
+  --color-state-warning-bg:   rgba(255, 165,   0, 0.30);
+  --color-state-warning-text: rgb(255, 200, 100);
+
+  /* Delete / danger (red) */
+  --color-state-danger-bg:    rgba(255,  80,  80, 0.30);
+  --color-state-danger-text:  rgb(255, 150, 150);
+
+  /* Reactivate / success (green) */
+  --color-state-success-bg:   rgba(  0, 200, 100, 0.30);
+  --color-state-success-text: rgb(150, 255, 200);
+
+  /* Delay / info (blue) */
+  --color-state-info-bg:      rgba(100, 150, 255, 0.20);
+  --color-state-info-text:    rgba(150, 200, 255, 0.90);
+
+
+  /* ============================================================
+     ANNOUNCEMENT HEADLINE STATUS BADGES
+     Solid colors used as the colored strip at the top of each
+     announcement card to communicate the disruption type.
+  ============================================================ */
+
+  --color-headline-cancelled:   #8a0303;  /* Train cancelled */
+  --color-headline-late:        #e06602;  /* Train late */
+  --color-headline-ersatzfahrt: #f4b942;  /* Replacement service */
+  --color-headline-announce:    #1549b0;  /* General announcement */
+
+
+  /* ============================================================
+     ACCENT / BRAND
+  ============================================================ */
+
+  --color-accent-primary: #004E9D;  /* S6 blue — project accents, create buttons */
+  --color-accent-save:    #f92f2f;  /* Save-indicator left-edge green */
+
+
+  /* ============================================================
+     FEX — Special express train (white card, dark text)
+     Inverts the standard dark‑on‑light relationship.
+  ============================================================ */
+
+  --color-fex-bg:   white;
+  --color-fex-text: var(--color-bg-primary);  /* Dark blue label on white card */
+
+
+  /* ============================================================
+     PROJECT DRAWER — LIGHT THEME
+     The project sidebar uses a deliberate light theme to visually
+     separate it from the dark schedule area.
+  ============================================================ */
+
+  --color-project-bg:          #f6f6f6;
+  --color-project-header-bg:   #111111;
+  --color-project-text:        #101010;
+  --color-project-label:       #333333;
+  --color-project-hint:        #666666;
+  --color-project-row-bright:  #f5f5f5;
+  --color-project-row-dark:    #e9e9e9;
+  --color-project-row-hover:   #f1f0f0;
+  --color-project-add-hover:   #dcdcdc;
+  --color-project-border:      rgba(64, 64, 64, 0.20);
+
+
+  /* ============================================================
+     TYPOGRAPHY
+     Always use this font stack — never declare font-family inline.
+  ============================================================ */
+
+  --font-family-ui:     "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow",
+                        "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
+  --font-stretch-ui:    condensed;
+
+}

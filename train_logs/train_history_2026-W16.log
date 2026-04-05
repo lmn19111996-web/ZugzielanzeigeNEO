@@ -59,3 +59,28 @@
 {"trainKey":"s7|sleep|12:12|2026-04-19","linie":"S7","ziel":"Sleep","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-04-19","canceled":false}
 {"trainKey":"s7|sleep 1|12:12|2026-04-14","linie":"S7","ziel":"Sleep 1","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-04-14","canceled":false}
 {"trainKey":"s7|sleep 1|12:12|2026-04-13","linie":"S7","ziel":"Sleep 1","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-04-13","canceled":false}
+{"trainKey":"s62|seminar konstruktionslehre|15:45|2026-04-13","linie":"S62","ziel":"Seminar Konstruktionslehre","plan":"15:45","actual":"15:45","dauer":90,"stops":"","date":"2026-04-13","canceled":false}
+{"trainKey":"s62|seminar konstruktionslehre|15:45|2026-04-15","linie":"S62","ziel":"Seminar Konstruktionslehre","plan":"15:45","actual":"15:45","dauer":90,"stops":"","date":"2026-04-15","canceled":false}
+{"trainKey":"s62|seminar konstruktionslehre|15:45|2026-04-16","linie":"S62","ziel":"Seminar Konstruktionslehre","plan":"15:45","actual":"15:45","dauer":90,"stops":"","date":"2026-04-16","canceled":false}
+{"trainKey":"s62|seminar konstruktionslehre|15:45|2026-04-17","linie":"S62","ziel":"Seminar Konstruktionslehre","plan":"15:45","actual":"15:45","dauer":90,"stops":"","date":"2026-04-17","canceled":false}
+{"trainKey":"s7|sleep 1|12:12|2026-04-15","linie":"S7","ziel":"Sleep 1","plan":"12:12","actual":"12:12","dauer":"","stops":"","date":"2026-04-15","canceled":false}
+{"trainKey":"s6|konstruktionslehre|08:00|2026-04-17","linie":"S6","ziel":"Konstruktionslehre","plan":"08:00","actual":"08:00","dauer":90,"stops":"","date":"2026-04-17","canceled":false}
+{"trainKey":"s6|konstruktionslehre|08:00|2026-04-18","linie":"S6","ziel":"Konstruktionslehre","plan":"08:00","actual":"08:00","dauer":90,"stops":"","date":"2026-04-18","canceled":false}
+{"trainKey":"s7|sleep|unknown|2026-04-13","linie":"S7","ziel":"Sleep","plan":"","actual":"","dauer":"","stops":"","date":"2026-04-13","canceled":false}
+{"trainKey":"s7|sleep|unknown|2026-04-14","linie":"S7","ziel":"Sleep","plan":"","actual":"","dauer":"","stops":"","date":"2026-04-14","canceled":false}
+{"trainKey":"s7|sleep|unknown|2026-04-15","linie":"S7","ziel":"Sleep","plan":"","actual":"","dauer":"","stops":"","date":"2026-04-15","canceled":false}
+{"trainKey":"s7|sleep|unknown|2026-04-16","linie":"S7","ziel":"Sleep","plan":"","actual":"","dauer":"","stops":"","date":"2026-04-16","canceled":false}
+{"trainKey":"s7|sleep|unknown|2026-04-17","linie":"S7","ziel":"Sleep","plan":"","actual":"","dauer":"","stops":"","date":"2026-04-17","canceled":false}
+{"trainKey":"s7|sleep|unknown|2026-04-18","linie":"S7","ziel":"Sleep","plan":"","actual":"","dauer":"","stops":"","date":"2026-04-18","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-04-13","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-04-13","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-04-14","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-04-14","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-04-15","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-04-15","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-04-16","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-04-16","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-04-17","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-04-17","canceled":false}
+{"trainKey":"s1|all aboard the stem train|00:00|2026-04-18","linie":"S1","ziel":"All aboard the stem train","plan":"00:00","actual":"00:00","dauer":"","stops":"","date":"2026-04-18","canceled":false}
+{"trainKey":"s95|fachschaftssitzung|17:30|2026-04-13","linie":"S95","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":40,"stops":"","date":"2026-04-13","canceled":false}
+{"trainKey":"s95|fachschaftssitzung|17:30|2026-04-14","linie":"S95","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":40,"stops":"","date":"2026-04-14","canceled":false}
+{"trainKey":"s95|fachschaftssitzung|17:30|2026-04-15","linie":"S95","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":40,"stops":"","date":"2026-04-15","canceled":false}
+{"trainKey":"s95|fachschaftssitzung|17:30|2026-04-16","linie":"S95","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":40,"stops":"","date":"2026-04-16","canceled":false}
+{"trainKey":"s95|fachschaftssitzung|17:30|2026-04-17","linie":"S95","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":40,"stops":"","date":"2026-04-17","canceled":false}
+{"trainKey":"s95|fachschaftssitzung|17:30|2026-04-18","linie":"S95","ziel":"Fachschaftssitzung","plan":"17:30","actual":"17:30","dauer":40,"stops":"","date":"2026-04-18","canceled":false}

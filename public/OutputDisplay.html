@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="design-tokens.css">
   <title>Zugzielanzeige</title>
   <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#161B75">
@@ -10,7 +11,7 @@
       height: 100%;
       margin: 0;
       padding: 0;
-      background: #161B75;
+      background: var(--color-bg-primary);
       color: white;
       font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
       font-stretch: condensed;
@@ -38,7 +39,7 @@
       font-size: 5vw;
       position: relative;
       border-bottom: 3px solid white;
-      background: #161B75;
+      background: var(--color-bg-primary);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -134,14 +135,14 @@
     
     .delayed {
       background: white;
-      color: #161B75;
+      color: var(--color-bg-primary);
       font-weight: bold;
     }
     
     /* FEX train highlighting */
     .fex-row {
       background: white;
-      color: #161B75;
+      color: var(--color-bg-primary);
     }
     /* Departure time styling: keep on one line and limit font size so it's not too large */
     .departure {
@@ -311,7 +312,7 @@
   /* Station selection overlay */
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
   .overlay.hidden { display: none; }
-  .overlay-card { width: min(92vw, 680px); background: #161B75; color: white; padding: 3vw; border-radius: 1vw; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+  .overlay-card { width: min(92vw, 680px); background: var(--color-bg-primary); color: white; padding: 3vw; border-radius: 1vw; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
   .overlay-title { font-size: clamp(18px, 4.2vw, 28px); margin: 0 0 1vw 0; }
   .overlay-sub { font-size: clamp(14px, 3vw, 18px); opacity: 0.85; margin-bottom: 2vw; }
   .station-input-wrap { position: relative; }
@@ -321,7 +322,7 @@
   .suggestion-item:hover { background: rgba(255,255,255,0.08); }
   .overlay-hint { margin-top: 1vw; font-size: clamp(12px, 2.8vw, 16px); color: rgba(255,255,255,0.8); }
   .overlay-actions { margin-top: 2vw; display: flex; gap: 1vw; }
-  .btn { background: white; color: #161B75; border: none; padding: 0.8vw 1.4vw; font-size: clamp(14px, 3.2vw, 18px); border-radius: 0.6vw; cursor: pointer; }
+  .btn { background: white; color: var(--color-bg-primary); border: none; padding: 0.8vw 1.4vw; font-size: clamp(14px, 3.2vw, 18px); border-radius: 0.6vw; cursor: pointer; }
   .btn.secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.35); }
   .mode-pill { display: inline-block; margin-left: 0.5vw; padding: 0.2vw 0.6vw; border-radius: 999px; background: rgba(255,255,255,0.15); font-size: 0.9em; }
   .change-station-btn { position: fixed; top: 8px; right: 8px; font-size: 12px; padding: 6px 10px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; cursor: pointer; z-index: 2100; }
@@ -331,7 +332,7 @@
 </head>
 <body>
   <!-- Station selection overlay (full screen, keyboard-invoked) -->
-  <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true" style="position:fixed;inset:0;z-index:2000;background:#161B75;">
+  <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true" style="position:fixed;inset:0;z-index:2000;background:var(--color-bg-primary);">
     <div class="overlay-card" style="width:100%;height:100%;margin:0;border-radius:0;background:transparent;padding:4vw;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;">
       <h2 class="overlay-title">Bahnhof auswählen</h2>
       <div class="overlay-sub">Fun Fact: Die Farbe von den Linien entspricht der der S-Bahn-Hannover.</div>
@@ -753,7 +754,7 @@
             dayLine.style.left = '2vw';
             dayLine.style.right = '2vw';
             dayLine.style.height = '2px';
-            dayLine.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            dayLine.style.backgroundColor = 'var(--color-surface-7)';
             dayLine.style.zIndex = '10';
             el.appendChild(dayLine);
           }
@@ -1557,7 +1558,7 @@
         const actualSpan = document.createElement('span');
         actualSpan.textContent = train.actual;
         actualSpan.style.background = 'white';
-        actualSpan.style.color = '#161B75';
+        actualSpan.style.color = 'var(--color-bg-primary)';
         actualSpan.style.padding = '2px 4px';
         actualSpan.style.borderRadius = '3px';
         actualSpan.style.marginLeft = '8px';
@@ -1643,7 +1644,7 @@
           const actualSpan = document.createElement('span');
           actualSpan.textContent = depActual;
           actualSpan.style.background = 'white';
-          actualSpan.style.color = '#161B75';
+          actualSpan.style.color = 'var(--color-bg-primary)';
           actualSpan.style.padding = '2px 4px';
           actualSpan.style.borderRadius = '3px';
           actualSpan.style.marginLeft = '8px';
