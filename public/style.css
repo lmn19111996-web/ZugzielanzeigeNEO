@@ -947,6 +947,28 @@ html, body {
       background: rgba(255, 255, 255, 0.5);
     }
 
+    /* Day stacked duration bar */
+    .day-stack-bar {
+      display: flex;
+      flex-direction: row;
+      height: 1vh;
+      min-height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0.6vh 0 0.7vh;
+      gap: 1px;
+    }
+
+    .day-stack-segment {
+      height: 100%;
+      transition: opacity 0.15s;
+      border-radius: 1px;
+    }
+
+    .day-stack-segment:hover {
+      opacity: 0.75;
+    }
+
     /* Focus mode template styles - from focus.html */
     .focus-container {
       height: 100%;
@@ -2966,6 +2988,12 @@ html, body {
       .day-separator-line {
         height: 1px; /* Thicker line for date separator */
         background: rgba(255, 255, 255, 0.795);
+      }
+
+      .day-stack-bar {
+        height: 0.6vh;
+        min-height: 5px;
+        margin: 0.8vh 0 0.9vh;
       }
 
       /* Belegungsplan adjustments for mobile */

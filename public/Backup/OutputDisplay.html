@@ -426,17 +426,17 @@
 
     // Helper functions for SVG paths
     function getTrainSVG(line) {
-      return `./${line.toLowerCase()}.svg`;
+      return `./res/${line.toLowerCase()}.svg`;
     }
     function getCarriageSVG(dauer, isFEX = false) {
       const n = Number(dauer);
       const prefix = isFEX ? 'cb' : 'c'; // cb = carriage blue
       // Default to c3/cb3 when duration is missing/invalid for a more pleasant look
-      if (!Number.isFinite(n) || n <= 0) return `./${prefix}3.svg`;
-      if (n <= 30) return `./${prefix}1.svg`;
-      if (n <= 60) return `./${prefix}2.svg`;
-      if (n <= 90) return `./${prefix}3.svg`;
-      return `./${prefix}4.svg`;
+      if (!Number.isFinite(n) || n <= 0) return `./res/${prefix}3.svg`;
+      if (n <= 30) return `./res/${prefix}1.svg`;
+      if (n <= 60) return `./res/${prefix}2.svg`;
+      if (n <= 90) return `./res/${prefix}3.svg`;
+      return `./res/${prefix}4.svg`;
     }
   // In-memory state for lightweight updates and selection
   let lastSchedule = null;

@@ -182,7 +182,7 @@
     <div class="project-drawer-container">
       <div class="project-drawer-header" data-project="header">
         <div class="project-symbol-wrapper">
-          <img src="s1.svg" class="project-drawer-symbol" data-project="symbol" alt="Line">
+          <img src="res/s1.svg" class="project-drawer-symbol" data-project="symbol" alt="Line">
           <div class="project-drawer-symbol-fallback" data-project="symbol-fallback" style="display: none;">S1</div>
         </div>
         <div class="project-drawer-title" data-project="name" data-editable="true">Unbenanntes Projekt</div>
@@ -224,7 +224,7 @@
       
       <div class="project-footer">
         <div class="project-created-date" data-project="created-date">Erstellt am</div>
-        <img src="delete.svg" class="project-delete-icon" data-project="delete-btn">
+        <img src="res/delete.svg" class="project-delete-icon" data-project="delete-btn">
       </div>
     </div>
   </template>
@@ -304,28 +304,28 @@
         <div class="taskbar">
           <div class="task-icon-group">
             <button class="task-icon-button" id="station-select-button">
-              <img src="DB_logo_white_rgb_100px.svg" alt="Station Selection">
+              <img src="res/DB_logo_white_rgb_100px.svg" alt="Station Selection">
               <span class="task-icon-label">Station</span>
             </button>
             <button class="task-button nav-only" id="sidebar-add-button">+</button>
             <button class="task-icon-button nav-only" id="list-view-button" title="Listenansicht">
-              <img src="list.png" alt="List View">
+              <img src="res/list.png" alt="List View">
               <span class="task-icon-label">Liste</span>
             </button>
             <button class="task-icon-button nav-only" id="occupancy-view-button" title="Belegungsplan">
-              <img src="occupancy.svg" alt="Occupancy View">
+              <img src="res/occupancy.svg" alt="Occupancy View">
               <span class="task-icon-label">Belegung</span>
             </button>
             <button class="task-icon-button" id="announcements-button" title="Ankuendigungen">
-              <img src="announcement.png" alt="Announcements">
+              <img src="res/announcement.png" alt="Announcements">
               <span class="task-icon-label">Meldungen</span>
             </button>
             <button class="task-icon-button" id="notes-button" title="Notizen">
-              <img src="notes.png" alt="Notes">
+              <img src="res/notes.png" alt="Notes">
               <span class="task-icon-label">Notizen</span>
             </button>
             <button class="task-icon-button" data-mode="projects" title="Projekte">
-              <img src="project.svg" alt="Projects">
+              <img src="res/project.svg" alt="Projects">
               <span class="task-icon-label">Projekte</span>
             </button>
             <button class="task-icon-button nav-only task-icon-button--star" data-mode="reviews" title="Rezensionen">
@@ -346,7 +346,7 @@
       
       <!-- Floating add button (mobile only) -->
       <button class="task-button mobile-only" id="add-train-button">
-        <img src="plus.svg" alt="Add">
+        <img src="res/plus.svg" alt="Add">
       </button>
       
     </div>
@@ -471,7 +471,24 @@
 
   <!-- script extracted to app.js -->
 <script src="templates.js"></script>
-<script src="app.js"></script>
+<!-- JS modules — load order is critical (globals first, init last) -->
+<script src="js/globals.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/schedule.js"></script>
+<script src="js/announcements.js"></script>
+<script src="js/drawers.js"></script>
+<script src="js/workspace.js"></script>
+<script src="js/render-trains.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/swipe.js"></script>
+<script src="js/time-suggestion.js"></script>
+<script src="js/station.js"></script>
+<script src="js/clock.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/init.js"></script>
 </body>
 </html>
 

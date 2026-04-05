@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Train Board",
   "short_name": "TrainBoard",
   "start_url": "/index.html",
@@ -7,7 +7,7 @@
   "theme_color": "#161B75",
   "icons": [
     {
-      "src": "6.png",
+      "src": "res/6.png",
       "sizes": "512x512",
       "type": "image/png"
     }

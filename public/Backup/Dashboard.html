@@ -1645,9 +1645,9 @@
         <div class="taskbar">
           <div class="task-icon-group">
             <button class="task-button" id="add-train-button">+</button>
-            <button class="task-icon-button" id="station-select-button"><img src="DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
-            <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="list.png" alt="Toggle View"></button>
-            <button class="task-icon-button" id="pin-train-button" title="Pin Train to Announcements"><img src="pin.svg" alt="Pin Train"></button>
+            <button class="task-icon-button" id="station-select-button"><img src="res/DB_logo_white_rgb_100px.svg" alt="Station Selection"></button>
+            <button class="task-icon-button" id="toggle-view-button" title="Toggle List/Occupancy View"><img src="res/list.png" alt="Toggle View"></button>
+            <button class="task-icon-button" id="pin-train-button" title="Pin Train to Announcements"><img src="res/pin.svg" alt="Pin Train"></button>
           </div>
         </div>
         <!-- Train list -->
@@ -1813,17 +1813,17 @@
     // Helper functions
     //S1 to s1 weil s1.svg
     function getTrainSVG(line) {
-      return `./${line.toLowerCase()}.svg`;
+      return `./res/${line.toLowerCase()}.svg`;
     }
 
     function getCarriageSVG(dauer, isFEX = false) {
       const n = Number(dauer);
       const prefix = isFEX ? 'cb' : 'c';
-      if (!Number.isFinite(n) || n <= 0) return `./${prefix}3.svg`;
-      if (n <= 30) return `./${prefix}1.svg`;
-      if (n <= 60) return `./${prefix}2.svg`;
-      if (n <= 90) return `./${prefix}3.svg`;
-      return `./${prefix}4.svg`;
+      if (!Number.isFinite(n) || n <= 0) return `./res/${prefix}3.svg`;
+      if (n <= 30) return `./res/${prefix}1.svg`;
+      if (n <= 60) return `./res/${prefix}2.svg`;
+      if (n <= 90) return `./res/${prefix}3.svg`;
+      return `./res/${prefix}4.svg`;
     }
 
     function formatClock(date) {

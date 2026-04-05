@@ -84,19 +84,46 @@ const Templates = {
   },
 
   /**
+   * Horizontal stacked bar showing task type breakdown for a day.
+   * Segments sized by total duration, sorted longest → shortest (left → right),
+   * coloured by line colour.
+   */
+  dayStackedBar(trainsForDay) {
+    const durByLine = {};
+    trainsForDay.forEach(t => {
+      if (t.canceled) return;
+      const line = (t.linie || '').trim();
+      if (!line) return;
+      durByLine[line] = (durByLine[line] || 0) + (Number(t.dauer) || 0);
+    });
+    const total = Object.values(durByLine).reduce((a, b) => a + b, 0);
+    if (total === 0) return '';
+    const sorted = Object.entries(durByLine).sort((a, b) => b[1] - a[1]);
+    const segments = sorted.map(([line, dur]) => {
+      const pct = (dur / total * 100).toFixed(2);
+      const color = getLineColor(line);
+      const label = `${line} · ${dur} min`;
+      return `<div class="day-stack-segment" style="width:${pct}%;background:${color}" title="${label}" aria-label="${label}"></div>`;
+    }).join('');
+    return `<div class="day-stack-bar" role="img" aria-label="Tagesübersicht">${segments}</div>`;
+  },
+
+  /**
    * Create a day separator element
    */
-  daySeparator(trainDate) {
+  daySeparator(trainDate, trainsForDay = []) {
     const dateObj = new Date(trainDate);
     const dateText = dateObj.toLocaleDateString('de-DE', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit'
     });
+    const bar = trainsForDay.length > 0 ? this.dayStackedBar(trainsForDay) : '';
     
     return `
       <div class="day-separator">
         <span class="day-separator-date">${dateText}</span>
+        ${bar}
         <div class="day-separator-line"></div>
       </div>
     `;
