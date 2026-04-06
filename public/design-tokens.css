@@ -18,7 +18,7 @@
 
   --color-bg-primary:           #161B75;  /* Main app background (body, page) */
   --color-bg-panel:             #0F1450;  /* Drawers, right-panel, announcement bg */
-  --color-bg-taskbar:           #1d1f5d;  /* Taskbar / left nav rail */
+  --color-bg-taskbar:           #161743;  /* Taskbar / left nav rail */
   --color-bg-card:              #171d5e;  /* Floating cards, now-card */
   --color-bg-button:            #2e3273;  /* Task button default */
   --color-bg-button-hover:      #1f2478;  /* Task button :hover */
@@ -61,6 +61,24 @@
   --color-surface-5: rgba(255, 255, 255, 0.15);  /* Active hover (strong) */
   --color-surface-6: rgba(255, 255, 255, 0.20);  /* Selected state / suggestion items */
   --color-surface-7: rgba(255, 255, 255, 0.30);  /* Strong selected / slot button selected */
+
+
+  /* ============================================================
+     STRESSMETER — ENERGY LEVEL COLORS
+     Used for badge number gradient, tooltip, and chart indicators.
+  ============================================================ */
+
+  --energy-green:  #63c522;  /* Full energy  / safe zone   */
+  --energy-yellow: #eab308;  /* Moderate drain / caution   */
+  --energy-orange: #f97316;  /* High drain    / warning    */
+  --energy-red:    #b91c1c;  /* Critical      / overloaded */
+
+  /* Trend arrow tint filters — applied to white SVG icons via CSS filter */
+  --trend-up-filter:   invert(58%) sepia(72%) saturate(450%) hue-rotate(70deg)  brightness(1.05);
+  --trend-down-filter: invert(22%) sepia(90%) saturate(700%) hue-rotate(345deg) brightness(0.95);
+
+  --hdr-night:     rgb(42, 26, 119);   /* Chart header — night / purple band */
+  --hdr-day:       rgb(96, 74, 0);  /* Chart header — day   / amber band  */
 
 
   /* ============================================================

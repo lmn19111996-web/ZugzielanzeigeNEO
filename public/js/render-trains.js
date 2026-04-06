@@ -356,7 +356,18 @@
         }
       });
 
-      // Render remaining trains (skip first) with day separators
+      // Render separator for the FIRST day at the top of the list
+      const firstDate = processedTrainData.currentTrain
+        ? processedTrainData.currentTrain.date
+        : (remainingTrains[0] && remainingTrains[0].date);
+      if (firstDate) {
+        const firstSepHTML = Templates.daySeparator(firstDate, trainsByDate[firstDate] || []);
+        const firstSepTemplate = document.createElement('template');
+        firstSepTemplate.innerHTML = firstSepHTML.trim();
+        trainListEl.appendChild(firstSepTemplate.content.firstChild);
+      }
+
+      // Render remaining trains with day separators on date change
       remainingTrains.forEach((train, index) => {
         // Check if this is the first train of a new day
         const prevTrain = index === 0 ? processedTrainData.currentTrain : remainingTrains[index - 1];
@@ -375,6 +386,17 @@
       // Attach swipe gestures on mobile after list is populated
       setupMobileSwipe();
 
+      // Attach jump-to-date handler (delegated, replaced each render)
+      trainListEl._jumpHandler && trainListEl.removeEventListener('click', trainListEl._jumpHandler);
+      trainListEl._jumpHandler = function(e) {
+        const dateSpan = e.target.closest('[data-jump-date]');
+        if (!dateSpan) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openDateJumpPopup(dateSpan, trainListEl);
+      };
+      trainListEl.addEventListener('click', trainListEl._jumpHandler);
+
       // Wait for DOM to fully render, then restore scroll and show
       requestAnimationFrame(() => {
         setTimeout(() => {
@@ -384,6 +406,71 @@
           }
         }, 50);
       });
+    }
+
+    // ===== DATE JUMP POPUP =====
+    function openDateJumpPopup(anchorEl, listEl) {
+      // Remove any existing popup
+      const existing = document.getElementById('date-jump-popup');
+      if (existing) existing.remove();
+
+      const initialDate = anchorEl.dataset.jumpDate || '';
+
+      // Collect all available dates from separators in the list
+      const available = Array.from(listEl.querySelectorAll('[data-jump-date]'))
+        .map(el => el.dataset.jumpDate)
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .sort();
+
+      const popup = document.createElement('div');
+      popup.id = 'date-jump-popup';
+      popup.className = 'date-jump-popup';
+      popup.innerHTML = `
+        <div class="date-jump-popup-label">Zu Datum springen</div>
+        <input type="date" class="date-jump-input" id="date-jump-input"
+          value="${initialDate}"
+          min="${available[0] || ''}"
+          max="${available[available.length - 1] || ''}">
+        <div class="date-jump-popup-hint">Datum wählen oder Enter</div>
+      `;
+
+      // Position below the anchor element
+      const anchorRect = anchorEl.getBoundingClientRect();
+      popup.style.top  = (anchorRect.bottom + 6) + 'px';
+      popup.style.left = anchorRect.left + 'px';
+      document.body.appendChild(popup);
+
+      const input = popup.querySelector('#date-jump-input');
+      input.focus();
+      try { input.showPicker && input.showPicker(); } catch(_) {}
+
+      function jumpToDate(dateStr) {
+        if (!dateStr) return;
+        const sep = listEl.querySelector('[data-jump-date="' + dateStr + '"]');
+        if (sep) {
+          sep.closest('.day-separator').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        popup.remove();
+        removeOutsideListener();
+      }
+
+      input.addEventListener('change', () => jumpToDate(input.value));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') jumpToDate(input.value);
+        if (e.key === 'Escape') { popup.remove(); removeOutsideListener(); }
+      });
+
+      function outsideClick(e) {
+        if (!popup.contains(e.target) && e.target !== anchorEl) {
+          popup.remove();
+          removeOutsideListener();
+        }
+      }
+      function removeOutsideListener() {
+        document.removeEventListener('pointerdown', outsideClick, true);
+      }
+      // Delay so the current click event doesn't immediately close it
+      setTimeout(() => document.addEventListener('pointerdown', outsideClick, true), 0);
     }
 
     // ===== MOBILE SWIPE GESTURES =====

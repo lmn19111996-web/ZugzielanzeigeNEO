@@ -125,7 +125,7 @@ const Templates = {
     
     return `
       <div class="day-separator">
-        <span class="day-separator-date">${dateText}</span>
+        <span class="day-separator-date day-separator-date--clickable" data-jump-date="${trainDate}" title="Zu Datum springen">${dateText} <span class="day-separator-jump-icon">↗</span></span>
         ${bar}
         <div class="day-separator-line"></div>
       </div>

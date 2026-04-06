@@ -195,6 +195,7 @@ html, body {
       flex-direction: column;
       border-right: 0.5px solid var(--color-divider);
       box-sizing: border-box;
+      transition: width 0.1s ease;
     }
 
 
@@ -215,8 +216,8 @@ html, body {
       align-items: center;
       justify-content: start;
       background: var(--color-bg-taskbar);
-      border-right: 0.5px solid var(--color-divider);
-      border-color: var(--color-divider);
+      border-right: 0.5px solid var(--color-border-subtle);
+      box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.5);
     }
 
     .mobile-only {
@@ -313,8 +314,13 @@ html, body {
 
     /* Left panel - scrollable train list (now inside left column) */
     .left-panel {
-      width: 100%;
-      height: 91vh;
+      background-color: var(--color-bg-panel);
+      width: calc(100% - 2vw);
+      height: 90vh;
+      margin: 1vh 1vw 0 1vw;
+      border-radius: 2vh;  
+      border: 0.5px solid var(--color-border-subtle);
+      box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.5);
       overflow-y: scroll;
       overflow-x: hidden;
       box-sizing: border-box;
@@ -651,7 +657,7 @@ html, body {
       box-sizing: border-box;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: right 0.2s ease, box-shadow 0.2s ease, visibility 0.2s ease;
+      transition: right 0.1s ease, box-shadow 0.1s ease, visibility 0.2s ease;
       z-index: 1050;
       display: block;
       padding: 0;
@@ -667,11 +673,12 @@ html, body {
     .now-card {
       background: var(--color-bg-card);
       border-bottom: none;
-      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      border: 0.5px solid var(--color-border-subtle);
       border-radius: 0.8vh;
       width: 65vw;
       margin: 2vh auto 1vh;
       padding: 0.5vh 1vw;
+      box-shadow: 0 0.3vh 1.5vh rgba(0, 0, 0, 0.3);
     }
 
     .mode-drawer {
@@ -940,6 +947,95 @@ html, body {
       color: rgba(255, 255, 255, 0.7);
       letter-spacing: -0.01em;
       flex-shrink: 0;
+    }
+
+    .day-separator-date--clickable {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4vw;
+      border-radius: 0.4vh;
+      padding: 0.1vh 0.3vw;
+      margin-left: -0.3vw;
+      transition: color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .day-separator-date--clickable:hover {
+      color: rgba(255, 255, 255, 1);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .day-separator-date--clickable:active {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .day-separator-jump-icon {
+      font-size: 1.8vh;
+      opacity: 0.45;
+      transition: opacity 0.15s;
+      line-height: 1;
+    }
+
+    .day-separator-date--clickable:hover .day-separator-jump-icon {
+      opacity: 0.85;
+    }
+
+    /* ── Date jump popup ────────────────────────────────────────────────── */
+    .date-jump-popup {
+      position: fixed;
+      z-index: 9500;
+      background: rgba(7,16,27,0.97);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.50);
+      backdrop-filter: blur(10px);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-width: 220px;
+      overflow: hidden;
+      animation: date-jump-popup-in 0.12s ease;
+    }
+
+    @keyframes date-jump-popup-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .date-jump-popup-label {
+      font-size: 1.6vh;
+      font-weight: 600;
+      color: #9db1c9;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      padding: 8px 12px 6px;
+      border-bottom: 2px solid rgba(255,255,255,0.18);
+    }
+
+    .date-jump-input {
+      background: transparent;
+      border: none;
+      color: #e9f1fb;
+      font-family: inherit;
+      font-stretch: condensed;
+      font-size: 2vh;
+      padding: 8px 12px;
+      outline: none;
+      color-scheme: dark;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .date-jump-input:focus {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .date-jump-popup-hint {
+      font-size: 1.4vh;
+      color: rgba(255,255,255,0.25);
+      padding: 4px 12px 8px;
     }
 
     .day-separator-line {
@@ -5014,7 +5110,6 @@ font-weight: 500;
 /* ── Width adjustment when review-write drawer is open ─── */
 body.review-write-drawer-open .left-column {
   width: calc(100% - var(--announcements-drawer-width) - 1vw);
-  transition: width 0.2s ease;
 }
 
 /* Mobile: review-write-drawer full screen (like note-drawer) */
@@ -5080,17 +5175,17 @@ body.review-write-drawer-open .left-column {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
-  padding: 0.5vh 1vw;
-  border-radius: 0.5vh;
-  border: 1px solid rgba(255, 255, 255, 0.675);
+  gap: 4px;
+  padding: 0.5vh 0.5vw;
+  border-radius: 0.8vh;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-card);
+  box-shadow: 0 0.3vh 1.5vh rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  background: var(--color-surface-2);
-  transition: background 0.2s ease, opacity 0.18s ease;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.badge-icon { width: 4vh; height: 4vh; display: block; flex-shrink: 0; }
+.badge-icon { width: 4.2vh; height: 4.2vh; display: block; flex-shrink: 0; }
 .badge-num  { font-size: 4vh; font-weight: 700; line-height: 1; }
 .badge-label {
   position: absolute;
@@ -5129,12 +5224,6 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
 
 #stressmeter-badge:hover { background: var(--color-surface-4); }
 
-/* Subtle tint on badge icon depending on day load tier */
-.badge-green  .badge-icon { opacity: 0.90; }
-.badge-yellow .badge-icon { opacity: 0.95; }
-.badge-orange .badge-icon { opacity: 1.00; }
-.badge-red    .badge-icon { opacity: 1.00; }
-
 /* Pulsing red alert border at top of screen when energy is critically low */
 .stress-alert::before {
   content: '';
@@ -5154,19 +5243,17 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
 /* ── Dashboard panel ─────────────────────────────────────────────────────── */
 .stress-dashboard {
   display: none;
-  width: 100%;
+  width: calc(100% - 2vw);
   box-sizing: border-box;
   background-color: var(--color-bg-panel);
-  margin-bottom: 1vh;
-  font-family: 'Bahnschrift', 'Bahnschrift Condensed', 'Arial Narrow', sans-serif;
+  box-shadow: 0 0.3vh 1.5vh rgba(0, 0, 0, 0.3);
+  margin: 1vh 1vw;
   color: #e9f1fb;
 }
 
 .stress-dashboard.open {
   display: block;
-  padding: 10px 12px 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.45);
-  border: 2px solid var(--color-border-subtle);
+  border: 0.5px solid var(--color-border-subtle);
   border-radius: 2vh;
 }
 
@@ -5293,4 +5380,9 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
 
 /* Alert badge inside tooltip */
 .sg-tip-alert  { font-size: 0.78rem; font-weight: 700; margin-top: 4px; }
-.sg-tip-linie-badge { height: 14px; width: auto; vertical-align: middle; margin-right: 3px; }
+.sg-tip-linie-badge  { height: 14px; width: auto; vertical-align: middle; margin-right: 3px; }
+.sg-tip-energy-icon  { width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 2px; filter: invert(1); }
+.badge-energy-icon   { width: 2.5vh; height: 2.5vh; display: block; filter: invert(1); opacity: 0.75; flex-shrink: 0; }
+.badge-trend-icon          { width: 2.8vh; height: 2.8vh; display: block; flex-shrink: 0; }
+.badge-trend-icon.trend-up   { filter: var(--trend-up-filter); }
+.badge-trend-icon.trend-down { filter: var(--trend-down-filter); }

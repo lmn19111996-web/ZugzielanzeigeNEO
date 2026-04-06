@@ -10,7 +10,7 @@
   var TODAY_IDX = 0;     // today is column 0
   var L_YAXIS   = 52;    // width of fixed Y-axis SVG (must match CSS margin-left)
   var R         = 16;    // right pad in scrollable SVG
-  var T         = 22;    // top pad (date labels)
+  var T         = 30;    // top pad (date labels + day/night header)
   var B         = 34;    // bottom pad (x-axis labels)
   var Y_MAX     = 1500;
   var Y_MIN     = 0;
@@ -76,6 +76,7 @@
 
   // ── Badge ─────────────────────────────────────────────────────────────────
   badge.addEventListener('click', toggleDashboard);
+  svg.addEventListener('click', onSvgClick);
 
   function updateStressBadge() {
     var now    = new Date();
@@ -115,10 +116,35 @@
     var curE    = curStep ? Math.round(curStep.E) : null;
     if (numEl && curE !== null) {
       numEl.textContent = String(curE);
-      numEl.style.color = curE >= cfg.STRESS_GREEN        ? '#86efac'
-                        : curE >= cfg.STRESS_YELLOW        ? '#facc15'
-                        : curE >= cfg.OVERLOAD_E_THRESHOLD ? '#fb923c'
-                        : '#fca5a5';
+      // Smooth gradient matching CSS tokens: green(≥700) → yellow(400) → orange(150) → dark-red(0)
+      var t1; var r, g, b;
+      if (curE >= cfg.STRESS_GREEN) {
+        r = 34;  g = 197; b = 94;   // var(--energy-green)  #22c55e
+      } else if (curE >= cfg.STRESS_YELLOW) {
+        t1 = (curE - cfg.STRESS_YELLOW) / (cfg.STRESS_GREEN - cfg.STRESS_YELLOW);
+        r = Math.round(234 + t1 * (34  - 234)); // #eab308 → #22c55e
+        g = Math.round(179 + t1 * (197 - 179));
+        b = Math.round(8   + t1 * (94  -   8));
+      } else if (curE >= cfg.OVERLOAD_E_THRESHOLD) {
+        t1 = (curE - cfg.OVERLOAD_E_THRESHOLD) / (cfg.STRESS_YELLOW - cfg.OVERLOAD_E_THRESHOLD);
+        r = Math.round(249 + t1 * (234 - 249)); // #f97316 → #eab308
+        g = Math.round(115 + t1 * (179 - 115));
+        b = Math.round(22  + t1 * (8   -  22));
+      } else {
+        t1 = curE / cfg.OVERLOAD_E_THRESHOLD;
+        r = Math.round(185 + t1 * (249 - 185)); // #b91c1c → #f97316
+        g = Math.round(28  + t1 * (115 -  28));
+        b = Math.round(28  + t1 * (22  -  28));
+      }
+      numEl.style.color = 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
+    var trendEl = document.getElementById('sg-badge-trend');
+    if (trendEl && curStep) {
+      var recovering = curStep.dE_per_min > 0;
+      trendEl.src = recovering ? 'res/doubleup.svg' : 'res/doubledown.svg';
+      trendEl.classList.toggle('trend-up',   recovering);
+      trendEl.classList.toggle('trend-down', !recovering);
     }
 
     badge.classList.remove('badge-green', 'badge-yellow', 'badge-orange', 'badge-red');
@@ -150,7 +176,7 @@
     yAxisSvg.style.height = H + 'px';
 
     var s = '';
-    s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="rgba(10,16,66,0.98)"/>';
+    // no background fill — transparent, blends with chart background
 
     for (var gv = Y_MIN; gv <= Y_MAX; gv += 150) {
       var gy = f(yPx(gv, H));
@@ -221,7 +247,7 @@
     var stepsMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], dates);
     var snapMap  = {};   // dateStr -> [{minute, E, color}]
 
-    // Brightness filter for curve lines
+    // Brightness + invert filters for chart images
     s += '<defs>' +
          '<filter id="sg-bf" color-interpolation-filters="sRGB">' +
          '<feComponentTransfer>' +
@@ -229,6 +255,20 @@
          '<feFuncG type="linear" slope="1.18" intercept="0.02"/>' +
          '<feFuncB type="linear" slope="1.18" intercept="0.02"/>' +
          '</feComponentTransfer></filter>' +
+         '<filter id="sg-invert" color-interpolation-filters="sRGB">' +
+         '<feComponentTransfer>' +
+         '<feFuncR type="linear" slope="-1" intercept="1"/>' +
+         '<feFuncG type="linear" slope="-1" intercept="1"/>' +
+         '<feFuncB type="linear" slope="-1" intercept="1"/>' +
+         '</feComponentTransfer></filter>' +
+         '<linearGradient id="sg-hdr-dawn" x1="0" y1="0" x2="1" y2="0">' +
+         '<stop offset="0" style="stop-color: var(--hdr-night); stop-opacity: 1"/>' +
+         '<stop offset="1" style="stop-color: var(--hdr-day);   stop-opacity: 1"/>' +
+         '</linearGradient>' +
+         '<linearGradient id="sg-hdr-dusk" x1="0" y1="0" x2="1" y2="0">' +
+         '<stop offset="0" style="stop-color: var(--hdr-day);   stop-opacity: 1"/>' +
+         '<stop offset="1" style="stop-color: var(--hdr-night); stop-opacity: 1"/>' +
+         '</linearGradient>' +
          '</defs>';
 
     // Alternating day backgrounds
@@ -270,6 +310,20 @@
       var colX    = i * DAY_W;
       var isToday = (i === TODAY_IDX);
 
+      // Day/night header band (y=0..T only): night | dawn-grad | day | dusk-grad | night
+      // 5.5h night | 1h gradient | 11h day | 1h gradient | 5.5h night = 24h
+      s += '<rect x="' + colX                              + '" y="0" width="' + f((5.5/24)*DAY_W) + '" height="' + T + '" style="fill: var(--hdr-night)"/>';
+      s += '<rect x="' + f(colX + (5.5/24)*DAY_W)         + '" y="0" width="' + f((1/24)*DAY_W)   + '" height="' + T + '" fill="url(#sg-hdr-dawn)"/>';
+      s += '<rect x="' + f(colX + (6.5/24)*DAY_W)         + '" y="0" width="' + f((11/24)*DAY_W)  + '" height="' + T + '" style="fill: var(--hdr-day)"/>';
+      s += '<rect x="' + f(colX + (17.5/24)*DAY_W)        + '" y="0" width="' + f((1/24)*DAY_W)   + '" height="' + T + '" fill="url(#sg-hdr-dusk)"/>';
+      s += '<rect x="' + f(colX + (18.5/24)*DAY_W)        + '" y="0" width="' + f((5.5/24)*DAY_W) + '" height="' + T + '" style="fill: var(--hdr-night)"/>';
+      if (DAY_W > 72) {
+        var iconSz = 14, iconY = f((T - iconSz) / 2);
+        s += '<image href="res/moon.svg" x="' + f(colX + (3/24)*DAY_W  - iconSz/2) + '" y="' + iconY + '" width="' + iconSz + '" height="' + iconSz + '" opacity="0.80"/>';
+        s += '<image href="res/sun.svg"  x="' + f(colX + (12/24)*DAY_W - iconSz/2) + '" y="' + iconY + '" width="' + iconSz + '" height="' + iconSz + '" opacity="0.80" filter="url(#sg-invert)"/>';
+        s += '<image href="res/moon.svg" x="' + f(colX + (21/24)*DAY_W - iconSz/2) + '" y="' + iconY + '" width="' + iconSz + '" height="' + iconSz + '" opacity="0.80"/>';
+      }
+
       s += '<line x1="' + colX + '" y1="' + T + '" x2="' + colX + '" y2="' + (H - B) +
            '" stroke="rgba(255,255,255,' + (isToday ? '0.40' : '0.15') + ')" stroke-width="' + (isToday ? '1.6' : '1') + '"/>';
 
@@ -277,7 +331,7 @@
       var dlbl = (isToday ? 'Heute \u00b7 ' : '') +
                  d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
       s += '<text x="' + (colX + 7) + '" y="' + (T - 9) +
-           '" font-size="13" font-weight="' + (isToday ? '700' : '400') +
+           '" font-size="15" font-weight="' + (isToday ? '700' : '400') +
            '" fill="' + (isToday ? 'rgba(255,255,230,0.95)' : 'rgba(255,255,255,0.48)') +
            '" font-family=' + SVG_FONT + '>' + esc(dlbl) + '</text>';
 
@@ -316,22 +370,23 @@
           var sv = steps[sm];
           if (sv && sv.E < minE) minE = sv.E;
         }
-        var alertLvl = minE < cfg.OVERLOAD_E_THRESHOLD ? 2   // red (black zone)
-                     : minE < cfg.STRESS_YELLOW        ? 1   // yellow (orange zone)
+        var alertLvl = minE < cfg.OVERLOAD_E_THRESHOLD ? 3   // <150: dark red zone
+                     : minE < cfg.STRESS_YELLOW        ? 2   // 150-400: orange zone
+                     : minE < cfg.STRESS_GREEN         ? 1   // 400-700: yellow zone
                      : 0;
-        var fillColor = alertLvl === 2 ? '#ef4444' : baseColor;
-        var fillOpacity = alertLvl === 2 ? '0.30' : '0.14';
+        var fillColor = alertLvl === 3 ? '#ef4444' : baseColor;
+        var fillOpacity = alertLvl === 3 ? '0.30' : '0.14';
         s += '<rect x="' + f(bx) + '" y="' + T + '" width="' + f(Math.max(2, bw)) + '" height="' + DH +
              '" fill="' + fillColor + '" opacity="' + fillOpacity + '"/>';
         if (bw > 24) {
           var lineLower = (t.linie || '').toLowerCase().replace(/[^a-z0-9]/g, '');
           var iw = 32, ih = 16;
-          s += '<image href="res/' + lineLower + '.svg" x="' + f(bx + bw / 2 - iw / 2) + '" y="' + (T + 2) +
+          s += '<image href="res/' + lineLower + '.svg" x="' + f(bx + bw / 2 - iw / 2) + '" y="' + (T + 6) +
                '" width="' + iw + '" height="' + ih + '"/>';
           if (alertLvl > 0) {
-            var aIcon = alertLvl === 2 ? 'auslastung4' : 'auslastung3';
+            var aIcon = alertLvl === 3 ? 'auslastung4' : alertLvl === 2 ? 'auslastung3' : 'auslastung2';
             var ai = 20;
-            s += '<image href="res/' + aIcon + '.svg" x="' + f(bx + bw / 2 - ai / 2) + '" y="' + (T + 20) +
+            s += '<image href="res/' + aIcon + '.svg" x="' + f(bx + bw / 2 - ai / 2) + '" y="' + (T + 26) +
                  '" width="' + ai + '" height="' + ai + '"/>';
           }
         }
@@ -346,7 +401,7 @@
         if (!s1 || !s2) continue;
         var taskId = s1.task ? s1.task.linie : null;
         var col    = (taskId && typeof getLineColor === 'function') ? getLineColor(taskId) : IDLE_C;
-        if ((s1.task && s1.task._alertLvl === 2) || s1.E < cfg.OVERLOAD_E_THRESHOLD || s2.E < cfg.OVERLOAD_E_THRESHOLD) col = '#ef4444';
+        if ((s1.task && s1.task._alertLvl === 3) || s1.E < cfg.OVERLOAD_E_THRESHOLD || s2.E < cfg.OVERLOAD_E_THRESHOLD) col = '#FF0000';
         s += '<line x1="' + f(colX + (m       / 1440) * DAY_W) + '" y1="' + f(yPx(s1.E, H)) +
              '" x2="' + f(colX + ((m + 3) / 1440) * DAY_W) + '" y2="' + f(yPx(s2.E, H)) +
              '" stroke="' + col + '" stroke-width="2.0" stroke-linecap="round"/>';
@@ -458,6 +513,7 @@
     var hd = svg.querySelector('#sg-hd');
     if (hl) { hl.setAttribute('x1', cx); hl.setAttribute('x2', cx); hl.setAttribute('visibility', 'visible'); }
     if (hd) { hd.setAttribute('cx', cx); hd.setAttribute('cy', cy); hd.setAttribute('fill', col); hd.setAttribute('visibility', 'visible'); }
+    svg.style.cursor = step.task ? 'pointer' : 'crosshair';
 
     var hh   = String(Math.floor(minute2 / 60)).padStart(2, '0');
     var mm   = String(minute2 % 60).padStart(2, '0');
@@ -503,7 +559,7 @@
     tooltipEl.style.setProperty('--tip-color', col);
     if (tipDate)      tipDate.textContent      = dateStr;
     if (tipTime)      tipTime.textContent      = hh + ':' + mm + (snapped ? ' \u2022' : '');
-    if (tipEnergy)  { tipEnergy.textContent    = E + ' \u26a1'; tipEnergy.style.color = col; }
+    if (tipEnergy)  { tipEnergy.innerHTML = '<img src="res/energy.svg" class="sg-tip-energy-icon" alt=""> ' + E; tipEnergy.style.color = col; }
     if (tipDelta)   { tipDelta.textContent     = deltaStr ? deltaStr + ' \u26a1' : ''; tipDelta.style.color = deltaCol; }
     if (tipTask) {
       if (step.task) {
@@ -532,9 +588,7 @@
     if (tipLeft + TTIP_W > shellRect.width) tipLeft = leftInShell - TTIP_W - 8;
     tipLeft = Math.max(L_YAXIS + 2, tipLeft);
 
-    var tipTop = topInShell + 14;                                   // below cursor
-    if (tipTop + TTIP_H > shellEl.offsetHeight) tipTop = topInShell - TTIP_H - 8;  // flip above
-    tipTop = Math.max(4, tipTop);
+    var tipTop = Math.max(4, topInShell + 14);
 
     tooltipEl.style.left = tipLeft + 'px';
     tooltipEl.style.top  = tipTop + 'px';
@@ -543,11 +597,33 @@
 
   function onLeave() {
     _lastHoverE = null;
+    svg.style.cursor = 'crosshair';
     var hl = svg.querySelector('#sg-hl');
     var hd = svg.querySelector('#sg-hd');
     if (hl) hl.setAttribute('visibility', 'hidden');
     if (hd) hd.setAttribute('visibility', 'hidden');
     tooltipEl.classList.remove('show');
+  }
+
+  // ── Task band click: open editor drawer ───────────────────────────────────
+  function onSvgClick(e) {
+    if (!svg._stepsMap || !svg._dates) return;
+    var wRect   = scrollWrap.getBoundingClientRect();
+    var clientX = e.clientX, clientY = e.clientY;
+    if (clientY < wRect.top || clientY > wRect.bottom) return;
+    var DAY_W   = svg._DAY_W || 300;
+    var svgX    = clientX - wRect.left + scrollWrap.scrollLeft;
+    var colIdx  = Math.floor(svgX / DAY_W);
+    if (colIdx < 0 || colIdx >= DAYS) return;
+    var frac    = (svgX - colIdx * DAY_W) / DAY_W;
+    var minute  = Math.round(Math.max(0, Math.min(1439, frac * 1440)));
+    var dateStr = svg._dates[colIdx];
+    var steps   = svg._stepsMap[dateStr];
+    if (!steps) return;
+    var step = steps[minute];
+    if (!step || !step.task) return;
+    tooltipEl.classList.remove('show');
+    if (typeof renderFocusMode === 'function') { renderFocusMode(step.task); }
   }
 
   // ── Smooth wheel scroll with velocity inertia ─────────────────────────────
