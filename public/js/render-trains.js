@@ -357,9 +357,8 @@
       });
 
       // Render separator for the FIRST day at the top of the list
-      const firstDate = processedTrainData.currentTrain
-        ? processedTrainData.currentTrain.date
-        : (remainingTrains[0] && remainingTrains[0].date);
+      // Always use the actual first train's date, not necessarily today
+      const firstDate = remainingTrains[0] && remainingTrains[0].date;
       if (firstDate) {
         const firstSepHTML = Templates.daySeparator(firstDate, trainsByDate[firstDate] || []);
         const firstSepTemplate = document.createElement('template');
@@ -368,15 +367,16 @@
       }
 
       // Render remaining trains with day separators on date change
-      remainingTrains.forEach((train, index) => {
+      let lastRenderedDate = firstDate;
+      remainingTrains.forEach((train) => {
         // Check if this is the first train of a new day
-        const prevTrain = index === 0 ? processedTrainData.currentTrain : remainingTrains[index - 1];
-        if (prevTrain && train.date !== prevTrain.date && train.date) {
+        if (train.date && train.date !== lastRenderedDate) {
           // Use template to create day separator with stacked bar
           const separatorHTML = Templates.daySeparator(train.date, trainsByDate[train.date] || []);
           const template = document.createElement('template');
           template.innerHTML = separatorHTML.trim();
           trainListEl.appendChild(template.content.firstChild);
+          lastRenderedDate = train.date;
         }
         
         const entry = createTrainEntry(train, now, false);

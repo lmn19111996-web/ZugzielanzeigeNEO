@@ -108,15 +108,24 @@ function asArray(x) {
 function pruneExpiredEntries(spontaneousEntries) {
   if (!Array.isArray(spontaneousEntries)) return [];
   const todayStr = fmtYYYYMMDD(new Date());
+  const now = new Date();
   const before = spontaneousEntries.length;
   const pruned = spontaneousEntries.filter(t => {
     if (!t.date) return true;           // no date = note/undated, keep
     if (t.projectId) return true;       // project task, always keep
-    return t.date >= todayStr;          // future/today, keep; past without project = drop
+    if (t.date >= todayStr) return true; // today or future, always keep
+    // Past date, no project: keep only if end time (plan/actual + dauer) is still in the future
+    const timeStr = t.actual || t.plan;
+    const m = timeStr && timeStr.match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return false;
+    const [yy, mo, dd] = t.date.split('-').map(Number);
+    const end = new Date(yy, mo - 1, dd, Number(m[1]), Number(m[2]), 0, 0);
+    end.setMinutes(end.getMinutes() + (Number(t.dauer) || 0));
+    return end > now;
   });
   const removed = before - pruned.length;
   if (removed > 0) {
-    console.log(`🧹 Pruned ${removed} expired entries (past, no projectId) from spontaneousEntries`);
+    console.log(`🧹 Pruned ${removed} expired entries (past, no projectId, already ended) from spontaneousEntries`);
   }
   return pruned;
 }
