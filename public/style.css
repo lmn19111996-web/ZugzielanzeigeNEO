@@ -1071,6 +1071,10 @@ html, body {
       pointer-events: none;
     }
 
+@media (max-width: 768px) {
+  .day-stack-label { display: none; }
+}
+
     /* Focus mode template styles - from focus.html */
     .focus-container {
       height: 100%;
