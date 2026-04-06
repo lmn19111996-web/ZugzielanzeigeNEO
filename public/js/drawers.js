@@ -254,6 +254,11 @@
         // Handle system back button (mobile)
         projectDrawerBackHandler = (e) => {
           if (drawer.classList.contains('is-open')) {
+            // If editor drawer is also open, let the editor handle this back press first
+            const editorPanel = document.getElementById('focus-panel');
+            if (editorPanel && editorPanel.classList.contains('is-open')) {
+              return;
+            }
             closeProjectDrawer();
             restoreWorkspaceModeAfterProjectDrawer();
           }

@@ -171,8 +171,6 @@
       schedule.projects.push(newProject);
       
       await saveSchedule();
-      const freshSchedule = await fetchSchedule();
-      Object.assign(schedule, freshSchedule);
       openProjectEditor(newProject._uniqueId);
     }
 
@@ -312,6 +310,9 @@
       const template = document.getElementById('project-drawer-template');
       
       if (!drawer || !template) return;
+
+      // Save scroll position before clearing (will be 0 on first open, >0 on re-renders)
+      const savedScroll = drawer.scrollTop;
 
       const lineColor = getLineColor(project.linie || 's1');
       const deadlineDate = project.deadline ? new Date(project.deadline) : null;
@@ -500,7 +501,8 @@
         tasksList.parentNode.insertBefore(statisticsBoard, tasksList.nextElementSibling.nextElementSibling);
         
         // Auto-scroll to focus on current progress point (where colored tasks end)
-        if (trains.length > 0) {
+        // Only on first open (savedScroll === 0), not on re-renders (editing, etc.)
+        if (savedScroll === 0 && trains.length > 0) {
           const currentTaskIndex = trains.findIndex(t => !t.date || t.date > today);
           if (currentTaskIndex > 0) {
             // Scroll to show the transition point between colored and gray tasks
@@ -571,6 +573,11 @@
       
       // Set up event listeners
       setupProjectDrawerListeners(project);
+      
+      // Restore scroll position after re-render (no-op on first open since savedScroll is 0)
+      if (savedScroll > 0) {
+        drawer.scrollTop = savedScroll;
+      }
     }
 
     function renderProjectTodo(todo, index, lineColor, projectId) {
@@ -631,19 +638,16 @@
       // View selector change
       const viewSelector = document.querySelector('[data-project="view-selector"]');
       if (viewSelector) {
-        viewSelector.addEventListener('change', async () => {
-          // Preserve completed section state before re-rendering
-          const wasOpen = project.completedSectionOpen;
+        viewSelector.addEventListener('change', () => {
+          // Always use live project reference to avoid stale closure issues
+          const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+          if (!liveProject) return;
           
           // OPTIMISTIC UI: Update immediately, save in background
-          project.currentView = viewSelector.value;
+          liveProject.currentView = viewSelector.value;
           
           // Re-render immediately with updated view
-          const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-          if (freshProject) {
-            freshProject.completedSectionOpen = wasOpen;
-            renderProjectDrawer(freshProject);
-          }
+          renderProjectDrawer(liveProject);
           
           // Save in background
           saveSchedule();
@@ -723,25 +727,22 @@
             }
             
             const save = () => {
-              // Preserve completed section state before re-rendering
-              const wasOpen = project.completedSectionOpen;
+              // Always use live project reference to avoid stale closure issues
+              const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (!liveProject) return;
               
               // OPTIMISTIC UI: Update immediately, save in background
-              // Save all fields
+              // Save all fields to the LIVE project object
               const allInputs = document.querySelectorAll('#project-drawer [data-editable="true"] input');
               allInputs.forEach(inp => {
                 const fn = inp.parentElement.getAttribute('data-field');
                 if (fn) {
-                  project[fn] = inp.value;
+                  liveProject[fn] = inp.value;
                 }
               });
               
               // Re-render immediately
-              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-              if (freshProject) {
-                freshProject.completedSectionOpen = wasOpen;
-                renderProjectDrawer(freshProject);
-              }
+              renderProjectDrawer(liveProject);
               renderProjectsPage();
               
               // Save in background
@@ -782,22 +783,16 @@
       const handleSymbolClick = function(e) {
         e.stopPropagation();
         
-        const currentLine = project.linie || 's1';
+        // Always use live project reference to avoid stale closure issues
+        const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+        const currentLine = (liveProject && liveProject.linie) || project.linie || 's1';
         const newLine = prompt('Linie ändern:', currentLine.toUpperCase());
         
-        if (newLine && newLine.trim() !== '') {
-          // Preserve completed section state before re-rendering
-          const wasOpen = project.completedSectionOpen;
-          
-          project.linie = newLine.trim().toLowerCase();
+        if (newLine && newLine.trim() !== '' && liveProject) {
+          liveProject.linie = newLine.trim().toLowerCase();
           
           // Re-render immediately
-          const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-          if (freshProject) {
-            // Restore the completed section state
-            freshProject.completedSectionOpen = wasOpen;
-            renderProjectDrawer(freshProject);
-          }
+          renderProjectDrawer(liveProject);
           renderProjectsPage();
           
           // Save in background
@@ -822,13 +817,11 @@
             const taskName = addInput.textContent.trim();
             if (taskName) {
               // OPTIMISTIC UI: Update immediately, save in background
-              // Preserve completed section state
-              const wasOpen = project.completedSectionOpen;
-              
-              // Use unified createNewTrainEntry with project-specific options
+              // Use live project reference to avoid stale closure issues
+              const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               schedule.spontaneousEntries = schedule.spontaneousEntries || [];
               const newTrain = createNewTrainEntry({
-                linie: (project.linie || 's1').toUpperCase(),
+                linie: ((liveProject && liveProject.linie) || project.linie || 's1').toUpperCase(),
                 ziel: taskName,
                 projectId: project._uniqueId
               });
@@ -840,10 +833,8 @@
               processTrainData(schedule);
               
               // Re-render immediately
-              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-              if (freshProject) {
-                freshProject.completedSectionOpen = wasOpen;
-                renderProjectDrawer(freshProject);
+              if (liveProject) {
+                renderProjectDrawer(liveProject);
               }
               renderProjectsPage(); // Update main projects panel
               
@@ -881,12 +872,11 @@
             const todoName = todoAddInput.textContent.trim();
             if (todoName) {
               // OPTIMISTIC UI: Update immediately, save in background
-              // Preserve completed section state
-              const wasOpen = project.completedSectionOpen;
-              
+              // Use live project reference to avoid stale closure issues
+              const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
               schedule.spontaneousEntries = schedule.spontaneousEntries || [];
               const newTodo = createNewTrainEntry({
-                linie: (project.linie || 's1').toUpperCase(),
+                linie: ((liveProject && liveProject.linie) || project.linie || 's1').toUpperCase(),
                 ziel: todoName,
                 projectId: project._uniqueId
               });
@@ -902,10 +892,8 @@
               processTrainData(schedule);
               
               // Re-render immediately
-              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-              if (freshProject) {
-                freshProject.completedSectionOpen = wasOpen;
-                renderProjectDrawer(freshProject);
+              if (liveProject) {
+                renderProjectDrawer(liveProject);
               }
               renderProjectsPage(); // Update main projects panel
               
@@ -948,21 +936,16 @@
             const taskToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
             const taskName = taskToDelete ? taskToDelete.ziel : 'Aufgabe';
             if (confirm(`Aufgabe "${taskName}" löschen?`)) {
-              // Preserve completed section state before re-rendering
-              const wasOpen = project.completedSectionOpen;
-              
               schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
               
               // CRITICAL: Regenerate derived data after removing train
               regenerateTrainsFromSchedule();
               processTrainData(schedule);
               
-              // Re-render immediately
-              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-              if (freshProject) {
-                // Restore the completed section state
-                freshProject.completedSectionOpen = wasOpen;
-                renderProjectDrawer(freshProject);
+              // Re-render immediately using live project reference
+              const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (liveProject) {
+                renderProjectDrawer(liveProject);
               }
               renderProjectsPage(); // Update main projects panel
               
@@ -1014,19 +997,15 @@
             if (newName && newName !== currentName) {
               const task = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
               if (task) {
-                // Preserve completed section state
-                const wasOpen = project.completedSectionOpen;
-                
                 // OPTIMISTIC UI: Update immediately
                 task.ziel = newName;
                 regenerateTrainsFromSchedule();
                 processTrainData(schedule);
                 
-                // Re-render both views
-                const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-                if (freshProject) {
-                  freshProject.completedSectionOpen = wasOpen;
-                  renderProjectDrawer(freshProject);
+                // Re-render both views using live project reference
+                const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+                if (liveProject) {
+                  renderProjectDrawer(liveProject);
                 }
                 renderProjectsPage();
                 
@@ -1070,20 +1049,16 @@
             const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
             if (todo) {
               // OPTIMISTIC UI: Update immediately, save in background
-              // Preserve completed section state
-              const wasOpen = project.completedSectionOpen;
-              
               todo.todoChecked = checkbox.checked;
               
               // CRITICAL: Regenerate derived data after modifying train
               regenerateTrainsFromSchedule();
               processTrainData(schedule);
               
-              // Re-render immediately
-              const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-              if (freshProject) {
-                freshProject.completedSectionOpen = wasOpen;
-                renderProjectDrawer(freshProject);
+              // Re-render immediately using live project reference
+              const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+              if (liveProject) {
+                renderProjectDrawer(liveProject);
               }
               renderProjectsPage(); // Update main projects panel
               
@@ -1100,20 +1075,16 @@
             e.stopPropagation();
             
             // OPTIMISTIC UI: Update immediately, save in background
-            // Preserve completed section state
-            const wasOpen = project.completedSectionOpen;
-            
             schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== todoId);
             
             // CRITICAL: Regenerate derived data after removing train
             regenerateTrainsFromSchedule();
             processTrainData(schedule);
             
-            // Re-render immediately
-            const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-            if (freshProject) {
-              freshProject.completedSectionOpen = wasOpen;
-              renderProjectDrawer(freshProject);
+            // Re-render immediately using live project reference
+            const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+            if (liveProject) {
+              renderProjectDrawer(liveProject);
             }
             renderProjectsPage(); // Update main projects panel
             
@@ -1162,19 +1133,15 @@
             if (newName && newName !== currentName) {
               const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
               if (todo) {
-                // Preserve completed section state
-                const wasOpen = project.completedSectionOpen;
-                
                 // OPTIMISTIC UI: Update immediately
                 todo.ziel = newName;
                 regenerateTrainsFromSchedule();
                 processTrainData(schedule);
                 
-                // Re-render both views
-                const freshProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-                if (freshProject) {
-                  freshProject.completedSectionOpen = wasOpen;
-                  renderProjectDrawer(freshProject);
+                // Re-render both views using live project reference
+                const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+                if (liveProject) {
+                  renderProjectDrawer(liveProject);
                 }
                 renderProjectsPage();
                 
@@ -1212,14 +1179,16 @@
           const completedList = drawer.querySelector('[data-section="completed-list"]');
           const arrow = this.querySelector('.project-completed-arrow');
           
+          // Use live project reference to avoid stale closure issues
+          const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
           if (completedList.style.display === 'none') {
             completedList.style.display = 'block';
             arrow.textContent = '▼';
-            project.completedSectionOpen = true;
+            if (liveProject) liveProject.completedSectionOpen = true;
           } else {
             completedList.style.display = 'none';
             arrow.textContent = '▶';
-            project.completedSectionOpen = false;
+            if (liveProject) liveProject.completedSectionOpen = false;
           }
           
           // Save the state
@@ -1234,14 +1203,16 @@
           const statisticsContent = drawer.querySelector('.project-statistics-content');
           const arrow = this.querySelector('.project-statistics-toggle-arrow');
           
+          // Use live project reference to avoid stale closure issues
+          const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
           if (statisticsContent.classList.contains('expanded')) {
             statisticsContent.classList.remove('expanded');
             arrow.classList.remove('expanded');
-            project.statisticsExpanded = false;
+            if (liveProject) liveProject.statisticsExpanded = false;
           } else {
             statisticsContent.classList.add('expanded');
             arrow.classList.add('expanded');
-            project.statisticsExpanded = true;
+            if (liveProject) liveProject.statisticsExpanded = true;
           }
           
           // Save the state

@@ -307,6 +307,7 @@ html, body {
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 0.4vh;
       margin-bottom: 1.5vh;
       padding-bottom: 1.5vh;
       border-bottom: 0.5px solid var(--color-divider);
@@ -2230,7 +2231,7 @@ html, body {
       .mobile-info-btn { display: none; }
 
       :root {
-        --nav-rail-width: 6vh;
+        --nav-rail-width: 7.5vh;
         --editor-drawer-width: clamp(20vw, 300px, 350px);
       --project-drawer-width: clamp(25vw, 450px, 550px);
       --announcements-drawer-width: 20vw;
@@ -2780,7 +2781,7 @@ html, body {
         position: relative;
         z-index: 1;
         will-change: transform;
-        background: var(--color-bg-primary);
+        background: var(--color-bg-panel);
       }
 
       /* FEX on mobile list: white card, dark text */
@@ -4937,8 +4938,8 @@ font-weight: 500;
 .review-write-drawer {
   position: fixed;
   top: 0;
-  right: calc(-1 * var(--announcements-drawer-width));
-  width: var(--announcements-drawer-width);
+  right: calc(-1 * var(--project-drawer-width));
+  width: var(--project-drawer-width);
   height: 100vh;
   height: 100dvh;
   background: var(--color-project-row-bright);
@@ -5212,6 +5213,10 @@ body.review-write-drawer-open .left-column {
   #stressmeter-badge { display: none; }
 }
 
+@media (max-width: 768px) {
+  #stressmeter-badge { display: none !important; }
+}
+
 /* Hide both badges whenever any drawer is open */
 body.editor-drawer-open #stressmeter-badge,
 body.announcements-open #stressmeter-badge,
@@ -5325,7 +5330,6 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
   min-width: 220px;
   max-width: 300px;
   background: rgba(7,16,27,0.97);
-  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 14px;
   box-shadow: 0 14px 36px rgba(0,0,0,0.50);
   padding: 0;
@@ -5336,7 +5340,7 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
   transition: opacity 100ms ease, transform 100ms ease;
   z-index: 4;
   backdrop-filter: blur(10px);
-  font-size: 0.82rem;
+  font-size: 1rem;
   line-height: 1.45;
   overflow: hidden;
 }
@@ -5351,8 +5355,8 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
   padding: 8px 12px 6px;
   border-bottom: 2px solid var(--tip-color, rgba(255,255,255,0.2));
 }
-.sg-tip-date  { color: #9db1c9; font-size: 0.78rem; }
-.sg-tip-time  { font-weight: 700; font-size: 0.92rem; color: #e9f1fb; }
+.sg-tip-date  { color: #9db1c9; font-size: 1rem; }
+.sg-tip-time  { font-weight: 700; font-size: 1rem; color: #e9f1fb; }
 
 .sg-tip-body  { padding: 7px 12px 10px; display: flex; flex-direction: column; gap: 3px; }
 
@@ -5363,23 +5367,23 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
   justify-content: space-between;
   margin-bottom: 2px;
 }
-.sg-tip-energy { font-size: 1.05rem; font-weight: 700; }
-.sg-tip-delta  { font-size: 0.82rem; font-weight: 600; }
+.sg-tip-energy { font-size: 1.25rem; font-weight: 700; }
+.sg-tip-delta  { font-size: 1rem; font-weight: 600; }
 
 /* Task name row */
 .sg-tip-task   { font-weight: 600; color: #e9f1fb; }
 /* Time window under task */
-.sg-tip-window { font-size: 0.77rem; color: #6b84a0; margin-bottom: 2px; }
+.sg-tip-window { font-size: 0.8rem; color: #6b84a0; margin-bottom: 2px; }
 
 /* Rate row */
 .sg-tip-rate   { color: #9db1c9; }
 .sg-tip-rate-val { font-weight: 600; }
 
 /* Multiplier rows */
-.sg-tip-muls   { color: #6b84a0; font-size: 0.77rem; margin-top: 2px; display: flex; flex-direction: column; gap: 1px; }
+.sg-tip-muls   { color: #6b84a0; font-size: 0.8rem; margin-top: 2px; display: flex; flex-direction: column; gap: 1px; }
 
 /* Alert badge inside tooltip */
-.sg-tip-alert  { font-size: 0.78rem; font-weight: 700; margin-top: 4px; }
+.sg-tip-alert  { font-size: 0.82rem; font-weight: 700; margin-top: 4px; }
 .sg-tip-linie-badge  { height: 14px; width: auto; vertical-align: middle; margin-right: 3px; }
 .sg-tip-energy-icon  { width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 2px; filter: invert(1); }
 .badge-energy-icon   { width: 2.5vh; height: 2.5vh; display: block; filter: invert(1); opacity: 0.75; flex-shrink: 0; }

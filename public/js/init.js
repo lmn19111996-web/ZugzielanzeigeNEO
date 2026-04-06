@@ -135,10 +135,8 @@
           schedule.spontaneousEntries = schedule.spontaneousEntries || [];
           schedule.spontaneousEntries.push(newNote);
           
-          // Save and refresh
+          // Save and refresh (client-authoritative: no re-fetch needed)
           await saveSchedule();
-          const freshSchedule = await fetchSchedule();
-          Object.assign(schedule, freshSchedule);
           processTrainData(schedule);
           
           // Open editor for the new note

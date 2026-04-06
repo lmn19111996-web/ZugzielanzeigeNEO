@@ -3,8 +3,7 @@
       const trainListEl = document.getElementById('train-list');
       if (!trainListEl) return;
 
-      trainListEl.innerHTML = '';
-
+      // Fetch first — clear only after we have new data to avoid a flash of blank content
       let reviews = [];
       try {
         const res = await fetch('/api/journal');
@@ -13,6 +12,8 @@
       } catch (e) {
         console.error('Failed to load reviews:', e);
       }
+
+      trainListEl.innerHTML = '';
 
       const page = document.createElement('div');
       page.className = 'reviews-page';
