@@ -1,3 +1,4 @@
 /key.env
 /public/data.json
 train_logs/
+journal.json
