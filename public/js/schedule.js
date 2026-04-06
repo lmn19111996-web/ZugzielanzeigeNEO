@@ -270,7 +270,10 @@
       } finally {
         saveInProgress = false;
         isDataOperationInProgress = false; // Release lock after save completes
-        
+
+        // Notify stressmeter so it busts its cache and refreshes the badge
+        if (typeof stressmeterOnDataChanged === 'function') stressmeterOnDataChanged();
+
         // If another save was queued, execute it now
         if (saveQueued) {
           saveQueued = false;

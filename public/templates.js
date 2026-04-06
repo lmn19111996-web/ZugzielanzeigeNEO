@@ -101,9 +101,12 @@ const Templates = {
     const sorted = Object.entries(durByLine).sort((a, b) => b[1] - a[1]);
     const segments = sorted.map(([line, dur]) => {
       const pct = (dur / total * 100).toFixed(2);
+      const pctRound = Math.round(pct);
       const color = getLineColor(line);
       const label = `${line} · ${dur} min`;
-      return `<div class="day-stack-segment" style="width:${pct}%;background:${color}" title="${label}" aria-label="${label}"></div>`;
+      // Only render percentage text when segment is wide enough to read
+      const text = pct >= 6 ? `<span class="day-stack-label">${pctRound}%</span>` : '';
+      return `<div class="day-stack-segment" style="width:${pct}%;background:${color}" title="${label}" aria-label="${label}">${text}</div>`;
     }).join('');
     return `<div class="day-stack-bar" role="img" aria-label="Tagesübersicht">${segments}</div>`;
   },

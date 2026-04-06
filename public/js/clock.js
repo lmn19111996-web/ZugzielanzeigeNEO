@@ -91,6 +91,9 @@
           departure.appendChild(formatCountdown(train, now));
         }
       }
+
+      // Refresh stressmeter badge (debounced internally to once per minute)
+      if (typeof updateStressBadge === 'function') updateStressBadge();
     }
 
 

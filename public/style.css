@@ -951,22 +951,27 @@ html, body {
     .day-stack-bar {
       display: flex;
       flex-direction: row;
-      height: 1vh;
-      min-height: 4px;
-      border-radius: 2px;
+      height: 2.5vh;
       overflow: hidden;
       margin: 0.6vh 0 0.7vh;
-      gap: 1px;
     }
 
     .day-stack-segment {
       height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
       transition: opacity 0.15s;
-      border-radius: 1px;
+      line-height: 1;
     }
 
-    .day-stack-segment:hover {
-      opacity: 0.75;
+    .day-stack-label {
+      font-size: 2vh;
+      font-weight: 300;
+      color: rgb(255, 255, 255);
+      white-space: nowrap;
+      pointer-events: none;
     }
 
     /* Focus mode template styles - from focus.html */
@@ -4277,15 +4282,27 @@ font-weight: 500;
    Journal Island & Card
    ══════════════════════════════════════════════ */
 
-/* Floating pill at top-right — vertically centred on the .now-card ribbon.
-   Default: compact circle showing only the star.
-   Hover / .is-reminder: expands to show the label. */
-.journal-island {
-  position: fixed;
-  top: 6vh;
-  transform: translateY(-50%);
+/* Container that holds the top ribbon and the journal island together */
+.top-bar {
+  position: relative;
+}
+
+/* Floating pill group at top-right — vertically centred on the .now-card ribbon.
+   Holds the stressmeter badge and the journal island side-by-side. */
+.top-bar-right-group {
+  position: absolute;
   right: 1.8vw;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Journal island is now a flex child — no longer needs its own abs positioning. */
+.journal-island {
+  position: relative;
   background: rgba(255, 204, 0, 0.92);
   color: #111;
   border-radius: 99px;
@@ -4302,21 +4319,20 @@ font-weight: 500;
 }
 
 .journal-island:hover {
-  /* keep the Y offset while scaling */
-  transform: translateY(-50%) scale(1.05);
+  transform: scale(1.05);
   box-shadow: 0 5px 18px rgba(0,0,0,0.45);
   background: rgba(255, 204, 0, 1);
 }
 
 .journal-island:active {
-  transform: translateY(-50%) scale(0.97);
+  transform: scale(0.97);
 }
 
 .journal-island-icon {
-  font-size: 2.2vh;
+  font-size: 2.8vh;
   line-height: 1;
-  width: 2.2vh;
-  height: 2.2vh;
+  width: 2.8vh;
+  height: 2.8vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4325,7 +4341,7 @@ font-weight: 500;
 
 .journal-island-label {
   /* collapsed by default; expands on hover or reminder mode */
-  font-size: 1.8vh;
+  font-size: 2.1vh;
   font-weight: 600;
   font-stretch: condensed;
   letter-spacing: -0.01em;
@@ -4351,7 +4367,7 @@ font-weight: 500;
 .journal-island.island-hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-50%) scale(0.8);
+  transform: scale(0.8);
 }
 
 /* ── Expanded card ─────────────────────────── */
@@ -5049,3 +5065,232 @@ body.review-write-drawer-open .left-column {
 .rv-edit-textarea::placeholder { color: rgba(255,255,255,0.25); }
 .rv-edit-textarea:focus { outline: none; border-color: rgba(255,204,0,0.45); }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* STRESSMETER — badge, alert border, dashboard panel, canvas tooltip         */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Badge ─────────────────────────────────────────────────────────────────── */
+#stressmeter-badge {
+  position: absolute;
+  left: 1.8vw;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 900;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5vh 1vw;
+  border-radius: 0.5vh;
+  border: 1px solid rgba(255, 255, 255, 0.675);
+  cursor: pointer;
+  background: var(--color-surface-2);
+  transition: background 0.2s ease, opacity 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.badge-icon { width: 4vh; height: 4vh; display: block; flex-shrink: 0; }
+.badge-num  { font-size: 4vh; font-weight: 700; line-height: 1; }
+.badge-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(15,22,80,0.98);
+  border: 1px solid rgba(255,255,255,0.14);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: clamp(9px, 1.1vh, 12px);
+  font-weight: 400;
+  color: rgba(255,255,255,0.85);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 901;
+}
+#stressmeter-badge:hover .badge-label { opacity: 1; }
+
+/* Hide badge when ribbon is too narrow (drawer open on mobile) */
+@container style(--narrow: 1) {
+  #stressmeter-badge { display: none; }
+}
+
+/* Hide both badges whenever any drawer is open */
+body.editor-drawer-open #stressmeter-badge,
+body.announcements-open #stressmeter-badge,
+body.notes-open #stressmeter-badge,
+body.project-drawer-open #stressmeter-badge,
+body.editor-drawer-open .top-bar-right-group,
+body.announcements-open .top-bar-right-group,
+body.notes-open .top-bar-right-group,
+body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
+
+#stressmeter-badge:hover { background: var(--color-surface-4); }
+
+/* Subtle tint on badge icon depending on day load tier */
+.badge-green  .badge-icon { opacity: 0.90; }
+.badge-yellow .badge-icon { opacity: 0.95; }
+.badge-orange .badge-icon { opacity: 1.00; }
+.badge-red    .badge-icon { opacity: 1.00; }
+
+/* Pulsing red alert border at top of screen when energy is critically low */
+.stress-alert::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 3px rgba(239, 68, 68, 0.7);
+  z-index: 9999;
+  animation: stress-pulse 2s ease-in-out infinite;
+}
+
+@keyframes stress-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* ── Dashboard panel ─────────────────────────────────────────────────────── */
+.stress-dashboard {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--color-bg-panel);
+  margin-bottom: 1vh;
+  font-family: 'Bahnschrift', 'Bahnschrift Condensed', 'Arial Narrow', sans-serif;
+  color: #e9f1fb;
+}
+
+.stress-dashboard.open {
+  display: block;
+  padding: 10px 12px 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+  border: 2px solid var(--color-border-subtle);
+  border-radius: 2vh;
+}
+
+/* ── Chart shell: fixed Y-axis left, scrollable content right ─────────────── */
+.sg-chart-shell {
+  position: relative;
+  height: 290px;
+  font-family: 'Bahnschrift', 'Bahnschrift Condensed', 'Arial Narrow', sans-serif;
+}
+
+/* Fixed non-scrolling Y-axis panel */
+#sg-yaxis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 52px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  display: block;
+}
+
+.sg-scroll-wrap {
+  height: 100%;
+  margin-left: 52px;        /* width of fixed Y-axis */
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 0 14px 14px 0;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-left: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  outline: none;
+}
+
+.sg-scroll-wrap:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(110,168,255,0.55);
+}
+
+/* Scrollbar — app design language */
+.sg-scroll-wrap::-webkit-scrollbar        { height: 5px; }
+.sg-scroll-wrap::-webkit-scrollbar-track  { background: rgba(255,255,255,0.04); border-radius: 0 0 14px 0; }
+.sg-scroll-wrap::-webkit-scrollbar-thumb  { background: rgba(110,168,255,0.35); border-radius: 3px; }
+.sg-scroll-wrap::-webkit-scrollbar-thumb:hover { background: rgba(110,168,255,0.65); }
+
+#stress-svg {
+  display: block;
+  height: 100%;
+}
+
+/* ── Hint overlay ─────────────────────────────────────────────────────────── */
+.sg-hint {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 3;
+  padding: 5px 10px;
+  background: rgba(4,12,20,0.80);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  color: #9db1c9;
+  font-size: 0.78rem;
+  pointer-events: none;
+}
+
+/* ── Hover tooltip ────────────────────────────────────────────────────────── */
+.sg-tooltip {
+  position: absolute;
+  min-width: 220px;
+  max-width: 300px;
+  background: rgba(7,16,27,0.97);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.50);
+  padding: 0;
+  color: #e9f1fb;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 100ms ease, transform 100ms ease;
+  z-index: 4;
+  backdrop-filter: blur(10px);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow: hidden;
+}
+.sg-tooltip.show { opacity: 1; transform: translateY(0); }
+
+/* Colour bar under date/time row — JS sets --tip-color */
+.sg-tip-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 12px 6px;
+  border-bottom: 2px solid var(--tip-color, rgba(255,255,255,0.2));
+}
+.sg-tip-date  { color: #9db1c9; font-size: 0.78rem; }
+.sg-tip-time  { font-weight: 700; font-size: 0.92rem; color: #e9f1fb; }
+
+.sg-tip-body  { padding: 7px 12px 10px; display: flex; flex-direction: column; gap: 3px; }
+
+/* Energy row: value left, total delta right */
+.sg-tip-energy-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.sg-tip-energy { font-size: 1.05rem; font-weight: 700; }
+.sg-tip-delta  { font-size: 0.82rem; font-weight: 600; }
+
+/* Task name row */
+.sg-tip-task   { font-weight: 600; color: #e9f1fb; }
+/* Time window under task */
+.sg-tip-window { font-size: 0.77rem; color: #6b84a0; margin-bottom: 2px; }
+
+/* Rate row */
+.sg-tip-rate   { color: #9db1c9; }
+.sg-tip-rate-val { font-weight: 600; }
+
+/* Multiplier rows */
+.sg-tip-muls   { color: #6b84a0; font-size: 0.77rem; margin-top: 2px; display: flex; flex-direction: column; gap: 1px; }
+
+/* Alert badge inside tooltip */
+.sg-tip-alert  { font-size: 0.78rem; font-weight: 700; margin-top: 4px; }
+.sg-tip-linie-badge { height: 14px; width: auto; vertical-align: middle; margin-right: 3px; }

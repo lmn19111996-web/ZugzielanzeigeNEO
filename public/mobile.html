@@ -285,18 +285,62 @@
   <div id="container">
     <!-- Left column: clock + train list -->
     <div class="left-column">
-      <!-- Top ribbon with clock -->
-      <div class="top-ribbon now-card">
-        <div class="clockSlot">
-          <div class="aclock">
-            <div class="center"></div>
-            <div class="hand hour" id="hour"></div>
-            <div class="hand minute" id="minute"></div>
+      <!-- Top ribbon with clock + journal island -->
+      <div class="top-bar">
+        <!-- Badge: absolutely positioned left (mirrors journal-island on right) -->
+        <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><span class="badge-label" id="sg-badge-label"></span></button>
+        <div class="top-ribbon now-card">
+          <div class="clockSlot">
+            <div class="aclock">
+              <div class="center"></div>
+              <div class="hand hour" id="hour"></div>
+              <div class="hand minute" id="minute"></div>
+            </div>
+            <div class="clock" id="clock">--:--</div>
           </div>
-          <div class="clock" id="clock">--:--</div>
+          <!-- First train entry will be rendered here by updateClock() -->
+          <div id="first-train-container"></div>
         </div>
-        <!-- First train entry will be rendered here by updateClock() -->
-        <div id="first-train-container"></div>
+        <!-- Right-side floating group: journal island, centred on ribbon height -->
+        <div class="top-bar-right-group">
+          <div id="journal-island" class="journal-island" aria-label="Tagebuch öffnen">
+            <span class="journal-island-icon">★</span>
+            <span class="journal-island-label">Rezension</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stressmeter dashboard: slides down from top bar when badge is clicked -->
+      <div id="stress-dashboard" class="stress-dashboard" aria-hidden="true">
+        <div class="sg-chart-shell">
+          <svg id="sg-yaxis" aria-hidden="true"></svg>
+          <div class="sg-hint">Mausrad / ← → scrollen</div>
+          <div class="sg-scroll-wrap" id="sg-scroll-wrap" tabindex="0" aria-label="Energie-Zeitverlauf">
+            <svg id="stress-svg" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
+          </div>
+          <!-- Hover tooltip — content injected by stressmeter-ui.js -->
+          <div id="sg-tooltip" class="sg-tooltip" role="tooltip" aria-live="polite">
+            <div class="sg-tip-header">
+              <span class="sg-tip-date" id="sg-tip-date"></span>
+              <span class="sg-tip-time" id="sg-tip-time"></span>
+            </div>
+            <div class="sg-tip-body">
+              <div class="sg-tip-energy-row">
+                <span class="sg-tip-energy" id="sg-tip-energy"></span>
+                <span class="sg-tip-delta"  id="sg-tip-delta"></span>
+              </div>
+              <div class="sg-tip-task"   id="sg-tip-task"></div>
+              <div class="sg-tip-window" id="sg-tip-window"></div>
+              <div class="sg-tip-rate">Rate: <span class="sg-tip-rate-val" id="sg-tip-rate"></span> E/min</div>
+              <div class="sg-tip-muls">
+                <span id="sg-tip-fatigue"></span>
+                <span id="sg-tip-circadian"></span>
+                <span id="sg-tip-context"></span>
+              </div>
+              <div class="sg-tip-alert" id="sg-tip-alert"></div>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!--Taskbar-->
@@ -442,12 +486,6 @@
     <button id="swipe-undo-btn">Rückgängig</button>
   </div>
 
-  <!-- Journal Island: floating pill at top-right that expands to a review card -->
-  <div id="journal-island" class="journal-island" aria-label="Tagebuch öffnen">
-    <span class="journal-island-icon">★</span>
-    <span class="journal-island-label">Rezension</span>
-  </div>
-
   <!-- Journal Card (hidden by default) -->
   <div id="journal-card" class="journal-card" aria-hidden="true">
     <div class="journal-card-header">
@@ -488,6 +526,8 @@
 <script src="js/station.js"></script>
 <script src="js/clock.js"></script>
 <script src="js/journal.js"></script>
+<script src="js/stressmeter-engine.js?v=17"></script>
+<script src="js/stressmeter-ui.js?v=22"></script>
 <script src="js/init.js"></script>
 </body>
 </html>

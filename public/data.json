@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": 1775390445164,
-    "lastSaved": "2026-04-05T12:00:45.164Z"
+    "version": 1775477114585,
+    "lastSaved": "2026-04-06T12:05:14.585Z"
   },
   "fixedSchedule": [
     {
@@ -49,7 +49,8 @@
         "days": []
       },
       "skippedDates": [
-        "2026-04-06"
+        "2026-04-06",
+        "2026-04-07"
       ]
     },
     {
@@ -113,7 +114,8 @@
         "days": []
       },
       "skippedDates": [
-        "2026-04-05"
+        "2026-04-05",
+        "2026-04-07"
       ]
     }
   ],
@@ -142,7 +144,8 @@
       "plannedDate": "2026-04-07",
       "_uniqueId": "train_sbivnmk4b_1772035101026",
       "recurrencePattern": "none",
-      "_templateId": "stem_c5b05xd7h_1772054033691"
+      "_templateId": "stem_c5b05xd7h_1772054033691",
+      "_alertLvl": 0
     },
     {
       "linie": "S6",
@@ -167,18 +170,6 @@
       "date": "2026-04-09",
       "plannedDate": "2026-04-09",
       "_uniqueId": "train_5cc9yoiow_1772035231539"
-    },
-    {
-      "linie": "S6",
-      "ziel": "Technische Mechanik II",
-      "plan": "11:30",
-      "actual": "11:30",
-      "dauer": 90,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-04-07",
-      "plannedDate": "2026-04-07",
-      "_uniqueId": "train_k7rwjqn9v_1772035263336"
     },
     {
       "linie": "S62",
@@ -468,10 +459,10 @@
       "_uniqueId": "stem_o9asst165_1772052470926_2026-04-08",
       "_templateId": "stem_o9asst165_1772052470926",
       "linie": "S7",
-      "ziel": "Sleep 1",
+      "ziel": "Study session 1",
       "plan": "12:12",
-      "actual": "12:12",
-      "dauer": 0,
+      "actual": "14:00",
+      "dauer": 90,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-04-08",
@@ -491,25 +482,12 @@
       "plannedDate": "2026-04-15"
     },
     {
-      "_uniqueId": "stem_x5kwy82hz_1772054002600_2026-04-07",
-      "_templateId": "stem_x5kwy82hz_1772054002600",
-      "linie": "S6",
-      "ziel": "Konstruktionslehre",
-      "plan": "08:00",
-      "actual": "08:00",
-      "dauer": 90,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-04-07",
-      "plannedDate": "2026-04-07"
-    },
-    {
       "_uniqueId": "stem_x5kwy82hz_1772054002600_2026-04-08",
       "_templateId": "stem_x5kwy82hz_1772054002600",
       "linie": "S6",
       "ziel": "Konstruktionslehre",
       "plan": "08:00",
-      "actual": "08:00",
+      "actual": "09:45",
       "dauer": 90,
       "zwischenhalte": [],
       "canceled": false,
@@ -613,7 +591,7 @@
       "linie": "S6",
       "ziel": "Konstruktionslehre",
       "plan": "08:00",
-      "actual": "08:00",
+      "actual": "11:30",
       "dauer": 90,
       "zwischenhalte": [],
       "canceled": false,
@@ -749,19 +727,6 @@
       "canceled": false,
       "date": "2026-04-18",
       "plannedDate": "2026-04-18"
-    },
-    {
-      "_uniqueId": "stem_wiiqqj6zo_1772056524605_2026-04-05",
-      "_templateId": "stem_wiiqqj6zo_1772056524605",
-      "linie": "S7",
-      "ziel": "Sleep",
-      "plan": "",
-      "actual": "",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-04-05",
-      "plannedDate": "2026-04-05"
     },
     {
       "_uniqueId": "stem_wiiqqj6zo_1772056524605_2026-04-06",
@@ -933,41 +898,28 @@
       "plannedDate": "2026-04-18"
     },
     {
-      "_uniqueId": "stem_mnjj8dnec_1772057764071_2026-04-05",
-      "_templateId": "stem_mnjj8dnec_1772057764071",
-      "linie": "S1",
-      "ziel": "All aboard the stem train",
-      "plan": "00:00",
-      "actual": "00:00",
-      "dauer": 0,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-04-05",
-      "plannedDate": "2026-04-05"
-    },
-    {
       "_uniqueId": "stem_mnjj8dnec_1772057764071_2026-04-06",
       "_templateId": "stem_mnjj8dnec_1772057764071",
-      "linie": "S1",
+      "linie": "S75",
       "ziel": "All aboard the stem train",
       "plan": "00:00",
       "actual": "00:00",
-      "dauer": 90,
+      "dauer": 900,
       "zwischenhalte": [],
-      "canceled": false,
+      "canceled": true,
       "date": "2026-04-06",
       "plannedDate": "2026-04-06"
     },
     {
       "_uniqueId": "stem_mnjj8dnec_1772057764071_2026-04-07",
       "_templateId": "stem_mnjj8dnec_1772057764071",
-      "linie": "S1",
+      "linie": "S2",
       "ziel": "All aboard the stem train",
       "plan": "00:00",
       "actual": "00:00",
-      "dauer": 0,
+      "dauer": 90,
       "zwischenhalte": [],
-      "canceled": false,
+      "canceled": true,
       "date": "2026-04-07",
       "plannedDate": "2026-04-07"
     },
@@ -1115,19 +1067,6 @@
       "plannedDate": "2026-04-18"
     },
     {
-      "linie": "S95",
-      "ziel": "Fachschaftssitzung",
-      "plan": "17:30",
-      "actual": "17:30",
-      "dauer": 40,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-04-05",
-      "plannedDate": "2026-04-05",
-      "_uniqueId": "train_ea987ypn2_1775379121668",
-      "_templateId": "stem_fkti1oep0_1775379142172"
-    },
-    {
       "_uniqueId": "stem_fkti1oep0_1775379142172_2026-04-06",
       "_templateId": "stem_fkti1oep0_1775379142172",
       "linie": "S95",
@@ -1139,19 +1078,6 @@
       "canceled": false,
       "date": "2026-04-06",
       "plannedDate": "2026-04-06"
-    },
-    {
-      "_uniqueId": "stem_fkti1oep0_1775379142172_2026-04-07",
-      "_templateId": "stem_fkti1oep0_1775379142172",
-      "linie": "S95",
-      "ziel": "Fachschaftssitzung",
-      "plan": "17:30",
-      "actual": "17:30",
-      "dauer": 40,
-      "zwischenhalte": [],
-      "canceled": false,
-      "date": "2026-04-07",
-      "plannedDate": "2026-04-07"
     },
     {
       "_uniqueId": "stem_fkti1oep0_1775379142172_2026-04-08",
@@ -1299,14 +1225,126 @@
     {
       "linie": "S7",
       "ziel": "A study session",
-      "plan": "09:00",
-      "actual": "09:00",
-      "dauer": 0,
+      "plan": "09:45",
+      "actual": "09:45",
+      "dauer": 90,
       "zwischenhalte": [],
       "canceled": false,
       "date": "2026-04-07",
       "plannedDate": "2026-04-07",
       "_uniqueId": "train_97zbto0du_1775379294964"
+    },
+    {
+      "_uniqueId": "stem_c5b05xd7h_1772054033691_2026-04-19",
+      "_templateId": "stem_c5b05xd7h_1772054033691",
+      "linie": "S6",
+      "ziel": "Konstruktionslehre",
+      "plan": "08:00",
+      "actual": "08:00",
+      "dauer": 90,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-19",
+      "plannedDate": "2026-04-19"
+    },
+    {
+      "_uniqueId": "stem_wiiqqj6zo_1772056524605_2026-04-19",
+      "_templateId": "stem_wiiqqj6zo_1772056524605",
+      "linie": "S7",
+      "ziel": "Sleep",
+      "plan": "",
+      "actual": "",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-19",
+      "plannedDate": "2026-04-19"
+    },
+    {
+      "_uniqueId": "stem_mnjj8dnec_1772057764071_2026-04-19",
+      "_templateId": "stem_mnjj8dnec_1772057764071",
+      "linie": "S1",
+      "ziel": "All aboard the stem train",
+      "plan": "00:00",
+      "actual": "00:00",
+      "dauer": 0,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-19",
+      "plannedDate": "2026-04-19"
+    },
+    {
+      "_uniqueId": "stem_fkti1oep0_1775379142172_2026-04-19",
+      "_templateId": "stem_fkti1oep0_1775379142172",
+      "linie": "S95",
+      "ziel": "Fachschaftssitzung",
+      "plan": "17:30",
+      "actual": "17:30",
+      "dauer": 40,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-19",
+      "plannedDate": "2026-04-19"
+    },
+    {
+      "linie": "S5",
+      "ziel": "Fitness Studio",
+      "plan": "06:00",
+      "actual": "06:00",
+      "dauer": 120,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-07",
+      "plannedDate": "2026-04-07",
+      "_uniqueId": "train_ld4ujmsqd_1775431476638"
+    },
+    {
+      "linie": "S6",
+      "ziel": "Technische Mechanik II",
+      "plan": "11:30",
+      "actual": "11:30",
+      "dauer": 90,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-07",
+      "plannedDate": "2026-04-07",
+      "_uniqueId": "train_z537zaevj_1775431554447"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Another study session",
+      "plan": "14:00",
+      "actual": "14:00",
+      "dauer": 90,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-07",
+      "plannedDate": "2026-04-07",
+      "_uniqueId": "train_zf0m8yxeg_1775431614048"
+    },
+    {
+      "linie": "S7",
+      "ziel": "Last study session",
+      "plan": "20:00",
+      "actual": "21:00",
+      "dauer": 180,
+      "zwischenhalte": [],
+      "canceled": false,
+      "date": "2026-04-07",
+      "plannedDate": "2026-04-07",
+      "_uniqueId": "train_keojt9ysl_1775431669496"
+    },
+    {
+      "linie": "S75",
+      "ziel": "HAHAHA",
+      "plan": "01:35",
+      "actual": "01:35",
+      "dauer": 999,
+      "zwischenhalte": [],
+      "canceled": true,
+      "date": "2026-04-06",
+      "plannedDate": "2026-04-06",
+      "_uniqueId": "train_iua4nr9b3_1775432118153"
     }
   ],
   "trains": [],

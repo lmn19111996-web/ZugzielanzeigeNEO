@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>15-Day Energy Timeline</title>
+  <style>
+    :root {
+      --bg: #07111d;
+      --panel: #0d1b2a;
+      --panel-2: #11243a;
+      --grid: rgba(255,255,255,0.10);
+      --grid-strong: rgba(255,255,255,0.22);
+      --text: #e9f1fb;
+      --muted: #9db1c9;
+      --healthy: rgba(42, 163, 98, 0.11);
+      --warning: rgba(255, 183, 0, 0.08);
+      --danger: rgba(255, 80, 80, 0.08);
+      --axis: rgba(255,255,255,0.55);
+      --shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(56, 99, 173, 0.22), transparent 35%),
+        linear-gradient(180deg, #07111d 0%, #091521 100%);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .frame {
+      width: min(94vw, 1540px);
+      height: min(84vh, 860px);
+      background: linear-gradient(180deg, rgba(15,31,49,0.98), rgba(10,22,35,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .topbar {
+      padding: 22px 26px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.96rem;
+      margin-top: 6px;
+    }
+
+    .meta {
+      text-align: right;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      padding: 0 26px 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 999px;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      flex: none;
+    }
+
+    .chart-shell {
+      position: relative;
+      padding: 0 20px 18px;
+      min-height: 0;
+      display: grid;
+    }
+
+    .scroll-wrap {
+      position: relative;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      outline: none;
+    }
+
+    .scroll-wrap:focus-visible {
+      box-shadow: inset 0 0 0 2px rgba(110, 168, 255, 0.55);
+    }
+
+    .hint {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      z-index: 3;
+      padding: 8px 12px;
+      background: rgba(4,12,20,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      color: var(--muted);
+      font-size: 0.84rem;
+      pointer-events: none;
+    }
+
+    svg {
+      display: block;
+      height: 100%;
+    }
+
+    .tooltip {
+      position: absolute;
+      min-width: 220px;
+      max-width: 320px;
+      background: rgba(7, 16, 27, 0.96);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.38);
+      padding: 12px 14px;
+      color: var(--text);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 120ms ease, transform 120ms ease;
+      z-index: 4;
+      backdrop-filter: blur(8px);
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tooltip .time {
+      font-weight: 700;
+      font-size: 0.96rem;
+      margin-bottom: 6px;
+    }
+
+    .tooltip .energy {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .tooltip .small {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .footer {
+      padding: 0 26px 22px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .footer strong { color: var(--text); }
+
+    @media (max-width: 900px) {
+      .frame { width: 100vw; height: 100vh; border-radius: 0; }
+      .topbar { padding: 18px 18px 8px; }
+      .legend { padding: 0 18px 10px; }
+      .chart-shell { padding: 0 14px 14px; }
+      .footer { padding: 0 18px 16px; flex-direction: column; }
+      .hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="topbar">
+      <div>
+        <div class="title">15-Day Energy Timeline</div>
+        <div class="subtitle">Horizontally scrollable t–E diagram, centered layout, task-colored segments, hover diagnostics, and a live “now” marker.</div>
+      </div>
+      <div class="meta">
+        <div><strong>Range:</strong> Today + 14 future days</div>
+        <div><strong>Input:</strong> Demo data, minute-scale feel, made-up values</div>
+      </div>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="chart-shell">
+      <div class="hint">Scroll with mouse wheel or ← → keys</div>
+      <div class="scroll-wrap" id="scrollWrap" tabindex="0" aria-label="Scrollable energy timeline">
+        <svg id="chartSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Energy over time chart"></svg>
+      </div>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <div class="footer">
+      <div>Healthy band is emphasized in the center of the chart. Colored background strips represent task intervals. The energy line itself is recolored by the active task.</div>
+      <div><strong>Interaction:</strong> hover the line, use mouse wheel to pan horizontally, or press the arrow keys while the chart is focused.</div>
+    </div>
+  </div>
+
+  <script>
+    const CATEGORY_COLORS = {
+      S1: '#4ecdc4',
+      S11: '#6ee7dd',
+      S2: '#f6bd60',
+      S3: '#c084fc',
+      S4: '#22c55e',
+      S41: '#fb7185',
+      S42: '#a78bfa',
+      S5: '#2dd4bf',
+      S51: '#14b8a6',
+      S6: '#60a5fa',
+      S60: '#38bdf8',
+      S62: '#7dd3fc',
+      S7: '#f59e0b',
+      S75: '#ef4444',
+      S8: '#a3e635',
+      S85: '#84cc16',
+      S9: '#f472b6',
+      S95: '#fb7185',
+      SLEEP: '#64748b',
+      IDLE: '#334155'
+    };
+
+    const CATEGORY_LABELS = {
+      S1: 'Break', S11: 'Combined break', S2: 'Chores', S3: 'Creative work',
+      S4: 'Girls’ night out', S41: 'Paid job', S42: 'Volunteering',
+      S5: 'Self-care', S51: 'Extensive self-care', S6: 'Study', S60: 'Group work',
+      S62: 'Seminar', S7: 'Self-study', S75: 'Extensive study', S8: 'Travel',
+      S85: 'Long trip', S9: 'Group work', S95: 'Student organization',
+      SLEEP: 'Sleep', IDLE: 'Idle'
+    };
+
+    const svg = document.getElementById('chartSvg');
+    const tooltip = document.getElementById('tooltip');
+    const scrollWrap = document.getElementById('scrollWrap');
+    const legend = document.getElementById('legend');
+
+    const cfg = {
+      days: 15,
+      dayWidth: 520,
+      height: 580,
+      topPad: 34,
+      rightPad: 30,
+      bottomPad: 82,
+      leftPad: 74,
+      yMax: 1500,
+      healthyMin: 800,
+      healthyMax: 1200,
+      warningMin: 400,
+      stepMinutes: 15,
+      startDate: new Date(),
+      nowMinute: 16 * 60 + 28,
+      nowEnergyApprox: 930
+    };
+
+    cfg.startDate = new Date(cfg.startDate.getFullYear(), cfg.startDate.getMonth(), cfg.startDate.getDate());
+
+    function formatDate(date) {
+      return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function minutesToLabel(min) {
+      const total = ((min % 1440) + 1440) % 1440;
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function dateOffset(base, days) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function categoryChip(key) {
+      const span = document.createElement('span');
+      span.className = 'chip';
+      span.innerHTML = `<span class="swatch" style="background:${CATEGORY_COLORS[key]}"></span>${key} — ${CATEGORY_LABELS[key]}`;
+      return span;
+    }
+
+    ['S6','S7','S75','S1','S4','S8','S95'].forEach(k => legend.appendChild(categoryChip(k)));
+
+    function makeDaySchedule(dayIndex) {
+      const weekend = [0, 6].includes(dateOffset(cfg.startDate, dayIndex).getDay());
+      const schedules = [
+        [
+          { start: 0, end: 7.5 * 60, category: 'SLEEP' },
+          { start: 8 * 60, end: 10 * 60, category: 'S6' },
+          { start: 10 * 60 + 15, end: 11 * 60 + 45, category: 'S6' },
+          { start: 12 * 60, end: 13 * 60, category: 'S1' },
+          { start: 13 * 60 + 15, end: 15 * 60 + 30, category: 'S6' },
+          { start: 16 * 60, end: 18 * 60 + 15, category: 'S7' },
+          { start: 19 * 60, end: 20 * 60, category: 'S2' },
+          { start: 20 * 60 + 30, end: 22 * 60 + 30, category: 'S3' }
+        ],
+        [
+          { start: 0, end: 7 * 60, category: 'SLEEP' },
+          { start: 8 * 60 + 30, end: 11 * 60 + 30, category: 'S75' },
+          { start: 12 * 60, end: 13 * 60, category: 'S1' },
+          { start: 13 * 60 + 30, end: 16 * 60, category: 'S7' },
+          { start: 16 * 60 + 30, end: 18 * 60, category: 'S60' },
+          { start: 20 * 60, end: 21 * 60 + 30, category: 'S5' }
+        ],
+        [
+          { start: 0, end: 8 * 60, category: 'SLEEP' },
+          { start: 9 * 60, end: 11 * 60, category: 'S41' },
+          { start: 12 * 60, end: 12 * 60 + 45, category: 'S1' },
+          { start: 13 * 60, end: 15 * 60, category: 'S95' },
+          { start: 16 * 60, end: 17 * 60, category: 'S8' },
+          { start: 18 * 60, end: 20 * 60 + 30, category: 'S7' }
+        ],
+        [
+          { start: 0, end: 7.75 * 60, category: 'SLEEP' },
+          { start: 9 * 60, end: 10.5 * 60, category: 'S62' },
+          { start: 11 * 60, end: 12.25 * 60, category: 'S6' },
+          { start: 12.5 * 60, end: 13.5 * 60, category: 'S1' },
+          { start: 14 * 60, end: 16.5 * 60, category: 'S7' },
+          { start: 17 * 60 + 15, end: 18 * 60 + 15, category: 'S2' },
+          { start: 19 * 60, end: 21 * 60 + 30, category: 'S4' }
+        ],
+        [
+          { start: 0, end: 8.25 * 60, category: 'SLEEP' },
+          { start: 9.5 * 60, end: 12 * 60, category: 'S75' },
+          { start: 12 * 60 + 15, end: 13 * 60, category: 'S1' },
+          { start: 13 * 60 + 15, end: 15 * 60 + 45, category: 'S75' },
+          { start: 16 * 60 + 30, end: 17 * 60 + 30, category: 'S5' },
+          { start: 18 * 60 + 30, end: 21 * 60, category: 'S3' }
+        ]
+      ];
+
+      if (weekend) {
+        return [
+          { start: 0, end: 9 * 60, category: 'SLEEP' },
+          { start: 11 * 60, end: 12 * 60 + 30, category: 'S8' },
+          { start: 13 * 60, end: 14 * 60, category: 'S1' },
+          { start: 15 * 60, end: 18 * 60, category: dayIndex % 2 ? 'S4' : 'S3' },
+          { start: 19 * 60, end: 20 * 60, category: 'S2' }
+        ];
+      }
+
+      return schedules[dayIndex % schedules.length];
+    }
+
+    function getTaskAt(schedule, minute) {
+      return schedule.find(task => minute >= task.start && minute < task.end) || null;
+    }
+
+    const loadPerHour = {
+      S1: -95, S11: -55, S2: 60, S3: 100, S4: -80, S41: 118, S42: 108,
+      S5: -28, S51: -40, S6: 96, S60: 112, S62: 105, S7: 126, S75: 170,
+      S8: 44, S85: 92, S9: 110, S95: 124, SLEEP: -140, IDLE: -18
+    };
+
+    function circadianMultiplier(dayMinute) {
+      const t = dayMinute / 60;
+      const phase = 14;
+      const c = Math.sin((4 * Math.PI * (t - phase)) / 24);
+      return 1 - 0.17 * c;
+    }
+
+    function fatigueMultiplier(E) {
+      const Emax = 1500;
+      const deficit = Math.max(0, Emax - E);
+      return 1 + 0.00000000017 * Math.pow(deficit, 3.08);
+    }
+
+    function contextMultiplier(task, minute) {
+      if (!task || task.category === 'SLEEP' || task.category === 'IDLE') return 1;
+      const minsInto = minute - task.start;
+      const startPenalty = 1 + 0.14 * Math.exp(-minsInto / 24);
+      return startPenalty;
+    }
+
+    function yScale(v, plotHeight) {
+      return cfg.topPad + (1 - v / cfg.yMax) * plotHeight;
+    }
+
+    function xScale(totalMinute) {
+      return cfg.leftPad + (totalMinute / 1440) * cfg.dayWidth;
+    }
+
+    function simulate() {
+      let energy = 1085;
+      const points = [];
+      const dailySchedules = [];
+
+      for (let day = 0; day < cfg.days; day++) {
+        const schedule = makeDaySchedule(day);
+        dailySchedules.push(schedule);
+        for (let m = 0; m <= 1440; m += cfg.stepMinutes) {
+          const minute = Math.min(m, 1439);
+          const task = getTaskAt(schedule, minute) || { category: 'IDLE', start: minute, end: minute + cfg.stepMinutes };
+          const base = loadPerHour[task.category] ?? 0;
+          const circ = circadianMultiplier(minute);
+          const fat = fatigueMultiplier(energy);
+          const ctx = contextMultiplier(task, minute);
+          const passive = 26;
+          let ratePerHour = passive - (base * circ * fat * ctx);
+          if (task.category === 'SLEEP') {
+            const cap = Math.min(1230, 900 + (day % 5) * 28 + (energy < 180 ? -80 : 0));
+            ratePerHour = 0.33 * (cap - energy);
+          }
+          const dtHours = cfg.stepMinutes / 60;
+          const nextEnergy = Math.max(-120, Math.min(cfg.yMax, energy + ratePerHour * dtHours));
+          const totalMinute = day * 1440 + minute;
+          points.push({
+            totalMinute,
+            day,
+            minute,
+            energy,
+            nextEnergy,
+            task: task.category,
+            base,
+            circ,
+            fat,
+            ctx,
+            ratePerHour,
+            label: minutesToLabel(minute),
+            dateLabel: formatDate(dateOffset(cfg.startDate, day))
+          });
+          energy = nextEnergy;
+        }
+        energy = Math.max(280, Math.min(1220, energy + 22));
+      }
+      return { points, dailySchedules };
+    }
+
+    function el(name, attrs = {}, children = []) {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      children.forEach(c => node.appendChild(c));
+      return node;
+    }
+
+    const { points, dailySchedules } = simulate();
+    const plotHeight = cfg.height - cfg.topPad - cfg.bottomPad;
+    const totalWidth = cfg.leftPad + cfg.dayWidth * cfg.days + cfg.rightPad;
+    svg.setAttribute('width', totalWidth);
+    svg.setAttribute('height', cfg.height);
+    svg.setAttribute('viewBox', `0 0 ${totalWidth} ${cfg.height}`);
+
+    const defs = el('defs');
+    const glow = el('filter', { id: 'nowGlow', x: '-50%', y: '-10%', width: '200%', height: '120%' }, [
+      el('feGaussianBlur', { stdDeviation: '4', result: 'blur' }),
+      el('feMerge', {}, [el('feMergeNode', { in: 'blur' }), el('feMergeNode', { in: 'SourceGraphic' })])
+    ]);
+    defs.appendChild(glow);
+    svg.appendChild(defs);
+
+    const bg = el('rect', { x: 0, y: 0, width: totalWidth, height: cfg.height, fill: 'transparent' });
+    svg.appendChild(bg);
+
+    svg.appendChild(el('rect', {
+      x: cfg.leftPad,
+      y: yScale(cfg.healthyMax, plotHeight),
+      width: cfg.dayWidth * cfg.days,
+      height: yScale(cfg.healthyMin, plotHeight) - yScale(cfg.healthyMax, plotHeight),
+      fill: 'var(--healthy)'
+    }));
+
+    svg.appendChild(el('rect', {
+      x: cfg.leftPad,
+      y: yScale(cfg.warningMin, plotHeight),
+      width: cfg.dayWidth * cfg.days,
+      height: yScale(0, plotHeight) - yScale(cfg.warningMin, plotHeight),
+      fill: 'var(--danger)'
+    }));
+
+    const overloadY = yScale(150, plotHeight);
+    svg.appendChild(el('line', {
+      x1: cfg.leftPad,
+      x2: cfg.leftPad + cfg.dayWidth * cfg.days,
+      y1: overloadY,
+      y2: overloadY,
+      stroke: 'rgba(255,110,110,0.55)',
+      'stroke-width': 1.5,
+      'stroke-dasharray': '6 6'
+    }));
+    svg.appendChild(el('text', {
+      x: cfg.leftPad + 8,
+      y: overloadY - 8,
+      fill: 'rgba(255,160,160,0.92)',
+      'font-size': 12,
+      'font-family': 'Inter, sans-serif'
+    }, [document.createTextNode('Overload threshold · 150')]));
+
+    for (let y = 0; y <= cfg.yMax; y += 150) {
+      const yPx = yScale(y, plotHeight);
+      svg.appendChild(el('line', {
+        x1: cfg.leftPad,
+        x2: cfg.leftPad + cfg.dayWidth * cfg.days,
+        y1: yPx,
+        y2: yPx,
+        stroke: y % 300 === 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)',
+        'stroke-width': 1
+      }));
+      const txt = el('text', {
+        x: cfg.leftPad - 12,
+        y: yPx + 4,
+        fill: 'rgba(255,255,255,0.62)',
+        'font-size': 12,
+        'font-family': 'Inter, sans-serif',
+        'text-anchor': 'end'
+      }, [document.createTextNode(String(y))]);
+      svg.appendChild(txt);
+    }
+
+    for (let d = 0; d < cfg.days; d++) {
+      const dayX = cfg.leftPad + d * cfg.dayWidth;
+      svg.appendChild(el('rect', {
+        x: dayX,
+        y: cfg.topPad,
+        width: cfg.dayWidth,
+        height: plotHeight,
+        fill: d % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.028)'
+      }));
+      svg.appendChild(el('line', {
+        x1: dayX,
+        x2: dayX,
+        y1: cfg.topPad,
+        y2: cfg.topPad + plotHeight,
+        stroke: 'rgba(255,255,255,0.18)',
+        'stroke-width': 1.4
+      }));
+      const date = dateOffset(cfg.startDate, d);
+      svg.appendChild(el('text', {
+        x: dayX + 10,
+        y: 20,
+        fill: 'rgba(255,255,255,0.92)',
+        'font-size': 14,
+        'font-weight': 700,
+        'font-family': 'Inter, sans-serif'
+      }, [document.createTextNode(d === 0 ? `Today · ${formatDate(date)}` : formatDate(date))]));
+
+      for (let h = 0; h <= 24; h += 3) {
+        const x = dayX + (h / 24) * cfg.dayWidth;
+        svg.appendChild(el('line', {
+          x1: x,
+          x2: x,
+          y1: cfg.topPad,
+          y2: cfg.topPad + plotHeight,
+          stroke: h % 6 === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.08)',
+          'stroke-width': 1
+        }));
+        if (h < 24) {
+          svg.appendChild(el('text', {
+            x,
+            y: cfg.height - 26,
+            fill: 'rgba(255,255,255,0.62)',
+            'font-size': 12,
+            'font-family': 'Inter, sans-serif',
+            'text-anchor': 'middle'
+          }, [document.createTextNode(`${String(h).padStart(2, '0')}:00`)]));
+        }
+      }
+
+      const schedule = dailySchedules[d];
+      schedule.forEach(task => {
+        const x = dayX + (task.start / 1440) * cfg.dayWidth;
+        const w = ((task.end - task.start) / 1440) * cfg.dayWidth;
+        svg.appendChild(el('rect', {
+          x,
+          y: cfg.topPad,
+          width: Math.max(2, w),
+          height: plotHeight,
+          fill: CATEGORY_COLORS[task.category] || '#888',
+          opacity: task.category === 'SLEEP' ? 0.10 : 0.13
+        }));
+      });
+    }
+
+    svg.appendChild(el('line', {
+      x1: cfg.leftPad + cfg.dayWidth * cfg.days,
+      x2: cfg.leftPad + cfg.dayWidth * cfg.days,
+      y1: cfg.topPad,
+      y2: cfg.topPad + plotHeight,
+      stroke: 'rgba(255,255,255,0.18)',
+      'stroke-width': 1.4
+    }));
+
+    const curveGroup = el('g');
+    for (let i = 0; i < points.length - 1; i++) {
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const x1 = xScale(p1.totalMinute);
+      const x2 = xScale(p2.totalMinute);
+      const y1 = yScale(p1.energy, plotHeight);
+      const y2 = yScale(p2.nextEnergy, plotHeight);
+      curveGroup.appendChild(el('line', {
+        x1, y1, x2, y2,
+        stroke: CATEGORY_COLORS[p1.task] || '#fff',
+        'stroke-width': 3.2,
+        'stroke-linecap': 'round'
+      }));
+    }
+    svg.appendChild(curveGroup);
+
+    const hitPath = el('polyline', {
+      fill: 'none',
+      stroke: 'rgba(255,255,255,0.001)',
+      'stroke-width': 18,
+      points: points.map(p => `${xScale(p.totalMinute)},${yScale(p.energy, plotHeight)}`).join(' ')
+    });
+    svg.appendChild(hitPath);
+
+    const nowX = xScale(cfg.nowMinute);
+    const nowLine = el('line', {
+      x1: nowX,
+      x2: nowX,
+      y1: cfg.topPad - 4,
+      y2: cfg.topPad + plotHeight + 8,
+      stroke: '#f8fafc',
+      'stroke-width': 2.2,
+      opacity: 0.95,
+      filter: 'url(#nowGlow)'
+    });
+    svg.appendChild(nowLine);
+    svg.appendChild(el('text', {
+      x: nowX + 8,
+      y: cfg.topPad + 16,
+      fill: '#f8fafc',
+      'font-size': 12,
+      'font-weight': 700,
+      'font-family': 'Inter, sans-serif'
+    }, [document.createTextNode('NOW')]));
+
+    const hoverLine = el('line', {
+      x1: cfg.leftPad,
+      x2: cfg.leftPad,
+      y1: cfg.topPad,
+      y2: cfg.topPad + plotHeight,
+      stroke: 'rgba(255,255,255,0.34)',
+      'stroke-width': 1.4,
+      'stroke-dasharray': '5 5',
+      visibility: 'hidden'
+    });
+    const hoverDot = el('circle', {
+      cx: cfg.leftPad,
+      cy: cfg.topPad,
+      r: 5,
+      fill: '#ffffff',
+      stroke: '#0b1420',
+      'stroke-width': 2,
+      visibility: 'hidden'
+    });
+    svg.appendChild(hoverLine);
+    svg.appendChild(hoverDot);
+
+    function nearestPoint(localX) {
+      const minute = ((localX - cfg.leftPad) / cfg.dayWidth) * 1440;
+      const clampedMinute = Math.max(0, Math.min(cfg.days * 1440, minute));
+      const idx = Math.max(0, Math.min(points.length - 1, Math.round(clampedMinute / cfg.stepMinutes)));
+      return points[idx];
+    }
+
+    function showTooltip(evt) {
+      const rect = svg.getBoundingClientRect();
+      const localX = (evt.clientX - rect.left) + scrollWrap.scrollLeft;
+      const p = nearestPoint(localX);
+      const px = xScale(p.totalMinute);
+      const py = yScale(p.energy, plotHeight);
+
+      hoverLine.setAttribute('x1', px);
+      hoverLine.setAttribute('x2', px);
+      hoverLine.setAttribute('visibility', 'visible');
+      hoverDot.setAttribute('cx', px);
+      hoverDot.setAttribute('cy', py);
+      hoverDot.setAttribute('visibility', 'visible');
+
+      tooltip.innerHTML = `
+        <div class="time">${p.dateLabel} · ${p.label}</div>
+        <div class="energy">${Math.round(p.energy)} energy</div>
+        <div class="small">
+          <div><strong>Task:</strong> ${p.task} — ${CATEGORY_LABELS[p.task] || p.task}</div>
+          <div><strong>Rate:</strong> ${p.ratePerHour >= 0 ? '+' : ''}${p.ratePerHour.toFixed(1)} / h</div>
+          <div><strong>Base load:</strong> ${p.base >= 0 ? '+' : ''}${p.base.toFixed(0)} / h</div>
+          <div><strong>Circadian:</strong> ×${p.circ.toFixed(2)}</div>
+          <div><strong>Fatigue:</strong> ×${p.fat.toFixed(2)}</div>
+          <div><strong>Context:</strong> ×${p.ctx.toFixed(2)}</div>
+        </div>
+      `;
+
+      const wrapRect = scrollWrap.getBoundingClientRect();
+      const leftInViewport = px - scrollWrap.scrollLeft;
+      let tipLeft = leftInViewport + 18;
+      if (tipLeft + 260 > wrapRect.width) tipLeft = leftInViewport - 270;
+      tipLeft = Math.max(12, tipLeft);
+      let tipTop = py - 20;
+      if (tipTop < 16) tipTop = py + 18;
+      if (tipTop > wrapRect.height - 150) tipTop = wrapRect.height - 150;
+      tooltip.style.left = `${tipLeft}px`;
+      tooltip.style.top = `${tipTop}px`;
+      tooltip.classList.add('show');
+    }
+
+    function hideTooltip() {
+      hoverLine.setAttribute('visibility', 'hidden');
+      hoverDot.setAttribute('visibility', 'hidden');
+      tooltip.classList.remove('show');
+    }
+
+    hitPath.addEventListener('mousemove', showTooltip);
+    hitPath.addEventListener('mouseenter', showTooltip);
+    hitPath.addEventListener('mouseleave', hideTooltip);
+
+    scrollWrap.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        scrollWrap.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+
+    scrollWrap.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        scrollWrap.scrollLeft += 120;
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        scrollWrap.scrollLeft -= 120;
+      }
+    });
+
+    requestAnimationFrame(() => {
+      scrollWrap.scrollLeft = 0;
+      scrollWrap.focus();
+    });
+  </script>
+</body>
+</html>
