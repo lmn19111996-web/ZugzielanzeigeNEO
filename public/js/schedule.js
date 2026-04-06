@@ -212,7 +212,7 @@
               
               // If no date specified and train is configured, assume today
               if (!cleanTrain.date && isConfigured) {
-                const today = new Date().toISOString().split('T')[0];
+                const _td = new Date(); const today = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
                 cleanTrain.date = today;
                 cleanTrain.plannedDate = today;
               } else if (cleanTrain.date && !cleanTrain.plannedDate) {
@@ -516,8 +516,10 @@
     // Show line picker dropdown for selecting S-Bahn lines
 
     function createNewTrainEntry(options = {}) {
-      // Create a blank train object with NO pre-filled dates
+      // Create a blank train object pre-filled with today's date so it appears
+      // immediately in the timetable (client-authoritative — no server round-trip needed).
       const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
       const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
       
       const newTrain = {
@@ -528,8 +530,8 @@
         dauer: 0,
         zwischenhalte: [],
         canceled: false,
-        date: '',  // Empty - user must fill
-        plannedDate: '',  // Will be set when user first saves a date
+        date: today,       // Default to today so the entry is immediately visible
+        plannedDate: today, // Matches date; will update with user edits
         weekday: weekday,
         source: 'local',
         _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),

@@ -20,6 +20,15 @@
       window.addEventListener('popstate', stationOverlayBackHandler, true);
       window.history.pushState({ overlay: 'station-chooser' }, '');
 
+      // Close on Escape key
+      const escHandler = (e) => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+          overlay.classList.add('hidden');
+          document.removeEventListener('keydown', escHandler, true);
+        }
+      };
+      document.addEventListener('keydown', escHandler, true);
+
       let timer = null;
       let activeIndex = -1;
       let lastMatches = [];

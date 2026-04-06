@@ -206,7 +206,13 @@
         
         // Fetch and update the GLOBAL schedule object
         const freshSchedule = await fetchSchedule(true);
+        // Preserve any locally-created entries not yet saved to the server
+        const serverIds = new Set((freshSchedule.spontaneousEntries || []).map(t => t._uniqueId));
+        const localOnlyEntries = (schedule.spontaneousEntries || []).filter(t => !serverIds.has(t._uniqueId));
         Object.assign(schedule, freshSchedule);
+        if (localOnlyEntries.length > 0) {
+          schedule.spontaneousEntries.push(...localOnlyEntries);
+        }
         processTrainData(schedule);
         
         // Render current workspace view

@@ -48,12 +48,12 @@
   if (!badge || !dashboard || !scrollWrap || !svg || !tooltipEl) return;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function todayStr() { return new Date().toISOString().split('T')[0]; }
+  function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
   function offsetDate(base, days) {
     var d = new Date(base + 'T12:00:00');
     d.setDate(d.getDate() + days);
-    return d.toISOString().split('T')[0];
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
 
   function f(n) { return (+n).toFixed(1); }
