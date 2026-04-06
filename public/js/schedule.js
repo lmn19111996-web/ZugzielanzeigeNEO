@@ -178,6 +178,10 @@
         // OPTIMISTICALLY update local version BEFORE sending
         // This prevents SSE race condition where broadcast arrives before response
         schedule._meta.version = newVersion;
+
+        // CLIENT-AUTHORITATIVE: Update stressmeter immediately with current in-memory data,
+        // before the network round-trip completes.
+        if (typeof stressmeterOnDataChanged === 'function') stressmeterOnDataChanged();
         
         // Filter: Only save trains that have a line number
         // AND ensure proper data format: fixed schedules have weekday only, spontaneous have date only
@@ -270,9 +274,6 @@
       } finally {
         saveInProgress = false;
         isDataOperationInProgress = false; // Release lock after save completes
-
-        // Notify stressmeter so it busts its cache and refreshes the badge
-        if (typeof stressmeterOnDataChanged === 'function') stressmeterOnDataChanged();
 
         // If another save was queued, execute it now
         if (saveQueued) {
