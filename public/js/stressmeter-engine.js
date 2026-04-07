@@ -183,13 +183,15 @@ function fastRecoveryDelta(E, cap, k, dt_hours) {
 }
 
 /**
- * Compute the maximum energy recoverable overnight (with overload penalty).
- *   O = max(0, (Eoverload − Eend) / Eoverload)     — how far below threshold the day ended
- *   EmaxWithCap = Ebase · (1 − omega · O)
- * Heavy overwork → larger O → lower cap → less overnight recovery.
+ * Compute the maximum energy recoverable in the gap (with overload penalty).
+ * Base cap is E_BASE in normal situations. Heavy overwork lowers it.
+ *   O = max(0, (Eoverload − E) / Eoverload)     — how far below threshold currently
+ *   EmaxWithCap = E_BASE · (1 − omega · O)
+ * When E is above threshold (normal), O=0 → cap=E_BASE=1000
+ * When E is below threshold (overworked), cap reduces toward E_BASE*(1-omega)
  */
-function computeEmaxWithCap(Ebase, Eend, omega, Eoverload) {
-  const O = Math.max(0, (Eoverload - Eend) / Eoverload);
+function computeEmaxWithCap(Ebase, E_current, omega, Eoverload) {
+  const O = Math.max(0, (Eoverload - E_current) / Eoverload);
   return Ebase * (1 - omega * O);
 }
 
@@ -203,12 +205,13 @@ function computeEmaxWithCap(Ebase, Eend, omega, Eoverload) {
 
 /**
  * Simulate all dates in one continuous pass.
- * @param {Array}  allTrains  All train/task objects (any date — filtered internally).
- * @param {Array}  dates      Ordered date strings for the simulation window.
- * @param {object} cfg        STRESSMETER_CONFIG.
+ * @param {Array}  allTrains        All train/task objects (any date — filtered internally).
+ * @param {Array}  dates            Ordered date strings for the simulation window.
+ * @param {object} cfg              STRESSMETER_CONFIG.
+ * @param {object} manualOverrides  Manual energy overrides: { dateStr: { minute: E, ... }, ... }
  * @returns {Object} { [dateStr]: Array(1440) } of step objects per local minute.
  */
-function simulateMultiDay(allTrains, dates, cfg) {
+function simulateMultiDay(allTrains, dates, cfg, manualOverrides) {
   const numDays  = dates.length;
   const TOTAL    = numDays * 1440;
   const DT_HOURS = 1 / 60;
@@ -273,16 +276,27 @@ function simulateMultiDay(allTrains, dates, cfg) {
         inLongGap = true;
       }
       if (inLongGap) {
-        dE = fastRecoveryDelta(E, gapCap, cfg.IDLE_RECOVERY_K, DT_HOURS)
-           + passiveRecoveryDelta(DT_HOURS, cfg.PASSIVE_RECOVERY_RATE);
+        // During fast recovery, passive recovery is suspended
+        // Fast recovery pulls energy toward the recovery cap (typically ~1000, lower after overwork)
+        dE = fastRecoveryDelta(E, gapCap, cfg.IDLE_RECOVERY_K, DT_HOURS);
       } else {
         dE = passiveRecoveryDelta(DT_HOURS, cfg.PASSIVE_RECOVERY_RATE);
       }
     }
 
+    // Update E and always clamp to [0, 1500] bounds
+    // This ensures recovery never exceeds max and depletion never goes below zero
+    E = Math.min(cfg.E_MAX, Math.max(cfg.E_MIN, E + dE));
+    
+    // Check for manual override for this specific minute
+    // If override exists, apply it and use it as the energy value for next minute's calculation
+    if (manualOverrides && manualOverrides[dateStr] && manualOverrides[dateStr][localM] != null) {
+      E = Math.max(cfg.E_MIN, Math.min(cfg.E_MAX, Number(manualOverrides[dateStr][localM])));
+    }
+    
     stepsMap[dateStr][localM] = {
       minute:      localM,
-      E,
+      E:           E,           // Clamped value (0-1500), or overridden value
       dE_per_min:  dE,
       task,
       loadFactor:  alf,
@@ -290,8 +304,6 @@ function simulateMultiDay(allTrains, dates, cfg) {
       M_fatigue:   M_f,
       M_context:   M_ctx,
     };
-
-    E = Math.min(cfg.E_MAX, Math.max(cfg.E_MIN, E + dE));
   }
 
   return stepsMap;
@@ -307,14 +319,17 @@ let _smCacheKey = '';
  * Return cached stepsMap if inputs are unchanged, otherwise re-simulate.
  * @param {Array} allTrains  All train objects (any date).
  * @param {Array} dates      Ordered date strings for the simulation window.
+ * @param {object} manualOverrides  Manual energy overrides: { dateStr: { minute: E, ... }, ... }
  * @returns {Object} { [dateStr]: Array(1440) }
  */
-function getOrComputeAllDaySteps(allTrains, dates) {
+function getOrComputeAllDaySteps(allTrains, dates, manualOverrides) {
+  manualOverrides = manualOverrides || {};
+  const overrideKey = JSON.stringify(manualOverrides);
   const key = dates.join(',') + '|' + JSON.stringify(
     allTrains.map(t => `${t._uniqueId}:${t.date}:${t.actual || ''}:${t.dauer}:${!!t.canceled}`)
-  );
+  ) + '|' + overrideKey;
   if (key === _smCacheKey && _smCache !== null) return _smCache;
-  _smCache    = simulateMultiDay(allTrains, dates, STRESSMETER_CONFIG);
+  _smCache    = simulateMultiDay(allTrains, dates, STRESSMETER_CONFIG, manualOverrides);
   _smCacheKey = key;
   return _smCache;
 }

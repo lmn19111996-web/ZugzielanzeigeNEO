@@ -287,19 +287,20 @@
     <div class="left-column">
       <!-- Top ribbon with clock + journal island -->
       <div class="top-bar">
-        <!-- Badge: absolutely positioned left (mirrors journal-island on right) -->
-        <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span class="badge-label" id="sg-badge-label"></span></button>
-        <div class="top-ribbon now-card">
-          <div class="clockSlot">
-            <div class="aclock">
-              <div class="center"></div>
-              <div class="hand hour" id="hour"></div>
-              <div class="hand minute" id="minute"></div>
+        <div class="top-bar-main">
+          <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span id="sg-badge-edit" class="badge-edit" title="Energiepunkt jetzt setzen">✎</span><span class="badge-label" id="sg-badge-label"></span></button>
+          <div class="top-ribbon now-card">
+            <div class="clockSlot">
+              <div class="aclock">
+                <div class="center"></div>
+                <div class="hand hour" id="hour"></div>
+                <div class="hand minute" id="minute"></div>
+              </div>
+              <div class="clock" id="clock">--:--</div>
             </div>
-            <div class="clock" id="clock">--:--</div>
+            <!-- First train entry will be rendered here by updateClock() -->
+            <div id="first-train-container"></div>
           </div>
-          <!-- First train entry will be rendered here by updateClock() -->
-          <div id="first-train-container"></div>
         </div>
         <!-- Right-side floating group: journal island, centred on ribbon height -->
         <div class="top-bar-right-group">
@@ -338,6 +339,10 @@
                 <span id="sg-tip-context"></span>
               </div>
               <div class="sg-tip-alert" id="sg-tip-alert"></div>
+              <div class="sg-tip-override-actions" id="sg-tip-override-actions" style="display:none;">
+                <button class="sg-tip-action-btn" id="sg-tip-override-edit" type="button">Bearbeiten</button>
+                <button class="sg-tip-action-btn sg-tip-action-btn-danger" id="sg-tip-override-remove" type="button">Entfernen</button>
+              </div>
             </div>
           </div>
         </div>

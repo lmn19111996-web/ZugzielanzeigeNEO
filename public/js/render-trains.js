@@ -486,14 +486,15 @@
       const entry = template.content.firstChild;
       
       if (window.innerWidth <= 768) {
-        // On mobile: header train opens editor directly; list entries toggle the action bar
+        // On mobile: header train toggles stress dashboard; list entries toggle the action bar
         entry.addEventListener('click', (e) => {
           if (e.target.closest('.mobile-info-btn, .mobile-action-btn')) return;
           const shell = entry.closest('.mobile-entry-shell');
           const bar = shell && shell.querySelector('.mobile-action-bar');
           if (!bar) {
-            // No action bar (header / first-train) → open editor drawer directly
-            renderFocusMode(train);
+            // No action bar (header / first-train) → open stress dashboard on mobile
+            const badge = document.getElementById('stressmeter-badge');
+            if (badge) badge.click();
             document.querySelectorAll('.train-entry').forEach(en => en.classList.remove('selected'));
             entry.classList.add('selected');
             return;

@@ -26,6 +26,27 @@
   var lastBadgeMinute  = -1;
   var _hoverRaf        = null;   // rAF handle for tooltip throttle
   var _lastHoverE      = null;   // cached mousemove event for rAF
+  var _lastHoverPoint  = null;   // { dateStr, minute, E }
+  var manualEOverrides = {};     // { 'YYYY-MM-DD': { minute: E, ... }, ... }
+  var _pinnedOverridePoint = null; // { dateStr, minute }
+  var _skipAutoTooltip  = false;   // flag to suppress auto-pinned tooltip after setting override
+
+  // Load overrides from localStorage
+  function loadOverridesFromStorage() {
+    try {
+      var stored = localStorage.getItem('stressmeter_manual_overrides');
+      if (stored) manualEOverrides = JSON.parse(stored);
+    } catch (e) { /* ignore storage errors */ }
+  }
+
+  // Save overrides to localStorage
+  function saveOverridesToStorage() {
+    try {
+      localStorage.setItem('stressmeter_manual_overrides', JSON.stringify(manualEOverrides));
+    } catch (e) { /* ignore storage errors */ }
+  }
+
+  loadOverridesFromStorage();
 
   // ── DOM ───────────────────────────────────────────────────────────────────
   var badge        = document.getElementById('stressmeter-badge');
@@ -37,6 +58,9 @@
   var tipDate      = document.getElementById('sg-tip-date');
   var tipTime      = document.getElementById('sg-tip-time');
   var tipEnergy    = document.getElementById('sg-tip-energy');
+  var tipOverrideActions = document.getElementById('sg-tip-override-actions');
+  var tipOverrideEdit = document.getElementById('sg-tip-override-edit');
+  var tipOverrideRemove = document.getElementById('sg-tip-override-remove');
   var tipDelta     = document.getElementById('sg-tip-delta');
   var tipTask      = document.getElementById('sg-tip-task');
   var tipWindow    = document.getElementById('sg-tip-window');
@@ -45,6 +69,7 @@
   var tipCircadian = document.getElementById('sg-tip-circadian');
   var tipContext   = document.getElementById('sg-tip-context');
   var tipAlert     = document.getElementById('sg-tip-alert');
+  var badgeEdit    = document.getElementById('sg-badge-edit');
   if (!badge || !dashboard || !scrollWrap || !svg || !tooltipEl) return;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -68,6 +93,128 @@
     return (processedTrainData.allTrains || []).filter(function (t) { return t.date === d; });
   }
 
+  function isOverridePoint(dateStr, minute) {
+    return !!(manualEOverrides[dateStr] && manualEOverrides[dateStr][minute] != null);
+  }
+
+  function setOverride(dateStr, minute, value) {
+    if (!manualEOverrides[dateStr]) manualEOverrides[dateStr] = {};
+    manualEOverrides[dateStr][minute] = Math.max(Y_MIN, Math.min(Y_MAX, Number(value)));
+    saveOverridesToStorage();
+    _pinnedOverridePoint = { dateStr: dateStr, minute: minute };
+    _skipAutoTooltip = true;
+    lastBadgeMinute = -1;
+    updateStressBadge();
+    if (dashboardOpen) {
+      renderGraph();
+      setTimeout(function () { _skipAutoTooltip = false; }, 100);
+    }
+  }
+
+  function clearOverride(dateStr, minute) {
+    if (!manualEOverrides[dateStr]) return;
+    delete manualEOverrides[dateStr][minute];
+    if (!Object.keys(manualEOverrides[dateStr]).length) delete manualEOverrides[dateStr];
+    saveOverridesToStorage();
+    if (_pinnedOverridePoint && _pinnedOverridePoint.dateStr === dateStr && _pinnedOverridePoint.minute === minute) {
+      _pinnedOverridePoint = null;
+    }
+    lastBadgeMinute = -1;
+    updateStressBadge();
+    if (dashboardOpen) renderGraph();
+  }
+
+  function openOverridePopup(anchorEl, dateStr, minute, initialE) {
+    var existing = document.getElementById('sg-energy-popup');
+    if (existing) existing.remove();
+
+    var popup = document.createElement('div');
+    popup.id = 'sg-energy-popup';
+    popup.className = 'date-jump-popup sg-energy-popup';
+    popup.innerHTML =
+      '<div class="date-jump-popup-label">Energiepunkt bearbeiten</div>' +
+      '<input type="number" class="sg-energy-input" id="sg-energy-input" min="' + Y_MIN + '" max="' + Y_MAX + '" step="1" value="' + Math.round(initialE) + '">' +
+      '<div class="date-jump-popup-hint">Enter = speichern, Esc = abbrechen</div>';
+
+    var a = anchorEl.getBoundingClientRect();
+    popup.style.top = (a.bottom + 6) + 'px';
+    popup.style.left = (a.left - 120) + 'px';
+    document.body.appendChild(popup);
+
+    var input = popup.querySelector('#sg-energy-input');
+    input.focus();
+    input.select();
+
+    function applyAndClose(save) {
+      if (save) {
+        var v = Number(input.value);
+        if (!isNaN(v)) setOverride(dateStr, minute, v);
+      }
+      popup.remove();
+      removeOutsideListener();
+    }
+
+    input.addEventListener('keydown', function (e2) {
+      if (e2.key === 'Enter') { e2.preventDefault(); applyAndClose(true); }
+      if (e2.key === 'Escape') { e2.preventDefault(); applyAndClose(false); }
+    });
+
+    function outsideClick(e2) {
+      if (!popup.contains(e2.target) && e2.target !== anchorEl) applyAndClose(true);
+    }
+    function removeOutsideListener() {
+      document.removeEventListener('pointerdown', outsideClick, true);
+    }
+    setTimeout(function () { document.addEventListener('pointerdown', outsideClick, true); }, 0);
+  }
+
+  function showPinnedTooltip() {
+    if (!_pinnedOverridePoint || !svg._dates || !svg._DAY_W || !dashboardOpen || _skipAutoTooltip) return;
+    var wRect = scrollWrap.getBoundingClientRect();
+    var colIdx = svg._dates.indexOf(_pinnedOverridePoint.dateStr);
+    if (colIdx < 0) return;
+    var px = colIdx * svg._DAY_W + (_pinnedOverridePoint.minute / 1440) * svg._DAY_W;
+    processHover({
+      _forcePoint: { dateStr: _pinnedOverridePoint.dateStr, minute: _pinnedOverridePoint.minute },
+      clientX: wRect.left + px - scrollWrap.scrollLeft,
+      clientY: wRect.top + T + 18
+    });
+  }
+
+  function cloneStepsMap(src, dates) {
+    var out = {};
+    dates.forEach(function (d) {
+      var arr = src[d] || [];
+      out[d] = arr.map(function (s) { return s ? { ...s } : s; });
+    });
+    return out;
+  }
+
+  function applyManualOverrides(baseMap, dates) {
+    var out = cloneStepsMap(baseMap, dates);
+   
+    dates.forEach(function (d) {
+      var steps = out[d];
+      if (!steps || !steps.length) return;
+     
+      // Apply overrides only to the specific minute, no propagation forward
+      // Recovery will continue naturally from the next minute
+      var dayOverrides = manualEOverrides[d];
+      if (dayOverrides) {
+        var mins = Object.keys(dayOverrides).map(function (k) { return Number(k); }).filter(function (m) { return !isNaN(m); });
+        mins.forEach(function (m) {
+          if (m < 0 || m > 1439 || !steps[m]) return;
+          var target = Math.max(Y_MIN, Math.min(Y_MAX, Number(dayOverrides[m])));
+          if (isNaN(target)) return;
+          // Only set this specific minute; don't propagate delta to future minutes
+          steps[m].E = target;
+        });
+      }
+    });
+   
+    return out;
+  }
+
   // Clamps E to [Y_MIN, Y_MAX] then maps to SVG y coordinate
   function yPx(E, H) {
     var e = Math.max(Y_MIN, Math.min(Y_MAX, E));
@@ -77,6 +224,39 @@
   // ── Badge ─────────────────────────────────────────────────────────────────
   badge.addEventListener('click', toggleDashboard);
   svg.addEventListener('click', onSvgClick);
+
+  if (badgeEdit) {
+    badgeEdit.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var now = new Date();
+      var dateStr = todayStr();
+      var minute = now.getHours() * 60 + now.getMinutes();
+      var dates = [dateStr];
+      var sMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], dates, manualEOverrides);
+      var step = (sMap[dateStr] || [])[Math.min(1439, minute)];
+      var currentE = step ? Math.round(step.E) : Y_MAX;
+      openOverridePopup(badgeEdit, dateStr, minute, currentE);
+    });
+  }
+
+  if (tipOverrideEdit) {
+    tipOverrideEdit.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!_lastHoverPoint || !isOverridePoint(_lastHoverPoint.dateStr, _lastHoverPoint.minute)) return;
+      openOverridePopup(tipOverrideEdit, _lastHoverPoint.dateStr, _lastHoverPoint.minute, _lastHoverPoint.E);
+    });
+  }
+  if (tipOverrideRemove) {
+    tipOverrideRemove.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!_lastHoverPoint) return;
+      clearOverride(_lastHoverPoint.dateStr, _lastHoverPoint.minute);
+      tooltipEl.classList.remove('show');
+    });
+  }
 
   function updateStressBadge() {
     var now    = new Date();
@@ -88,7 +268,7 @@
       var date  = todayStr();
       var datesList = [];
       for (var j = 0; j < DAYS; j++) { datesList.push(offsetDate(date, j)); }
-      sMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], datesList);
+      sMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], datesList, manualEOverrides);
     } catch (e) { return; }
     var daySteps = sMap[todayStr()] || [];
     var cfg = STRESSMETER_CONFIG;
@@ -244,8 +424,9 @@
 
     var s        = '';
     var fullW    = DAYS * DAY_W;
-    var stepsMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], dates);
+    var stepsMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], dates, manualEOverrides);
     var snapMap  = {};   // dateStr -> [{minute, E, color}]
+    var overridePoints = []; // [{dateStr, minute, x, y}]
 
     // Brightness + invert filters for chart images
     s += '<defs>' +
@@ -331,8 +512,8 @@
       var dlbl = (isToday ? 'Heute \u00b7 ' : '') +
                  d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
       s += '<text x="' + (colX + 7) + '" y="' + (T - 9) +
-           '" font-size="15" font-weight="' + (isToday ? '700' : '400') +
-           '" fill="' + (isToday ? 'rgba(255,255,230,0.95)' : 'rgba(255,255,255,0.48)') +
+         '" font-size="15" font-weight="' + (isToday ? '700' : '500') +
+         '" fill="' + (isToday ? 'rgba(255,255,230,0.95)' : 'rgba(255,255,255,0.78)') +
            '" font-family=' + SVG_FONT + '>' + esc(dlbl) + '</text>';
 
       for (var hr = 0; hr <= 24; hr += 3) {
@@ -415,6 +596,19 @@
         s += '<circle cx="' + sx + '" cy="' + sy + '" r="3" fill="' + sp.color + '" filter="url(#sg-bf)"/>';
       });
 
+      // Manual override points - styled like snap points but with distinct coloring
+      var dayOverrides = manualEOverrides[dateStr] || {};
+      Object.keys(dayOverrides).forEach(function (mk) {
+        var om = Number(mk);
+        if (isNaN(om) || om < 0 || om > 1439 || !steps[om]) return;
+        var ox = colX + (om / 1440) * DAY_W;
+        var oy = yPx(steps[om].E, H);
+        overridePoints.push({ dateStr: dateStr, minute: om, x: ox, y: oy });
+        // Render as a larger point with colored ring and white core (matching snap-point style but distinctive)
+        s += '<circle cx="' + f(ox) + '" cy="' + f(oy) + '" r="5" fill="rgba(99,197,34,0.3)" stroke="rgba(99,197,34,0.85)" stroke-width="2.2" filter="url(#sg-bf)"/>';
+        s += '<circle cx="' + f(ox) + '" cy="' + f(oy) + '" r="2.8" fill="#ffffff"/>';
+      });
+
       // NOW marker
       if (isToday) {
         var nowD = new Date();
@@ -448,6 +642,7 @@
 
     svg._stepsMap = stepsMap;
     svg._snapMap  = snapMap;
+    svg._overridePoints = overridePoints;
     svg._dates    = dates;
     svg._H        = H;
     svg._DAY_W    = DAY_W;
@@ -473,20 +668,56 @@
 
   function processHover(e) {
     if (!svg._stepsMap || !svg._dates) return;
+    
+    // If we have a pinned override point, check if cursor moved far enough to unpin
+    if (_pinnedOverridePoint && !e._forcePoint) {
+      var wRect   = scrollWrap.getBoundingClientRect();
+      var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      var DAY_W   = svg._DAY_W || 300;
+      var svgX    = clientX - wRect.left + scrollWrap.scrollLeft;
+      var colIdx  = svg._dates.indexOf(_pinnedOverridePoint.dateStr);
+      if (colIdx >= 0) {
+        var pinnedX = colIdx * DAY_W + (_pinnedOverridePoint.minute / 1440) * DAY_W;
+        var distFromPinned = Math.abs(svgX - pinnedX);
+        // Unpin if cursor moves more than 50px away
+        if (distFromPinned > 50) {
+          _pinnedOverridePoint = null;
+          tooltipEl.classList.remove('show');
+          return;
+        }
+      }
+      showPinnedTooltip();
+      return;
+    }
     var wRect   = scrollWrap.getBoundingClientRect();
     var clientX = e.touches ? e.touches[0].clientX : e.clientX;
     var clientY = e.touches ? e.touches[0].clientY : e.clientY;
     var DAY_W   = svg._DAY_W || 300;
     var H       = svg._H;
-    var svgX    = clientX - wRect.left + scrollWrap.scrollLeft;
-    var colIdx  = Math.floor(svgX / DAY_W);
-    if (colIdx < 0 || colIdx >= DAYS || clientY < wRect.top || clientY > wRect.bottom) {
-      onLeave();
-      return;
+    var svgX;
+    var colIdx;
+    var minute;
+    var dateStr;
+    if (e._forcePoint) {
+      dateStr = e._forcePoint.dateStr;
+      minute = e._forcePoint.minute;
+      colIdx = svg._dates.indexOf(dateStr);
+      if (colIdx < 0) { onLeave(); return; }
+      svgX = colIdx * DAY_W + (minute / 1440) * DAY_W;
+      clientX = wRect.left + svgX - scrollWrap.scrollLeft;
+      clientY = wRect.top + T + 18;
+    } else {
+      svgX    = clientX - wRect.left + scrollWrap.scrollLeft;
+      colIdx  = Math.floor(svgX / DAY_W);
+      if (colIdx < 0 || colIdx >= DAYS || clientY < wRect.top || clientY > wRect.bottom) {
+        onLeave();
+        return;
+      }
+      var frac = (svgX - colIdx * DAY_W) / DAY_W;
+      minute  = Math.round(Math.max(0, Math.min(1439, frac * 1440)));
+      dateStr = svg._dates[colIdx];
     }
-    var frac    = (svgX - colIdx * DAY_W) / DAY_W;
-    var minute  = Math.round(Math.max(0, Math.min(1439, frac * 1440)));
-    var dateStr = svg._dates[colIdx];
     var steps   = svg._stepsMap[dateStr];
     if (!steps) { onLeave(); return; }
 
@@ -500,7 +731,23 @@
       if (dist < SNAP_PX && dist < minDist) { minDist = dist; snapped = sp; }
     });
 
-    var minute2  = snapped ? snapped.minute : minute;
+    // Check for nearby override markers and auto-pin tooltip
+    var nearbyOverride = null;
+    var overrideDist = Infinity;
+    (svg._overridePoints || []).forEach(function (p) {
+      if (p.dateStr !== dateStr || e._forcePoint) return;
+      var px = colIdx * DAY_W + (p.minute / 1440) * DAY_W;
+      var dist = Math.abs(svgX - px);
+      if (dist < SNAP_PX && dist < overrideDist) {
+        overrideDist = dist;
+        nearbyOverride = p;
+      }
+    });
+    if (nearbyOverride && !_pinnedOverridePoint) {
+      _pinnedOverridePoint = { dateStr: nearbyOverride.dateStr, minute: nearbyOverride.minute };
+    }
+
+    var minute2  = e._forcePoint ? minute : (snapped ? snapped.minute : minute);
     var step     = steps[minute2];
     if (!step) { onLeave(); return; }
 
@@ -520,7 +767,7 @@
     var taskName = step.task ? (step.task.ziel || '\u2014') : 'Leerlauf / Schlaf';
     var rateNum  = step.dE_per_min;
     var rateStr  = (rateNum >= 0 ? '+' : '') + rateNum.toFixed(2);
-    var rateCol  = rateNum >= 0 ? '#86efac' : '#fca5a5';
+    var rateCol  = rateNum >= 0 ? getComputedStyle(document.documentElement).getPropertyValue('--energy-green').trim() : getComputedStyle(document.documentElement).getPropertyValue('--energy-red').trim();
 
     // Compute total delta for the whole task
     var totalDelta = null;
@@ -538,13 +785,16 @@
       }
     }
     var deltaStr = totalDelta !== null ? ((totalDelta >= 0 ? '+' : '') + totalDelta) : '';
-    var deltaCol = totalDelta !== null ? (totalDelta >= 0 ? '#86efac' : '#fca5a5') : '#9db1c9';
+    var deltaCol = totalDelta !== null ? (totalDelta >= 0 ? getComputedStyle(document.documentElement).getPropertyValue('--energy-green').trim() : getComputedStyle(document.documentElement).getPropertyValue('--energy-red').trim()) : '#9db1c9';
 
     // Alert level for current point
     var cfg2 = STRESSMETER_CONFIG;
     var alertLvl = E < cfg2.OVERLOAD_E_THRESHOLD ? 2 : E < cfg2.STRESS_YELLOW ? 1 : 0;
     var alertTxt = alertLvl === 2 ? '\u26a0 Kritisch — Schwarze Zone!' : alertLvl === 1 ? '\u26a0 Warnung — Orange Zone' : '';
     var alertCol = alertLvl === 2 ? '#ef4444' : '#facc15';
+
+    _lastHoverPoint = { dateStr: dateStr, minute: minute2, E: E };
+    var overrideFocused = isOverridePoint(dateStr, minute2);
 
     // Time window string
     var windowStr = '';
@@ -554,6 +804,16 @@
       var wh2 = String(Math.floor(taskEnd   / 60)).padStart(2, '0');
       var wm2 = String(Math.round(taskEnd)   % 60).padStart(2, '0');
       windowStr = wh1 + ':' + wm1 + ' \u2013 ' + wh2 + ':' + wm2;
+    } else {
+      var idleStart = minute2;
+      var idleEnd = minute2;
+      while (idleStart > 0 && steps[idleStart - 1] && !steps[idleStart - 1].task) idleStart--;
+      while (idleEnd < 1439 && steps[idleEnd + 1] && !steps[idleEnd + 1].task) idleEnd++;
+      var ih1 = String(Math.floor(idleStart / 60)).padStart(2, '0');
+      var im1 = String(idleStart % 60).padStart(2, '0');
+      var ih2 = String(Math.floor(idleEnd / 60)).padStart(2, '0');
+      var im2 = String(idleEnd % 60).padStart(2, '0');
+      windowStr = ih1 + ':' + im1 + ' \u2013 ' + ih2 + ':' + im2;
     }
 
     tooltipEl.style.setProperty('--tip-color', col);
@@ -570,6 +830,7 @@
       }
     }
     if (tipWindow)    tipWindow.textContent    = windowStr;
+    if (tipOverrideActions) tipOverrideActions.style.display = overrideFocused ? 'flex' : 'none';
     if (tipRate)    { tipRate.textContent      = rateStr; tipRate.style.color = rateCol; }
     if (tipFatigue)   tipFatigue.textContent   = 'Erschöpf.\u00d7: ' + step.M_fatigue.toFixed(3);
     if (tipCircadian) tipCircadian.textContent = 'Zirkadian\u00d7: ' + step.M_circadian.toFixed(3);
@@ -596,7 +857,12 @@
   }
 
   function onLeave() {
+    if (_pinnedOverridePoint) {
+      showPinnedTooltip();
+      return;
+    }
     _lastHoverE = null;
+    _lastHoverPoint = null;
     svg.style.cursor = 'crosshair';
     var hl = svg.querySelector('#sg-hl');
     var hd = svg.querySelector('#sg-hd');
@@ -618,6 +884,25 @@
     var frac    = (svgX - colIdx * DAY_W) / DAY_W;
     var minute  = Math.round(Math.max(0, Math.min(1439, frac * 1440)));
     var dateStr = svg._dates[colIdx];
+
+    // Clicking near an override marker pins tooltip on that marker
+    var nearestOverride = null;
+    var nearestDist = 10;
+    (svg._overridePoints || []).forEach(function (p) {
+      if (p.dateStr !== dateStr) return;
+      var dx = Math.abs((colIdx * DAY_W + (p.minute / 1440) * DAY_W) - svgX);
+      if (dx < nearestDist) {
+        nearestDist = dx;
+        nearestOverride = p;
+      }
+    });
+    if (nearestOverride) {
+      _pinnedOverridePoint = { dateStr: nearestOverride.dateStr, minute: nearestOverride.minute };
+      showPinnedTooltip();
+      return;
+    }
+    _pinnedOverridePoint = null;
+
     var steps   = svg._stepsMap[dateStr];
     if (!steps) return;
     var step = steps[minute];
