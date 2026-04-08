@@ -926,10 +926,13 @@ html, body {
 
     /* Apply darker text to all elements in past train entries */
     .train-entry.past-train,
-    .train-entry.past-train .zugziel,
-    .train-entry.past-train .departure,
     .train-entry.past-train .line-badge {
-      opacity: 0.95;
+      color: rgba(255, 255, 255, 1);
+    }
+    
+    .train-entry.past-train .zugziel,
+    .train-entry.past-train .departure {
+      opacity: 0.8;
       color: rgba(255, 255, 255, 1);
     }
 
