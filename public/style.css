@@ -5967,6 +5967,15 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
   height: 100%;
 }
 
+.sg-now-line {
+  position: absolute;
+  width: 2px;
+  border-left: 2px dashed #f8fafc;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+}
+
 /* ── Hint overlay ─────────────────────────────────────────────────────────── */
 .sg-hint {
   position: absolute;

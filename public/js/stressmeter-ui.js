@@ -32,6 +32,8 @@
   var manualEOverrides = {};     // { 'YYYY-MM-DD': { minute: E, ... }, ... }
   var _pinnedOverridePoint = null; // { dateStr, minute }
   var _skipAutoTooltip  = false;   // flag to suppress auto-pinned tooltip after setting override
+  var _graphRenderCache = { key: '', svgMarkup: '' };
+  var _nowLineEl = null;
 
   // Load overrides from localStorage
   function loadOverridesFromStorage() {
@@ -223,6 +225,67 @@
     return T + (1 - (e - Y_MIN) / Y_RANGE) * (H - T - B);
   }
 
+  function trainSignature(t) {
+    if (!t) return '';
+    return [
+      t._uniqueId || '',
+      t.date || '',
+      t.plan || '',
+      t.actual || '',
+      Number(t.dauer) || 0,
+      t.linie || '',
+      t.canceled ? 1 : 0
+    ].join('|');
+  }
+
+  function buildGraphRenderKey(today, dayW, height) {
+    var version = (typeof schedule !== 'undefined' && schedule && schedule._meta) ? (schedule._meta.version || 0) : 0;
+    var trainsSig = (processedTrainData.allTrains || []).map(trainSignature).join('~');
+    var overridesSig = JSON.stringify(manualEOverrides || {});
+    return [today, dayW, height, version, trainsSig, overridesSig].join('::');
+  }
+
+  function ensureNowLine() {
+    if (_nowLineEl && _nowLineEl.parentElement) return _nowLineEl;
+    var shellEl = scrollWrap.parentElement;
+    if (!shellEl) return null;
+    _nowLineEl = shellEl.querySelector('.sg-now-line');
+    if (!_nowLineEl) {
+      _nowLineEl = document.createElement('div');
+      _nowLineEl.className = 'sg-now-line';
+      shellEl.appendChild(_nowLineEl);
+    }
+    return _nowLineEl;
+  }
+
+  function updateNowLineOverlay(dayW, height) {
+    var lineEl = ensureNowLine();
+    if (!lineEl) return;
+    if (!dashboardOpen) {
+      lineEl.style.opacity = '0';
+      return;
+    }
+    var nowD = new Date();
+    var nMin = nowD.getHours() * 60 + nowD.getMinutes();
+    var x = L_YAXIS + (TODAY_IDX * dayW + (nMin / 1440) * dayW) - scrollWrap.scrollLeft;
+    lineEl.style.left = x + 'px';
+    lineEl.style.top = (T - 4) + 'px';
+    lineEl.style.height = (height - B - T + 8) + 'px';
+    lineEl.style.opacity = '0.85';
+  }
+
+  function bindSvgInteractionHandlers() {
+    svg.removeEventListener('mousemove', onHoverThrottled);
+    svg.removeEventListener('mouseleave', onLeave);
+    svg.removeEventListener('touchmove', onHoverThrottled);
+    svg.removeEventListener('touchend', onLeave);
+
+    svg.addEventListener('mousemove', onHoverThrottled);
+    svg.addEventListener('mouseleave', onLeave);
+    svg.addEventListener('touchmove', onHoverThrottled, { passive: true });
+    svg.addEventListener('touchend', onLeave);
+  }
+
   // ── Badge ─────────────────────────────────────────────────────────────────
   badge.addEventListener('click', toggleDashboard);
   svg.addEventListener('click', onSvgClick);
@@ -332,6 +395,10 @@
     badge.classList.remove('badge-green', 'badge-yellow', 'badge-orange', 'badge-red');
     badge.classList.add(tier === 1 ? 'badge-green' : tier === 2 ? 'badge-yellow' : tier === 3 ? 'badge-orange' : 'badge-red');
     document.body.classList.toggle('stress-alert', tier === 4);
+
+    if (dashboardOpen && svg._DAY_W && svg._H) {
+      updateNowLineOverlay(svg._DAY_W, svg._H);
+    }
   }
 
   // ── Dashboard toggle ──────────────────────────────────────────────────────
@@ -344,6 +411,8 @@
       requestAnimationFrame(function () {
         requestAnimationFrame(renderGraph);
       });
+    } else {
+      updateNowLineOverlay(svg._DAY_W || Math.max(120, scrollWrap.clientWidth), svg._H || (scrollWrap.clientHeight || 280));
     }
   }
 
@@ -422,7 +491,31 @@
     var dates = [];
     for (var i = 0; i < DAYS; i++) dates.push(offsetDate(today, i));
 
+    var renderKey = buildGraphRenderKey(today, DAY_W, H);
+
     renderYAxis(H, cfg);
+
+    if (_graphRenderCache.key === renderKey && _graphRenderCache.svgMarkup) {
+      svg.setAttribute('width', _graphRenderCache.SVG_W);
+      svg.setAttribute('height', H);
+      svg.setAttribute('viewBox', '0 0 ' + _graphRenderCache.SVG_W + ' ' + H);
+      svg.style.width = _graphRenderCache.SVG_W + 'px';
+      svg.style.height = H + 'px';
+      svg.style.cursor = 'crosshair';
+      if (svg.innerHTML !== _graphRenderCache.svgMarkup) svg.innerHTML = _graphRenderCache.svgMarkup;
+
+      svg._stepsMap = _graphRenderCache.stepsMap;
+      svg._snapMap = _graphRenderCache.snapMap;
+      svg._overridePoints = _graphRenderCache.overridePoints;
+      svg._dates = _graphRenderCache.dates;
+      svg._H = H;
+      svg._DAY_W = DAY_W;
+
+      scrollWrap.scrollLeft = savedScroll;
+      bindSvgInteractionHandlers();
+      updateNowLineOverlay(DAY_W, H);
+      return;
+    }
 
     var s        = '';
     var fullW    = DAYS * DAY_W;
@@ -611,14 +704,6 @@
         s += '<circle cx="' + f(ox) + '" cy="' + f(oy) + '" r="2.8" fill="#ffffff"/>';
       });
 
-      // NOW marker
-      if (isToday) {
-        var nowD = new Date();
-        var nMin = nowD.getHours() * 60 + nowD.getMinutes();
-        var nx   = f(colX + (nMin / 1440) * DAY_W);
-        s += '<line x1="' + nx + '" y1="' + (T - 4) + '" x2="' + nx + '" y2="' + (H - B + 4) +
-             '" stroke="#f8fafc" stroke-width="2" stroke-dasharray="3 4" opacity="0.85"/>';
-      }
     }
 
     s += '<line x1="' + fullW + '" y1="' + T + '" x2="' + fullW + '" y2="' + (H - B) +
@@ -649,13 +734,21 @@
     svg._H        = H;
     svg._DAY_W    = DAY_W;
 
+    _graphRenderCache = {
+      key: renderKey,
+      svgMarkup: s,
+      stepsMap: stepsMap,
+      snapMap: snapMap,
+      overridePoints: overridePoints,
+      dates: dates,
+      SVG_W: SVG_W
+    };
+
     scrollWrap.scrollLeft = savedScroll;
 
     // Events on the entire SVG element (not just hit rect) so cursor never flickers
-    svg.addEventListener('mousemove',  onHoverThrottled);
-    svg.addEventListener('mouseleave', onLeave);
-    svg.addEventListener('touchmove',  onHoverThrottled, { passive: true });
-    svg.addEventListener('touchend',   onLeave);
+    bindSvgInteractionHandlers();
+    updateNowLineOverlay(DAY_W, H);
   }
 
   // ── Tooltip (throttled via rAF) ───────────────────────────────────────────
@@ -942,6 +1035,11 @@
     else if (e.key === 'ArrowLeft')  { e.preventDefault(); scrollWrap.scrollLeft -= 180; }
   });
 
+  scrollWrap.addEventListener('scroll', function () {
+    if (!dashboardOpen) return;
+    updateNowLineOverlay(svg._DAY_W || Math.max(120, scrollWrap.clientWidth), svg._H || (scrollWrap.clientHeight || 280));
+  }, { passive: true });
+
   // Debounced resize re-render
   var _resizeTimer = null;
   window.addEventListener('resize', function () {
@@ -955,6 +1053,8 @@
 
   window.stressmeterOnDataChanged = function () {
     invalidateStressmeterCache();
+    _graphRenderCache.key = '';
+    _graphRenderCache.svgMarkup = '';
     lastBadgeMinute = -1;
     updateStressBadge();
     if (dashboardOpen) renderGraph();
