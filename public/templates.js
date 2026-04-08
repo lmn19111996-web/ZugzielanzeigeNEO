@@ -68,22 +68,18 @@ const Templates = {
     // ── Check-in / Check-out widget ──────────────────────────────────────────
     // Only rendered for today's non-cancelled trains (not the headline first-train).
     const isCheckedIn   = !!train.checkinTime;
-    const isPastTrain   = isPastTrainDetected;
     const uid           = train._uniqueId || '';
 
     let checkinWidgetHTML = '';
     if (isToday && !train.canceled && !isFirstTrain) {
-      if (isPastTrain) {
-        // Past train: no check-in widget - status shown only in time animation
+      // Show widget for all today's non-canceled tasks (including past tasks)
+      // until they are checked out.
+      if (isCheckedOut) {
+        // Completed: hide check-in/check-out widget entirely
         checkinWidgetHTML = '';
-      } else {
-        // Future train: original check-in/check-out widget
-        if (isCheckedOut) {
-          // Completed: hide check-in/check-out widget entirely
-          checkinWidgetHTML = '';
-        } else if (isCheckedIn) {
-          // Stable checked-in state (loaded from saved data — no animation)
-          checkinWidgetHTML = `
+      } else if (isCheckedIn) {
+        // Stable checked-in state (loaded from saved data — no animation)
+        checkinWidgetHTML = `
             <div class="checkin-wrap show-checkout">
               <div class="checkin-shell checked-in stable">
                 <div class="checkin-border" aria-hidden="true">
@@ -110,9 +106,9 @@ const Templates = {
                 </span>
               </button>
             </div>`;
-        } else {
-          // Idle: yellow check-in button waiting to be clicked
-          checkinWidgetHTML = `
+      } else {
+        // Idle: yellow check-in button waiting to be clicked
+        checkinWidgetHTML = `
             <div class="checkin-wrap">
               <div class="checkin-shell">
                 <div class="checkin-border" aria-hidden="true">
@@ -139,7 +135,6 @@ const Templates = {
                 </span>
               </button>
             </div>`;
-        }
       }
     }
     
