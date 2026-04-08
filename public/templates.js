@@ -49,6 +49,65 @@ const Templates = {
       tempDiv.appendChild(formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date));
     }
     const departureHTML = tempDiv.innerHTML;
+
+    // ── Check-in / Check-out widget ──────────────────────────────────────────
+    // Only rendered for today's non-cancelled trains (not the headline first-train).
+    const _d = now;
+    const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+    const isToday       = train.date === todayDate;
+    const isCheckedIn   = !!train.checkinTime;
+    const isCheckedOut  = !!train.checkoutTime;
+    const uid           = train._uniqueId || '';
+
+    let checkinWidgetHTML = '';
+    if (isToday && !train.canceled && !isFirstTrain) {
+      if (isCheckedOut) {
+        // Completed: show a small done indicator next to the time
+        checkinWidgetHTML = `<img class="ci-done-icon" src="res/eingecheckt.svg" alt="Abgecheckt" title="Ausgecheckt um ${train.checkoutTime}">`;
+      } else if (isCheckedIn) {
+        // Stable checked-in state (loaded from saved data — no animation)
+        checkinWidgetHTML = `
+          <div class="checkin-wrap show-checkout">
+            <div class="checkin-shell checked-in stable">
+              <div class="checkin-border" aria-hidden="true">
+                <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                  <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                </svg>
+              </div>
+              <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Eingecheckt">
+                <span class="checkin-content">
+                  <img class="ci-icon ci-icon--checked" src="res/eingecheckt.svg" alt="">
+                  <span class="checkin-text">Erfolgreich eingecheckt</span>
+                </span>
+              </button>
+            </div>
+            <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
+              <img class="co-icon" src="res/checkout.svg" alt="">
+            </button>
+          </div>`;
+      } else {
+        // Idle: yellow check-in button waiting to be clicked
+        checkinWidgetHTML = `
+          <div class="checkin-wrap">
+            <div class="checkin-shell">
+              <div class="checkin-border" aria-hidden="true">
+                <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                  <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                </svg>
+              </div>
+              <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Einchecken">
+                <span class="checkin-content">
+                  <img class="ci-icon" src="res/checkin.svg" alt="">
+                  <span class="checkin-text">Erfolgreich eingecheckt</span>
+                </span>
+              </button>
+            </div>
+            <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
+              <img class="co-icon" src="res/checkout.svg" alt="">
+            </button>
+          </div>`;
+      }
+    }
     
     return `
       <div class="${entryClasses.join(' ')}" 
@@ -79,6 +138,7 @@ const Templates = {
             </div>
           </div>
         </div>
+        ${checkinWidgetHTML}
       </div>
     `;
   },

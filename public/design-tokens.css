@@ -104,6 +104,15 @@
   --color-state-info-bg:      rgba(100, 150, 255, 0.20);
   --color-state-info-text:    rgba(150, 200, 255, 0.90);
 
+  /* Check-in / Checkout states */
+  --checkin-yellow:           #eab308;  /* Check-in button idle (yellow) */
+  --checkin-success-green:    rgb(99, 166, 21);  /* Check-in success state (bright green) */
+  --checkout-icon-tint:       #ffffff;  /* Checkout icon (white) */
+  --checkin-success-bg:       rgba( 34, 197,  94, 0.14); /* Glass-green while success expanding */
+  --checkin-stable-bg:        rgba(255, 255, 255, 0.05); /* Faded bg after animation completes */
+  --checkin-border-stroke:    #40a11d;                   /* Clockwise-drawing border stroke */
+  --checkin-text-color:       rgb(99, 166, 21); /* "Erfolgreich eingecheckt" label */
+
 
   /* ============================================================
      ANNOUNCEMENT HEADLINE STATUS BADGES
