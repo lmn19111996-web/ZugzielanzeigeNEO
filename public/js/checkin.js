@@ -25,6 +25,30 @@ function _ciFindTrain(uid) {
   return (schedule.spontaneousEntries || []).find(function (t) { return t._uniqueId === uid; });
 }
 
+function _ciComputeDuration(baseTime, outTime) {
+  var baseH = parseInt(baseTime.split(':')[0], 10);
+  var baseM = parseInt(baseTime.split(':')[1], 10);
+  var outH  = parseInt(outTime.split(':')[0], 10);
+  var outM  = parseInt(outTime.split(':')[1], 10);
+  var dur   = (outH * 60 + outM) - (baseH * 60 + baseM);
+  if (dur < 1) dur = 1;
+  return dur;
+}
+
+function _ciApplyCheckoutState(uid, timeStr, dur) {
+  var lists = [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []];
+  var seen = new Set();
+  lists.forEach(function (list) {
+    list.forEach(function (t) {
+      if (!t || t._uniqueId !== uid) return;
+      if (seen.has(t)) return;
+      seen.add(t);
+      t.dauer = dur;
+      t.checkoutTime = timeStr;
+    });
+  });
+}
+
 // ── Data operations ────────────────────────────────────────────────────────
 
 function _ciCommitCheckin(uid, timeStr) {
@@ -40,21 +64,8 @@ function _ciCommitCheckin(uid, timeStr) {
   saveSchedule();
 }
 
-function _ciSaveCheckout(uid, timeStr) {
-  var train = _ciFindTrain(uid);
-  if (!train) return;
-
-  // Duration = checkout minus checkin (minutes)
-  var base  = train.checkinTime || train.actual || '00:00';
-  var baseH = parseInt(base.split(':')[0], 10);
-  var baseM = parseInt(base.split(':')[1], 10);
-  var outH  = parseInt(timeStr.split(':')[0], 10);
-  var outM  = parseInt(timeStr.split(':')[1], 10);
-  var dur   = (outH * 60 + outM) - (baseH * 60 + baseM);
-  if (dur < 1) dur = 1;
-
-  train.dauer        = dur;
-  train.checkoutTime = timeStr;
+function _ciSaveCheckout(uid, timeStr, dur) {
+  _ciApplyCheckoutState(uid, timeStr, dur);
 
   if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
 
@@ -119,30 +130,29 @@ document.addEventListener('click', function _ciClickCapture(e) {
     e.stopPropagation();
     e.preventDefault();
 
+    var wrap  = coBtn.closest('.checkin-wrap');
+    if (!wrap) return;
+
     coBtn.disabled = true;
     var checkoutTime = _ciNowHHMM();
+    var baseTime = train.checkinTime || train.actual || '00:00';
+    var checkoutDuration = _ciComputeDuration(baseTime, checkoutTime);
 
-    // Show checkout success animation
-    var messageDiv = document.createElement('div');
-    messageDiv.className = 'checkout-message';
-    var boxDiv = document.createElement('div');
-    boxDiv.className = 'co-success-box';
-    var iconImg = document.createElement('img');
-    iconImg.className = 'co-success-icon';
-    iconImg.src = 'res/eingecheckt.svg';
-    iconImg.alt = '';
-    var textSpan = document.createElement('span');
-    textSpan.textContent = 'Erfolgreich ausgescheckt';
-    boxDiv.appendChild(iconImg);
-    boxDiv.appendChild(textSpan);
-    messageDiv.appendChild(boxDiv);
-    document.body.appendChild(messageDiv);
+    // Apply checked-out data immediately to avoid transient re-renders showing
+    // the old checked-in widget during the animation window.
+    _ciApplyCheckoutState(uid, checkoutTime, checkoutDuration);
 
-    // After animation completes (0.5s), save checkout and rerender
+    // Stage 1 (0-1.5s): run checkout box expansion + border/background animation.
+    wrap.classList.remove('show-checkout', 'fade-accent', 'checkout-fade');
+    wrap.classList.add('checkout-animating');
+
+    // Stage 2 (1.5-2.0s): fade accent + fade out to nothingness.
     setTimeout(function () {
-      messageDiv.remove();
-      _ciSaveCheckout(uid, checkoutTime);
-    }, 500);
+      wrap.classList.add('fade-accent', 'checkout-fade');
+      setTimeout(function () {
+        _ciSaveCheckout(uid, checkoutTime, checkoutDuration);
+      }, 300);
+    }, 1500);
     return;
   }
 }, true /* capture phase — fires before bubbling entry-click listeners */);

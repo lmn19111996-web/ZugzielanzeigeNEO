@@ -18,6 +18,8 @@
   var IDLE_C    = 'rgba(156,163,175,1.0)';
   // Snap-to-boundary tolerance: within this many px of a task boundary the cursor snaps to it
   var SNAP_PX   = 12;
+  // Override-point hit tolerance in px (radial distance from marker center)
+  var OVERRIDE_HIT_PX = 14;
   // Font for all SVG text
   var SVG_FONT  = "'Bahnschrift', 'Bahnschrift Condensed', 'Arial Narrow', sans-serif";
 
@@ -731,14 +733,15 @@
       if (dist < SNAP_PX && dist < minDist) { minDist = dist; snapped = sp; }
     });
 
-    // Check for nearby override markers and auto-pin tooltip
+    // Check for nearby override markers and auto-pin tooltip (2D hit test)
     var nearbyOverride = null;
     var overrideDist = Infinity;
     (svg._overridePoints || []).forEach(function (p) {
       if (p.dateStr !== dateStr || e._forcePoint) return;
-      var px = colIdx * DAY_W + (p.minute / 1440) * DAY_W;
-      var dist = Math.abs(svgX - px);
-      if (dist < SNAP_PX && dist < overrideDist) {
+      var dx = svgX - p.x;
+      var dy = (clientY - wRect.top) - p.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < OVERRIDE_HIT_PX && dist < overrideDist) {
         overrideDist = dist;
         nearbyOverride = p;
       }
@@ -747,7 +750,9 @@
       _pinnedOverridePoint = { dateStr: nearbyOverride.dateStr, minute: nearbyOverride.minute };
     }
 
-    var minute2  = e._forcePoint ? minute : (snapped ? snapped.minute : minute);
+    var minute2  = e._forcePoint
+      ? minute
+      : (nearbyOverride ? nearbyOverride.minute : (snapped ? snapped.minute : minute));
     var step     = steps[minute2];
     if (!step) { onLeave(); return; }
 
@@ -887,12 +892,15 @@
 
     // Clicking near an override marker pins tooltip on that marker
     var nearestOverride = null;
-    var nearestDist = 10;
+    var nearestDist = OVERRIDE_HIT_PX;
+    var localY = clientY - wRect.top;
     (svg._overridePoints || []).forEach(function (p) {
       if (p.dateStr !== dateStr) return;
-      var dx = Math.abs((colIdx * DAY_W + (p.minute / 1440) * DAY_W) - svgX);
-      if (dx < nearestDist) {
-        nearestDist = dx;
+      var dx = svgX - p.x;
+      var dy = localY - p.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < nearestDist) {
+        nearestDist = dist;
         nearestOverride = p;
       }
     });

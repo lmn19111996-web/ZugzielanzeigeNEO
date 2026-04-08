@@ -78,8 +78,8 @@ const Templates = {
       } else {
         // Future train: original check-in/check-out widget
         if (isCheckedOut) {
-          // Completed: show a small done indicator next to the time
-          checkinWidgetHTML = `<img class="ci-done-icon" src="res/eingecheckt.svg" alt="Abgecheckt" title="Ausgecheckt um ${train.checkoutTime}">`;
+          // Completed: hide check-in/check-out widget entirely
+          checkinWidgetHTML = '';
         } else if (isCheckedIn) {
           // Stable checked-in state (loaded from saved data — no animation)
           checkinWidgetHTML = `
@@ -98,7 +98,15 @@ const Templates = {
                 </button>
               </div>
               <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
-                <img class="co-icon" src="res/checkout.svg" alt="">
+                <span class="checkout-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </span>
+                <span class="checkout-content">
+                  <img class="co-icon" src="res/checkout.svg" alt="">
+                  <span class="checkout-text">Erfolgreich ausgescheckt</span>
+                </span>
               </button>
             </div>`;
         } else {
@@ -119,7 +127,15 @@ const Templates = {
                 </button>
               </div>
               <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
-                <img class="co-icon" src="res/checkout.svg" alt="">
+                <span class="checkout-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </span>
+                <span class="checkout-content">
+                  <img class="co-icon" src="res/checkout.svg" alt="">
+                  <span class="checkout-text">Erfolgreich ausgescheckt</span>
+                </span>
               </button>
             </div>`;
         }
