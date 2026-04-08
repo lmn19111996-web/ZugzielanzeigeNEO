@@ -5734,19 +5734,25 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
 
 /* ── Dashboard panel ─────────────────────────────────────────────────────── */
 .stress-dashboard {
-  display: none;
+  height: 0;
+  overflow: hidden;
   width: calc(100% - 2vw);
   box-sizing: border-box;
   background-color: var(--color-bg-panel);
-  box-shadow: 0 0.3vh 1.5vh rgba(0, 0, 0, 0.3);
-  margin: 1vh 1vw;
+  margin: 0 1vw;
   color: #e9f1fb;
+  border: 0.5px solid transparent;
+  border-radius: 2vh;
+  transition: height 0.25s ease, margin-top 0.25s ease, margin-bottom 0.25s ease,
+              box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .stress-dashboard.open {
-  display: block;
-  border: 0.5px solid var(--color-border-subtle);
-  border-radius: 2vh;
+  height: 500px;
+  margin-top: 1vh;
+  margin-bottom: 0;
+  border-color: var(--color-border-subtle);
+  box-shadow: 0 0.3vh 1.5vh rgba(0, 0, 0, 0.3);
 }
 
 /* ── Chart shell: fixed Y-axis left, scrollable content right ─────────────── */
