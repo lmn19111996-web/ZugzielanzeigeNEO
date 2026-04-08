@@ -51,7 +51,8 @@ const Templates = {
     const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
     const isToday = train.date === todayDate;
     const isCheckedOut = !!train.checkoutTime;
-    const isPastTrainDetected = train._isPastTrain || (isToday && isCheckedOut);
+    const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut;
+    const isPastTrainDetected = !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
     
     if (isFirstTrain) {
       tempDiv.appendChild(formatCountdown(train, now));

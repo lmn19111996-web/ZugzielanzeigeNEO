@@ -197,13 +197,17 @@
         const timeDisplay = document.createElement('div');
         timeDisplay.className = 'past-train-time-display active';
         
-        // Planned time (strikethrough) on top
-        const plannedSpan = document.createElement('span');
-        plannedSpan.className = 'past-train-planned-time';
-        plannedSpan.textContent = planHHMM;
-        timeDisplay.appendChild(plannedSpan);
-        
-        // Actual arrival - Departure on next line
+        const hasDelay = planHHMM !== actualHHMM;
+
+        // Planned time (strikethrough) is shown only when actual differs from plan.
+        if (hasDelay) {
+          const plannedSpan = document.createElement('span');
+          plannedSpan.className = 'past-train-planned-time';
+          plannedSpan.textContent = planHHMM;
+          timeDisplay.appendChild(plannedSpan);
+        }
+
+        // Always show actual arrival - departure interval.
         const actualSpan = document.createElement('span');
         actualSpan.className = 'past-train-actual-time';
         actualSpan.textContent = `${actualHHMM}–${departureHHMM}`;
