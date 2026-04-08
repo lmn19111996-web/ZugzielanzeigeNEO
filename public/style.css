@@ -930,13 +930,14 @@ html, body {
       color: rgba(255, 255, 255, 1);
     }
     
-    .train-entry.past-train .zugziel,
-    .train-entry.past-train .departure {
-      opacity: 0.8;
+    .train-entry.past-train .zugziel {
+      opacity: 0.6;
+      font-weight: 400;
       color: rgba(255, 255, 255, 1);
     }
 
     .train-entry.past-train .departure {
+      opacity: 0.8;
       overflow: visible;
       text-overflow: clip;
     }
@@ -948,7 +949,7 @@ html, body {
       min-width: 18vh;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       overflow: visible;
     }
 
@@ -957,7 +958,7 @@ html, body {
       position: absolute;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       opacity: 1;
       animation: pastTrainTimeToggle 10s infinite;
@@ -973,7 +974,7 @@ html, body {
       animation: pastTrainStatusToggle 10s infinite;
       display: inline-flex;
       align-items: baseline;
-      justify-content: center;
+      justify-content: flex-end;
       gap: 0.2vh;
       color: rgba(255, 255, 255, 1);
       overflow: visible;
@@ -1007,7 +1008,7 @@ html, body {
       text-decoration: line-through;
       opacity: 0.9;
       line-height: 1;
-      align-self: flex-start;
+      align-self: flex-end;
       margin-bottom: 0.2vh;
     }
 
