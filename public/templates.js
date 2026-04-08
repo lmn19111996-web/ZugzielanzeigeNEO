@@ -40,11 +40,25 @@ const Templates = {
     if (isFirstTrain) entryClasses.push('first-train');
     if (train.linie === 'FEX') entryClasses.push('fex-entry');
     if (train._isPreview) entryClasses.push('preview-train');
+    if (train._isPastTrain) entryClasses.push('past-train');
     
     // Create a temporary container for departure HTML
     const tempDiv = document.createElement('div');
+    
+    // Determine if this is truly a past train using multiple indicators
+    // to handle cases where _isPastTrain flag might not be set yet
+    const _d = now;
+    const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+    const isToday = train.date === todayDate;
+    const isCheckedOut = !!train.checkoutTime;
+    const isPastTrainDetected = train._isPastTrain || (isToday && isCheckedOut);
+    
     if (isFirstTrain) {
       tempDiv.appendChild(formatCountdown(train, now));
+    } else if (isPastTrainDetected) {
+      // For past trains, use special time formatting
+      // Pass check-in status to determine animation display
+      tempDiv.appendChild(formatPastTrainTime(train.plan, train.actual, train.dauer, train.date, now, !!train.checkinTime));
     } else {
       tempDiv.appendChild(formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date));
     }
@@ -52,60 +66,63 @@ const Templates = {
 
     // ── Check-in / Check-out widget ──────────────────────────────────────────
     // Only rendered for today's non-cancelled trains (not the headline first-train).
-    const _d = now;
-    const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
-    const isToday       = train.date === todayDate;
     const isCheckedIn   = !!train.checkinTime;
-    const isCheckedOut  = !!train.checkoutTime;
+    const isPastTrain   = isPastTrainDetected;
     const uid           = train._uniqueId || '';
 
     let checkinWidgetHTML = '';
     if (isToday && !train.canceled && !isFirstTrain) {
-      if (isCheckedOut) {
-        // Completed: show a small done indicator next to the time
-        checkinWidgetHTML = `<img class="ci-done-icon" src="res/eingecheckt.svg" alt="Abgecheckt" title="Ausgecheckt um ${train.checkoutTime}">`;
-      } else if (isCheckedIn) {
-        // Stable checked-in state (loaded from saved data — no animation)
-        checkinWidgetHTML = `
-          <div class="checkin-wrap show-checkout">
-            <div class="checkin-shell checked-in stable">
-              <div class="checkin-border" aria-hidden="true">
-                <svg viewBox="0 0 226 44" preserveAspectRatio="none">
-                  <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
-                </svg>
-              </div>
-              <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Eingecheckt">
-                <span class="checkin-content">
-                  <img class="ci-icon ci-icon--checked" src="res/eingecheckt.svg" alt="">
-                  <span class="checkin-text">Erfolgreich eingecheckt</span>
-                </span>
-              </button>
-            </div>
-            <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
-              <img class="co-icon" src="res/checkout.svg" alt="">
-            </button>
-          </div>`;
+      if (isPastTrain) {
+        // Past train: no check-in widget - status shown only in time animation
+        checkinWidgetHTML = '';
       } else {
-        // Idle: yellow check-in button waiting to be clicked
-        checkinWidgetHTML = `
-          <div class="checkin-wrap">
-            <div class="checkin-shell">
-              <div class="checkin-border" aria-hidden="true">
-                <svg viewBox="0 0 226 44" preserveAspectRatio="none">
-                  <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
-                </svg>
+        // Future train: original check-in/check-out widget
+        if (isCheckedOut) {
+          // Completed: show a small done indicator next to the time
+          checkinWidgetHTML = `<img class="ci-done-icon" src="res/eingecheckt.svg" alt="Abgecheckt" title="Ausgecheckt um ${train.checkoutTime}">`;
+        } else if (isCheckedIn) {
+          // Stable checked-in state (loaded from saved data — no animation)
+          checkinWidgetHTML = `
+            <div class="checkin-wrap show-checkout">
+              <div class="checkin-shell checked-in stable">
+                <div class="checkin-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </div>
+                <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Eingecheckt">
+                  <span class="checkin-content">
+                    <img class="ci-icon ci-icon--checked" src="res/eingecheckt.svg" alt="">
+                    <span class="checkin-text">Erfolgreich eingecheckt</span>
+                  </span>
+                </button>
               </div>
-              <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Einchecken">
-                <span class="checkin-content">
-                  <img class="ci-icon" src="res/checkin.svg" alt="">
-                  <span class="checkin-text">Erfolgreich eingecheckt</span>
-                </span>
+              <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
+                <img class="co-icon" src="res/checkout.svg" alt="">
               </button>
-            </div>
-            <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
-              <img class="co-icon" src="res/checkout.svg" alt="">
-            </button>
-          </div>`;
+            </div>`;
+        } else {
+          // Idle: yellow check-in button waiting to be clicked
+          checkinWidgetHTML = `
+            <div class="checkin-wrap">
+              <div class="checkin-shell">
+                <div class="checkin-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </div>
+                <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Einchecken">
+                  <span class="checkin-content">
+                    <img class="ci-icon" src="res/checkin.svg" alt="">
+                    <span class="checkin-text">Erfolgreich eingecheckt</span>
+                  </span>
+                </button>
+              </div>
+              <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
+                <img class="co-icon" src="res/checkout.svg" alt="">
+              </button>
+            </div>`;
+        }
       }
     }
     

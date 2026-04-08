@@ -87,8 +87,9 @@
           train.actual = newActual;
           scheduleTrain.actual = newActual;
           // Update departure display in the DOM without re-rendering the whole list
+          // Skip past trains - they have their own CSS animation
           const depEl = entry.querySelector('.departure');
-          if (depEl) {
+          if (depEl && !entry.classList.contains('past-train')) {
             const tempDiv = document.createElement('div');
             tempDiv.appendChild(formatDeparture(train.plan, newActual, now, newDelay, train.dauer, train.date));
             depEl.innerHTML = tempDiv.innerHTML;

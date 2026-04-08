@@ -120,7 +120,29 @@ document.addEventListener('click', function _ciClickCapture(e) {
     e.preventDefault();
 
     coBtn.disabled = true;
-    _ciSaveCheckout(uid, _ciNowHHMM());
+    var checkoutTime = _ciNowHHMM();
+
+    // Show checkout success animation
+    var messageDiv = document.createElement('div');
+    messageDiv.className = 'checkout-message';
+    var boxDiv = document.createElement('div');
+    boxDiv.className = 'co-success-box';
+    var iconImg = document.createElement('img');
+    iconImg.className = 'co-success-icon';
+    iconImg.src = 'res/eingecheckt.svg';
+    iconImg.alt = '';
+    var textSpan = document.createElement('span');
+    textSpan.textContent = 'Erfolgreich ausgescheckt';
+    boxDiv.appendChild(iconImg);
+    boxDiv.appendChild(textSpan);
+    messageDiv.appendChild(boxDiv);
+    document.body.appendChild(messageDiv);
+
+    // After animation completes (0.5s), save checkout and rerender
+    setTimeout(function () {
+      messageDiv.remove();
+      _ciSaveCheckout(uid, checkoutTime);
+    }, 500);
     return;
   }
 }, true /* capture phase — fires before bubbling entry-click listeners */);

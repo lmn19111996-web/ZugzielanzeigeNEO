@@ -167,6 +167,78 @@
       return frag;
     }
 
+    // Format time display for past trains (departed)
+    function formatPastTrainTime(plan, actual, dauer, trainDate, now, isCheckedIn = false) {
+      try {
+        // Parse times to get HH:MM format
+        const planTime = parseTime(plan, now, trainDate);
+        const actualTime = parseTime(actual || plan, now, trainDate);
+        
+        const planHHMM = planTime ? formatClock(planTime).substring(0, 5) : '--:--';
+        const actualHHMM = actualTime ? formatClock(actualTime).substring(0, 5) : '--:--';
+        
+        // Calculate departure time (actual arrival + duration)
+        let departureHHMM = '--:--';
+        if (actualTime && dauer) {
+          const occEnd = new Date(actualTime.getTime() + Number(dauer) * 60000);
+          departureHHMM = formatClock(occEnd).substring(0, 5);
+        }
+        
+        const frag = document.createDocumentFragment();
+        
+        // Create animation container for toggling time/departure status
+        const animContainer = document.createElement('div');
+        animContainer.className = 'past-train-time-toggle';
+        animContainer.setAttribute('data-plan', planHHMM);
+        animContainer.setAttribute('data-actual', actualHHMM);
+        animContainer.setAttribute('data-departure', departureHHMM);
+        
+        // Time display content
+        const timeDisplay = document.createElement('div');
+        timeDisplay.className = 'past-train-time-display active';
+        
+        // Planned time (strikethrough) on top
+        const plannedSpan = document.createElement('span');
+        plannedSpan.className = 'past-train-planned-time';
+        plannedSpan.textContent = planHHMM;
+        timeDisplay.appendChild(plannedSpan);
+        
+        // Actual arrival - Departure on next line
+        const actualSpan = document.createElement('span');
+        actualSpan.className = 'past-train-actual-time';
+        actualSpan.textContent = `${actualHHMM}–${departureHHMM}`;
+        timeDisplay.appendChild(actualSpan);
+        
+        animContainer.appendChild(timeDisplay);
+        
+        // Departure status display (hidden initially)
+        // Always show only "abgefahren"; icon/color indicate check-in status.
+        const statusDisplay = document.createElement('div');
+        statusDisplay.className = 'past-train-departed-display';
+
+        const statusText = document.createElement('span');
+        statusText.className = 'past-status-text';
+        statusText.textContent = 'abgefahren';
+        statusDisplay.appendChild(statusText);
+
+        if (isCheckedIn) {
+          statusDisplay.classList.add('is-checked');
+          const icon = document.createElement('img');
+          icon.className = 'past-status-icon';
+          icon.src = 'res/eingecheckt.svg';
+          icon.alt = '';
+          statusDisplay.appendChild(icon);
+        }
+        
+        animContainer.appendChild(statusDisplay);
+        frag.appendChild(animContainer);
+        return frag;
+      } catch (e) {
+        console.error('Error formatting past train time:', e);
+        return document.createTextNode('--:--');
+      }
+    }
+
     // Format countdown for headline train
     function formatCountdown(train, now) {
       if (train.canceled) {

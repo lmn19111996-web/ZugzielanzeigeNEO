@@ -919,6 +919,115 @@ html, body {
     }
 
     /* ============================================================
+       PAST TRAIN STYLES
+       Trains that have already arrived and departed on today's date.
+       Display darker text and special time format with animation.
+    ============================================================ */
+
+    /* Apply darker text to all elements in past train entries */
+    .train-entry.past-train,
+    .train-entry.past-train .zugziel,
+    .train-entry.past-train .departure,
+    .train-entry.past-train .line-badge {
+      opacity: 0.95;
+      color: rgba(255, 255, 255, 1);
+    }
+
+    .train-entry.past-train .departure {
+      overflow: visible;
+      text-overflow: clip;
+    }
+
+    /* Past train time toggle container */
+    .past-train-time-toggle {
+      position: relative;
+      height: 5.4vh;
+      min-width: 18vh;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+
+    /* Layered time/status views with sequential fades. */
+    .past-train-time-display {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      animation: pastTrainTimeToggle 10s infinite;
+      overflow: visible;
+    }
+
+    .past-train-departed-display {
+      position: absolute;
+      font-size: 3vh;
+      line-height: 1;
+      font-weight: 400;
+      opacity: 0;
+      animation: pastTrainStatusToggle 10s infinite;
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.2vh;
+      color: rgba(255, 255, 255, 1);
+      overflow: visible;
+    }
+
+    .past-train-departed-display.is-checked {
+      color: rgb(99, 166, 21);
+    }
+
+    /* 10s cycle: fast sequential fades (fade-out completes, then fade-in). */
+    @keyframes pastTrainTimeToggle {
+      0% { opacity: 0; }
+      7% { opacity: 1; }
+      43% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes pastTrainStatusToggle {
+      0% { opacity: 0; }
+      50% { opacity: 0; }
+      57% { opacity: 1; }
+      93% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Planned time (strikethrough) */
+    .past-train-planned-time {
+      font-size: 1.9vh;
+      color: var(--color-headline-ersatzfahrt);
+      text-decoration: line-through;
+      opacity: 0.9;
+      line-height: 1;
+      align-self: flex-start;
+      margin-bottom: 0.2vh;
+    }
+
+    /* Actual arrival - departure time */
+    .past-train-actual-time {
+      font-size: 3.3vh;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .past-status-text {
+      font-size: 3vh;
+      line-height: 1;
+    }
+
+    .past-status-icon {
+      width: 2.6vh;
+      height: 2.6vh;
+      flex-shrink: 0;
+      transform: translateY(-0.4em);
+    }
+
+    /* ============================================================
        CHECK-IN / CHECK-OUT WIDGET
        Appears left of the departure time on today's trains.
        SVG icons are self-colored (no filter tinting needed).
@@ -1081,6 +1190,60 @@ html, body {
     @keyframes ciDrawBorder {
       from { stroke-dashoffset: 530; }
       to   { stroke-dashoffset: 0;   }
+    }
+
+    /* Checkout success animation message */
+    .checkout-message {
+      position: fixed;
+      bottom: auto;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .co-success-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8vh;
+      background: rgba(34, 197, 94, 0.14);
+      border: 1.5px solid rgb(99, 166, 21);
+      border-radius: 1vh;
+      padding: 1vh 1.5vh;
+      color: rgb(99, 166, 21);
+      font-size: 2.2vh;
+      font-weight: 500;
+      white-space: nowrap;
+      animation: coMessageFadeInOut 0.5s ease-in-out forwards;
+    }
+
+    .co-success-icon {
+      width: 2.6vh;
+      height: 2.6vh;
+      flex-shrink: 0;
+    }
+
+    @keyframes coMessageFadeInOut {
+      0% { 
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      25% { 
+        opacity: 1;
+        transform: scale(1);
+      }
+      75% { 
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% { 
+        opacity: 0;
+        transform: scale(0.95);
+      }
     }
 
     /* Checkout button — no background, slides in from 0→4.5vh width */
@@ -3292,6 +3455,27 @@ html, body {
         display: flex;
         align-items: center;
         gap: 0.5vh;
+      }
+
+      /* Past trains on mobile: left-align the whole time field block */
+      .train-entry.past-train .right-block > .departure-slot {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .train-entry.past-train .past-train-time-toggle {
+        width: 100%;
+        min-width: 0;
+        justify-content: flex-start;
+      }
+
+      .train-entry.past-train .past-train-time-display,
+      .train-entry.past-train .past-train-departed-display {
+        left: 0;
+        right: auto;
+        align-items: flex-start;
+        justify-content: flex-start;
+        text-align: left;
       }
       
       /* Row 1, Col 2: Line icon */

@@ -99,6 +99,9 @@
           return ta - tb;
         });
       
+      // Get today's date for filtering past trains from today
+      const todayDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      
       // Filter for future and currently occupying trains
       processedTrainData.futureTrains = processedTrainData.scheduledTrains.filter(t => {
         const tTime = parseTime(t.actual || t.plan, now, t.date);
@@ -110,6 +113,24 @@
         const occEnd = getOccupancyEnd(t, now);
         if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
         return tTime > now;
+      });
+      
+      // Filter for past trains from today (already departed)
+      const pastTrainsFromToday = processedTrainData.scheduledTrains.filter(t => {
+        // Only include trains from today
+        if (t.date !== todayDate) return false;
+        
+        // Get the train's end time
+        const occEnd = getOccupancyEnd(t, now);
+        if (!occEnd) return false;
+        
+        // Include only trains that have already ended
+        return occEnd <= now;
+      });
+      
+      // Mark past trains with a flag for template rendering
+      pastTrainsFromToday.forEach(t => {
+        t._isPastTrain = true;
       });
       
       // IMPORTANT: Current train must ALWAYS be from local personal schedule
@@ -158,8 +179,9 @@
         processedTrainData.currentTrain = null;
       }
       
-      // Remaining trains (all future trains)
-      processedTrainData.remainingTrains = processedTrainData.futureTrains;
+      // Remaining trains: past trains (from today) + future trains
+      // Display order: oldest past train first, then future trains
+      processedTrainData.remainingTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
       
       return processedTrainData;
       

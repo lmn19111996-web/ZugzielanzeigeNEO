@@ -341,6 +341,12 @@
           return;
         }
         
+        // Skip past trains - they have their own CSS animation
+        const trainEntry = el.closest('.train-entry');
+        if (trainEntry && trainEntry.classList.contains('past-train')) {
+          return;
+        }
+        
         const plan = el.dataset.plan || null;
         const actual = el.dataset.actual || null;
         const dauer = el.dataset.dauer ? Number(el.dataset.dauer) : 0;

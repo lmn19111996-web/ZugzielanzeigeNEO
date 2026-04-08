@@ -475,7 +475,6 @@
 
     // ===== MOBILE SWIPE GESTURES =====
 
-
     function createTrainEntry(train, now, isFirstTrain = false) {
       // Use template to create HTML
       const htmlString = Templates.trainEntry(train, now, isFirstTrain);
