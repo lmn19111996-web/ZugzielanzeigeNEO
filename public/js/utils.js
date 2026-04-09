@@ -207,10 +207,12 @@
           timeDisplay.appendChild(plannedSpan);
         }
 
-        // Always show actual arrival - departure interval.
+        // Show interval only when a valid duration exists.
         const actualSpan = document.createElement('span');
         actualSpan.className = 'past-train-actual-time';
-        actualSpan.textContent = `${actualHHMM}–${departureHHMM}`;
+        actualSpan.textContent = departureHHMM !== '--:--'
+          ? `${actualHHMM} - ${departureHHMM}`
+          : actualHHMM;
         timeDisplay.appendChild(actualSpan);
         
         animContainer.appendChild(timeDisplay);

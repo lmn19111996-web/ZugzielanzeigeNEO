@@ -353,8 +353,196 @@ html, body {
       display: flex;
     }
 
+    .log-viewer-page {
+      width: 100%;
+      min-height: 100%;
+      padding: 3vh 2vw;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .log-viewer-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2vw;
+      margin-bottom: 3vh;
+      padding-bottom: 2vh;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
+    }
+
+    .log-viewer-page-title {
+      font-size: 4vh;
+      font-weight: 500;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .log-viewer-page-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.5vw;
+      margin-bottom: 2vh;
+      flex-shrink: 0;
+    }
+
+    .log-viewer-preset-btn {
+      min-height: 3.6vh;
+      padding: 0.3vh 0.9vw;
+      border: 0.5px solid rgba(255, 255, 255, 0.28);
+      border-radius: 0.6vh;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: clamp(13px, 1.9vh, 18px);
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .log-viewer-preset-btn.active {
+      background: var(--color-accent-primary);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #fff;
+    }
+
+    .log-viewer-filter-bar {
+      display: flex;
+      gap: 0.8vw;
+      margin-bottom: 3vh;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .log-viewer-label {
+      font-size: clamp(11px, 1.55vh, 14px);
+      color: rgba(255, 255, 255, 0.75);
+      white-space: nowrap;
+    }
+
+    .log-viewer-date-row {
+      grid-column: 1 / 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35vw;
+      min-width: 0;
+      width: max-content;
+    }
+
+    .log-viewer-date-sep {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1.9vh;
+      line-height: 1;
+      margin: 0 0.15vw;
+    }
+
+    .log-viewer-input {
+      width: auto;
+      min-height: 2.6vh;
+      padding: 0;
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      color: white;
+      font-family: inherit;
+      font-size: 2vh;
+      outline: none;
+      box-sizing: border-box;
+      color-scheme: dark;
+    }
+
+    .log-viewer-input::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+
+    .log-viewer-load-btn {
+      min-height: 3.8vh;
+      padding: 0.4vh 0.9vw;
+      border: 0.5px solid rgba(255, 255, 255, 0.34);
+      border-radius: 0.6vh;
+      background: var(--color-accent-primary);
+      color: white;
+      font-size: clamp(14px, 2vh, 18px);
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .log-viewer-load-btn:disabled {
+      opacity: 0.65;
+      cursor: default;
+    }
+
+    .log-viewer-status {
+      margin-bottom: 3vh;
+      font-size: 2vh;
+      color: rgba(255, 255, 255, 0.72);
+      flex-shrink: 0;
+    }
+
+    .log-viewer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-height: 8vh;
+    }
+
+    .log-viewer-empty {
+      padding: 5vh 0;
+      text-align: center;
+      opacity: 0.6;
+      font-size: 2.2vh;
+    }
+
+    @media (max-width: 768px) {
+      .log-viewer-page {
+        padding: 2vh 4vw;
+      }
+
+      .log-viewer-page-header,
+      .log-viewer-page-actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .log-viewer-date-row {
+        width: 100%;
+        gap: 0.6vw;
+        flex-wrap: wrap;
+      }
+
+      .log-viewer-load-btn {
+        width: auto;
+      }
+
+      .log-viewer-filter-bar {
+        gap: 1vh 1.5vw;
+      }
+
+    }
+
     .left-panel::-webkit-scrollbar {
       display: none; /* Safari and Chrome */
+    }
+
+    .left-panel.log-viewer-mode {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.35) rgba(255,255,255,0.08);
+      -ms-overflow-style: auto;
+    }
+
+    .left-panel.log-viewer-mode::-webkit-scrollbar {
+      display: block;
+      width: 0.8vh;
+    }
+
+    .left-panel.log-viewer-mode::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.35);
+      border-radius: 1vh;
+    }
+
+    .left-panel.log-viewer-mode::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.08);
+      border-radius: 1vh;
     }
 
     /* Belegungsplan (Occupancy Plan) - vertical timeline view */
@@ -887,6 +1075,16 @@ html, body {
       box-sizing: border-box;
       min-width: 12vw;
       order: 3;
+      gap: 0.5vw;
+    }
+
+    .duration-slot {
+      min-width: 3.8vw;
+      text-align: right;
+      font-size: 2.3vh;
+      color: rgba(255,255,255,0.7);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
 
     /* Checkin widget — direct child of train-entry, sits between info and time */

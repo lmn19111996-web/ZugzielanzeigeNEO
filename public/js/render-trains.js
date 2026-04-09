@@ -80,14 +80,279 @@
       }
     }
 
+    let logViewerState = {
+      from: '',
+      to: '',
+      rows: [],
+      loading: false,
+      loadedOnce: false,
+      error: '',
+      preset: ''
+    };
+
+    function toDateInputValue(date) {
+      const d = date instanceof Date ? date : new Date(date);
+      if (Number.isNaN(d.getTime())) return '';
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function ensureLogViewerDefaults() {
+      if (!logViewerState.from || !logViewerState.to) {
+        const now = new Date();
+        const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        logViewerState.from = toDateInputValue(from);
+        logViewerState.to = toDateInputValue(now);
+        if (!logViewerState.preset) logViewerState.preset = 'week';
+      }
+    }
+
+    function normalizeLogEntryToTrain(entry, index) {
+      const now = new Date();
+      const rawStops = entry && (entry.zwischenhalte != null ? entry.zwischenhalte : entry.stops);
+      const stopsArr = Array.isArray(rawStops)
+        ? rawStops.map(s => String(s).trim()).filter(Boolean)
+        : (typeof rawStops === 'string'
+            ? rawStops.split(/\n|\u2022|\|/).map(s => s.trim()).filter(Boolean)
+            : []);
+
+      const dateStr = (entry && (entry.date || entry.plannedDate)) || '';
+      const ts = parseTime((entry && (entry.actual || entry.plan)) || '', now, dateStr);
+      const isPast = !!(ts && ts < now);
+
+      return {
+        _uniqueId: (entry && (entry._uniqueId || entry.trainKey)) || `log_${index}_${Date.now()}`,
+        linie: (entry && entry.linie) || 'LOG',
+        ziel: (entry && entry.ziel) || '(ohne Ziel)',
+        plan: (entry && (entry.plan || entry.actual)) || '',
+        actual: (entry && (entry.actual || entry.plan)) || '',
+        dauer: Number(entry && entry.dauer) || 0,
+        date: (entry && (entry.date || entry.plannedDate)) || '',
+        zwischenhalte: stopsArr,
+        canceled: !!(entry && entry.canceled),
+        _readOnly: true,
+        _showDurationColumn: true,
+        _isPastTrain: isPast,
+        checkinTime: entry && entry.checkinTime ? entry.checkinTime : null,
+        checkoutTime: entry && entry.checkoutTime ? entry.checkoutTime : null,
+        source: 'log'
+      };
+    }
+
+    function applyLogViewerPreset(preset) {
+      const now = new Date();
+      const to = new Date(now);
+      let from = new Date(now);
+
+      if (preset === 'week') {
+        from.setDate(from.getDate() - 7);
+      } else if (preset === 'month') {
+        from.setMonth(from.getMonth() - 1);
+      } else if (preset === 'year') {
+        from.setFullYear(from.getFullYear() - 1);
+      } else if (preset === 'all') {
+        from = new Date(0);
+      } else {
+        from.setDate(from.getDate() - 7);
+        preset = 'week';
+      }
+
+      logViewerState.from = toDateInputValue(from);
+      logViewerState.to = toDateInputValue(to);
+      logViewerState.preset = preset;
+    }
+
+    async function fetchLogViewerRange() {
+      ensureLogViewerDefaults();
+
+      logViewerState.loading = true;
+      logViewerState.error = '';
+      renderLogViewerWorkspace();
+
+      try {
+        const fromIso = new Date(`${logViewerState.from}T00:00:00`).toISOString();
+        const toIso = new Date(`${logViewerState.to}T23:59:59.999`).toISOString();
+        const url = `/api/train-history/range?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}&limit=10000`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.error || `HTTP ${res.status}`);
+        }
+        const payload = await res.json();
+        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        logViewerState.rows = entries.map(normalizeLogEntryToTrain).filter(t => t.plan || t.actual);
+        logViewerState.loadedOnce = true;
+      } catch (err) {
+        console.error('Failed to load log viewer range:', err);
+        logViewerState.rows = [];
+        logViewerState.error = err && err.message ? err.message : 'Unbekannter Fehler';
+        logViewerState.loadedOnce = true;
+      } finally {
+        logViewerState.loading = false;
+        renderLogViewerWorkspace();
+      }
+    }
+
+    function renderLogViewerWorkspace() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+
+      renderHeadlineTrain();
+      trainListEl.innerHTML = '';
+      trainListEl.classList.add('log-viewer-mode');
+      ensureLogViewerDefaults();
+
+      const page = document.createElement('div');
+      page.className = 'log-viewer-page';
+
+      const header = document.createElement('div');
+      header.className = 'log-viewer-page-header';
+      header.innerHTML = `
+        <div>
+          <h2 class="log-viewer-page-title">Log Viewer</h2>
+        </div>
+      `;
+      page.appendChild(header);
+
+      const actions = document.createElement('div');
+      actions.className = 'log-viewer-page-actions';
+      actions.innerHTML = `
+        <div class="log-viewer-date-row">
+          <label class="log-viewer-label" for="log-viewer-from">Von</label>
+          <input id="log-viewer-from" class="log-viewer-input" type="date" value="${logViewerState.from}">
+          <span class="log-viewer-date-sep" aria-hidden="true">-</span>
+          <label class="log-viewer-label" for="log-viewer-to">Bis</label>
+          <input id="log-viewer-to" class="log-viewer-input" type="date" value="${logViewerState.to}">
+          <button id="log-viewer-load" class="log-viewer-load-btn" type="button">Laden</button>
+        </div>
+      `;
+      page.appendChild(actions);
+
+      const presets = document.createElement('div');
+      presets.className = 'log-viewer-filter-bar';
+      presets.setAttribute('role', 'group');
+      presets.setAttribute('aria-label', 'Zeitraum presets');
+      presets.innerHTML = `
+        <button class="log-viewer-preset-btn${logViewerState.preset === 'week' ? ' active' : ''}" data-preset="week" type="button">Letzte Woche</button>
+        <button class="log-viewer-preset-btn${logViewerState.preset === 'month' ? ' active' : ''}" data-preset="month" type="button">Letzter Monat</button>
+        <button class="log-viewer-preset-btn${logViewerState.preset === 'year' ? ' active' : ''}" data-preset="year" type="button">Letztes Jahr</button>
+        <button class="log-viewer-preset-btn${logViewerState.preset === 'all' ? ' active' : ''}" data-preset="all" type="button">Alles</button>
+      `;
+      page.appendChild(presets);
+
+      const status = document.createElement('div');
+      status.className = 'log-viewer-status';
+      if (logViewerState.loading) {
+        status.textContent = 'Lade Logs...';
+      } else if (logViewerState.error) {
+        status.textContent = `Fehler: ${logViewerState.error}`;
+      } else if (logViewerState.loadedOnce) {
+        status.textContent = `${logViewerState.rows.length} Einträge im gewählten Zeitraum`;
+      } else {
+        status.textContent = 'Bereit';
+      }
+      page.appendChild(status);
+
+      const results = document.createElement('div');
+      results.className = 'log-viewer-list';
+      page.appendChild(results);
+
+      trainListEl.appendChild(page);
+
+      const fromInput = actions.querySelector('#log-viewer-from');
+      const toInput = actions.querySelector('#log-viewer-to');
+      const loadBtn = actions.querySelector('#log-viewer-load');
+      const presetButtons = presets.querySelectorAll('.log-viewer-preset-btn');
+      if (fromInput) {
+        fromInput.addEventListener('change', () => {
+          logViewerState.from = fromInput.value;
+          logViewerState.preset = '';
+        });
+      }
+      if (toInput) {
+        toInput.addEventListener('change', () => {
+          logViewerState.to = toInput.value;
+          logViewerState.preset = '';
+        });
+      }
+      presetButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          applyLogViewerPreset(btn.dataset.preset || 'week');
+          renderLogViewerWorkspace();
+          fetchLogViewerRange();
+        });
+      });
+      if (loadBtn) {
+        loadBtn.disabled = logViewerState.loading;
+        loadBtn.addEventListener('click', () => {
+          if (fromInput && fromInput.value) logViewerState.from = fromInput.value;
+          if (toInput && toInput.value) logViewerState.to = toInput.value;
+          fetchLogViewerRange();
+        });
+      }
+
+      const handleEnterToLoad = (evt) => {
+        if (evt.key !== 'Enter') return;
+        evt.preventDefault();
+        if (fromInput && fromInput.value) logViewerState.from = fromInput.value;
+        if (toInput && toInput.value) logViewerState.to = toInput.value;
+        fetchLogViewerRange();
+      };
+
+      const handleDateTabOrder = (evt) => {
+        if (evt.key !== 'Tab' || !fromInput || !toInput) return;
+        if (evt.target === fromInput && !evt.shiftKey) {
+          evt.preventDefault();
+          toInput.focus();
+          return;
+        }
+        if (evt.target === toInput && evt.shiftKey) {
+          evt.preventDefault();
+          fromInput.focus();
+        }
+      };
+
+      if (fromInput) {
+        fromInput.addEventListener('keydown', handleEnterToLoad);
+        fromInput.addEventListener('keydown', handleDateTabOrder);
+      }
+      if (toInput) {
+        toInput.addEventListener('keydown', handleEnterToLoad);
+        toInput.addEventListener('keydown', handleDateTabOrder);
+      }
+
+      if (!logViewerState.loading && logViewerState.rows.length > 0) {
+        renderTrainListWithEntries(logViewerState.rows, {
+          showHeadline: false,
+          preserveScroll: false,
+          enableSwipe: false,
+          enableDateJump: false,
+          append: false,
+          targetEl: results
+        });
+      } else if (!logViewerState.loading && logViewerState.loadedOnce && !logViewerState.error) {
+        const empty = document.createElement('div');
+        empty.className = 'log-viewer-empty';
+        empty.textContent = 'Keine Einträge im gewählten Zeitraum.';
+        results.appendChild(empty);
+      }
+
+      if (!logViewerState.loadedOnce && !logViewerState.loading) {
+        fetchLogViewerRange();
+      }
+    }
+
     /**
      * Unified decision helper function that checks the current workspace mode
      * and calls the correct rendering functions.
      * 
      * WORKSPACE MODES (main panel content):
      * - 'list' or 'occupancy': Train workspace (list or belegungsplan view)
-     * - 'projects': Projects workspace
+    * - 'projects': Projects workspace
      * - 'reviews': Rezensionen workspace
+    * - 'log-viewer': Time-range log viewer workspace
      * 
      * Non-workspace modes (drawers/overlays):
      * - 'announcements', 'db-api', 'meals', 'groceries', 'inventory' are NOT workspaces
@@ -134,6 +399,17 @@
             renderComprehensiveAnnouncementPanel();
           }
           break;
+
+        case 'log-viewer':
+          // Log viewer workspace
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderLogViewerWorkspace();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
           
         default:
           // Should not happen - defensive fallback
@@ -146,6 +422,7 @@
     function renderBelegungsplan() {
       const now = new Date();
       const trainListEl = document.getElementById('train-list');
+      trainListEl.classList.remove('log-viewer-mode');
       
       // Save scroll position BEFORE any DOM manipulation
       const savedScrollPosition = trainListEl.scrollTop;
@@ -327,22 +604,34 @@
       });
     }
 
-    // Legacy render function for reference
-    function renderTrainList() {
+    function renderTrainListWithEntries(remainingTrains, options = {}) {
+      const {
+        showHeadline = true,
+        preserveScroll = true,
+        enableSwipe = true,
+        enableDateJump = true,
+        append = false,
+        targetEl = null
+      } = options;
+
       const now = new Date();
-      const trainListEl = document.getElementById('train-list');
-      
+      const listRoot = targetEl || document.getElementById('train-list');
+      if (!listRoot) return;
+      if (listRoot.id === 'train-list' && currentWorkspaceMode !== 'log-viewer') {
+        listRoot.classList.remove('log-viewer-mode');
+      }
+
       // Save scroll position BEFORE any DOM manipulation
-      const savedScrollPosition = trainListEl.scrollTop;
-      const oldScrollHeight = trainListEl.scrollHeight;
-      
-      trainListEl.innerHTML = '';
+      const savedScrollPosition = preserveScroll ? listRoot.scrollTop : 0;
+
+      if (!append) {
+        listRoot.innerHTML = '';
+      }
 
       // Update headline train
-      renderHeadlineTrain();
-
-      // Use processed data
-      const remainingTrains = processedTrainData.remainingTrains;
+      if (showHeadline) {
+        renderHeadlineTrain();
+      }
 
       // Pre-group ALL trains (current + remaining) by date for the stacked bars
       const trainsByDate = {};
@@ -363,7 +652,7 @@
         const firstSepHTML = Templates.daySeparator(firstDate, trainsByDate[firstDate] || []);
         const firstSepTemplate = document.createElement('template');
         firstSepTemplate.innerHTML = firstSepHTML.trim();
-        trainListEl.appendChild(firstSepTemplate.content.firstChild);
+        listRoot.appendChild(firstSepTemplate.content.firstChild);
       }
 
       // Render remaining trains with day separators on date change
@@ -375,36 +664,56 @@
           const separatorHTML = Templates.daySeparator(train.date, trainsByDate[train.date] || []);
           const template = document.createElement('template');
           template.innerHTML = separatorHTML.trim();
-          trainListEl.appendChild(template.content.firstChild);
+          listRoot.appendChild(template.content.firstChild);
           lastRenderedDate = train.date;
         }
         
         const entry = createTrainEntry(train, now, false);
-        trainListEl.appendChild(entry);
+        listRoot.appendChild(entry);
       });
       
       // Attach swipe gestures on mobile after list is populated
-      setupMobileSwipe();
+      if (enableSwipe) {
+        setupMobileSwipe();
+      }
 
       // Attach jump-to-date handler (delegated, replaced each render)
-      trainListEl._jumpHandler && trainListEl.removeEventListener('click', trainListEl._jumpHandler);
-      trainListEl._jumpHandler = function(e) {
-        const dateSpan = e.target.closest('[data-jump-date]');
-        if (!dateSpan) return;
-        e.preventDefault();
-        e.stopPropagation();
-        openDateJumpPopup(dateSpan, trainListEl);
-      };
-      trainListEl.addEventListener('click', trainListEl._jumpHandler);
+      if (enableDateJump) {
+        listRoot._jumpHandler && listRoot.removeEventListener('click', listRoot._jumpHandler);
+        listRoot._jumpHandler = function(e) {
+          const dateSpan = e.target.closest('[data-jump-date]');
+          if (!dateSpan) return;
+          e.preventDefault();
+          e.stopPropagation();
+          openDateJumpPopup(dateSpan, listRoot);
+        };
+        listRoot.addEventListener('click', listRoot._jumpHandler);
+      } else if (listRoot._jumpHandler) {
+        listRoot.removeEventListener('click', listRoot._jumpHandler);
+        listRoot._jumpHandler = null;
+      }
 
       // Wait for DOM to fully render, then restore scroll and show
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          // Set scroll position
-          if (savedScrollPosition > 0) {
-            trainListEl.scrollTop = savedScrollPosition;
-          }
-        }, 50);
+      if (preserveScroll) {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            // Set scroll position
+            if (savedScrollPosition > 0) {
+              listRoot.scrollTop = savedScrollPosition;
+            }
+          }, 50);
+        });
+      }
+    }
+
+    // Legacy render function for reference
+    function renderTrainList() {
+      renderTrainListWithEntries(processedTrainData.remainingTrains, {
+        showHeadline: true,
+        preserveScroll: true,
+        enableSwipe: true,
+        enableDateJump: true,
+        append: false
       });
     }
 
@@ -476,6 +785,7 @@
     // ===== MOBILE SWIPE GESTURES =====
 
     function createTrainEntry(train, now, isFirstTrain = false) {
+      const isReadOnly = !!(train && train._readOnly);
       // Use template to create HTML
       const htmlString = Templates.trainEntry(train, now, isFirstTrain);
       
@@ -487,6 +797,12 @@
       if (window.innerWidth <= 768) {
         // On mobile: header train toggles stress dashboard; list entries toggle the action bar
         entry.addEventListener('click', (e) => {
+          if (isReadOnly) {
+            renderFocusMode(train);
+            document.querySelectorAll('.train-entry').forEach(en => en.classList.remove('selected'));
+            entry.classList.add('selected');
+            return;
+          }
           if (e.target.closest('.mobile-info-btn, .mobile-action-btn')) return;
           const shell = entry.closest('.mobile-entry-shell');
           const bar = shell && shell.querySelector('.mobile-action-bar');
@@ -539,6 +855,12 @@
       } else {
         // On desktop: tap opens editor drawer
         entry.addEventListener('click', () => {
+          if (isReadOnly) {
+            renderFocusMode(train);
+            document.querySelectorAll('.train-entry').forEach(e => e.classList.remove('selected'));
+            entry.classList.add('selected');
+            return;
+          }
           renderFocusMode(train);
           document.querySelectorAll('.train-entry').forEach(e => e.classList.remove('selected'));
           entry.classList.add('selected');

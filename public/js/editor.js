@@ -1186,7 +1186,7 @@
       // Click-out handler to close drawer when clicking outside
       // Remove old handler if exists to prevent duplicates
       if (editorDrawerClickOutHandler) {
-        document.removeEventListener('click', editorDrawerClickOutHandler, true);
+        document.removeEventListener('pointerdown', editorDrawerClickOutHandler, true);
       }
       
       editorDrawerClickOutHandler = async (e) => {
@@ -1222,7 +1222,7 @@
       };
       
       // Use capture phase to handle click before other handlers
-      document.addEventListener('click', editorDrawerClickOutHandler, true);
+      document.addEventListener('pointerdown', editorDrawerClickOutHandler, true);
       
       // Add delay button event listeners - EXACTLY like legacy but with debounced save
       const delayButtonsContainer = panel.querySelector('.editor-delay-buttons');

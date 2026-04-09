@@ -35,7 +35,7 @@
 
     function setWorkspaceMode(mode) {
       const isMobile = window.innerWidth <= 768;
-      // Note: currentWorkspaceMode is only set for actual workspaces (list, occupancy, projects, reviews)
+      // Note: currentWorkspaceMode is only set for actual workspaces (list, occupancy, projects, reviews, log-viewer)
       // Non-workspace modes (drawers/overlays) don't change it
 
       if (mode === 'add') {
@@ -94,6 +94,16 @@
           break;
         case 'reviews':
           currentWorkspaceMode = 'reviews';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
+        case 'log-viewer':
+          currentWorkspaceMode = 'log-viewer';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           closeEditorDrawer();

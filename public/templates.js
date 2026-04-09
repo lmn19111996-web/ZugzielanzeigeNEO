@@ -64,6 +64,12 @@ const Templates = {
       tempDiv.appendChild(formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date));
     }
     const departureHTML = tempDiv.innerHTML;
+    const durationText = Number.isFinite(Number(train.dauer)) && Number(train.dauer) > 0
+      ? `${Math.round(Number(train.dauer))} min`
+      : '-';
+    const durationSlotHTML = train._showDurationColumn
+      ? `<div class="duration-slot" title="Dauer">${durationText}</div>`
+      : '';
 
     // ── Check-in / Check-out widget ──────────────────────────────────────────
     // Only rendered for today's non-cancelled trains (not the headline first-train).
@@ -71,7 +77,7 @@ const Templates = {
     const uid           = train._uniqueId || '';
 
     let checkinWidgetHTML = '';
-    if (isToday && !train.canceled && !isFirstTrain) {
+    if (!train._readOnly && isToday && !train.canceled && !isFirstTrain) {
       // Show widget for all today's non-canceled tasks (including past tasks)
       // until they are checked out.
       if (isCheckedOut) {
@@ -154,6 +160,7 @@ const Templates = {
           <div class="zugziel">${destinationText}</div>
         </div>
         <div class="right-block">
+          ${durationSlotHTML}
           <div class="departure-slot">
             <div class="departure" 
                  data-departure="1" 

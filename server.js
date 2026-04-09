@@ -214,6 +214,8 @@ function accumulateTrainData(trains, scheduleType) {
       date: actualDate,
       plannedDate: train.plannedDate || actualDate || '',
       canceled: Boolean(train.canceled),
+      checkinTime: train.checkinTime || null,
+      checkoutTime: train.checkoutTime || null,
       recurrence: train.recurrence || null,
       startDate: train.startDate || null,
       skippedDates: Array.isArray(train.skippedDates) ? train.skippedDates.slice() : []
@@ -455,6 +457,58 @@ function createTrainKey(train, scheduleType) {
     actualDate
   ];
   return keyParts.join('|').toLowerCase();
+}
+
+function parseTrainTimestampMs(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+
+  const dateStr =
+    (typeof entry.date === 'string' && entry.date) ||
+    (typeof entry.plannedDate === 'string' && entry.plannedDate) ||
+    null;
+
+  const timeStr =
+    (typeof entry.actual === 'string' && entry.actual) ||
+    (typeof entry.plan === 'string' && entry.plan) ||
+    null;
+
+  if (!dateStr || !timeStr) {
+    if (typeof entry.loggedAt === 'string' && entry.loggedAt) {
+      const fallback = new Date(entry.loggedAt).getTime();
+      return Number.isFinite(fallback) ? fallback : null;
+    }
+    return null;
+  }
+
+  const match = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(timeStr);
+  if (!match) return null;
+
+  const hh = Number(match[1]);
+  const mm = Number(match[2]);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+
+  const local = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(local.getTime())) return null;
+
+  local.setHours(hh, mm, 0, 0);
+  return local.getTime();
+}
+
+async function listWeeklyLogFiles() {
+  try {
+    await fsPromises.access(TRAIN_LOG_DIR);
+  } catch {
+    return [];
+  }
+
+  const files = await fsPromises.readdir(TRAIN_LOG_DIR);
+  return files
+    .filter(file => file.startsWith('train_history_') && file.endsWith('.log'))
+    .map(file => ({
+      file,
+      filePath: path.join(TRAIN_LOG_DIR, file)
+    }))
+    .sort((a, b) => a.file.localeCompare(b.file));
 }
 
 
@@ -833,6 +887,76 @@ app.get('/api/train-history/weeks', async (req, res) => {
     res.json({ weeks, current: getWeekIdentifier() });
   } catch (e) {
     res.status(500).json({ error: 'Failed to list weekly logs', details: e.message });
+  }
+});
+
+// Read train history over an absolute timestamp range (inclusive), across all weekly files
+app.get('/api/train-history/range', async (req, res) => {
+  try {
+    const fromRaw = String(req.query.from || '');
+    const toRaw = String(req.query.to || '');
+    if (!fromRaw || !toRaw) {
+      return res.status(400).json({ error: 'Missing required query params: from, to' });
+    }
+
+    const fromMs = new Date(fromRaw).getTime();
+    const toMs = new Date(toRaw).getTime();
+    if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) {
+      return res.status(400).json({ error: 'Invalid from/to format. Use ISO datetime.' });
+    }
+
+    const rangeStart = Math.min(fromMs, toMs);
+    const rangeEnd = Math.max(fromMs, toMs);
+    const requestedLimit = req.query.limit ? parseInt(req.query.limit, 10) : 5000;
+    const limit = Math.max(1, Math.min(Number.isFinite(requestedLimit) ? requestedLimit : 5000, 20000));
+
+    const weeklyFiles = await listWeeklyLogFiles();
+    const matched = [];
+
+    for (const wf of weeklyFiles) {
+      let content;
+      try {
+        content = await fsPromises.readFile(wf.filePath, 'utf8');
+      } catch {
+        continue;
+      }
+
+      const lines = content.split('\n').filter(line => line.trim());
+      lines.forEach((line) => {
+        try {
+          const entry = JSON.parse(line);
+          const ts = parseTrainTimestampMs(entry);
+          if (ts == null) return;
+          if (ts < rangeStart || ts > rangeEnd) return;
+          matched.push({
+            ...entry,
+            _rangeTs: ts,
+            _sourceWeekFile: wf.file
+          });
+        } catch {
+          // Ignore invalid lines in range endpoint
+        }
+      });
+    }
+
+    matched.sort((a, b) => a._rangeTs - b._rangeTs);
+    const limited = matched.length > limit;
+    const entries = (limited ? matched.slice(matched.length - limit) : matched).map((entry) => {
+      const out = { ...entry };
+      delete out._rangeTs;
+      return out;
+    });
+
+    res.json({
+      entries,
+      total: matched.length,
+      showing: entries.length,
+      limited,
+      from: new Date(rangeStart).toISOString(),
+      to: new Date(rangeEnd).toISOString()
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to read train history range', details: e.message });
   }
 });
 
