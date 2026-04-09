@@ -211,7 +211,7 @@ function computeEmaxWithCap(Ebase, E_current, omega, Eoverload) {
  * @param {object} manualOverrides  Manual energy overrides: { dateStr: { minute: E, ... }, ... }
  * @returns {Object} { [dateStr]: Array(1440) } of step objects per local minute.
  */
-function simulateMultiDay(allTrains, dates, cfg, manualOverrides) {
+function simulateMultiDay(allTrains, dates, cfg, manualOverrides, dayStartSeeds) {
   const numDays  = dates.length;
   const TOTAL    = numDays * 1440;
   const DT_HOURS = 1 / 60;
@@ -235,7 +235,10 @@ function simulateMultiDay(allTrains, dates, cfg, manualOverrides) {
   const stepsMap = {};
   dates.forEach(d => { stepsMap[d] = new Array(1440); });
 
-  let E = Math.min(cfg.E_MAX, Math.max(cfg.E_MIN, cfg.E_DEFAULT));
+  const seededStart = dayStartSeeds && dayStartSeeds[dates[0]] != null
+    ? Number(dayStartSeeds[dates[0]])
+    : cfg.E_DEFAULT;
+  let E = Math.min(cfg.E_MAX, Math.max(cfg.E_MIN, isNaN(seededStart) ? cfg.E_DEFAULT : seededStart));
 
   // Inline gap tracking — cap is fixed at gap entry from E at that moment.
   let gapStart  = -1;   // absolute minute the current gap began (-1 = not in gap)
@@ -322,14 +325,21 @@ let _smCacheKey = '';
  * @param {object} manualOverrides  Manual energy overrides: { dateStr: { minute: E, ... }, ... }
  * @returns {Object} { [dateStr]: Array(1440) }
  */
-function getOrComputeAllDaySteps(allTrains, dates, manualOverrides) {
+function getOrComputeAllDaySteps(allTrains, dates, manualOverrides, dayStartSeeds) {
   manualOverrides = manualOverrides || {};
+  dayStartSeeds = dayStartSeeds || {};
   const overrideKey = JSON.stringify(manualOverrides);
+  const seedKey = JSON.stringify(
+    dates.reduce((acc, d) => {
+      if (dayStartSeeds[d] != null) acc[d] = dayStartSeeds[d];
+      return acc;
+    }, {})
+  );
   const key = dates.join(',') + '|' + JSON.stringify(
     allTrains.map(t => `${t._uniqueId}:${t.date}:${t.actual || ''}:${t.dauer}:${!!t.canceled}`)
-  ) + '|' + overrideKey;
+  ) + '|' + overrideKey + '|' + seedKey;
   if (key === _smCacheKey && _smCache !== null) return _smCache;
-  _smCache    = simulateMultiDay(allTrains, dates, STRESSMETER_CONFIG, manualOverrides);
+  _smCache    = simulateMultiDay(allTrains, dates, STRESSMETER_CONFIG, manualOverrides, dayStartSeeds);
   _smCacheKey = key;
   return _smCache;
 }

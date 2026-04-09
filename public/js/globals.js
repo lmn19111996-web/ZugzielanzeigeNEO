@@ -61,6 +61,17 @@
       currentTrain: null,      // First future/occupying train from PERSONAL SCHEDULE
       remainingTrains: []      // Future trains after the current one
     };
+    let lastStressDataSignature = '';
+
+    function buildStressDataSignature(trains) {
+      return (trains || []).map(t => [
+        t && t._uniqueId || '',
+        t && t.date || '',
+        t && (t.actual || t.plan) || '',
+        Number(t && t.dauer || 0),
+        t && t.canceled ? 1 : 0
+      ].join('|')).join('~');
+    }
 
     function processTrainData(schedule) {
       const now = new Date();
@@ -182,11 +193,15 @@
       // Remaining trains: past trains (from today) + future trains
       // Display order: oldest past train first, then future trains
       processedTrainData.remainingTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
-      
-      return processedTrainData;
-      
+
+      const stressSig = buildStressDataSignature(processedTrainData.allTrains);
+      if (stressSig !== lastStressDataSignature) {
+        lastStressDataSignature = stressSig;
+        if (typeof stressmeterOnDataChanged === 'function') stressmeterOnDataChanged();
+      }
+
       // Sync pinned trains with updated data
       syncPinnedTrains();
-      
+
       return processedTrainData;
     }

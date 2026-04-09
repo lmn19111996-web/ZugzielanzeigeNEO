@@ -729,7 +729,10 @@
             const save = () => {
               // Always use live project reference to avoid stale closure issues
               const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
-              if (!liveProject) return;
+              if (!liveProject) {
+                isEditingProject = false;
+                return;
+              }
               
               // OPTIMISTIC UI: Update immediately, save in background
               // Save all fields to the LIVE project object
@@ -747,9 +750,13 @@
               
               // Save in background
               saveSchedule();
+              isEditingProject = false;
             };
             
             input.addEventListener('blur', save);
+            input.addEventListener('focus', () => {
+              isEditingProject = true;
+            });
             input.addEventListener('keydown', (e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -993,6 +1000,7 @@
           input.style.fontFamily = 'inherit';
           
           const saveName = () => {
+            isEditingProject = false;
             const newName = input.value.trim();
             if (newName && newName !== currentName) {
               const task = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
@@ -1031,6 +1039,7 @@
           
           nameSpan.textContent = '';
           nameSpan.appendChild(input);
+          isEditingProject = true;
           input.focus();
           input.select();
         });
@@ -1129,6 +1138,7 @@
           input.style.fontFamily = 'inherit';
           
           const saveName = () => {
+            isEditingProject = false;
             const newName = input.value.trim();
             if (newName && newName !== currentName) {
               const todo = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
@@ -1167,6 +1177,7 @@
           
           nameSpan.textContent = '';
           nameSpan.appendChild(input);
+          isEditingProject = true;
           input.focus();
           input.select();
         });

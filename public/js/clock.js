@@ -138,6 +138,11 @@
       console.log('Starting routine version check polling (30s interval)');
       refreshIntervalId = setInterval(async () => {
         try {
+          if (isDataOperationInProgress || isEditingTrain || isEditingProject) {
+            console.log('⏸️ Polling deferred - local edits in progress');
+            return;
+          }
+
           // Fetch schedule to check version
           const res = await fetch('/api/schedule');
           if (!res.ok) return;
@@ -148,9 +153,18 @@
           // VERSION CHECK: Only update if server has newer version
           if (serverVersion && serverVersion > schedule._meta.version) {
             console.log(`🔄 Polling detected newer version: local=${schedule._meta.version}, server=${serverVersion} - Updating...`);
-            
+            const localSnapshot = {
+              fixedSchedule: (schedule.fixedSchedule || []).slice(),
+              spontaneousEntries: (schedule.spontaneousEntries || []).slice(),
+              projects: (schedule.projects || []).slice()
+            };
+
             // Update schedule and regenerate
             Object.assign(schedule, serverData);
+            schedule.fixedSchedule = mergeClientOnlyById(schedule.fixedSchedule, localSnapshot.fixedSchedule);
+            schedule.spontaneousEntries = mergeClientOnlyById(schedule.spontaneousEntries, localSnapshot.spontaneousEntries);
+            schedule.projects = mergeClientOnlyById(schedule.projects, localSnapshot.projects);
+            materializeFromStems();
             regenerateTrainsFromSchedule();
             processTrainData(schedule);
             
@@ -202,17 +216,16 @@
       // VERSION CHECK: Only fetch if server has NEWER version
       // Use > instead of !== to handle out-of-order updates correctly
       if (serverVersion && serverVersion > schedule._meta.version) {
+        if (isDataOperationInProgress || isEditingTrain || isEditingProject) {
+          console.log('⏸️ SSE refresh deferred - local edits in progress');
+          return;
+        }
+
         console.log(`🔄 Server ahead: local=${schedule._meta.version}, server=${serverVersion} - Fetching...`);
         
         // Fetch and update the GLOBAL schedule object
         const freshSchedule = await fetchSchedule(true);
-        // Preserve any locally-created entries not yet saved to the server
-        const serverIds = new Set((freshSchedule.spontaneousEntries || []).map(t => t._uniqueId));
-        const localOnlyEntries = (schedule.spontaneousEntries || []).filter(t => !serverIds.has(t._uniqueId));
         Object.assign(schedule, freshSchedule);
-        if (localOnlyEntries.length > 0) {
-          schedule.spontaneousEntries.push(...localOnlyEntries);
-        }
         processTrainData(schedule);
         
         // Render current workspace view

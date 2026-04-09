@@ -34,6 +34,7 @@
   var _skipAutoTooltip  = false;   // flag to suppress auto-pinned tooltip after setting override
   var _graphRenderCache = { key: '', svgMarkup: '' };
   var _nowLineEl = null;
+  var dayStartESeeds = {}; // { 'YYYY-MM-DD': E_at_00_00 }
 
   // Load overrides from localStorage
   function loadOverridesFromStorage() {
@@ -50,7 +51,50 @@
     } catch (e) { /* ignore storage errors */ }
   }
 
+  function loadDayStartSeedsFromStorage() {
+    try {
+      var raw = localStorage.getItem('stressmeter_day_start_energy');
+      if (raw) dayStartESeeds = JSON.parse(raw) || {};
+    } catch (e) { /* ignore storage errors */ }
+  }
+
+  function saveDayStartSeedsToStorage() {
+    try {
+      localStorage.setItem('stressmeter_day_start_energy', JSON.stringify(dayStartESeeds));
+    } catch (e) { /* ignore storage errors */ }
+  }
+
+  function persistDayStartSeeds(dates, stepsMap) {
+    if (!dates || !stepsMap) return;
+    var changed = false;
+    var today = todayStr();
+    dates.forEach(function (d) {
+      var day = stepsMap[d] || [];
+      if (!day.length || !day[0]) return;
+      var e0 = Number(day[0].E);
+      if (!isFinite(e0)) return;
+      if (dayStartESeeds[d] !== e0) {
+        dayStartESeeds[d] = e0;
+        changed = true;
+      }
+    });
+    Object.keys(dayStartESeeds).forEach(function (d) {
+      if (d < today) {
+        delete dayStartESeeds[d];
+        changed = true;
+      }
+    });
+    if (changed) saveDayStartSeedsToStorage();
+  }
+
+  function getSeededStepsMap(trains, dates) {
+    var map = getOrComputeAllDaySteps(trains || [], dates || [], manualEOverrides, dayStartESeeds);
+    persistDayStartSeeds(dates, map);
+    return map;
+  }
+
   loadOverridesFromStorage();
+  loadDayStartSeedsFromStorage();
 
   // ── DOM ───────────────────────────────────────────────────────────────────
   var badge        = document.getElementById('stressmeter-badge');
@@ -242,7 +286,8 @@
     var version = (typeof schedule !== 'undefined' && schedule && schedule._meta) ? (schedule._meta.version || 0) : 0;
     var trainsSig = (processedTrainData.allTrains || []).map(trainSignature).join('~');
     var overridesSig = JSON.stringify(manualEOverrides || {});
-    return [today, dayW, height, version, trainsSig, overridesSig].join('::');
+    var seedSig = String(dayStartESeeds[today] != null ? dayStartESeeds[today] : '');
+    return [today, dayW, height, version, trainsSig, overridesSig, seedSig].join('::');
   }
 
   function ensureNowLine() {
@@ -298,7 +343,7 @@
       var dateStr = todayStr();
       var minute = now.getHours() * 60 + now.getMinutes();
       var dates = [dateStr];
-      var sMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], dates, manualEOverrides);
+      var sMap = getSeededStepsMap(processedTrainData.allTrains || [], dates);
       var step = (sMap[dateStr] || [])[Math.min(1439, minute)];
       var currentE = step ? Math.round(step.E) : Y_MAX;
       openOverridePopup(badgeEdit, dateStr, minute, currentE);
@@ -333,7 +378,7 @@
       var date  = todayStr();
       var datesList = [];
       for (var j = 0; j < DAYS; j++) { datesList.push(offsetDate(date, j)); }
-      sMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], datesList, manualEOverrides);
+      sMap = getSeededStepsMap(processedTrainData.allTrains || [], datesList);
     } catch (e) { return; }
     var daySteps = sMap[todayStr()] || [];
     var cfg = STRESSMETER_CONFIG;
@@ -519,7 +564,7 @@
 
     var s        = '';
     var fullW    = DAYS * DAY_W;
-    var stepsMap = getOrComputeAllDaySteps(processedTrainData.allTrains || [], dates, manualEOverrides);
+    var stepsMap = getSeededStepsMap(processedTrainData.allTrains || [], dates);
     var snapMap  = {};   // dateStr -> [{minute, E, color}]
     var overridePoints = []; // [{dateStr, minute, x, y}]
 
@@ -903,15 +948,34 @@
       var wm2 = String(Math.round(taskEnd)   % 60).padStart(2, '0');
       windowStr = wh1 + ':' + wm1 + ' \u2013 ' + wh2 + ':' + wm2;
     } else {
-      var idleStart = minute2;
-      var idleEnd = minute2;
-      while (idleStart > 0 && steps[idleStart - 1] && !steps[idleStart - 1].task) idleStart--;
-      while (idleEnd < 1439 && steps[idleEnd + 1] && !steps[idleEnd + 1].task) idleEnd++;
-      var ih1 = String(Math.floor(idleStart / 60)).padStart(2, '0');
-      var im1 = String(idleStart % 60).padStart(2, '0');
-      var ih2 = String(Math.floor(idleEnd / 60)).padStart(2, '0');
-      var im2 = String(idleEnd % 60).padStart(2, '0');
-      windowStr = ih1 + ':' + im1 + ' \u2013 ' + ih2 + ':' + im2;
+      var totalMins = (svg._dates || []).length * 1440;
+      var absStart = colIdx * 1440 + minute2;
+      var absEnd = absStart;
+      function getStepAtAbs(absMinute) {
+        if (absMinute < 0 || absMinute >= totalMins) return null;
+        var dayI = Math.floor(absMinute / 1440);
+        var minI = absMinute % 1440;
+        var dayS = svg._stepsMap[svg._dates[dayI]];
+        return dayS ? dayS[minI] : null;
+      }
+      while (absStart > 0) {
+        var prev = getStepAtAbs(absStart - 1);
+        if (!prev || prev.task) break;
+        absStart--;
+      }
+      while (absEnd < totalMins - 1) {
+        var next = getStepAtAbs(absEnd + 1);
+        if (!next || next.task) break;
+        absEnd++;
+      }
+      function fmtAbs(absMinute) {
+        var dayI = Math.floor(absMinute / 1440);
+        var minI = absMinute % 1440;
+        var hh = String(Math.floor(minI / 60)).padStart(2, '0');
+        var mi = String(minI % 60).padStart(2, '0');
+        return hh + ':' + mi;
+      }
+      windowStr = fmtAbs(absStart) + ' \u2013 ' + fmtAbs(absEnd);
     }
 
     tooltipEl.style.setProperty('--tip-color', col);

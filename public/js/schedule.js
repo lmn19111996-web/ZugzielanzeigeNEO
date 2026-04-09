@@ -5,6 +5,12 @@
         console.log('⏸️ fetchSchedule blocked - data operation in progress');
         return schedule; // Return current schedule without fetching
       }
+
+      const localSnapshot = {
+        fixedSchedule: (schedule.fixedSchedule || []).slice(),
+        spontaneousEntries: (schedule.spontaneousEntries || []).slice(),
+        projects: (schedule.projects || []).slice()
+      };
       
       try {
         // Always fetch local schedule
@@ -91,19 +97,16 @@
           schedule.trains = (data.trains || []).map(assignId);
           schedule.projects = (data.projects || []).map(assignProjectId);
 
+          schedule.fixedSchedule = mergeClientOnlyById(schedule.fixedSchedule, localSnapshot.fixedSchedule);
+          schedule.spontaneousEntries = mergeClientOnlyById(schedule.spontaneousEntries, localSnapshot.spontaneousEntries);
+          schedule.projects = mergeClientOnlyById(schedule.projects, localSnapshot.projects);
+
           // Expand recurring stems into real entries for the rolling window
           materializeFromStems();
+          regenerateTrainsFromSchedule();
 
           // Build localTrains from spontaneousEntries (or legacy trains array)
-          const entriesSource = data.spontaneousEntries || data.trains || [];
-          localTrains = entriesSource.map(t => {
-            const normalized = { ...t, source: 'local', _uniqueId: t._uniqueId };
-            if (t.stops && !t.zwischenhalte) {
-              normalized.zwischenhalte = t.stops;
-              delete normalized.stops;
-            }
-            return normalized;
-          });
+          localTrains = (schedule.localTrains || []).slice();
         }
         
         // Process DB API data if station selected
@@ -284,17 +287,44 @@
       }
     }
 
+    function mergeClientOnlyById(serverItems, localItems) {
+      const merged = Array.isArray(serverItems) ? serverItems.slice() : [];
+      const knownIds = new Set(
+        merged
+          .map(item => item && item._uniqueId)
+          .filter(Boolean)
+      );
+
+      (localItems || []).forEach(item => {
+        if (!item || !item._uniqueId || knownIds.has(item._uniqueId)) return;
+        merged.push(item);
+        knownIds.add(item._uniqueId);
+      });
+
+      return merged;
+    }
+
     // Handle version conflict - server wins strategy
     async function handleVersionConflict(conflict) {
       console.warn('⚠️ Version conflict! Server version:', conflict.serverVersion, 'Local version:', schedule._meta.version);
       
       // Simple strategy: Server wins (replace local with server data)
       const serverData = conflict.serverData;
+      const localSnapshot = {
+        fixedSchedule: (schedule.fixedSchedule || []).slice(),
+        spontaneousEntries: (schedule.spontaneousEntries || []).slice(),
+        projects: (schedule.projects || []).slice()
+      };
       
       // Replace entire schedule with server data
       Object.assign(schedule, serverData);
+      schedule.fixedSchedule = mergeClientOnlyById(schedule.fixedSchedule, localSnapshot.fixedSchedule);
+      schedule.spontaneousEntries = mergeClientOnlyById(schedule.spontaneousEntries, localSnapshot.spontaneousEntries);
+      schedule.projects = mergeClientOnlyById(schedule.projects, localSnapshot.projects);
+      materializeFromStems();
       
       // Re-process and re-render everything (no fetch needed - we have server data)
+      regenerateTrainsFromSchedule();
       processTrainData(schedule);
       refreshUIOnly();
       
@@ -488,6 +518,11 @@
     // Use this when we need to fetch fresh data (version mismatch, conflicts, etc.)
     async function refreshDataAndUI() {
       console.log('🔄 Refreshing data and UI...');
+
+      if (isDataOperationInProgress || isEditingTrain || isEditingProject) {
+        console.log('⏸️ Skipping refreshDataAndUI - local edits in progress');
+        return;
+      }
       
       // Force fetch latest data (bypasses lock check)
       const freshSchedule = await fetchSchedule(true);

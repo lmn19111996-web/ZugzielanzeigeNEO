@@ -2,6 +2,31 @@
     function makeAllFieldsEditable(train, panel, focusFieldName) {
       const editableFields = panel.querySelectorAll('[data-editable="true"]');
       const inputs = {};
+
+      const findOrRestoreScheduleTrain = (trainId, fallbackTrain) => {
+        schedule.spontaneousEntries = schedule.spontaneousEntries || [];
+
+        let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+        if (scheduleTrain) return scheduleTrain;
+
+        const detachedTrain = [schedule.localTrains || [], schedule.trains || []]
+          .flat()
+          .find(t => t && t._uniqueId === trainId && t.source === 'local');
+
+        const restoreSource = detachedTrain || fallbackTrain;
+        if (!restoreSource || restoreSource.source !== 'local') return null;
+
+        const restoredTrain = {
+          ...restoreSource,
+          source: 'local'
+        };
+        delete restoredTrain._isPastTrain;
+
+        schedule.spontaneousEntries.push(restoredTrain);
+        regenerateTrainsFromSchedule();
+        console.warn('⚠️ Restored stale local train into schedule before save:', trainId);
+        return restoredTrain;
+      };
       
       // Define tab order: date(1) → line(2) → destination(3) → stops(4) → plan(5) → duration(6) → actual(7)
       const tabOrder = ['date', 'linie', 'ziel', 'zwischenhalte', 'plan', 'dauer', 'actual'];
@@ -10,15 +35,7 @@
       const updateValue = (field, value) => {
         // Find the actual train in the schedule using unique ID
         const trainId = panel.dataset.trainId;
-        let scheduleTrain = null;
-        let sourceArray = null;
-        
-        // Find train in spontaneousEntries
-        const spontIndex = schedule.spontaneousEntries.findIndex(t => t._uniqueId === trainId);
-        if (spontIndex >= 0) {
-          scheduleTrain = schedule.spontaneousEntries[spontIndex];
-          sourceArray = 'spontaneousEntries';
-        }
+        let scheduleTrain = findOrRestoreScheduleTrain(trainId, train);
 
         if (!scheduleTrain) {
           console.error('❌ Could not find train in schedule!', {
@@ -402,7 +419,7 @@
         if (isEditable) {
           durationValue.parentElement.setAttribute('data-editable', 'true');
         }
-        
+
         // Populate Stops
         const stopsValue = clone.querySelector('[data-focus="stops"]');
         let stopsArray = [];
@@ -423,13 +440,13 @@
         if (isEditable) {
           stopsValue.parentElement.setAttribute('data-editable', 'true');
         }
-        
+
         // Populate Project dropdown
         const projectValue = clone.querySelector('[data-focus="project"]');
         if (projectValue) {
           const projects = schedule.projects || [];
           const currentProject = train.projectId ? projects.find(p => p._uniqueId === train.projectId) : null;
-          
+
           if (currentProject) {
             projectValue.textContent = currentProject.name || 'Unbenanntes Projekt';
           } else {
@@ -438,10 +455,10 @@
           }
           projectValue.parentElement.setAttribute('data-value', train.projectId || '');
         }
-        
+
         // Append to panel
         panel.appendChild(clone);
-        
+
         // Setup project badge (show next to label if project assigned)
         const projectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
         if (projectBadge && train.projectId) {
@@ -456,11 +473,11 @@
           // Hide badge if no project
           projectBadge.style.display = 'none';
         }
-        
+
         // Determine the type of object being edited and show/hide fields accordingly
         const isNote = train.type === 'note';
         const isTodo = train.type === 'todo';
-        
+
         if (isNote) {
           // For notes: show only Ziel and Zwischenhalte
           const hideFields = ['linie', 'date', 'plan', 'actual', 'dauer', 'projectId'];
@@ -474,9 +491,9 @@
             }
           });
           // Hide project badge for notes
-          const projectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
-          if (projectBadge) projectBadge.style.display = 'none';
-          
+          const noteProjectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
+          if (noteProjectBadge) noteProjectBadge.style.display = 'none';
+
           const delayButtons = panel.querySelector('.editor-delay-buttons');
           if (delayButtons) {
             delayButtons.style.display = 'none';
@@ -495,8 +512,8 @@
             }
           });
           // Hide project badge for todos
-          const projectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
-          if (projectBadge) projectBadge.style.display = 'none';
+          const todoProjectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
+          if (todoProjectBadge) todoProjectBadge.style.display = 'none';
           const delayButtons = panel.querySelector('.editor-delay-buttons');
           if (delayButtons) {
             delayButtons.style.display = 'none';
@@ -504,8 +521,6 @@
           }
         }
         // For trains and tasks: show all fields (default behavior, no hiding needed)
-
-
 
         // ---- RECURRING TRAIN: stem mode — change labels, hide irrelevant fields ----
         if (isRecurringStem) {
@@ -527,15 +542,15 @@
           });
           const delayButtons = panel.querySelector('.editor-delay-buttons');
           if (delayButtons) delayButtons.style.display = 'none';
-          const cancelBtn = panel.querySelector('[data-focus-action="cancel"]');
-          if (cancelBtn) cancelBtn.style.display = 'none';
+          const recurringCancelBtn = panel.querySelector('[data-focus-action="cancel"]');
+          if (recurringCancelBtn) recurringCancelBtn.style.display = 'none';
 
           // Recurrence: configure the template field
           const recFieldStem = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
           if (recFieldStem) {
             const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
             const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
-            const patternLabels = { weekdays: 'Werktage (Mo\u2013Fr)', daily: 'T\u00e4glich', weekly: 'W\u00f6chentlich' };
+            const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich' };
             recFieldStem.setAttribute('data-value', curPattern);
             recFieldStem.setAttribute('data-input-type', 'recurrence-stem');
             recFieldStem.setAttribute('data-editable', 'true');
@@ -568,7 +583,7 @@
 
               const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
               const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
-              const patternLabels = { weekdays: 'Werktage (Mo\u2013Fr)', daily: 'T\u00e4glich', weekly: 'W\u00f6chentlich' };
+              const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich' };
 
               // Configure the template recurrence field
               const recField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
@@ -631,207 +646,240 @@
           if (actions) actions.style.display = 'none';
           return;
         }
+
+        const findOrRestoreScheduleTrain = (trainId, fallbackTrain) => {
+          schedule.spontaneousEntries = schedule.spontaneousEntries || [];
+
+          let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+          if (scheduleTrain) return scheduleTrain;
+
+          const detachedTrain = [schedule.localTrains || [], schedule.trains || []]
+            .flat()
+            .find(t => t && t._uniqueId === trainId && t.source === 'local');
+
+          const restoreSource = detachedTrain || fallbackTrain;
+          if (!restoreSource || restoreSource.source !== 'local') return null;
+
+          const restoredTrain = {
+            ...restoreSource,
+            source: 'local'
+          };
+          delete restoredTrain._isPastTrain;
+
+          schedule.spontaneousEntries.push(restoredTrain);
+          regenerateTrainsFromSchedule();
+          console.warn('⚠️ Restored stale local train into schedule before save:', trainId);
+          return restoredTrain;
+        };
         
       // Helper function to save all field changes and exit edit mode
+      let saveAllFieldsInFlight = false;
       const saveAllFields = async () => {
+        if (saveAllFieldsInFlight) {
+          console.log('⏸️ saveAllFields skipped - already in progress');
+          return;
+        }
+
+        saveAllFieldsInFlight = true;
         console.log('💾 saveAllFields called for train:', train._uniqueId);
         
         // Set lock to prevent concurrent operations
         isDataOperationInProgress = true;
-        
-        const editableFields = panel.querySelectorAll('.editor-field');
-        let hasChanges = false;
-        
-        editableFields.forEach(field => {
-          const input = field.querySelector('input, textarea, select');
-          if (!input) return;
+
+        try {
+          const editableFields = panel.querySelectorAll('.editor-field');
+          let hasChanges = false;
           
-          const fieldName = field.getAttribute('data-field');
-          const newValue = input.value;
-          const oldValue = field.getAttribute('data-value');
-          
-          console.log(`  Field ${fieldName}: "${oldValue}" -> "${newValue}"`);
-          
-          // Only update if value changed
-          if (newValue !== oldValue) {
-            hasChanges = true;
-            console.log(`  → Change detected in ${fieldName}`);
+          editableFields.forEach(field => {
+            const input = field.querySelector('input, textarea, select');
+            if (!input) return;
             
-            // Update train object
-            if (fieldName === 'date') {
-              train.date = newValue;
-              const dateObj = new Date(newValue);
-              train.weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
-            } else if (fieldName === 'dauer') {
-              train.dauer = Number(newValue) || 0;
-            } else if (fieldName === 'zwischenhalte') {
-              train.zwischenhalte = newValue.split('\n');
-            } else if (fieldName === 'actual') {
-              train.actual = newValue || undefined;
-            } else if (fieldName === 'projectId') {
-              train.projectId = newValue || undefined;
-            } else if (fieldName === 'recurrencePattern') {
-              // Handled by the dedicated recurrence-change block below; skip generic assignment
-            } else {
-              train[fieldName] = newValue;
-            }
-          }
-        });
-        
-        // Find the train in schedule
-        const trainId = panel.dataset.trainId;
-        console.log('  Looking for train with ID:', trainId);
-
-        // ---- STEM SAVE PATH ----
-        if (panel.dataset.editMode === 'stem' && train._templateId) {
-          const stemId  = train._templateId;
-          const stem    = (schedule.fixedSchedule || []).find(s => s._uniqueId === stemId);
-          if (stem) {
-            // Write every edited field value directly onto the stem
-            panel.querySelectorAll('.editor-field').forEach(field => {
-              const input = field.querySelector('input, textarea, select');
-              if (!input) return;
-              const fieldName = field.getAttribute('data-field');
-              const val = input.value;
-              if      (fieldName === 'linie')             stem.linie       = val;
-              else if (fieldName === 'ziel')              stem.ziel        = val;
-              else if (fieldName === 'plan')            { stem.plan = val; stem.actual = val; }
-              else if (fieldName === 'dauer')             stem.dauer       = Number(val) || 0;
-              else if (fieldName === 'zwischenhalte')     stem.zwischenhalte = val.split('\n').filter(l => l.trim());
-              else if (fieldName === 'date')              stem.startDate   = val;
-              else if (fieldName === 'projectId')         stem.projectId   = val || undefined;
-              else if (fieldName === 'recurrencePattern') stem.recurrence  = { ...stem.recurrence, pattern: val };
-            });
-
-            const todayStr = new Date().toISOString().split('T')[0];
-            // Keep past skip records; clear future ones (they'll be re-evaluated fresh)
-            stem.skippedDates = (stem.skippedDates || []).filter(d => d <= todayStr);
-            // Remove future children so rematerialization regenerates them cleanly
-            schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
-              t => t._templateId !== stemId || t.date <= todayStr
-            );
-            // Rebuild from updated stem
-            materializeFromStems();
-            regenerateTrainsFromSchedule();
-            processTrainData(schedule);
-            refreshUIOnly();
-            saveSchedule();
-
-            // Stay in stem editor after save (don't jump to instance)
-            renderFocusMode(train, 'stem');
-          }
-          isDataOperationInProgress = false;
-          return;
-        }
-        // ---- END STEM SAVE PATH ----
-
-        let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
-        console.log('  Found in spontaneousEntries:', !!scheduleTrain);
-
-        if (!scheduleTrain) {
-          console.error('❌ Train not found in schedule!');
-          return;
-        }
-
-        // ---- RECURRENCE CHANGE HANDLING (train editor only) ----
-        const recSel = panel.querySelector('.editor-field[data-field="recurrencePattern"] select');
-        if (recSel && panel.dataset.editMode !== 'stem') {
-          const newPattern = recSel.value;
-          const oldStemId  = train._templateId;
-          const oldStem    = oldStemId ? (schedule.fixedSchedule || []).find(s => s._uniqueId === oldStemId) : null;
-          const oldPattern = oldStem?.recurrence?.pattern || 'none';
-          const _tn = new Date();
-          const todayStr = `${_tn.getFullYear()}-${String(_tn.getMonth()+1).padStart(2,'0')}-${String(_tn.getDate()).padStart(2,'0')}`;
-
-          if (newPattern !== 'none' && oldPattern === 'none') {
-            // PROMOTE: normal train → recurring
-            const stemId   = 'stem_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-            const entryDate = scheduleTrain.date || todayStr;
-            const newStem = {
-              _uniqueId:    stemId,
-              linie:        scheduleTrain.linie || '',
-              ziel:         scheduleTrain.ziel  || '',
-              plan:         scheduleTrain.plan  || '',
-              dauer:        scheduleTrain.dauer || 0,
-              zwischenhalte: Array.isArray(scheduleTrain.zwischenhalte) ? [...scheduleTrain.zwischenhalte] : [],
-              projectId:    scheduleTrain.projectId || undefined,
-              startDate:    entryDate,
-              recurrence:   { pattern: newPattern, days: [] },
-              skippedDates: [entryDate] // this instance already exists, don’t re-materialise
-            };
-            schedule.fixedSchedule = schedule.fixedSchedule || [];
-            schedule.fixedSchedule.push(newStem);
-            scheduleTrain._templateId = stemId;
-            train._templateId         = stemId;
-            hasChanges = true;
-            materializeFromStems();
-            console.log('↻ Promoted train to recurring, stem:', stemId);
-
-          } else if (newPattern === 'none' && oldPattern !== 'none') {
-            // DETACH: recurring instance → standalone
-            if (oldStem) {
-              oldStem.skippedDates = oldStem.skippedDates || [];
-              if (train.date && !oldStem.skippedDates.includes(train.date))
-                oldStem.skippedDates.push(train.date);
-            }
-            delete scheduleTrain._templateId;
-            delete train._templateId;
-            hasChanges = true;
-            console.log('✂ Detached recurring instance → standalone');
-
-          } else if (newPattern !== 'none' && oldPattern !== 'none' && newPattern !== oldPattern) {
-            // PATTERN CHANGE: update stem + rematerialise future
-            if (oldStem) {
-              oldStem.recurrence   = { ...oldStem.recurrence, pattern: newPattern };
-              oldStem.skippedDates = (oldStem.skippedDates || []).filter(d => d <= todayStr);
-              schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
-                t => t._templateId !== oldStemId || t.date <= todayStr
-              );
-              materializeFromStems();
+            const fieldName = field.getAttribute('data-field');
+            const newValue = input.value;
+            const oldValue = field.getAttribute('data-value');
+            
+            console.log(`  Field ${fieldName}: "${oldValue}" -> "${newValue}"`);
+            
+            // Only update if value changed
+            if (newValue !== oldValue) {
               hasChanges = true;
-              console.log('🔄 Recurrence pattern changed to', newPattern);
+              console.log(`  → Change detected in ${fieldName}`);
+              
+              // Update train object
+              if (fieldName === 'date') {
+                train.date = newValue;
+                const dateObj = new Date(newValue);
+                train.weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+              } else if (fieldName === 'dauer') {
+                train.dauer = Number(newValue) || 0;
+              } else if (fieldName === 'zwischenhalte') {
+                train.zwischenhalte = newValue.split('\n');
+              } else if (fieldName === 'actual') {
+                train.actual = newValue || undefined;
+              } else if (fieldName === 'projectId') {
+                train.projectId = newValue || undefined;
+              } else if (fieldName === 'recurrencePattern') {
+                // Handled by the dedicated recurrence-change block below; skip generic assignment
+              } else {
+                train[fieldName] = newValue;
+              }
+            }
+          });
+          
+          // Find the train in schedule
+          const trainId = panel.dataset.trainId;
+          console.log('  Looking for train with ID:', trainId);
+
+          // ---- STEM SAVE PATH ----
+          if (panel.dataset.editMode === 'stem' && train._templateId) {
+            const stemId  = train._templateId;
+            const stem    = (schedule.fixedSchedule || []).find(s => s._uniqueId === stemId);
+            if (stem) {
+              // Write every edited field value directly onto the stem
+              panel.querySelectorAll('.editor-field').forEach(field => {
+                const input = field.querySelector('input, textarea, select');
+                if (!input) return;
+                const fieldName = field.getAttribute('data-field');
+                const val = input.value;
+                if      (fieldName === 'linie')             stem.linie       = val;
+                else if (fieldName === 'ziel')              stem.ziel        = val;
+                else if (fieldName === 'plan')            { stem.plan = val; stem.actual = val; }
+                else if (fieldName === 'dauer')             stem.dauer       = Number(val) || 0;
+                else if (fieldName === 'zwischenhalte')     stem.zwischenhalte = val.split('\n').filter(l => l.trim());
+                else if (fieldName === 'date')              stem.startDate   = val;
+                else if (fieldName === 'projectId')         stem.projectId   = val || undefined;
+                else if (fieldName === 'recurrencePattern') stem.recurrence  = { ...stem.recurrence, pattern: val };
+              });
+
+              const todayStr = new Date().toISOString().split('T')[0];
+              // Keep past skip records; clear future ones (they'll be re-evaluated fresh)
+              stem.skippedDates = (stem.skippedDates || []).filter(d => d <= todayStr);
+              // Remove future children so rematerialization regenerates them cleanly
+              schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
+                t => t._templateId !== stemId || t.date <= todayStr
+              );
+              // Rebuild from updated stem
+              materializeFromStems();
+              regenerateTrainsFromSchedule();
+              processTrainData(schedule);
+              refreshUIOnly();
+              saveSchedule();
+
+              // Stay in stem editor after save (don't jump to instance)
+              renderFocusMode(train, 'stem');
+            }
+            return;
+          }
+          // ---- END STEM SAVE PATH ----
+
+          let scheduleTrain = findOrRestoreScheduleTrain(trainId, train);
+          console.log('  Found in spontaneousEntries:', !!scheduleTrain);
+
+          if (!scheduleTrain) {
+            console.error('❌ Train not found in schedule!');
+            return;
+          }
+
+          // ---- RECURRENCE CHANGE HANDLING (train editor only) ----
+          const recSel = panel.querySelector('.editor-field[data-field="recurrencePattern"] select');
+          if (recSel && panel.dataset.editMode !== 'stem') {
+            const newPattern = recSel.value;
+            const oldStemId  = train._templateId;
+            const oldStem    = oldStemId ? (schedule.fixedSchedule || []).find(s => s._uniqueId === oldStemId) : null;
+            const oldPattern = oldStem?.recurrence?.pattern || 'none';
+            const _tn = new Date();
+            const todayStr = `${_tn.getFullYear()}-${String(_tn.getMonth()+1).padStart(2,'0')}-${String(_tn.getDate()).padStart(2,'0')}`;
+
+            if (newPattern !== 'none' && oldPattern === 'none') {
+              // PROMOTE: normal train → recurring
+              const stemId   = 'stem_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+              const entryDate = scheduleTrain.date || todayStr;
+              const newStem = {
+                _uniqueId:    stemId,
+                linie:        scheduleTrain.linie || '',
+                ziel:         scheduleTrain.ziel  || '',
+                plan:         scheduleTrain.plan  || '',
+                dauer:        scheduleTrain.dauer || 0,
+                zwischenhalte: Array.isArray(scheduleTrain.zwischenhalte) ? [...scheduleTrain.zwischenhalte] : [],
+                projectId:    scheduleTrain.projectId || undefined,
+                startDate:    entryDate,
+                recurrence:   { pattern: newPattern, days: [] },
+                skippedDates: [entryDate] // this instance already exists, don’t re-materialise
+              };
+              schedule.fixedSchedule = schedule.fixedSchedule || [];
+              schedule.fixedSchedule.push(newStem);
+              scheduleTrain._templateId = stemId;
+              train._templateId         = stemId;
+              hasChanges = true;
+              materializeFromStems();
+              console.log('↻ Promoted train to recurring, stem:', stemId);
+
+            } else if (newPattern === 'none' && oldPattern !== 'none') {
+              // DETACH: recurring instance → standalone
+              if (oldStem) {
+                oldStem.skippedDates = oldStem.skippedDates || [];
+                if (train.date && !oldStem.skippedDates.includes(train.date))
+                  oldStem.skippedDates.push(train.date);
+              }
+              delete scheduleTrain._templateId;
+              delete train._templateId;
+              hasChanges = true;
+              console.log('✂ Detached recurring instance → standalone');
+
+            } else if (newPattern !== 'none' && oldPattern !== 'none' && newPattern !== oldPattern) {
+              // PATTERN CHANGE: update stem + rematerialise future
+              if (oldStem) {
+                oldStem.recurrence   = { ...oldStem.recurrence, pattern: newPattern };
+                oldStem.skippedDates = (oldStem.skippedDates || []).filter(d => d <= todayStr);
+                schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
+                  t => t._templateId !== oldStemId || t.date <= todayStr
+                );
+                materializeFromStems();
+                hasChanges = true;
+                console.log('🔄 Recurrence pattern changed to', newPattern);
+              }
             }
           }
-        }
-        // ---- END RECURRENCE HANDLING ----
+          // ---- END RECURRENCE HANDLING ----
         
-        // If changes were made, update schedule and save
-        if (hasChanges) {
-          console.log('✅ Changes detected, saving...');
-          // Update the schedule train with all changes
-          Object.assign(scheduleTrain, train);
-          
-          // OPTIMISTIC UI: Render immediately, then save in background
-          refreshUIOnly();
-          
-          // Refresh note panel if it's open and this is a note
-          const isNote = train.type === 'note';
-          const noteDrawer = document.getElementById('note-drawer');
-          if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
-            console.log('  Refreshing note panel');
-            renderNotePanel();
+          // If changes were made, update schedule and save
+          if (hasChanges) {
+            console.log('✅ Changes detected, saving...');
+            // Update the schedule train with all changes
+            Object.assign(scheduleTrain, train);
+            
+            // OPTIMISTIC UI: Render immediately, then save in background
+            refreshUIOnly();
+            
+            // Refresh note panel if it's open and this is a note
+            const isNote = train.type === 'note';
+            const noteDrawer = document.getElementById('note-drawer');
+            if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
+              console.log('  Refreshing note panel');
+              renderNotePanel();
+            }
+            
+            // Save in background - no await, no callback needed
+            saveSchedule();
+          } else {
+            console.log('  No changes detected');
           }
           
-          // Save in background - no await, no callback needed
-          saveSchedule();
-        } else {
-          console.log('  No changes detected');
+          // Always re-render the panel to exit edit mode
+          // Find the train in the freshly processed data (has all computed properties)
+          const updatedTrain = processedTrainData.allTrains.find(t => 
+            t._uniqueId === trainId
+          );
+          
+          if (updatedTrain) {
+            renderFocusMode(updatedTrain);
+          } else {
+            console.error('Could not find updated train in processedTrainData!');
+          }
+        } finally {
+          isDataOperationInProgress = false;
+          saveAllFieldsInFlight = false;
         }
-        
-        // Always re-render the panel to exit edit mode
-        // Find the train in the freshly processed data (has all computed properties)
-        const updatedTrain = processedTrainData.allTrains.find(t => 
-          t._uniqueId === trainId
-        );
-        
-        if (updatedTrain) {
-          renderFocusMode(updatedTrain);
-        } else {
-          console.error('Could not find updated train in processedTrainData!');
-        }
-        
-        // Release data operation lock
-        isDataOperationInProgress = false;
       };
       
       // ============ LEGACY-STYLE EDIT MECHANISM ============
@@ -1192,7 +1240,7 @@
           const trainId = panel.dataset.trainId;
           
           // Find train in schedule
-          let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+          let scheduleTrain = findOrRestoreScheduleTrain(trainId, train);
 
           if (!scheduleTrain) {
             console.error('Train not found in schedule!');
@@ -1294,7 +1342,7 @@
           const trainId = panel.dataset.trainId;
           
           // Find train in schedule
-          let scheduleTrain = schedule.spontaneousEntries.find(t => t._uniqueId === trainId);
+          let scheduleTrain = findOrRestoreScheduleTrain(trainId, train);
           let sourceArray = schedule.spontaneousEntries;
           
           if (!scheduleTrain) {

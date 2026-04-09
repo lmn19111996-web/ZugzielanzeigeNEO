@@ -22,6 +22,7 @@ const TRAIN_LOG_DIR = path.join(__dirname, 'train_logs');
 const LAST_LOG_TIME_FILE = path.join(__dirname, 'train_logs', '.last_log_time');
 const LOG_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every 1 hour
+const TRAIN_LOG_SCHEMA_VERSION = 2;
 
 // In-memory accumulator for pending train data (keyed by week)
 const pendingTrainData = new Map(); // Map<weekId, Map<trainKey, trainState>>
@@ -190,28 +191,32 @@ async function logTrainHistory(trains, scheduleType, additionalInfo = {}) {
 function accumulateTrainData(trains, scheduleType) {
   trains.forEach(train => {
     const trainKey = createTrainKey(train, scheduleType);
-    
-    // Convert weekday to actual date for fixed schedules
-    let actualDate;
-    let dateObj;
-    if (scheduleType === 'fixed' && train.weekday) {
-      actualDate = weekdayToCurrentWeekDate(train.weekday);
-      dateObj = new Date(actualDate);
-    } else {
-      actualDate = train.date || '';
-      dateObj = actualDate ? new Date(actualDate) : new Date();
-    }
-    
+    const actualDate = resolveTrainDate(train, scheduleType);
+    const dateObj = actualDate ? new Date(actualDate + 'T12:00:00') : new Date();
+    const zwischenhalte = normalizeStops(train.zwischenhalte != null ? train.zwischenhalte : train.stops);
+
     const currentState = {
+      schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
+      scheduleType,
+      loggedAt: new Date().toISOString(),
       trainKey,
+      _uniqueId: train._uniqueId || null,
+      _templateId: train._templateId || null,
+      projectId: train.projectId || null,
+      type: train.type || null,
       linie: train.linie || '',
       ziel: train.ziel || '',
       plan: train.plan || '',
       actual: train.actual || '',
-      dauer: train.dauer || '',
-      stops: train.stops || '',
+      dauer: Number(train.dauer) || 0,
+      zwischenhalte,
+      stops: zwischenhalte.join(' • '),
       date: actualDate,
-      canceled: train.canceled || false
+      plannedDate: train.plannedDate || actualDate || '',
+      canceled: Boolean(train.canceled),
+      recurrence: train.recurrence || null,
+      startDate: train.startDate || null,
+      skippedDates: Array.isArray(train.skippedDates) ? train.skippedDates.slice() : []
     };
     
     // Determine which week this train belongs to
@@ -225,6 +230,31 @@ function accumulateTrainData(trains, scheduleType) {
     // Add or update train in the week's map
     pendingTrainData.get(weekId).set(trainKey, currentState);
   });
+}
+
+function resolveTrainDate(train, scheduleType) {
+  if (train && typeof train.date === 'string' && train.date) return train.date;
+  if (train && typeof train.plannedDate === 'string' && train.plannedDate) return train.plannedDate;
+  if (scheduleType === 'fixed' && train && typeof train.startDate === 'string' && train.startDate) return train.startDate;
+  if (scheduleType === 'fixed' && train && typeof train.weekday === 'string' && train.weekday) {
+    return weekdayToCurrentWeekDate(train.weekday) || '';
+  }
+  return '';
+}
+
+function normalizeStops(rawStops) {
+  if (Array.isArray(rawStops)) {
+    return rawStops
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+  }
+  if (typeof rawStops === 'string') {
+    return rawStops
+      .split(/\n|\u2022|\|/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 // Flush all pending train data to disk (called once per day)
@@ -358,10 +388,10 @@ async function readLogAsStateMap(logFilePath = null) {
     lines.forEach(line => {
       try {
         const logEntry = JSON.parse(line);
-        if (logEntry.trainKey) {
-          // Each line represents the current state of a train
-          stateMap.set(logEntry.trainKey, logEntry);
-        }
+        const key = logEntry.trainKey || createTrainKey(logEntry, logEntry.scheduleType || 'legacy');
+        if (!key) return;
+        // Each line represents the current state of a train
+        stateMap.set(key, { ...logEntry, trainKey: key });
       } catch (e) {
         console.warn('Skipping invalid log line:', line.substring(0, 50));
       }
@@ -384,18 +414,12 @@ async function rewriteLogFile(stateMap, logFilePath = null) {
   const logFile = logFilePath || getWeeklyLogFile();
   
   try {
-    const logEntries = Array.from(stateMap.values()).map(trainState => {
-      return JSON.stringify({
-        trainKey: trainState.trainKey,
-        linie: trainState.linie,
-        ziel: trainState.ziel,
-        plan: trainState.plan,
-        actual: trainState.actual,
-        dauer: trainState.dauer,
-        stops: trainState.stops,
-        date: trainState.date,
-        canceled: trainState.canceled
-      });
+    const logEntries = Array.from(stateMap.values()).map((trainState) => {
+      const normalized = { ...trainState };
+      normalized.schemaVersion = Number(normalized.schemaVersion) || TRAIN_LOG_SCHEMA_VERSION;
+      normalized.trainKey = normalized.trainKey || createTrainKey(normalized, normalized.scheduleType || 'legacy');
+      if (!normalized.loggedAt) normalized.loggedAt = new Date().toISOString();
+      return JSON.stringify(normalized);
     });
     
     const logContent = logEntries.join('\n') + '\n';
@@ -417,18 +441,17 @@ async function rewriteLogFile(stateMap, logFilePath = null) {
 
 // Create a unique key for a train entry to detect duplicates
 function createTrainKey(train, scheduleType) {
-  // Always use actual date - convert weekday to current week date for fixed schedules
-  let actualDate;
-  if (scheduleType === 'fixed' && train.weekday) {
-    actualDate = weekdayToCurrentWeekDate(train.weekday);
-  } else {
-    actualDate = train.date || 'unknown';
-  }
+  if (!train || typeof train !== 'object') return '';
+  if (train._uniqueId) return `${scheduleType || 'unknown'}|uid|${String(train._uniqueId)}`;
+
+  // Always use a resolved date for non-UID legacy entries
+  const actualDate = resolveTrainDate(train, scheduleType) || 'unknown';
   
   const keyParts = [
+    scheduleType || 'unknown',
     train.linie || 'unknown',
     train.ziel || 'unknown', 
-    train.plan || 'unknown',
+    train.plan || train.actual || 'unknown',
     actualDate
   ];
   return keyParts.join('|').toLowerCase();
