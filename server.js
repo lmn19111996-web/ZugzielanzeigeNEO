@@ -494,6 +494,42 @@ function parseTrainTimestampMs(entry) {
   return local.getTime();
 }
 
+function buildHistoryDedupKey(entry) {
+  if (!entry || typeof entry !== 'object') return '';
+
+  const trainKey = typeof entry.trainKey === 'string' ? entry.trainKey.trim().toLowerCase() : '';
+  if (trainKey) {
+    // New schema keys: <scheduleType>|uid|<uniqueId>
+    const uidMarker = '|uid|';
+    const uidIndex = trainKey.indexOf(uidMarker);
+    if (uidIndex >= 0) {
+      const uid = trainKey.slice(uidIndex + uidMarker.length);
+      if (uid) return `uid|${uid}`;
+    }
+
+    // Legacy schema keys: <scheduleType>|<linie>|<ziel>|<time>|<date>
+    const parts = trainKey.split('|');
+    if (parts.length >= 5) {
+      return `legacy|${parts.slice(1).join('|')}`;
+    }
+
+    return `key|${trainKey}`;
+  }
+
+  const uid = typeof entry._uniqueId === 'string' ? entry._uniqueId.trim() : '';
+  if (uid) return `uid|${uid}`;
+
+  const datePart = String(entry.date || entry.plannedDate || '').trim().toLowerCase();
+  const liniePart = String(entry.linie || '').trim().toLowerCase();
+  const zielPart = String(entry.ziel || '').trim().toLowerCase();
+  const planPart = String(entry.plan || '').trim().toLowerCase();
+  const actualPart = String(entry.actual || '').trim().toLowerCase();
+  const dauerPart = String(entry.dauer != null ? entry.dauer : '').trim().toLowerCase();
+  const typePart = String(entry.type || '').trim().toLowerCase();
+
+  return `sig|${datePart}|${liniePart}|${zielPart}|${planPart}|${actualPart}|${dauerPart}|${typePart}`;
+}
+
 async function listWeeklyLogFiles() {
   try {
     await fsPromises.access(TRAIN_LOG_DIR);
@@ -940,8 +976,19 @@ app.get('/api/train-history/range', async (req, res) => {
     }
 
     matched.sort((a, b) => a._rangeTs - b._rangeTs);
-    const limited = matched.length > limit;
-    const entries = (limited ? matched.slice(matched.length - limit) : matched).map((entry) => {
+
+    // Deduplicate before limiting to avoid repeated rows from legacy/overlapping logs.
+    // Keep the latest match for each logical train key in the selected range.
+    const dedupedMap = new Map();
+    matched.forEach((entry) => {
+      const dedupKey = buildHistoryDedupKey(entry);
+      if (!dedupKey) return;
+      dedupedMap.set(dedupKey, entry);
+    });
+
+    const deduped = Array.from(dedupedMap.values()).sort((a, b) => a._rangeTs - b._rangeTs);
+    const limited = deduped.length > limit;
+    const entries = (limited ? deduped.slice(deduped.length - limit) : deduped).map((entry) => {
       const out = { ...entry };
       delete out._rangeTs;
       return out;
@@ -949,7 +996,7 @@ app.get('/api/train-history/range', async (req, res) => {
 
     res.json({
       entries,
-      total: matched.length,
+      total: deduped.length,
       showing: entries.length,
       limited,
       from: new Date(rangeStart).toISOString(),

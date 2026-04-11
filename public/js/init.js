@@ -346,6 +346,13 @@
         if (trainEntry && trainEntry.classList.contains('past-train')) {
           return;
         }
+
+        if (trainEntry && trainEntry.dataset.trainType === 'duration-only') {
+          const dauer = el.dataset.dauer ? Number(el.dataset.dauer) : 0;
+          el.innerHTML = '';
+          el.appendChild(document.createTextNode(formatDurationOnlyText(dauer)));
+          return;
+        }
         
         const plan = el.dataset.plan || null;
         const actual = el.dataset.actual || null;
@@ -361,6 +368,9 @@
       document.querySelectorAll('.indicator-dot').forEach((dot) => {
         const entry = dot.closest('.train-entry');
         const departure = entry.querySelector('[data-departure]');
+        if (entry.dataset.trainType === 'duration-only') {
+          return;
+        }
         const plan = departure.dataset.plan || null;
         const actual = departure.dataset.actual || null;
         const trainDate = departure.dataset.date || null;

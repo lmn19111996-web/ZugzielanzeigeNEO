@@ -57,6 +57,7 @@
       localTrains: [],         // Local personal schedule trains only
       noteTrains: [],          // Notes (objects with type='note')
       scheduledTrains: [],     // Trains with plan time
+      durationOnlyTrains: [],  // Trains without time, rendered after timed trains per day
       futureTrains: [],        // Scheduled trains in the future or currently occupying
       currentTrain: null,      // First future/occupying train from PERSONAL SCHEDULE
       remainingTrains: []      // Future trains after the current one
@@ -82,6 +83,7 @@
         localTrains: [],
         noteTrains: [],
         scheduledTrains: [],
+        durationOnlyTrains: [],
         futureTrains: [],
         currentTrain: null,
         remainingTrains: []
@@ -103,11 +105,19 @@
       ];
       
       processedTrainData.scheduledTrains = processedTrainData.allTrains
-        .filter(t => t.type !== 'note' && t.linie && t.plan && t.plan.trim() !== '')
+        .filter(t => t.type !== 'note' && !isDurationOnlyTrain(t) && t.linie && hasTrainTime(t))
         .sort((a, b) => {
           const ta = parseTime(a.actual || a.plan, now, a.date);
           const tb = parseTime(b.actual || b.plan, now, b.date);
           return ta - tb;
+        });
+
+      processedTrainData.durationOnlyTrains = processedTrainData.allTrains
+        .filter(t => isDurationOnlyTrain(t) && t.linie && t.date)
+        .sort((a, b) => {
+          const dateCompare = String(a.date || '').localeCompare(String(b.date || ''));
+          if (dateCompare !== 0) return dateCompare;
+          return 0;
         });
       
       // Get today's date for filtering past trains from today
@@ -146,7 +156,7 @@
       
       // IMPORTANT: Current train must ALWAYS be from local personal schedule
       const localScheduledTrains = processedTrainData.localTrains
-        .filter(t => t.plan && t.plan.trim() !== '')
+        .filter(t => !isDurationOnlyTrain(t) && hasTrainTime(t))
         .sort((a, b) => {
           const ta = parseTime(a.actual || a.plan, now, a.date);
           const tb = parseTime(b.actual || b.plan, now, b.date);
@@ -190,9 +200,33 @@
         processedTrainData.currentTrain = null;
       }
       
-      // Remaining trains: past trains (from today) + future trains
-      // Display order: oldest past train first, then future trains
-      processedTrainData.remainingTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
+      // Remaining trains: timed trains keep their chronological order.
+      // Duration-only trains are appended at the end of their respective day.
+      const timedDisplayTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
+      const timedByDate = new Map();
+      const durationOnlyByDate = new Map();
+
+      timedDisplayTrains.forEach((train) => {
+        const key = train.date || '';
+        if (!timedByDate.has(key)) timedByDate.set(key, []);
+        timedByDate.get(key).push(train);
+      });
+
+      processedTrainData.durationOnlyTrains.forEach((train) => {
+        const key = train.date || '';
+        if (!durationOnlyByDate.has(key)) durationOnlyByDate.set(key, []);
+        durationOnlyByDate.get(key).push(train);
+      });
+
+      const orderedDates = Array.from(new Set([
+        ...timedDisplayTrains.map(t => t.date).filter(Boolean),
+        ...processedTrainData.durationOnlyTrains.map(t => t.date).filter(Boolean)
+      ])).sort();
+
+      processedTrainData.remainingTrains = orderedDates.flatMap((date) => [
+        ...(timedByDate.get(date) || []),
+        ...(durationOnlyByDate.get(date) || [])
+      ]);
 
       const stressSig = buildStressDataSignature(processedTrainData.allTrains);
       if (stressSig !== lastStressDataSignature) {

@@ -11,6 +11,7 @@ const Templates = {
    * Create a train entry for the train list view
    */
   trainEntry(train, now, isFirstTrain = false) {
+    const isDurationOnly = isDurationOnlyTrain(train);
     const delay = train.canceled ? 0 : getDelay(train.plan, train.actual, now, train.date);
     const tTime = parseTime(train.actual || train.plan, now, train.date);
     const occEnd = getOccupancyEnd(train, now);
@@ -51,11 +52,14 @@ const Templates = {
     const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
     const isToday = train.date === todayDate;
     const isCheckedOut = !!train.checkoutTime;
+    const hasOpenCheckinSession = !!train.checkinTime;
     const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut;
-    const isPastTrainDetected = !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
+    const isPastTrainDetected = !isDurationOnly && !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
     
     if (isFirstTrain) {
       tempDiv.appendChild(formatCountdown(train, now));
+    } else if (isDurationOnly) {
+      tempDiv.appendChild(document.createTextNode(formatDurationOnlyText(train.dauer)));
     } else if (isPastTrainDetected) {
       // For past trains, use special time formatting
       // Pass check-in status to determine animation display
@@ -73,14 +77,14 @@ const Templates = {
 
     // ── Check-in / Check-out widget ──────────────────────────────────────────
     // Only rendered for today's non-cancelled trains (not the headline first-train).
-    const isCheckedIn   = !!train.checkinTime;
+    const isCheckedIn   = hasOpenCheckinSession;
     const uid           = train._uniqueId || '';
 
     let checkinWidgetHTML = '';
     if (!train._readOnly && isToday && !train.canceled && !isFirstTrain) {
       // Show widget for all today's non-canceled tasks (including past tasks)
       // until they are checked out.
-      if (isCheckedOut) {
+      if (isCheckedOut && !isDurationOnly) {
         // Completed: hide check-in/check-out widget entirely
         checkinWidgetHTML = '';
       } else if (isCheckedIn) {
@@ -150,6 +154,7 @@ const Templates = {
            data-ziel="${destinationText || ''}"
            data-plan="${train.plan || ''}" 
            data-date="${train.date || ''}" 
+         data-train-type="${train.type || 'train'}"
            data-unique-id="${train._uniqueId || ''}">
         <div class="train-info">
           <div class="${indicatorClass}"></div>

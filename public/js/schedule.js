@@ -165,7 +165,7 @@
         
         // Auto-fill any empty actual times with plan times before saving
         const autoFillActual = (train) => {
-          if (train.plan && !train.actual) {
+          if (train.plan && !train.actual && !isDurationOnlyTrain(train)) {
             train.actual = train.plan;
           }
           return train;
@@ -449,10 +449,11 @@
           const entry = {
             _uniqueId:     uid,
             _templateId:   stem._uniqueId,
+            type:          stem.type,
             linie:         stem.linie,
             ziel:          stem.ziel          || '',
             plan:          stem.plan          || '',
-            actual:        stem.plan          || '',
+            actual:        stem.plan          || undefined,
             dauer:         stem.dauer         || 0,
             zwischenhalte: Array.isArray(stem.zwischenhalte) ? [...stem.zwischenhalte] : [],
             projectId:     stem.projectId     || undefined,
@@ -480,6 +481,7 @@
 
       const newStem = {
         _uniqueId: stemId,
+        type: undefined,
         linie: '',
         ziel: '',
         plan: '',
@@ -497,7 +499,8 @@
       const syntheticChild = {
         _uniqueId:    stemId + '_' + today,
         _templateId:  stemId,
-        linie: '', ziel: '', plan: '', actual: '',
+        type: undefined,
+        linie: '', ziel: '', plan: '', actual: undefined,
         dauer: 0, zwischenhalte: [], canceled: false,
         date: today, plannedDate: today, source: 'local'
       };
@@ -558,6 +561,7 @@
       const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
       
       const newTrain = {
+        type: options.type,
         linie: options.linie || '',
         ziel: options.ziel || '',
         plan: '',  // Empty - user must fill

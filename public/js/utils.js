@@ -59,6 +59,19 @@
       return div.innerHTML;
     }
 
+    function isDurationOnlyTrain(train) {
+      return !!train && train.type === 'duration-only';
+    }
+
+    function hasTrainTime(train) {
+      return !!(train && typeof train.plan === 'string' && train.plan.trim() !== '');
+    }
+
+    function formatDurationOnlyText(dauer) {
+      const minutes = Math.max(0, Math.round(Number(dauer) || 0));
+      return `gesamte Dauer: ${minutes} Minuten`;
+    }
+
     function calculateArrivalTime(departureTime, durationMinutes, trainDate = null) {
       if (!departureTime || !durationMinutes) return null;
       const now = new Date();

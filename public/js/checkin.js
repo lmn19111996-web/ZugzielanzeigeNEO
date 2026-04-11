@@ -35,6 +35,13 @@ function _ciComputeDuration(baseTime, outTime) {
   return dur;
 }
 
+function _ciComputeDurationFromMs(startMs, endMs) {
+  var safeStart = Number(startMs);
+  var safeEnd = Number(endMs);
+  if (!Number.isFinite(safeStart) || !Number.isFinite(safeEnd) || safeEnd <= safeStart) return 0;
+  return Math.max(0, Math.round((safeEnd - safeStart) / 60000));
+}
+
 function _ciApplyCheckoutState(uid, timeStr, dur) {
   var lists = [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []];
   var seen = new Set();
@@ -43,7 +50,14 @@ function _ciApplyCheckoutState(uid, timeStr, dur) {
       if (!t || t._uniqueId !== uid) return;
       if (seen.has(t)) return;
       seen.add(t);
-      t.dauer = dur;
+      if (isDurationOnlyTrain(t)) {
+        t.dauer = (Number(t.dauer) || 0) + dur;
+        t.checkinTime = undefined;
+        t.actual = undefined;
+        t._checkinEpochMs = undefined;
+      } else {
+        t.dauer = dur;
+      }
       t.checkoutTime = timeStr;
     });
   });
@@ -54,8 +68,11 @@ function _ciApplyCheckoutState(uid, timeStr, dur) {
 function _ciCommitCheckin(uid, timeStr) {
   var train = _ciFindTrain(uid);
   if (!train || train.checkinTime) return; // Idempotent guard
-  train.actual      = timeStr;
+  if (!isDurationOnlyTrain(train)) {
+    train.actual = timeStr;
+  }
   train.checkinTime = timeStr;
+  train._checkinEpochMs = Date.now();
   // Refresh processed data so clock.js sees the correct state on the next tick.
   // We intentionally skip renderCurrentWorkspaceView() here — the animated DOM
   // already shows the correct post-stage-2 state, and a forced re-render would
@@ -64,8 +81,10 @@ function _ciCommitCheckin(uid, timeStr) {
   saveSchedule();
 }
 
-function _ciSaveCheckout(uid, timeStr, dur) {
-  _ciApplyCheckoutState(uid, timeStr, dur);
+function _ciSaveCheckout(uid, timeStr, dur, alreadyApplied) {
+  if (!alreadyApplied) {
+    _ciApplyCheckoutState(uid, timeStr, dur);
+  }
 
   if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
 
@@ -125,7 +144,13 @@ document.addEventListener('click', function _ciClickCapture(e) {
   if (coBtn) {
     var uid   = coBtn.dataset.coUid;
     var train = _ciFindTrain(uid);
-    if (!train || train.checkoutTime) return;
+    if (!train) return;
+
+    if (isDurationOnlyTrain(train)) {
+      if (!train.checkinTime) return;
+    } else if (train.checkoutTime) {
+      return;
+    }
 
     e.stopPropagation();
     e.preventDefault();
@@ -135,8 +160,27 @@ document.addEventListener('click', function _ciClickCapture(e) {
 
     coBtn.disabled = true;
     var checkoutTime = _ciNowHHMM();
-    var baseTime = train.checkinTime || train.actual || '00:00';
-    var checkoutDuration = _ciComputeDuration(baseTime, checkoutTime);
+    var checkoutDuration;
+    if (isDurationOnlyTrain(train)) {
+      var checkoutMs = Date.now();
+      var startMs = train._checkinEpochMs;
+      if (!Number.isFinite(Number(startMs)) && train.checkinTime) {
+        var now = new Date();
+        var parts = train.checkinTime.split(':');
+        if (parts.length === 2) {
+          var hh = parseInt(parts[0], 10);
+          var mm = parseInt(parts[1], 10);
+          if (!Number.isNaN(hh) && !Number.isNaN(mm)) {
+            var fallbackStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+            startMs = fallbackStart.getTime();
+          }
+        }
+      }
+      checkoutDuration = _ciComputeDurationFromMs(startMs, checkoutMs);
+    } else {
+      var baseTime = train.checkinTime || train.actual || '00:00';
+      checkoutDuration = _ciComputeDuration(baseTime, checkoutTime);
+    }
 
     // Apply checked-out data immediately to avoid transient re-renders showing
     // the old checked-in widget during the animation window.
@@ -150,7 +194,7 @@ document.addEventListener('click', function _ciClickCapture(e) {
     setTimeout(function () {
       wrap.classList.add('fade-accent', 'checkout-fade');
       setTimeout(function () {
-        _ciSaveCheckout(uid, checkoutTime, checkoutDuration);
+        _ciSaveCheckout(uid, checkoutTime, checkoutDuration, true);
       }, 300);
     }, 1500);
     return;

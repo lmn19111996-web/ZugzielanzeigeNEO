@@ -370,6 +370,21 @@
         if (isEditable) {
           dateValue.parentElement.setAttribute('data-editable', 'true');
         }
+
+        // Populate train type
+        const typeValue = clone.querySelector('[data-focus="entry-type"]');
+        if (typeValue) {
+          const typeLabels = {
+            train: 'Fahrt mit Zeit',
+            'duration-only': 'Nur Dauer'
+          };
+          const currentType = isDurationOnlyTrain(train) ? 'duration-only' : 'train';
+          typeValue.textContent = typeLabels[currentType] || typeLabels.train;
+          typeValue.parentElement.setAttribute('data-value', currentType);
+          if (isEditable) {
+            typeValue.parentElement.setAttribute('data-editable', 'true');
+          }
+        }
         
         // Populate Arrival (Plan)
         const arrivalPlanValue = clone.querySelector('[data-focus="arrival-plan"]');
@@ -477,10 +492,11 @@
         // Determine the type of object being edited and show/hide fields accordingly
         const isNote = train.type === 'note';
         const isTodo = train.type === 'todo';
+        const isDurationOnly = isDurationOnlyTrain(train);
 
         if (isNote) {
           // For notes: show only Ziel and Zwischenhalte
-          const hideFields = ['linie', 'date', 'plan', 'actual', 'dauer', 'projectId'];
+          const hideFields = ['linie', 'date', 'type', 'plan', 'actual', 'dauer', 'projectId'];
           hideFields.forEach(field => {
             const fieldEl = panel.querySelector(`.editor-field[data-field="${field}"]`);
             if (fieldEl) {
@@ -501,7 +517,7 @@
           }
         } else if (isTodo) {
           // For todos: show only Ziel, Datum, and Zwischenhalte
-          const hideFields = ['linie', 'plan', 'actual', 'dauer', 'projectId'];
+          const hideFields = ['linie', 'type', 'plan', 'actual', 'dauer', 'projectId'];
           hideFields.forEach(field => {
             const fieldEl = panel.querySelector(`.editor-field[data-field="${field}"]`);
             if (fieldEl) {
@@ -519,6 +535,14 @@
             delayButtons.style.display = 'none';
             delayButtons.querySelectorAll('button').forEach(btn => btn.setAttribute('tabindex', '-1'));
           }
+        } else if (isDurationOnly) {
+          const hideFields = ['plan', 'actual'];
+          hideFields.forEach(field => {
+            const fieldEl = panel.querySelector(`.editor-field[data-field="${field}"]`);
+            if (fieldEl) fieldEl.style.display = 'none';
+          });
+          const durationLabel = panel.querySelector('.editor-field[data-field="dauer"] .editor-field-label');
+          if (durationLabel) durationLabel.textContent = 'Gesamtdauer';
         }
         // For trains and tasks: show all fields (default behavior, no hiding needed)
 
@@ -579,6 +603,14 @@
                 planFieldEl.style.opacity = '0.5';
                 planFieldEl.style.cursor = 'default';
                 planFieldEl.title = 'Abfahrtszeit wird durch Vorlage bestimmt';
+              }
+
+              const typeFieldEl = panel.querySelector('.editor-field[data-field="type"]');
+              if (typeFieldEl) {
+                typeFieldEl.removeAttribute('data-editable');
+                typeFieldEl.style.opacity = '0.5';
+                typeFieldEl.style.cursor = 'default';
+                typeFieldEl.title = 'Eintragstyp wird durch Vorlage bestimmt';
               }
 
               const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
@@ -710,6 +742,12 @@
                 train.date = newValue;
                 const dateObj = new Date(newValue);
                 train.weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
+              } else if (fieldName === 'type') {
+                train.type = newValue === 'duration-only' ? 'duration-only' : undefined;
+                if (newValue === 'duration-only') {
+                  train.plan = '';
+                  train.actual = undefined;
+                }
               } else if (fieldName === 'dauer') {
                 train.dauer = Number(newValue) || 0;
               } else if (fieldName === 'zwischenhalte') {
@@ -743,6 +781,7 @@
                 const val = input.value;
                 if      (fieldName === 'linie')             stem.linie       = val;
                 else if (fieldName === 'ziel')              stem.ziel        = val;
+                else if (fieldName === 'type')              stem.type        = val === 'duration-only' ? 'duration-only' : undefined;
                 else if (fieldName === 'plan')            { stem.plan = val; stem.actual = val; }
                 else if (fieldName === 'dauer')             stem.dauer       = Number(val) || 0;
                 else if (fieldName === 'zwischenhalte')     stem.zwischenhalte = val.split('\n').filter(l => l.trim());
@@ -750,6 +789,11 @@
                 else if (fieldName === 'projectId')         stem.projectId   = val || undefined;
                 else if (fieldName === 'recurrencePattern') stem.recurrence  = { ...stem.recurrence, pattern: val };
               });
+
+              if (stem.type === 'duration-only') {
+                stem.plan = '';
+                stem.actual = undefined;
+              }
 
               const todayStr = new Date().toISOString().split('T')[0];
               // Keep past skip records; clear future ones (they'll be re-evaluated fresh)
@@ -793,15 +837,16 @@
             if (newPattern !== 'none' && oldPattern === 'none') {
               // PROMOTE: normal train → recurring
               const stemId   = 'stem_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-              const entryDate = scheduleTrain.date || todayStr;
+              const entryDate = train.date || scheduleTrain.date || todayStr;
               const newStem = {
                 _uniqueId:    stemId,
-                linie:        scheduleTrain.linie || '',
-                ziel:         scheduleTrain.ziel  || '',
-                plan:         scheduleTrain.plan  || '',
-                dauer:        scheduleTrain.dauer || 0,
-                zwischenhalte: Array.isArray(scheduleTrain.zwischenhalte) ? [...scheduleTrain.zwischenhalte] : [],
-                projectId:    scheduleTrain.projectId || undefined,
+                type:         train.type,
+                linie:        train.linie || '',
+                ziel:         train.ziel  || '',
+                plan:         train.plan  || '',
+                dauer:        train.dauer || 0,
+                zwischenhalte: Array.isArray(train.zwischenhalte) ? [...train.zwischenhalte] : [],
+                projectId:    train.projectId || undefined,
                 startDate:    entryDate,
                 recurrence:   { pattern: newPattern, days: [] },
                 skippedDates: [entryDate] // this instance already exists, don’t re-materialise
@@ -971,6 +1016,28 @@
                 input.appendChild(opt);
               });
               input.value = currentValue || 'weekdays';
+            } else if (inputType === 'train-type') {
+              input = document.createElement('select');
+              input.style.width = '100%';
+              input.style.background = 'var(--color-bg-panel)';
+              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              input.style.borderRadius = '0';
+              input.style.padding = '0.5vh';
+              input.style.color = 'white';
+              input.style.fontFamily = 'inherit';
+              input.style.fontSize = '2vh';
+              input.style.outline = 'none';
+              input.style.cursor = 'pointer';
+              [
+                { value: 'train', label: 'Fahrt mit Zeit' },
+                { value: 'duration-only', label: 'Nur Dauer' }
+              ].forEach(({ value, label }) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                input.appendChild(opt);
+              });
+              input.value = currentValue || 'train';
             } else if (inputType === 'select') {
               // Special handling for project dropdown
               input = document.createElement('select');
@@ -1007,11 +1074,11 @@
               input.type = inputType;
             }
             
-            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'textarea') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'textarea') {
               input.type = inputType;
             }
             
-            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type') {
               input.value = currentValue;
               input.placeholder = placeholder;
               input.style.width = '100%';
@@ -1067,6 +1134,8 @@
                 } else if (isTodo) {
                   // Todos: Ziel → Datum → Zwischenhalte → repeat
                   tabOrder = ['ziel', 'date', 'zwischenhalte'];
+                } else if (isDurationOnlyTrain(train)) {
+                  tabOrder = ['linie', 'ziel', 'date', 'dauer', 'zwischenhalte', 'projectId'];
                 } else {
                   // Trains/Tasks: Full order
                   tabOrder = ['linie', 'ziel', 'date', 'plan', 'actual', 'dauer', 'zwischenhalte', 'projectId'];
@@ -1192,6 +1261,11 @@
       editorDrawerClickOutHandler = async (e) => {
         // Check if panel is open and has content
         if (panel && panel.classList.contains('is-open') && panel.innerHTML.trim() !== '') {
+          // Clicking another train should only replace drawer content, not close/reopen.
+          if (e.target.closest('.train-entry, .belegungsplan-train-block')) {
+            return;
+          }
+
           // Check if we're in edit mode
           const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea, [data-editable="true"] select');
           
@@ -1248,6 +1322,38 @@
           }
 
           const now = new Date();
+          const isDurationOnly = isDurationOnlyTrain(train);
+
+          const durationDeltaByAction = {
+            minus5: -5,
+            plus5: 5,
+            plus10: 10,
+            plus30: 30
+          };
+
+          if (isDurationOnly) {
+            const durationDelta = durationDeltaByAction[action];
+            if (durationDelta != null) {
+              const currentDuration = Number(train.dauer) || 0;
+              const nextDuration = Math.max(0, currentDuration + durationDelta);
+              train.dauer = nextDuration;
+              scheduleTrain.dauer = nextDuration;
+              renderFocusMode(train);
+            }
+
+            clearTimeout(delayButtonTimeout);
+            delayButtonTimeout = setTimeout(() => {
+              refreshUIOnly();
+              const updatedTrainAfterDelay = processedTrainData.allTrains.find(t => 
+                t._uniqueId === trainId
+              );
+              if (updatedTrainAfterDelay) {
+                renderFocusMode(updatedTrainAfterDelay);
+              }
+              saveSchedule();
+            }, 500);
+            return;
+          }
 
           // COPY LEGACY LOGIC EXACTLY
           switch (action) {

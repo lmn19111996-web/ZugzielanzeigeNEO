@@ -13,6 +13,7 @@
     function attachSwipeToEntry(entry) {
       entry.dataset.swipe = '1';
       const uniqueId = entry.dataset.uniqueId;
+      const isDurationOnly = entry.dataset.trainType === 'duration-only';
 
       // ── Outer shell: holds swipe-wrapper + collapsible action bar ──
       const shell = document.createElement('div');
@@ -43,10 +44,12 @@
       bar.innerHTML = `
         <div class="mobile-action-btns">
           <button class="mobile-action-btn mobile-cancel-btn" data-mobile-action="cancel">✕</button>
+          ${isDurationOnly ? '' : `
           <button class="mobile-action-btn mobile-delay-btn" data-mobile-action="minus5">−5</button>
           <button class="mobile-action-btn mobile-delay-btn" data-mobile-action="plus5">+5</button>
           <button class="mobile-action-btn mobile-delay-btn" data-mobile-action="plus10">+10</button>
           <button class="mobile-action-btn mobile-delay-btn" data-mobile-action="plus30">+30</button>
+          `}
         </div>
       `;
       shell.appendChild(bar);
@@ -168,6 +171,11 @@
             ? '<span class="swipe-hint-icon">&#8634;</span><span>Reaktivieren</span>'
             : '<span class="swipe-hint-icon">&#10005;</span><span>Ausfall</span>';
         } else if (dx < 0) {
+          if (isDurationOnly) {
+            bg.style.opacity = 0;
+            hint.style.opacity = 0;
+            return;
+          }
           const mins = computeDelayMins(Math.abs(dx));
           bg.className = 'swipe-bg swipe-bg-left';
           bg.style.opacity = alpha(dx);
@@ -201,6 +209,10 @@
           snapBack(true);
           swipeToggleCancel(uniqueId);
         } else if (dx < -TRIGGER_PX) {
+          if (isDurationOnly) {
+            snapBack();
+            return;
+          }
           const mins = computeDelayMins(Math.abs(dx));
           snapBack(true);
           if (mins > 0) swipeApplyDelay(uniqueId, mins);

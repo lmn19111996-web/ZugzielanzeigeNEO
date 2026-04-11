@@ -363,6 +363,12 @@
         e.preventDefault();
         createNewTrainEntry();
       }
+
+      // Ctrl+H to create a no-time (duration-only) train entry
+      if (e.ctrlKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        createNewTrainEntry({ type: 'duration-only' });
+      }
       
       // Ctrl+S to save current train in focus panel
       if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {

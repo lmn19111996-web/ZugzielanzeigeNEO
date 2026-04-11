@@ -195,25 +195,29 @@
     function openEditorDrawer(train = null) {
       const panel = document.getElementById('focus-panel');
       if (panel) {
+        const wasOpen = panel.classList.contains('is-open');
         panel.classList.add('is-open');
         document.body.classList.add('editor-drawer-open');
-        
-        // Handle system back button (mobile)
-        editorDrawerBackHandler = (e) => {
-          if (panel.classList.contains('is-open')) {
-            const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
-            if (!hasInputs) {
-              desktopFocusedTrainId = null;
-              panel.innerHTML = '';
-              closeEditorDrawer();
-              // Stop the project drawer's popstate handler from also firing,
-              // so the project drawer stays open after closing the editor.
-              e.stopImmediatePropagation();
+
+        // If already open, only swap content in place (no extra history/listener churn).
+        if (!wasOpen) {
+          // Handle system back button (mobile)
+          editorDrawerBackHandler = (e) => {
+            if (panel.classList.contains('is-open')) {
+              const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
+              if (!hasInputs) {
+                desktopFocusedTrainId = null;
+                panel.innerHTML = '';
+                closeEditorDrawer();
+                // Stop the project drawer's popstate handler from also firing,
+                // so the project drawer stays open after closing the editor.
+                e.stopImmediatePropagation();
+              }
             }
-          }
-        };
-        window.addEventListener('popstate', editorDrawerBackHandler, true);
-        window.history.pushState({ drawer: 'editor' }, '');
+          };
+          window.addEventListener('popstate', editorDrawerBackHandler, true);
+          window.history.pushState({ drawer: 'editor' }, '');
+        }
       }
       closeAnnouncementsDrawer();
       // Only close note drawer if we're not editing a note
