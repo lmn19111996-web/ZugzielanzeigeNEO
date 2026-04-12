@@ -1,4 +1,4 @@
-﻿// === TRAIN ARRIVAL NOTIFICATIONS ===
+// === TRAIN ARRIVAL NOTIFICATIONS ===
 
     async function requestNotificationPermission() {
       if (!('Notification' in window)) {
@@ -22,14 +22,14 @@
     const _lastPushedStatusByTrain = new Map();
 
     // Called after every data change AND on the 15 s fallback interval.
-    // Path A (in-app) has been removed — Web Push (Path B) is the active notification channel.
+    // Path A (in-app) has been removed � Web Push (Path B) is the active notification channel.
     function checkTrainArrivals() {
       // no-op: in-app notifications retired in favour of Web Push
     }
 
 
 
-    // Debug helper — open ?debug=1 for the on-screen button, or call from console.
+    // Debug helper � open ?debug=1 for the on-screen button, or call from console.
     window.fireDebugNotification = async function() {
       const granted = await requestNotificationPermission();
       if (!granted) { alert('Notification permission not granted.'); return; }
@@ -40,7 +40,7 @@
         || null;
       if (train) {
         sendTrainNotification(train, now, null);
-        console.log('🧪 Debug notif fired for', train.linie, train.ziel);
+        console.log('?? Debug notif fired for', train.linie, train.ziel);
       } else {
         const opts = {
           body: `Benachrichtigung funktioniert. Gesendet um ${timeStr}.`,
@@ -55,14 +55,14 @@
         } else {
           new Notification('Test-Benachrichtigung', opts);
         }
-        console.log('🧪 Debug notif fired (no train in schedule)');
+        console.log('?? Debug notif fired (no train in schedule)');
       }
     };
 
     // === WEB PUSH ===
 
     // Register this device for server-sent push notifications.
-    // Safe to call multiple times — server deduplicates by endpoint.
+    // Safe to call multiple times � server deduplicates by endpoint.
     async function subscribeToPush() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       if (Notification.permission !== 'granted') return;
@@ -106,10 +106,10 @@
     // Returns an array of { id, notifyAt (ISO), title, options } objects.
     //
     // Mirrors Path A behaviour exactly:
-    //   win-{id}         → 20 min before departure (window entry)
-    //   chg-{id}-{key}   → immediate, when train is already in window and status changed
-    //   dep-{id}         → at exact departure time ("Ihre Reise geht jetzt los")
-    //   end-{id}         → at occupation end (dauer / checkoutTime)
+    //   win-{id}         ? 20 min before departure (window entry)
+    //   chg-{id}-{key}   ? immediate, when train is already in window and status changed
+    //   dep-{id}         ? at exact departure time ("Ihre Reise geht jetzt los")
+    //   end-{id}         ? at occupation end (dauer / checkoutTime)
     function buildPushEvents(days = 14) {
       if (!processedTrainData || !Array.isArray(processedTrainData.localTrains)) return [];
       const now = new Date();
@@ -144,7 +144,7 @@
         const _zh = Array.isArray(train.zwischenhalte) ? train.zwischenhalte.filter(s => s && s.trim()).join(', ') : '';
         const zhSuffix = _zh ? (' von ' + (_zh.length > 100 ? _zh.slice(0, 100) + '\u2026' : _zh)) : '';
 
-        // ── Immediate status-change notification (train already in window) ──
+        // -- Immediate status-change notification (train already in window) --
         // Only fires when the status is different from what was last pushed for this train.
         if (inWindow) {
           const lastPushed = _lastPushedStatusByTrain.get(trainId);
@@ -152,13 +152,13 @@
           if (statusChanged) {
             let chgBody;
             if (train.canceled) {
-              chgBody = `Abfahrt ursprünglich ${planClock}. Fällt heute aus. Wir bitten um Entschuldigung.`;
+              chgBody = `Abfahrt urspr�nglich ${planClock}. F�llt heute aus. Wir bitten um Entschuldigung.`;
             } else if (delay > 0) {
-              chgBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
+              chgBody = `Abfahrt urspr�nglich ${planClock}${zhSuffix}, heute ${delay} Minuten sp�ter um ${formatClock(trainTime)}.`;
             } else if (delay < 0) {
-              chgBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
+              chgBody = `Abfahrt urspr�nglich ${planClock}${zhSuffix}, heute ${-delay} Minuten fr�her um ${formatClock(trainTime)}.`;
             } else {
-              chgBody = `Ihre Reise geht los. Abfahrt heute pünktlich um ${planClock}${zhSuffix}.`;
+              chgBody = `Ihre Reise geht los. Abfahrt heute p�nktlich um ${planClock}${zhSuffix}.`;
             }
             events.push({
               id: `chg-${trainId}-${statusKey}`,
@@ -166,7 +166,7 @@
               title,
               options: {
                 body: chgBody,
-                icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+                icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
                 vibrate: [200, 100, 200],
                 data: { url: appUrl }
               }
@@ -174,22 +174,22 @@
             _lastPushedStatusByTrain.set(trainId, statusKey);
           }
         } else {
-          // Train left the window — clear so re-entry fires again
+          // Train left the window � clear so re-entry fires again
           _lastPushedStatusByTrain.delete(trainId);
         }
 
-        // ── Window-entry notification: 20 min before trainTime ──────────
+        // -- Window-entry notification: 20 min before trainTime ----------
         const windowNotifyAt = new Date(trainTime.getTime() - 20 * 60000);
         if (windowNotifyAt > now) {
           let windowBody;
           if (train.canceled) {
-            windowBody = `Abfahrt ursprünglich ${planClock}. Fällt heute aus. Wir bitten um Entschuldigung.`;
+            windowBody = `Abfahrt urspr�nglich ${planClock}. F�llt heute aus. Wir bitten um Entschuldigung.`;
           } else if (delay > 0) {
-            windowBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
+            windowBody = `Abfahrt urspr�nglich ${planClock}${zhSuffix}, heute ${delay} Minuten sp�ter um ${formatClock(trainTime)}.`;
           } else if (delay < 0) {
-            windowBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
+            windowBody = `Abfahrt urspr�nglich ${planClock}${zhSuffix}, heute ${-delay} Minuten fr�her um ${formatClock(trainTime)}.`;
           } else {
-            windowBody = `Ihre Reise geht los. Abfahrt heute pünktlich um ${planClock}${zhSuffix}.`;
+            windowBody = `Ihre Reise geht los. Abfahrt heute p�nktlich um ${planClock}${zhSuffix}.`;
           }
           events.push({
             id: `win-${trainId}`,
@@ -197,22 +197,22 @@
             title,
             options: {
               body: windowBody,
-              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200, 100, 200],
               data: { url: appUrl }
             }
           });
         }
 
-        // ── Departure notification: at trainTime ─────────────────────────
+        // -- Departure notification: at trainTime -------------------------
         if (trainTime > now && !train.canceled) {
           let depBody;
           if (delay > 0) {
-            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${delay} Minuten sp�ter um ${formatClock(trainTime)}.`;
           } else if (delay < 0) {
-            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${-delay} Minuten fr�her um ${formatClock(trainTime)}.`;
           } else {
-            depBody = `Ihre Reise geht jetzt los. Abfahrt heute pünktlich um ${planClock}.`;
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute p�nktlich um ${planClock}.`;
           }
           events.push({
             id: `dep-${trainId}`,
@@ -220,14 +220,14 @@
             title,
             options: {
               body: depBody,
-              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [300, 100, 300],
               data: { url: appUrl }
             }
           });
         }
 
-        // ── Occupation-end notification ───────────────────────────────────
+        // -- Occupation-end notification -----------------------------------
         const occupationEnd = train.checkoutTime
           ? parseTime(train.checkoutTime, now, train.date)
           : (train.dauer && train.dauer > 0 ? new Date(trainTime.getTime() + train.dauer * 60000) : null);
@@ -235,7 +235,7 @@
         if (occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
           const depClock = formatClock(occupationEnd);
           const endBody = delay <= 0
-            ? `Ankunft pünktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`
+            ? `Ankunft p�nktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`
             : `Ankunft um ${depClock}. Vielen Dank und auf Wiedersehen.`;
           events.push({
             id: `end-${trainId}`,
@@ -243,7 +243,7 @@
             title,
             options: {
               body: endBody,
-              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200],
               data: { url: appUrl }
             }
@@ -256,7 +256,7 @@
 
     // === END WEB PUSH CLIENT ===
 
-    // Console debug helper — call window.debugPushStatus() at any time.
+    // Console debug helper � call window.debugPushStatus() at any time.
     window.debugPushStatus = async function() {
       console.group('[Push] Debug Status');
       console.log('Notification.permission:', Notification.permission);
