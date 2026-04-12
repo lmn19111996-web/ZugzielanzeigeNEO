@@ -7,6 +7,47 @@ const LOG_DIR = path.join(ROOT, 'train_logs');
 const LAST_LOG_TIME_FILE = path.join(LOG_DIR, '.last_log_time');
 const SCHEMA_VERSION = 3;
 
+function parseArgs(argv) {
+  const opts = {
+    dataFile: DATA_FILE,
+    logDir: LOG_DIR,
+    backupDir: path.join(ROOT, 'train_logs_legacy'),
+    makeBackup: true,
+    skipFuture: true,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--no-backup') {
+      opts.makeBackup = false;
+    } else if (arg === '--include-future') {
+      opts.skipFuture = false;
+    } else if (arg === '--data-file' && argv[i + 1]) {
+      opts.dataFile = path.resolve(ROOT, argv[i + 1]);
+      i += 1;
+    } else if (arg === '--log-dir' && argv[i + 1]) {
+      opts.logDir = path.resolve(ROOT, argv[i + 1]);
+      i += 1;
+    } else if (arg === '--backup-dir' && argv[i + 1]) {
+      opts.backupDir = path.resolve(ROOT, argv[i + 1]);
+      i += 1;
+    }
+  }
+
+  return opts;
+}
+
+function timestampTag() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+}
+
 function fmtYYYYMMDD(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -148,11 +189,16 @@ function recordTimestampMs(record) {
 }
 
 function main() {
-  if (!fs.existsSync(DATA_FILE)) {
-    throw new Error(`data.json not found: ${DATA_FILE}`);
+  const opts = parseArgs(process.argv.slice(2));
+  const dataFile = opts.dataFile;
+  const logDir = opts.logDir;
+  const lastLogTimeFile = path.join(logDir, '.last_log_time');
+
+  if (!fs.existsSync(dataFile)) {
+    throw new Error(`data.json not found: ${dataFile}`);
   }
 
-  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  const data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
   const fixed = Array.isArray(data.fixedSchedule) ? data.fixedSchedule : [];
   const spontaneous = Array.isArray(data.spontaneousEntries) ? data.spontaneousEntries : [];
   const legacyTrains = Array.isArray(data.trains) ? data.trains : [];
@@ -175,7 +221,7 @@ function main() {
 
     const serviceDate = resolveServiceDate(train, sourceType);
     if (!serviceDate) return;
-    if (serviceDate > todayStr) return; // no future history
+    if (opts.skipFuture && serviceDate > todayStr) return; // no future history
 
     const record = toRecord(train, sourceType, projectNameById, nowIso);
     if (!record) return;
@@ -189,11 +235,24 @@ function main() {
   spontaneous.forEach((t) => addTrain(t, 'spontaneous'));
   legacyTrains.forEach((t) => addTrain(t, 'spontaneous'));
 
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+  fs.mkdirSync(logDir, { recursive: true });
 
   // Remove all existing weekly log files first.
-  const existing = fs.readdirSync(LOG_DIR).filter((f) => /^train_history_.+\.log$/.test(f));
-  existing.forEach((f) => fs.unlinkSync(path.join(LOG_DIR, f)));
+  const existing = fs.readdirSync(logDir).filter((f) => /^train_history_.+\.log$/.test(f));
+
+  if (opts.makeBackup && existing.length > 0) {
+    const backupFolder = path.join(opts.backupDir, `rebuild_${timestampTag()}`);
+    fs.mkdirSync(backupFolder, { recursive: true });
+    existing.forEach((f) => {
+      fs.copyFileSync(path.join(logDir, f), path.join(backupFolder, f));
+    });
+    if (fs.existsSync(lastLogTimeFile)) {
+      fs.copyFileSync(lastLogTimeFile, path.join(backupFolder, '.last_log_time'));
+    }
+    console.log(`Backup created: ${backupFolder}`);
+  }
+
+  existing.forEach((f) => fs.unlinkSync(path.join(logDir, f)));
 
   // Write rebuilt files.
   let total = 0;
@@ -204,19 +263,24 @@ function main() {
       .sort((a, b) => recordTimestampMs(a) - recordTimestampMs(b));
     if (!records.length) return;
 
-    const filePath = path.join(LOG_DIR, `train_history_${weekId}.log`);
+    const filePath = path.join(logDir, `train_history_${weekId}.log`);
     const content = records.map((r) => JSON.stringify(r)).join('\n') + '\n';
     fs.writeFileSync(filePath, content, 'utf8');
     total += records.length;
     writtenWeeks.push(`${weekId}:${records.length}`);
   });
 
-  fs.writeFileSync(LAST_LOG_TIME_FILE, Date.now().toString(), 'utf8');
+  fs.writeFileSync(lastLogTimeFile, Date.now().toString(), 'utf8');
 
   console.log(`Rebuild complete. Weeks=${writtenWeeks.length} Records=${total}`);
   if (writtenWeeks.length) {
     console.log(`Weeks detail: ${writtenWeeks.join(', ')}`);
   }
+
+  console.log(`Source data: ${dataFile}`);
+  console.log(`Target log dir: ${logDir}`);
+  console.log(`Backup enabled: ${opts.makeBackup}`);
+  console.log(`Skip future entries: ${opts.skipFuture}`);
 }
 
 main();
