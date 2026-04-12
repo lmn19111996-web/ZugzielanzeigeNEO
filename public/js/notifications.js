@@ -1,14 +1,7 @@
 ﻿// === TRAIN ARRIVAL NOTIFICATIONS ===
-    const TRAIN_NOTIFICATION_WINDOW_MINUTES = 15;
-
     async function requestNotificationPermission() {
       if (!('Notification' in window)) {
         console.warn('This browser does not support notifications');
-        return false;
-      }
-
-      if (!window.isSecureContext) {
-        console.warn('Notifications require a secure context (HTTPS or localhost).');
         return false;
       }
       
@@ -28,45 +21,18 @@
       return train.id || train._uniqueId || `${train.linie || train.line || ''}-${train.plan || ''}-${train.date || ''}-${train.ziel || train.destination || ''}`;
     }
 
-    async function showTrainNotification(title, options) {
-      if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          if (registration && typeof registration.showNotification === 'function') {
-            await registration.showNotification(title, options);
-            return true;
-          }
-        } catch (error) {
-          console.warn('Service worker notification path failed, falling back to window notification:', error);
-        }
-      }
-
-      try {
-        const notification = new Notification(title, options);
-        setTimeout(() => notification.close(), 10000);
-        notification.onclick = function() {
-          window.focus();
-          notification.close();
-        };
-        return true;
-      } catch (error) {
-        console.error('Failed to show train notification:', error);
-        return false;
-      }
-    }
-
     function checkTrainArrivals() {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
       const now = new Date();
-      const windowEnd = new Date(now.getTime() + TRAIN_NOTIFICATION_WINDOW_MINUTES * 60000);
+      const zeroMinutesFromNow = now;
+      const twentyMinutesFromNow = new Date(now.getTime() + 20 * 60000);
       
       if (!processedTrainData.localTrains) return;
       
       // Check local trains for upcoming arrivals
       processedTrainData.localTrains.forEach(train => {
         const trainId = getTrainNotifyId(train);
-        if (!trainId || !train.plan) {
+        // Skip trains with no time at all; but allow checked-in trains that have actual set
+        if (!trainId || (!train.plan && !train.actual)) {
           return;
         }
         
@@ -74,24 +40,20 @@
         if (!trainTime) return;
         
         const statusKey = `${train.canceled ? 'canceled' : 'active'}|${train.plan || ''}|${train.actual || ''}|${train.dauer || ''}`;
-        const notifyKey = `${statusKey}|${train.date || ''}|${train.actual || train.plan || ''}`;
+        const previousStatus = lastTrainStatusById.get(trainId);
         lastTrainStatusById.set(trainId, statusKey);
 
-        const isUpcoming = trainTime >= now && trainTime < windowEnd;
-
-        if (!isUpcoming) {
-          if (trainTime < now) {
-            lastNotifiedStatusById.delete(trainId);
-          }
+        // Only notify when the train status changes (skip first observation)
+        if (!previousStatus || previousStatus === statusKey) {
           return;
         }
 
-        if (lastNotifiedStatusById.get(trainId) !== notifyKey) {
-          sendTrainNotification(train, trainTime).then(function(sent) {
-            if (sent) {
-              lastNotifiedStatusById.set(trainId, notifyKey);
-            }
-          });
+        // Check if train arrives between 0 and 20 minutes from now
+        if (trainTime >= zeroMinutesFromNow && trainTime < twentyMinutesFromNow) {
+          if (lastNotifiedStatusById.get(trainId) !== statusKey) {
+            sendTrainNotification(train, trainTime);
+            lastNotifiedStatusById.set(trainId, statusKey);
+          }
         }
       });
       
@@ -114,16 +76,14 @@
       });
     }
     
-    async function sendTrainNotification(train, trainTime) {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    function sendTrainNotification(train, trainTime) {
+      if (Notification.permission !== 'granted') return;
       
       const lineLabel = train.linie || train.line || '';
       const destinationLabel = train.ziel || train.destination || '';
       const planTime = train.plan ? parseTime(train.plan, new Date(), train.date) : null;
       const planClock = planTime ? formatClock(planTime) : formatClock(trainTime);
       const delay = getDelay(train.plan, train.actual, new Date(), train.date);
-      const iconLine = String(lineLabel || '').toLowerCase();
-      const notifyId = getTrainNotifyId(train);
 
       const title = `${lineLabel} nach ${destinationLabel}`.trim();
       let body = `Abfahrt ${planClock} von Gleis --.`;
@@ -136,23 +96,54 @@
         body = `Abfahrt ursprünglich ${planClock}, heute ${-delay} Minuten früher.`;
       }
       
-      const sent = await showTrainNotification(title, {
+      const iconPath = train.linie ? `./res/${train.linie.toLowerCase()}.svg` : undefined;
+      const notification = new Notification(title, {
         body: body,
-        icon: iconLine ? `/res/${iconLine}.svg` : undefined,
-        badge: iconLine ? `/res/${iconLine}.svg` : undefined,
-        tag: `train-${notifyId}`,
+        icon: iconPath,
+        badge: iconPath,
+        tag: `train-${train._uniqueId || getTrainNotifyId(train)}-${Date.now()}`, // Unique per fire so browser never suppresses as a silent replace
         requireInteraction: false,
-        silent: false,
-        data: {
-          url: '/mobile.html',
-          trainId: notifyId
-        }
+        silent: false
       });
-
-      if (!sent) return false;
       
-      console.log(`📢 Notification sent for train ${lineLabel} to ${destinationLabel} at ${formatClock(trainTime)}`);
-      return true;
+      // Auto-close after 10 seconds
+      setTimeout(() => notification.close(), 10000);
+      
+      // Optional: focus the window when notification is clicked
+      notification.onclick = function() {
+        window.focus();
+        notification.close();
+      };
+      
+      console.log(`📢 Notification sent for train ${lineLabel} to ${destinationLabel} at ${planClock}`);
     }
+
+    // Debug helper — call from console or bind to a button
+    // Usage: fireDebugNotification() or open ?debug=1
+    window.fireDebugNotification = async function() {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        alert('Notification permission not granted. Allow notifications first.');
+        return;
+      }
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      const train = processedTrainData.currentTrain
+        || (processedTrainData.localTrains && processedTrainData.localTrains[0])
+        || null;
+      if (train) {
+        sendTrainNotification(train, now);
+        console.log('🧪 Debug notification fired for', train.linie, train.ziel);
+      } else {
+        // Fire a generic notification when no train is loaded
+        new Notification('Test-Benachrichtigung', {
+          body: `Benachrichtigung funktioniert. Gesendet um ${timeStr}.`,
+          tag: `debug-notification-${Date.now()}`,
+          requireInteraction: false,
+          silent: false
+        });
+        console.log('🧪 Debug notification fired (no train in schedule)');
+      }
+    };
 
     // Fetch data from server API

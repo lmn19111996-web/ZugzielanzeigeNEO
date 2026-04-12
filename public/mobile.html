@@ -13,6 +13,9 @@
 <body>
   <!-- Save Status Indicator -->
   <div id="save-status-indicator"></div>
+  <!-- Debug notification button — only visible with ?debug=1 in the URL -->
+  <button id="debug-notif-btn" onclick="fireDebugNotification()" style="display:none;position:fixed;bottom:80px;right:16px;z-index:9999;padding:8px 14px;background:#ff6b35;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔔 Test Notif</button>
+  <script>if (new URLSearchParams(location.search).get('debug') === '1') { document.getElementById('debug-notif-btn').style.display = ''; }</script>
   
   <!-- Focus mode template -->
   <template id="focus-template">

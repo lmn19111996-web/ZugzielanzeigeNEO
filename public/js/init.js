@@ -403,13 +403,8 @@
 
 if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-          .then(function(registration) {
-            console.log('Service worker registered with scope:', registration.scope);
-          })
-          .catch(function(error) {
-            console.error('Service worker registration failed:', error);
-          });
+        // Register from root so the SW scope covers the whole app, not just /public/
+        navigator.serviceWorker.register('/service-worker.js');
       });
     }
     
@@ -419,34 +414,12 @@ if ('serviceWorker' in navigator) {
     // Initialize notifications for train arrivals
     (function initializeNotifications() {
       let notificationIntervalId = null;
-      let activationHandlerAttached = false;
-      const activationEvents = ['pointerdown', 'keydown'];
-
-      function detachActivationHandlers() {
-        activationEvents.forEach((eventName) => {
-          window.removeEventListener(eventName, handleNotificationActivation, true);
-        });
-        activationHandlerAttached = false;
-      }
-
-      function attachActivationHandlers() {
-        if (activationHandlerAttached) return;
-        activationEvents.forEach((eventName) => {
-          window.addEventListener(eventName, handleNotificationActivation, true);
-        });
-        activationHandlerAttached = true;
-      }
 
       async function startNotifications() {
-        if (!window.isSecureContext) {
-          console.warn('Notification startup skipped: app is not running in a secure context.');
-          return false;
-        }
-
         const granted = await requestNotificationPermission();
         if (!granted) {
           console.log('Notification permission not granted - arrival alerts disabled');
-          return false;
+          return;
         }
 
         console.log('Notification permission granted - will alert for trains arriving in 15 minutes');
@@ -459,31 +432,13 @@ if ('serviceWorker' in navigator) {
 
         // Initial check
         checkTrainArrivals();
-        return true;
       }
-
-      async function handleNotificationActivation() {
-        const started = await startNotifications();
-        if (started || Notification.permission !== 'default') {
-          detachActivationHandlers();
-        }
-      }
-
-      console.log('Notification capability:', {
-        secureContext: window.isSecureContext,
-        hasNotificationApi: 'Notification' in window,
-        permission: 'Notification' in window ? Notification.permission : 'unsupported'
-      });
 
       // Some browsers only allow permission prompts after user interaction
       if ('Notification' in window && Notification.permission === 'default') {
-        attachActivationHandlers();
+        window.addEventListener('click', startNotifications, { once: true });
       } else if ('Notification' in window) {
         startNotifications();
-      }
-
-      if (!activationHandlerAttached && 'Notification' in window && Notification.permission === 'default') {
-        attachActivationHandlers();
       }
     })();
 // ══════════════════════════════════════════════════════════════
