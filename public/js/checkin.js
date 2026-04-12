@@ -73,11 +73,14 @@ function _ciCommitCheckin(uid, timeStr) {
   }
   train.checkinTime = timeStr;
   train._checkinEpochMs = Date.now();
-  // Refresh processed data so clock.js sees the correct state on the next tick.
-  // We intentionally skip renderCurrentWorkspaceView() here — the animated DOM
-  // already shows the correct post-stage-2 state, and a forced re-render would
-  // cause a visible blink. The next natural clock tick will re-render cleanly.
-  processTrainData(schedule);
+  // Animation is finished at this point, so use the same full local refresh path
+  // as editor actions before saving in the background.
+  if (typeof refreshUIOnly === 'function') {
+    refreshUIOnly();
+  } else {
+    processTrainData(schedule);
+    renderCurrentWorkspaceView();
+  }
   saveSchedule();
 }
 
@@ -88,8 +91,12 @@ function _ciSaveCheckout(uid, timeStr, dur, alreadyApplied) {
 
   if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
 
-  processTrainData(schedule);
-  renderCurrentWorkspaceView({ includeAnnouncements: false });
+  if (typeof refreshUIOnly === 'function') {
+    refreshUIOnly();
+  } else {
+    processTrainData(schedule);
+    renderCurrentWorkspaceView();
+  }
   saveSchedule();
 }
 
