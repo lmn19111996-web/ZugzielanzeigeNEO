@@ -3,3 +3,5 @@
 train_logs/
 journal.json
 train_logs_legacy/
+push-events.json
+push-subscriptions.json
