@@ -1,0 +1,6 @@
+{"trainKey":"s4|flurus stellwerksim abend|20:00|2026-01-08","linie":"S4","ziel":"FLURUS StellwerkSim Abend","plan":"20:00","actual":"20:00","dauer":120,"stops":"","date":"2026-01-08","canceled":true}
+{"trainKey":"s1|pause|16:00|2026-01-06","linie":"S1","ziel":"Pause","plan":"16:00","actual":"16:00","dauer":10,"stops":"","date":"2026-01-06","canceled":false}
+{"trainKey":"s1|pause|17:00|2026-01-06","linie":"S1","ziel":"Pause","plan":"17:00","actual":"17:00","dauer":20,"stops":"","date":"2026-01-06","canceled":false}
+{"trainKey":"s75|mathematik i|15:22|2026-01-06","linie":"S75","ziel":"Mathematik I","plan":"15:22","actual":"15:22","dauer":180,"stops":"","date":"2026-01-06","canceled":false}
+{"trainKey":"s75|mathematik i|22:30|2026-01-06","linie":"S75","ziel":"Mathematik I","plan":"22:30","actual":"22:30","dauer":90,"stops":"","date":"2026-01-06","canceled":false}
+{"trainKey":"s75|technische mechanik i (übung)|20:00|2026-01-09","linie":"S75","ziel":"Technische Mechanik I (Übung)","plan":"20:00","actual":"20:00","dauer":180,"stops":"","date":"2026-01-09","canceled":false}

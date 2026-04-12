@@ -89,6 +89,7 @@
       error: '',
       preset: ''
     };
+    let durationOnlyExpandedByDate = {};
 
     function toDateInputValue(date) {
       const d = date instanceof Date ? date : new Date(date);
@@ -130,6 +131,9 @@
         actual: (entry && (entry.actual || entry.plan)) || '',
         dauer: Number(entry && entry.dauer) || 0,
         date: (entry && (entry.date || entry.plannedDate)) || '',
+        type: (entry && entry.type) || 'normal',
+        projectId: (entry && entry.projectId) || null,
+        projectName: (entry && entry.projectName) || null,
         zwischenhalte: stopsArr,
         canceled: !!(entry && entry.canceled),
         _readOnly: true,
@@ -174,7 +178,7 @@
       try {
         const fromIso = new Date(`${logViewerState.from}T00:00:00`).toISOString();
         const toIso = new Date(`${logViewerState.to}T23:59:59.999`).toISOString();
-        const url = `/api/train-history/range?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}&limit=10000`;
+        const url = `/api/train-history/range?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}&fromDate=${encodeURIComponent(logViewerState.from)}&toDate=${encodeURIComponent(logViewerState.to)}&limit=10000`;
         const res = await fetch(url);
         if (!res.ok) {
           const errBody = await res.json().catch(() => ({}));
@@ -611,7 +615,8 @@
         enableSwipe = true,
         enableDateJump = true,
         append = false,
-        targetEl = null
+        targetEl = null,
+        durationOnlyEntries = []
       } = options;
 
       const now = new Date();
@@ -633,43 +638,85 @@
         renderHeadlineTrain();
       }
 
-      // Pre-group ALL trains (current + remaining) by date for the stacked bars
+      // Pre-group all list entries by date so each day section can render
+      // separator -> duration-only trains -> timed trains.
       const trainsByDate = {};
-      const allForGrouping = processedTrainData.currentTrain
-        ? [processedTrainData.currentTrain, ...remainingTrains]
-        : [...remainingTrains];
-      allForGrouping.forEach(t => {
-        if (t.date) {
-          if (!trainsByDate[t.date]) trainsByDate[t.date] = [];
-          trainsByDate[t.date].push(t);
-        }
+      const timedByDate = {};
+      const durationByDate = {};
+
+      const allForGrouping = [
+        ...(processedTrainData.currentTrain ? [processedTrainData.currentTrain] : []),
+        ...remainingTrains,
+        ...durationOnlyEntries
+      ];
+
+      allForGrouping.forEach((t) => {
+        if (!t || !t.date) return;
+        if (!trainsByDate[t.date]) trainsByDate[t.date] = [];
+        trainsByDate[t.date].push(t);
       });
 
-      // Render separator for the FIRST day at the top of the list
-      // Always use the actual first train's date, not necessarily today
-      const firstDate = remainingTrains[0] && remainingTrains[0].date;
-      if (firstDate) {
-        const firstSepHTML = Templates.daySeparator(firstDate, trainsByDate[firstDate] || []);
-        const firstSepTemplate = document.createElement('template');
-        firstSepTemplate.innerHTML = firstSepHTML.trim();
-        listRoot.appendChild(firstSepTemplate.content.firstChild);
-      }
+      remainingTrains.forEach((t) => {
+        if (!t || !t.date) return;
+        if (!timedByDate[t.date]) timedByDate[t.date] = [];
+        timedByDate[t.date].push(t);
+      });
 
-      // Render remaining trains with day separators on date change
-      let lastRenderedDate = firstDate;
-      remainingTrains.forEach((train) => {
-        // Check if this is the first train of a new day
-        if (train.date && train.date !== lastRenderedDate) {
-          // Use template to create day separator with stacked bar
-          const separatorHTML = Templates.daySeparator(train.date, trainsByDate[train.date] || []);
-          const template = document.createElement('template');
-          template.innerHTML = separatorHTML.trim();
-          listRoot.appendChild(template.content.firstChild);
-          lastRenderedDate = train.date;
+      durationOnlyEntries.forEach((t) => {
+        if (!t || !t.date) return;
+        if (!durationByDate[t.date]) durationByDate[t.date] = [];
+        durationByDate[t.date].push(t);
+      });
+
+      const orderedDates = Array.from(new Set([
+        ...Object.keys(timedByDate),
+        ...Object.keys(durationByDate)
+      ])).sort();
+
+      orderedDates.forEach((date) => {
+        const separatorHTML = Templates.daySeparator(date, trainsByDate[date] || []);
+        const separatorTemplate = document.createElement('template');
+        separatorTemplate.innerHTML = separatorHTML.trim();
+        listRoot.appendChild(separatorTemplate.content.firstChild);
+
+        const durationTrainsForDay = durationByDate[date] || [];
+        if (durationTrainsForDay.length > 0) {
+          const dayGroup = document.createElement('div');
+          const isExpanded = !!durationOnlyExpandedByDate[date];
+          dayGroup.className = `duration-only-day-group${isExpanded ? ' expanded' : ''}`;
+
+          const toggleBtn = document.createElement('button');
+          toggleBtn.type = 'button';
+          toggleBtn.className = 'duration-only-day-toggle';
+          toggleBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+          toggleBtn.innerHTML = `
+            <span class="duration-only-day-chevron">▸</span>
+            <span class="duration-only-day-title">Dauereinträge</span>
+          `;
+          dayGroup.appendChild(toggleBtn);
+
+          const content = document.createElement('div');
+          content.className = 'duration-only-day-content';
+          durationTrainsForDay.forEach((train) => {
+            const entry = createTrainEntry(train, now, false);
+            content.appendChild(entry);
+          });
+          dayGroup.appendChild(content);
+
+          toggleBtn.addEventListener('click', () => {
+            const nextExpanded = !dayGroup.classList.contains('expanded');
+            dayGroup.classList.toggle('expanded', nextExpanded);
+            durationOnlyExpandedByDate[date] = nextExpanded;
+            toggleBtn.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+          });
+
+          listRoot.appendChild(dayGroup);
         }
-        
-        const entry = createTrainEntry(train, now, false);
-        listRoot.appendChild(entry);
+
+        (timedByDate[date] || []).forEach((train) => {
+          const entry = createTrainEntry(train, now, false);
+          listRoot.appendChild(entry);
+        });
       });
       
       // Attach swipe gestures on mobile after list is populated
@@ -713,7 +760,8 @@
         preserveScroll: true,
         enableSwipe: true,
         enableDateJump: true,
-        append: false
+        append: false,
+        durationOnlyEntries: processedTrainData.durationOnlyTrains
       });
     }
 

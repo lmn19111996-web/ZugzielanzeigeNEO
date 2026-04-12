@@ -1761,6 +1761,54 @@ html, body {
       background: rgba(255, 255, 255, 0.5);
     }
 
+    .duration-only-day-group {
+      margin: 0.2vh 1.5vw 0.6vh;
+    }
+
+    .duration-only-day-toggle {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.72);
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 0.45vw;
+      text-align: left;
+      padding: 0.35vh 0.15vw;
+      cursor: pointer;
+    }
+
+    .duration-only-day-title {
+      font-size: 2.5vh;
+      font-weight: 400;
+    }
+
+    .duration-only-day-chevron {
+      font-size: 3vh;
+      opacity: 0.75;
+      transition: transform 0.15s ease;
+    }
+
+    .duration-only-day-content {
+      position: relative;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transform: translateX(-1.2vw);
+      transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.24s ease;
+    }
+
+    .duration-only-day-group.expanded .duration-only-day-content {
+      max-height: 120vh;
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .duration-only-day-group.expanded .duration-only-day-chevron {
+      transform: rotate(90deg);
+    }
+
     /* Day stacked duration bar */
     .day-stack-bar {
       display: flex;
@@ -3891,10 +3939,19 @@ html, body {
       
       /* End of mobile train-entry grid layout */
 
-      .day-separator {
-        padding: 2vh 3vw; /* Add vertical padding */
+      .duration-only-day-group {
+        margin: 0.2vh 2.8vw 0.8vh;
       }
-      
+
+      .duration-only-day-toggle {
+        gap: 1.6vw;
+        padding: 0.45vh 0.4vw;
+      }
+
+      .duration-only-day-title {
+        font-size: 2vh;
+      }
+
       .day-separator-date {
         font-size: 2vh;
         margin-bottom: 1vh;

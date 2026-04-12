@@ -200,33 +200,9 @@
         processedTrainData.currentTrain = null;
       }
       
-      // Remaining trains: timed trains keep their chronological order.
-      // Duration-only trains are appended at the end of their respective day.
-      const timedDisplayTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
-      const timedByDate = new Map();
-      const durationOnlyByDate = new Map();
-
-      timedDisplayTrains.forEach((train) => {
-        const key = train.date || '';
-        if (!timedByDate.has(key)) timedByDate.set(key, []);
-        timedByDate.get(key).push(train);
-      });
-
-      processedTrainData.durationOnlyTrains.forEach((train) => {
-        const key = train.date || '';
-        if (!durationOnlyByDate.has(key)) durationOnlyByDate.set(key, []);
-        durationOnlyByDate.get(key).push(train);
-      });
-
-      const orderedDates = Array.from(new Set([
-        ...timedDisplayTrains.map(t => t.date).filter(Boolean),
-        ...processedTrainData.durationOnlyTrains.map(t => t.date).filter(Boolean)
-      ])).sort();
-
-      processedTrainData.remainingTrains = orderedDates.flatMap((date) => [
-        ...(timedByDate.get(date) || []),
-        ...(durationOnlyByDate.get(date) || [])
-      ]);
+      // Remaining trains in main list are timed trains only.
+      // Duration-only trains are rendered in a dedicated collapsed section.
+      processedTrainData.remainingTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
 
       const stressSig = buildStressDataSignature(processedTrainData.allTrains);
       if (stressSig !== lastStressDataSignature) {

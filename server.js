@@ -22,10 +22,10 @@ const TRAIN_LOG_DIR = path.join(__dirname, 'train_logs');
 const LAST_LOG_TIME_FILE = path.join(__dirname, 'train_logs', '.last_log_time');
 const LOG_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every 1 hour
-const TRAIN_LOG_SCHEMA_VERSION = 2;
+const TRAIN_LOG_SCHEMA_VERSION = 3;
 
-// In-memory accumulator for pending train data (keyed by week)
-const pendingTrainData = new Map(); // Map<weekId, Map<trainKey, trainState>>
+// In-memory accumulator for pending log records (keyed by week)
+const pendingTrainData = new Map(); // Map<weekId, Map<recordId, logRecord>>
 
 // Cache for schedule data to avoid disk reads on every request
 let scheduleCache = null;
@@ -177,50 +177,127 @@ function getWeeklyLogFile(date = new Date()) {
   return path.join(TRAIN_LOG_DIR, `train_history_${weekId}.log`);
 }
 
+function normalizeSourceType(scheduleType) {
+  const v = String(scheduleType || '').toLowerCase();
+  if (v === 'fixed' || v === 'spontaneous') return v;
+  return 'spontaneous';
+}
+
+function normalizeText(value) {
+  return String(value == null ? '' : value).trim();
+}
+
+function normalizeKeyPart(value) {
+  return normalizeText(value).toLowerCase() || 'unknown';
+}
+
+function isRecurringStem(train, sourceType) {
+  return sourceType === 'fixed' && !!(train && train.recurrence);
+}
+
+function resolveLogServiceDate(train, sourceType) {
+  if (train && typeof train.date === 'string' && train.date) return train.date;
+  if (train && typeof train.plannedDate === 'string' && train.plannedDate) return train.plannedDate;
+  if (sourceType === 'fixed' && train && typeof train.startDate === 'string' && train.startDate) return train.startDate;
+  if (sourceType === 'fixed' && train && typeof train.weekday === 'string' && train.weekday) {
+    return weekdayToCurrentWeekDate(train.weekday) || '';
+  }
+  return '';
+}
+
+function resolveLogServiceTime(train) {
+  const actual = normalizeText(train && train.actual);
+  const plan = normalizeText(train && train.plan);
+  return actual || plan || '';
+}
+
+function buildCanonicalRecordId(train, sourceType, serviceDate, serviceTime) {
+  const uid = normalizeText(train && train._uniqueId);
+  if (uid) return `${sourceType}|uid|${uid}`;
+
+  const linie = normalizeKeyPart(train && train.linie);
+  const ziel = normalizeKeyPart(train && train.ziel);
+  const time = normalizeKeyPart(serviceTime || 'notime');
+  const date = normalizeKeyPart(serviceDate || 'unknown');
+  const type = normalizeKeyPart(train && train.type);
+  const project = normalizeKeyPart(train && train.projectId);
+  return `${sourceType}|sig|${linie}|${ziel}|${time}|${date}|${type}|${project}`;
+}
+
+function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
+  const serviceDate = resolveLogServiceDate(train, sourceType);
+  if (!serviceDate) return null;
+
+  const serviceTime = resolveLogServiceTime(train);
+  const nowIso = new Date().toISOString();
+  const projectNameById = additionalInfo && typeof additionalInfo.projectNameById === 'object'
+    ? additionalInfo.projectNameById
+    : null;
+  const zwischenhalte = normalizeStops(train && (train.zwischenhalte != null ? train.zwischenhalte : train.stops));
+  const source = normalizeSourceType(sourceType);
+  const recordId = buildCanonicalRecordId(train, source, serviceDate, serviceTime);
+
+  return {
+    schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
+    recordId,
+    trainKey: recordId,
+    scheduleType: source,
+    loggedAt: nowIso,
+    serviceDate,
+    serviceTime,
+    _uniqueId: normalizeText(train && train._uniqueId) || null,
+    _templateId: normalizeText(train && train._templateId) || null,
+    projectId: normalizeText(train && train.projectId) || null,
+    projectName: train && train.projectId && projectNameById ? (projectNameById[train.projectId] || null) : null,
+    type: normalizeText(train && train.type) || null,
+    linie: normalizeText(train && train.linie),
+    ziel: normalizeText(train && train.ziel),
+    plan: normalizeText(train && train.plan),
+    actual: normalizeText(train && train.actual),
+    dauer: Number(train && train.dauer) || 0,
+    zwischenhalte,
+    stops: zwischenhalte.join(' • '),
+    date: serviceDate,
+    plannedDate: serviceDate,
+    canceled: Boolean(train && train.canceled),
+    checkinTime: (train && train.checkinTime) || null,
+    checkoutTime: (train && train.checkoutTime) || null,
+    recurrence: (train && train.recurrence) || null,
+    startDate: (train && train.startDate) || null,
+    skippedDates: Array.isArray(train && train.skippedDates) ? train.skippedDates.slice() : []
+  };
+}
+
 // Accumulate train data in memory (no immediate write)
 async function logTrainHistory(trains, scheduleType, additionalInfo = {}) {
   try {
     // Instead of writing immediately, accumulate train data in memory
-    accumulateTrainData(trains, scheduleType);
+    accumulateTrainData(trains, scheduleType, additionalInfo);
   } catch (e) {
     console.error('Error accumulating train history:', e.message);
   }
 }
 
 // Accumulate train data in memory for batch writing
-function accumulateTrainData(trains, scheduleType) {
-  trains.forEach(train => {
-    const trainKey = createTrainKey(train, scheduleType);
-    const actualDate = resolveTrainDate(train, scheduleType);
-    const dateObj = actualDate ? new Date(actualDate + 'T12:00:00') : new Date();
-    const zwischenhalte = normalizeStops(train.zwischenhalte != null ? train.zwischenhalte : train.stops);
+function accumulateTrainData(trains, scheduleType, additionalInfo = {}) {
+  const sourceType = normalizeSourceType(scheduleType);
+  const todayStr = fmtYYYYMMDD(new Date());
 
-    const currentState = {
-      schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
-      scheduleType,
-      loggedAt: new Date().toISOString(),
-      trainKey,
-      _uniqueId: train._uniqueId || null,
-      _templateId: train._templateId || null,
-      projectId: train.projectId || null,
-      type: train.type || null,
-      linie: train.linie || '',
-      ziel: train.ziel || '',
-      plan: train.plan || '',
-      actual: train.actual || '',
-      dauer: Number(train.dauer) || 0,
-      zwischenhalte,
-      stops: zwischenhalte.join(' • '),
-      date: actualDate,
-      plannedDate: train.plannedDate || actualDate || '',
-      canceled: Boolean(train.canceled),
-      checkinTime: train.checkinTime || null,
-      checkoutTime: train.checkoutTime || null,
-      recurrence: train.recurrence || null,
-      startDate: train.startDate || null,
-      skippedDates: Array.isArray(train.skippedDates) ? train.skippedDates.slice() : []
-    };
-    
+  trains.forEach(train => {
+    if (isRecurringStem(train, sourceType)) return;
+    const actualDate = resolveLogServiceDate(train, sourceType);
+
+    // Skip future-dated entries. History logs should only contain past/present
+    // events. Pre-materialised recurring instances for future dates would
+    // flood every weekly log file on each save.
+    if (actualDate && actualDate > todayStr) return;
+    if (!actualDate) return;
+
+    const currentState = buildLogRecordV3(train, sourceType, additionalInfo);
+    if (!currentState) return;
+
+    const dateObj = actualDate ? new Date(actualDate + 'T12:00:00') : new Date();
+
     // Determine which week this train belongs to
     const weekId = getWeekIdentifier(dateObj);
     
@@ -229,19 +306,13 @@ function accumulateTrainData(trains, scheduleType) {
       pendingTrainData.set(weekId, new Map());
     }
     
-    // Add or update train in the week's map
-    pendingTrainData.get(weekId).set(trainKey, currentState);
+    // Add or update record in the week's map
+    pendingTrainData.get(weekId).set(currentState.recordId, currentState);
   });
 }
 
 function resolveTrainDate(train, scheduleType) {
-  if (train && typeof train.date === 'string' && train.date) return train.date;
-  if (train && typeof train.plannedDate === 'string' && train.plannedDate) return train.plannedDate;
-  if (scheduleType === 'fixed' && train && typeof train.startDate === 'string' && train.startDate) return train.startDate;
-  if (scheduleType === 'fixed' && train && typeof train.weekday === 'string' && train.weekday) {
-    return weekdayToCurrentWeekDate(train.weekday) || '';
-  }
-  return '';
+  return resolveLogServiceDate(train, normalizeSourceType(scheduleType));
 }
 
 function normalizeStops(rawStops) {
@@ -389,11 +460,10 @@ async function readLogAsStateMap(logFilePath = null) {
     
     lines.forEach(line => {
       try {
-        const logEntry = JSON.parse(line);
-        const key = logEntry.trainKey || createTrainKey(logEntry, logEntry.scheduleType || 'legacy');
-        if (!key) return;
-        // Each line represents the current state of a train
-        stateMap.set(key, { ...logEntry, trainKey: key });
+        const raw = JSON.parse(line);
+        const normalized = normalizeLogRecordFromAny(raw);
+        if (!normalized) return;
+        stateMap.set(normalized.recordId, normalized);
       } catch (e) {
         console.warn('Skipping invalid log line:', line.substring(0, 50));
       }
@@ -416,13 +486,11 @@ async function rewriteLogFile(stateMap, logFilePath = null) {
   const logFile = logFilePath || getWeeklyLogFile();
   
   try {
-    const logEntries = Array.from(stateMap.values()).map((trainState) => {
-      const normalized = { ...trainState };
-      normalized.schemaVersion = Number(normalized.schemaVersion) || TRAIN_LOG_SCHEMA_VERSION;
-      normalized.trainKey = normalized.trainKey || createTrainKey(normalized, normalized.scheduleType || 'legacy');
-      if (!normalized.loggedAt) normalized.loggedAt = new Date().toISOString();
-      return JSON.stringify(normalized);
-    });
+    const logEntries = Array.from(stateMap.values())
+      .map((entry) => normalizeLogRecordFromAny(entry))
+      .filter(Boolean)
+      .sort((a, b) => getLogRecordTimestampMs(a) - getLogRecordTimestampMs(b))
+      .map((normalized) => JSON.stringify(normalized));
     
     const logContent = logEntries.join('\n') + '\n';
     
@@ -437,6 +505,92 @@ async function rewriteLogFile(stateMap, logFilePath = null) {
   } catch (err) {
     console.error('Failed to rewrite weekly train log:', err.message);
   }
+}
+
+function normalizeLogRecordFromAny(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+
+  // Already normalized v3 record
+  if (Number(entry.schemaVersion) >= 3 && typeof entry.recordId === 'string' && entry.recordId) {
+    const normalized = { ...entry };
+    normalized.schemaVersion = TRAIN_LOG_SCHEMA_VERSION;
+    normalized.scheduleType = normalizeSourceType(normalized.scheduleType);
+    normalized.serviceDate = normalizeText(normalized.serviceDate || normalized.date || normalized.plannedDate);
+    normalized.serviceTime = normalizeText(normalized.serviceTime || normalized.actual || normalized.plan);
+    normalized.date = normalized.serviceDate;
+    normalized.plannedDate = normalized.serviceDate;
+    normalized.trainKey = normalized.recordId;
+    if (!normalized.loggedAt) normalized.loggedAt = new Date().toISOString();
+    return normalized;
+  }
+
+  // Migrate older schemas and mixed historical formats
+  const sourceType = normalizeSourceType(entry.scheduleType);
+  const serviceDate = normalizeText(entry.date || entry.plannedDate || resolveLogServiceDate(entry, sourceType));
+  if (!serviceDate) return null;
+  const serviceTime = normalizeText(entry.actual || entry.plan || entry.serviceTime);
+
+  const uid = normalizeText(entry._uniqueId);
+  let recordId = normalizeText(entry.recordId || entry.trainKey);
+  if (uid) {
+    recordId = `${sourceType}|uid|${uid}`;
+  } else {
+    const currentLooksLikeCanonical = recordId.includes('|uid|') || recordId.includes('|sig|');
+    if (!currentLooksLikeCanonical) {
+      recordId = buildCanonicalRecordId(entry, sourceType, serviceDate, serviceTime);
+    }
+  }
+
+  const zwischenhalte = normalizeStops(entry.zwischenhalte != null ? entry.zwischenhalte : entry.stops);
+  return {
+    schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
+    recordId,
+    trainKey: recordId,
+    scheduleType: sourceType,
+    loggedAt: normalizeText(entry.loggedAt) || new Date().toISOString(),
+    serviceDate,
+    serviceTime,
+    _uniqueId: uid || null,
+    _templateId: normalizeText(entry._templateId) || null,
+    projectId: normalizeText(entry.projectId) || null,
+    projectName: normalizeText(entry.projectName) || null,
+    type: normalizeText(entry.type) || null,
+    linie: normalizeText(entry.linie),
+    ziel: normalizeText(entry.ziel),
+    plan: normalizeText(entry.plan),
+    actual: normalizeText(entry.actual),
+    dauer: Number(entry.dauer) || 0,
+    zwischenhalte,
+    stops: zwischenhalte.join(' • '),
+    date: serviceDate,
+    plannedDate: serviceDate,
+    canceled: Boolean(entry.canceled),
+    checkinTime: entry.checkinTime || null,
+    checkoutTime: entry.checkoutTime || null,
+    recurrence: entry.recurrence || null,
+    startDate: entry.startDate || null,
+    skippedDates: Array.isArray(entry.skippedDates) ? entry.skippedDates.slice() : []
+  };
+}
+
+function getLogRecordTimestampMs(entry) {
+  if (!entry || typeof entry !== 'object') return Number.POSITIVE_INFINITY;
+  const dateStr = normalizeText(entry.serviceDate || entry.date || entry.plannedDate);
+  const timeStr = normalizeText(entry.serviceTime || entry.actual || entry.plan);
+  const m = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(timeStr);
+  if (dateStr && m) {
+    const hh = Number(m[1]);
+    const mm = Number(m[2]);
+    if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+      const local = new Date(`${dateStr}T00:00:00`);
+      if (!Number.isNaN(local.getTime())) {
+        local.setHours(hh, mm, 0, 0);
+        return local.getTime();
+      }
+    }
+  }
+  const fallback = new Date(entry.loggedAt || '').getTime();
+  return Number.isFinite(fallback) ? fallback : Number.POSITIVE_INFINITY;
 }
 
 
@@ -497,6 +651,19 @@ function parseTrainTimestampMs(entry) {
 function buildHistoryDedupKey(entry) {
   if (!entry || typeof entry !== 'object') return '';
 
+  const datePart = String(entry.date || entry.plannedDate || '').trim().toLowerCase();
+  const liniePart = String(entry.linie || '').trim().toLowerCase();
+  const zielPart = String(entry.ziel || '').trim().toLowerCase();
+  const timePart = String(entry.actual || entry.plan || '').trim().toLowerCase();
+  const typePart = String(entry.type || '').trim().toLowerCase();
+  const dauerPart = String(entry.dauer != null ? entry.dauer : '').trim().toLowerCase();
+
+  // Prefer a semantic key so legacy keys and UID-based keys for the same
+  // visible train/day collapse into one row in the log viewer.
+  if (datePart && liniePart && zielPart && timePart) {
+    return `svc|${datePart}|${liniePart}|${zielPart}|${timePart}|${typePart}|${dauerPart}`;
+  }
+
   const trainKey = typeof entry.trainKey === 'string' ? entry.trainKey.trim().toLowerCase() : '';
   if (trainKey) {
     // New schema keys: <scheduleType>|uid|<uniqueId>
@@ -519,13 +686,8 @@ function buildHistoryDedupKey(entry) {
   const uid = typeof entry._uniqueId === 'string' ? entry._uniqueId.trim() : '';
   if (uid) return `uid|${uid}`;
 
-  const datePart = String(entry.date || entry.plannedDate || '').trim().toLowerCase();
-  const liniePart = String(entry.linie || '').trim().toLowerCase();
-  const zielPart = String(entry.ziel || '').trim().toLowerCase();
   const planPart = String(entry.plan || '').trim().toLowerCase();
   const actualPart = String(entry.actual || '').trim().toLowerCase();
-  const dauerPart = String(entry.dauer != null ? entry.dauer : '').trim().toLowerCase();
-  const typePart = String(entry.type || '').trim().toLowerCase();
 
   return `sig|${datePart}|${liniePart}|${zielPart}|${planPart}|${actualPart}|${dauerPart}|${typePart}`;
 }
@@ -866,33 +1028,34 @@ app.get('/api/train-history', async (req, res) => {
       throw err;
     }
     
-    // Parse JSON lines
+    // Parse JSON lines using the canonical v3 normalization path.
     const lines = content.trim().split('\n').filter(line => line.trim());
-    
-    // Apply default limit of 1000 to prevent massive responses
-    const DEFAULT_LIMIT = 1000;
-    const requestedLimit = req.query.limit ? parseInt(req.query.limit) : DEFAULT_LIMIT;
-    const limit = Math.min(requestedLimit, 10000); // Cap at 10000 for safety
-    
-    // Only parse the lines we need (from the end for recent entries)
-    const startIdx = lines.length > limit ? lines.length - limit : 0;
-    const linesToParse = lines.slice(startIdx);
-    
-    const entries = linesToParse.map(line => {
+    const recordsMap = new Map();
+    lines.forEach((line) => {
       try {
-        return JSON.parse(line);
+        const raw = JSON.parse(line);
+        const record = normalizeLogRecordFromAny(raw);
+        if (!record) return;
+        recordsMap.set(record.recordId, record);
       } catch (e) {
         console.warn('Skipping invalid log line:', line.substring(0, 50));
-        return null;
       }
-    }).filter(Boolean);
+    });
+
+    const rows = Array.from(recordsMap.values()).sort((a, b) => getLogRecordTimestampMs(a) - getLogRecordTimestampMs(b));
+
+    // Apply default limit of 1000 to prevent massive responses.
+    const DEFAULT_LIMIT = 1000;
+    const requestedLimit = req.query.limit ? parseInt(req.query.limit, 10) : DEFAULT_LIMIT;
+    const limit = Math.min(Number.isFinite(requestedLimit) ? requestedLimit : DEFAULT_LIMIT, 10000);
+    const entries = rows.length > limit ? rows.slice(rows.length - limit) : rows;
     
     res.json({ 
       entries: entries,
-      total: lines.length,
+      total: rows.length,
       showing: entries.length,
       week: weekId,
-      limited: lines.length > limit
+      limited: rows.length > limit
     });
   } catch (e) {
     res.status(500).json({ error: 'Failed to parse log file', details: e.message });
@@ -931,6 +1094,24 @@ app.get('/api/train-history/range', async (req, res) => {
   try {
     const fromRaw = String(req.query.from || '');
     const toRaw = String(req.query.to || '');
+    const fromDateRaw = String(req.query.fromDate || '');
+    const toDateRaw = String(req.query.toDate || '');
+
+    const hasDateWindow = fromDateRaw && toDateRaw;
+    if (hasDateWindow) {
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRe.test(fromDateRaw) || !dateRe.test(toDateRaw)) {
+        return res.status(400).json({ error: 'Invalid fromDate/toDate format. Use YYYY-MM-DD.' });
+      }
+    }
+
+    const rangeDateStart = hasDateWindow
+      ? (fromDateRaw <= toDateRaw ? fromDateRaw : toDateRaw)
+      : null;
+    const rangeDateEnd = hasDateWindow
+      ? (fromDateRaw <= toDateRaw ? toDateRaw : fromDateRaw)
+      : null;
+
     if (!fromRaw || !toRaw) {
       return res.status(400).json({ error: 'Missing required query params: from, to' });
     }
@@ -947,7 +1128,7 @@ app.get('/api/train-history/range', async (req, res) => {
     const limit = Math.max(1, Math.min(Number.isFinite(requestedLimit) ? requestedLimit : 5000, 20000));
 
     const weeklyFiles = await listWeeklyLogFiles();
-    const matched = [];
+    const dedupedMap = new Map();
 
     for (const wf of weeklyFiles) {
       let content;
@@ -960,32 +1141,34 @@ app.get('/api/train-history/range', async (req, res) => {
       const lines = content.split('\n').filter(line => line.trim());
       lines.forEach((line) => {
         try {
-          const entry = JSON.parse(line);
-          const ts = parseTrainTimestampMs(entry);
-          if (ts == null) return;
+          const raw = JSON.parse(line);
+          const entry = normalizeLogRecordFromAny(raw);
+          if (!entry) return;
+
+          if (rangeDateStart && rangeDateEnd) {
+            const entryDate = normalizeText(entry.serviceDate || entry.date || entry.plannedDate);
+            // In date-window mode, only entries that carry an explicit date are valid.
+            if (!entryDate) return;
+            if (entryDate < rangeDateStart || entryDate > rangeDateEnd) return;
+          }
+
+          const ts = getLogRecordTimestampMs(entry);
+          if (!Number.isFinite(ts)) return;
           if (ts < rangeStart || ts > rangeEnd) return;
-          matched.push({
-            ...entry,
-            _rangeTs: ts,
-            _sourceWeekFile: wf.file
-          });
+
+          const existing = dedupedMap.get(entry.recordId);
+          if (!existing || getLogRecordTimestampMs(existing) <= ts) {
+            dedupedMap.set(entry.recordId, {
+              ...entry,
+              _rangeTs: ts,
+              _sourceWeekFile: wf.file
+            });
+          }
         } catch {
           // Ignore invalid lines in range endpoint
         }
       });
     }
-
-    matched.sort((a, b) => a._rangeTs - b._rangeTs);
-
-    // Deduplicate before limiting to avoid repeated rows from legacy/overlapping logs.
-    // Keep the latest match for each logical train key in the selected range.
-    const dedupedMap = new Map();
-    matched.forEach((entry) => {
-      const dedupKey = buildHistoryDedupKey(entry);
-      if (!dedupKey) return;
-      dedupedMap.set(dedupKey, entry);
-    });
-
     const deduped = Array.from(dedupedMap.values()).sort((a, b) => a._rangeTs - b._rangeTs);
     const limited = deduped.length > limit;
     const entries = (limited ? deduped.slice(deduped.length - limit) : deduped).map((entry) => {
@@ -1045,13 +1228,23 @@ app.post('/api/schedule', async (req, res) => {
     }
 
     const rawSpontaneous = Array.isArray(body.spontaneousEntries) ? body.spontaneousEntries : [];
+    const projectsArr = Array.isArray(body.projects) ? body.projects : [];
+    const projectNameById = Object.fromEntries(
+      projectsArr
+        .filter(p => p && p._uniqueId)
+        .map(p => [String(p._uniqueId), typeof p.name === 'string' ? p.name : ''])
+    );
+    const logContext = { projectNameById };
 
     // Log history BEFORE pruning so all entries are archived
     const fixedArr  = Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [];
     const trainsArr = Array.isArray(body.trains) ? body.trains : [];
-    if (fixedArr.length > 0)      logTrainHistory(fixedArr, 'fixed');
-    if (rawSpontaneous.length > 0) logTrainHistory(rawSpontaneous, 'spontaneous');
-    if (trainsArr.length > 0)     logTrainHistory(trainsArr, 'legacy');
+    if (fixedArr.length > 0)      logTrainHistory(fixedArr, 'fixed', logContext);
+    if (rawSpontaneous.length > 0) logTrainHistory(rawSpontaneous, 'spontaneous', logContext);
+    // `trains` is a legacy container from older schema versions.
+    // Keep ingesting it for compatibility, but write under spontaneous
+    // so no new `legacy|...` keys are produced.
+    if (trainsArr.length > 0)     logTrainHistory(trainsArr, 'spontaneous', logContext);
 
     // Prune expired entries (past + no projectId) before persisting to disk
     const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous);
@@ -1064,7 +1257,7 @@ app.post('/api/schedule', async (req, res) => {
       fixedSchedule: fixedArr,
       spontaneousEntries: prunedSpontaneous,
       trains: trainsArr,
-      projects: Array.isArray(body.projects) ? body.projects : [],
+      projects: projectsArr,
     };
 
     const filePath = path.join(PUBLIC_DIR, 'data.json');

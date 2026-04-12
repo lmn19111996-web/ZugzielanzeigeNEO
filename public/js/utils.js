@@ -7,6 +7,7 @@
     function getLineColor(line) {
       const lineColors = {
         's1': '#7D66AD',
+        's11': '#62AC4E',
         's2': '#00793B',
         's25': '#1c763b',
         's26': '#1c763b',
@@ -30,7 +31,7 @@
         's95': '#91247D',
         'fex': '#FF0000'
       };
-      return lineColors[line.toLowerCase()] || '#7D66AD';
+      return lineColors[line.toLowerCase()] || '#004E9D';
     }
 
     function getCarriageSVG(dauer, isFEX = false) {
@@ -69,6 +70,9 @@
 
     function formatDurationOnlyText(dauer) {
       const minutes = Math.max(0, Math.round(Number(dauer) || 0));
+      if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {
+        return `${minutes} Min`;
+      }
       return `gesamte Dauer: ${minutes} Minuten`;
     }
 
