@@ -112,16 +112,17 @@
           return ta - tb;
         });
 
+      // Get today's date for date-based visibility filtering
+      const todayDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
       processedTrainData.durationOnlyTrains = processedTrainData.allTrains
-        .filter(t => isDurationOnlyTrain(t) && t.linie && t.date)
+        .filter(t => isDurationOnlyTrain(t) && t.linie && t.date && t.date >= todayDate)
         .sort((a, b) => {
           const dateCompare = String(a.date || '').localeCompare(String(b.date || ''));
           if (dateCompare !== 0) return dateCompare;
           return 0;
         });
-      
-      // Get today's date for filtering past trains from today
-      const todayDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
       
       // Filter for future and currently occupying trains
       processedTrainData.futureTrains = processedTrainData.scheduledTrains.filter(t => {
