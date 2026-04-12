@@ -22,14 +22,14 @@
     const _lastPushedStatusByTrain = new Map();
 
     // Called after every data change AND on the 15 s fallback interval.
-    // Path A (in-app) has been removed ó Web Push (Path B) is the active notification channel.
+    // Path A (in-app) has been removed ÔøΩ Web Push (Path B) is the active notification channel.
     function checkTrainArrivals() {
       // no-op: in-app notifications retired in favour of Web Push
     }
 
 
 
-    // Debug helper ó open ?debug=1 for the on-screen button, or call from console.
+    // Debug helper ÔøΩ open ?debug=1 for the on-screen button, or call from console.
     window.fireDebugNotification = async function() {
       const granted = await requestNotificationPermission();
       if (!granted) { alert('Notification permission not granted.'); return; }
@@ -62,7 +62,7 @@
     // === WEB PUSH ===
 
     // Register this device for server-sent push notifications.
-    // Safe to call multiple times ó server deduplicates by endpoint.
+    // Safe to call multiple times ÔøΩ server deduplicates by endpoint.
     async function subscribeToPush() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       if (Notification.permission !== 'granted') return;
@@ -152,13 +152,13 @@
           if (statusChanged) {
             let chgBody;
             if (train.canceled) {
-              chgBody = `Abfahrt urspr¸nglich ${planClock}. F‰llt heute aus. Wir bitten um Entschuldigung.`;
+              chgBody = `Abfahrt urspr√ºnglich ${planClock}. F√§llt heute aus. Wir bitten um Entschuldigung.`;
             } else if (delay > 0) {
-              chgBody = `Abfahrt urspr¸nglich ${planClock}${zhSuffix}, heute ${delay} Minuten sp‰ter um ${formatClock(trainTime)}.`;
+              chgBody = `Abfahrt urspr√ºnglich ${planClock}${zhSuffix}, heute ${delay} Minuten sp√§ter um ${formatClock(trainTime)}.`;
             } else if (delay < 0) {
-              chgBody = `Abfahrt urspr¸nglich ${planClock}${zhSuffix}, heute ${-delay} Minuten fr¸her um ${formatClock(trainTime)}.`;
+              chgBody = `Abfahrt urspr√ºnglich ${planClock}${zhSuffix}, heute ${-delay} Minuten fr√ºher um ${formatClock(trainTime)}.`;
             } else {
-              chgBody = `Ihre Reise geht los. Abfahrt heute p¸nktlich um ${planClock}${zhSuffix}.`;
+              chgBody = `Ihre Reise geht los. Abfahrt heute p√ºnktlich um ${planClock}${zhSuffix}.`;
             }
             events.push({
               id: `chg-${trainId}-${statusKey}`,
@@ -166,7 +166,7 @@
               title,
               options: {
                 body: chgBody,
-                icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+                icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
                 vibrate: [200, 100, 200],
                 data: { url: appUrl }
               }
@@ -174,7 +174,7 @@
             _lastPushedStatusByTrain.set(trainId, statusKey);
           }
         } else {
-          // Train left the window ó clear so re-entry fires again
+          // Train left the window ÔøΩ clear so re-entry fires again
           _lastPushedStatusByTrain.delete(trainId);
         }
 
@@ -183,13 +183,13 @@
         if (windowNotifyAt > now) {
           let windowBody;
           if (train.canceled) {
-            windowBody = `Abfahrt urspr¸nglich ${planClock}. F‰llt heute aus. Wir bitten um Entschuldigung.`;
+            windowBody = `Abfahrt urspr√ºnglich ${planClock}. F√§llt heute aus. Wir bitten um Entschuldigung.`;
           } else if (delay > 0) {
-            windowBody = `Abfahrt urspr¸nglich ${planClock}${zhSuffix}, heute ${delay} Minuten sp‰ter um ${formatClock(trainTime)}.`;
+            windowBody = `Abfahrt urspr√ºnglich ${planClock}${zhSuffix}, heute ${delay} Minuten sp√§ter um ${formatClock(trainTime)}.`;
           } else if (delay < 0) {
-            windowBody = `Abfahrt urspr¸nglich ${planClock}${zhSuffix}, heute ${-delay} Minuten fr¸her um ${formatClock(trainTime)}.`;
+            windowBody = `Abfahrt urspr√ºnglich ${planClock}${zhSuffix}, heute ${-delay} Minuten fr√ºher um ${formatClock(trainTime)}.`;
           } else {
-            windowBody = `Ihre Reise geht los. Abfahrt heute p¸nktlich um ${planClock}${zhSuffix}.`;
+            windowBody = `Ihre Reise geht los. Abfahrt heute p√ºnktlich um ${planClock}${zhSuffix}.`;
           }
           events.push({
             id: `win-${trainId}`,
@@ -197,7 +197,7 @@
             title,
             options: {
               body: windowBody,
-              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200, 100, 200],
               data: { url: appUrl }
             }
@@ -208,11 +208,11 @@
         if (trainTime > now && !train.canceled) {
           let depBody;
           if (delay > 0) {
-            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${delay} Minuten sp‰ter um ${formatClock(trainTime)}.`;
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${delay} Minuten sp√§ter um ${formatClock(trainTime)}.`;
           } else if (delay < 0) {
-            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${-delay} Minuten fr¸her um ${formatClock(trainTime)}.`;
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${-delay} Minuten fr√ºher um ${formatClock(trainTime)}.`;
           } else {
-            depBody = `Ihre Reise geht jetzt los. Abfahrt heute p¸nktlich um ${planClock}.`;
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute p√ºnktlich um ${planClock}.`;
           }
           events.push({
             id: `dep-${trainId}`,
@@ -220,7 +220,7 @@
             title,
             options: {
               body: depBody,
-              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [300, 100, 300],
               data: { url: appUrl }
             }
@@ -235,7 +235,7 @@
         if (occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
           const depClock = formatClock(occupationEnd);
           const endBody = delay <= 0
-            ? `Ankunft p¸nktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`
+            ? `Ankunft p√ºnktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`
             : `Ankunft um ${depClock}. Vielen Dank und auf Wiedersehen.`;
           events.push({
             id: `end-${trainId}`,
@@ -243,7 +243,7 @@
             title,
             options: {
               body: endBody,
-              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200],
               data: { url: appUrl }
             }
@@ -256,7 +256,7 @@
 
     // === END WEB PUSH CLIENT ===
 
-    // Console debug helper ó call window.debugPushStatus() at any time.
+    // Console debug helper ÔøΩ call window.debugPushStatus() at any time.
     window.debugPushStatus = async function() {
       console.group('[Push] Debug Status');
       console.log('Notification.permission:', Notification.permission);
