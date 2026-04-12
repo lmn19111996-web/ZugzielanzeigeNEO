@@ -88,19 +88,15 @@ async function sendPushToAll(title, options) {
     return;
   }
   const subs = loadPushSubscriptions();
-  console.log(`[Push] 🔔 Firing: "${title}" → ${subs.length} subscription(s)`);
-  console.log(`[Push]    Body: ${options && options.body ? options.body : '(no body)'}`);
   const dead = [];
   await Promise.all(subs.map(async sub => {
     try {
       await webPush.sendNotification(sub, JSON.stringify({ title, options }));
-      console.log(`[Push]    ✅ Delivered to ${sub.endpoint.slice(0, 60)}...`);
     } catch (err) {
       if (err.statusCode === 410 || err.statusCode === 404) {
         dead.push(sub.endpoint);
-        console.log(`[Push]    ♻️  Dead subscription removed: ${sub.endpoint.slice(0, 60)}...`);
       } else {
-        console.warn(`[Push]    ❌ Delivery failed (${err.statusCode}): ${err.message}`);
+        console.warn(`[Push] Delivery failed (${err.statusCode}): ${err.message}`);
       }
     }
   }));
@@ -122,21 +118,10 @@ function schedulePushEvents(events) {
     if (delay < -60000) return; // already more than 1 min past — skip
     const clampedDelay = Math.max(0, delay);
     const handle = setTimeout(async () => {
-      console.log(`[Push] ⏰ Timeout fired for: ${ev.id} ("${ev.title}")`);
       await sendPushToAll(ev.title, ev.options);
       pendingPushTimeouts.delete(ev.id);
     }, clampedDelay);
     pendingPushTimeouts.set(ev.id, { handle, event: ev });
-  });
-
-  console.log(`[Push] 📅 Scheduled ${pendingPushTimeouts.size} push event(s):`);
-  // Print each scheduled event sorted by fire time
-  const sorted = [...pendingPushTimeouts.values()]
-    .sort((a, b) => new Date(a.event.notifyAt) - new Date(b.event.notifyAt));
-  sorted.forEach(({ event: ev }) => {
-    const inMs = new Date(ev.notifyAt) - new Date();
-    const inMin = Math.round(inMs / 60000);
-    console.log(`[Push]   • ${ev.id}  @ ${ev.notifyAt}  (in ${inMin} min)  "${ev.title}"`);
   });
 }
 
@@ -1443,7 +1428,6 @@ app.post('/api/push/subscribe', (req, res) => {
   if (!subs.find(s => s.endpoint === sub.endpoint)) {
     subs.push(sub);
     savePushSubscriptions(subs);
-    console.log(`🔔 New push subscription registered. Total: ${subs.length}`);
   }
   res.json({ ok: true });
 });
@@ -1454,7 +1438,6 @@ app.post('/api/push/unsubscribe', (req, res) => {
   if (!endpoint) return res.status(400).json({ error: 'Missing endpoint' });
   const subs = loadPushSubscriptions().filter(s => s.endpoint !== endpoint);
   savePushSubscriptions(subs);
-  console.log(`🔕 Push subscription removed. Remaining: ${subs.length}`);
   res.json({ ok: true });
 });
 
@@ -1474,7 +1457,6 @@ app.get('/api/push/debug', (req, res) => {
   });
   pending.sort((a, b) => new Date(a.notifyAt) - new Date(b.notifyAt));
 
-  console.log(`[Push] /api/push/debug — subs: ${subs.length}, pending timeouts: ${pending.length}`);
   res.json({
     vapidConfigured: !!process.env.VAPID_PUBLIC_KEY,
     subscriptionCount: subs.length,
