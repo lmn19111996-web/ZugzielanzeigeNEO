@@ -5,6 +5,18 @@ self.addEventListener('fetch', () => {
   // Minimal fetch listener required for PWA installability
 });
 
+// Web Push: server sends { title, options } as JSON payload
+self.addEventListener('push', e => {
+  let title = 'Zugzielanzeige';
+  let options = { icon: '/res/6.png', badge: '/res/6.png', vibrate: [200, 100, 200] };
+  try {
+    const data = e.data.json();
+    title = data.title || title;
+    options = Object.assign(options, data.options || {});
+  } catch {}
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const targetUrl = (e.notification.data && e.notification.data.url) || '/';

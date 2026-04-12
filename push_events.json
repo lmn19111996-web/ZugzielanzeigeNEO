@@ -1,0 +1,2847 @@
+[
+  {
+    "id": "win-train_8ohfbhfm0_1772035362041",
+    "notifyAt": "2026-04-16T13:25:00.000Z",
+    "title": "S62 nach Vortragsübung Höhere Mathematik II",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-train_8ohfbhfm0_1772035362041",
+    "notifyAt": "2026-04-16T13:45:00.000Z",
+    "title": "S62 nach Vortragsübung Höhere Mathematik II",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-train_8ohfbhfm0_1772035362041",
+    "notifyAt": "2026-04-16T15:15:00.000Z",
+    "title": "S62 nach Vortragsübung Höhere Mathematik II",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-13",
+    "notifyAt": "2026-04-13T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-13",
+    "notifyAt": "2026-04-13T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-13",
+    "notifyAt": "2026-04-13T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-14",
+    "notifyAt": "2026-04-14T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-14",
+    "notifyAt": "2026-04-14T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-14",
+    "notifyAt": "2026-04-14T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-15",
+    "notifyAt": "2026-04-15T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-15",
+    "notifyAt": "2026-04-15T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-15",
+    "notifyAt": "2026-04-15T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-16",
+    "notifyAt": "2026-04-16T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-16",
+    "notifyAt": "2026-04-16T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-16",
+    "notifyAt": "2026-04-16T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-17",
+    "notifyAt": "2026-04-17T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-17",
+    "notifyAt": "2026-04-17T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-17",
+    "notifyAt": "2026-04-17T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_o9asst165_1772052470926_2026-04-15",
+    "notifyAt": "2026-04-15T09:52:00.000Z",
+    "title": "S7 nach Sleep 1",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 12:12. Bitte bereit halten.",
+      "icon": "/res/s7.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_o9asst165_1772052470926_2026-04-15",
+    "notifyAt": "2026-04-15T10:12:00.000Z",
+    "title": "S7 nach Sleep 1",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 12:12.",
+      "icon": "/res/s7.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-13",
+    "notifyAt": "2026-04-13T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-13",
+    "notifyAt": "2026-04-13T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-13",
+    "notifyAt": "2026-04-13T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-14",
+    "notifyAt": "2026-04-14T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-14",
+    "notifyAt": "2026-04-14T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-14",
+    "notifyAt": "2026-04-14T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-15",
+    "notifyAt": "2026-04-15T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-15",
+    "notifyAt": "2026-04-15T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-15",
+    "notifyAt": "2026-04-15T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-16",
+    "notifyAt": "2026-04-16T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-16",
+    "notifyAt": "2026-04-16T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-16",
+    "notifyAt": "2026-04-16T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-17",
+    "notifyAt": "2026-04-17T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-17",
+    "notifyAt": "2026-04-17T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-17",
+    "notifyAt": "2026-04-17T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-13",
+    "notifyAt": "2026-04-13T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-13",
+    "notifyAt": "2026-04-13T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-13",
+    "notifyAt": "2026-04-13T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-14",
+    "notifyAt": "2026-04-14T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-14",
+    "notifyAt": "2026-04-14T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-14",
+    "notifyAt": "2026-04-14T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-15",
+    "notifyAt": "2026-04-15T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-15",
+    "notifyAt": "2026-04-15T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-15",
+    "notifyAt": "2026-04-15T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-16",
+    "notifyAt": "2026-04-16T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-16",
+    "notifyAt": "2026-04-16T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-16",
+    "notifyAt": "2026-04-16T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-17",
+    "notifyAt": "2026-04-17T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-17",
+    "notifyAt": "2026-04-17T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-17",
+    "notifyAt": "2026-04-17T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-18",
+    "notifyAt": "2026-04-18T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-18",
+    "notifyAt": "2026-04-18T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-18",
+    "notifyAt": "2026-04-18T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-13",
+    "notifyAt": "2026-04-12T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-13",
+    "notifyAt": "2026-04-12T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-14",
+    "notifyAt": "2026-04-13T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-14",
+    "notifyAt": "2026-04-13T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-15",
+    "notifyAt": "2026-04-14T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-15",
+    "notifyAt": "2026-04-14T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-16",
+    "notifyAt": "2026-04-15T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-16",
+    "notifyAt": "2026-04-15T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-17",
+    "notifyAt": "2026-04-16T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-17",
+    "notifyAt": "2026-04-16T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-18",
+    "notifyAt": "2026-04-17T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-18",
+    "notifyAt": "2026-04-17T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-13",
+    "notifyAt": "2026-04-13T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-13",
+    "notifyAt": "2026-04-13T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-13",
+    "notifyAt": "2026-04-13T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-14",
+    "notifyAt": "2026-04-14T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-14",
+    "notifyAt": "2026-04-14T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-14",
+    "notifyAt": "2026-04-14T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-15",
+    "notifyAt": "2026-04-15T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-15",
+    "notifyAt": "2026-04-15T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-15",
+    "notifyAt": "2026-04-15T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-16",
+    "notifyAt": "2026-04-16T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-16",
+    "notifyAt": "2026-04-16T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-16",
+    "notifyAt": "2026-04-16T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-17",
+    "notifyAt": "2026-04-17T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-17",
+    "notifyAt": "2026-04-17T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-17",
+    "notifyAt": "2026-04-17T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-18",
+    "notifyAt": "2026-04-18T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-18",
+    "notifyAt": "2026-04-18T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-18",
+    "notifyAt": "2026-04-18T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-19",
+    "notifyAt": "2026-04-19T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-19",
+    "notifyAt": "2026-04-19T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-19",
+    "notifyAt": "2026-04-19T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-19",
+    "notifyAt": "2026-04-18T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-19",
+    "notifyAt": "2026-04-18T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-19",
+    "notifyAt": "2026-04-19T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-19",
+    "notifyAt": "2026-04-19T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-19",
+    "notifyAt": "2026-04-19T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-20",
+    "notifyAt": "2026-04-20T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-20",
+    "notifyAt": "2026-04-20T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-20",
+    "notifyAt": "2026-04-20T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-20",
+    "notifyAt": "2026-04-20T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-20",
+    "notifyAt": "2026-04-20T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-20",
+    "notifyAt": "2026-04-20T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-20",
+    "notifyAt": "2026-04-20T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-20",
+    "notifyAt": "2026-04-20T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-20",
+    "notifyAt": "2026-04-20T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-20",
+    "notifyAt": "2026-04-19T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-20",
+    "notifyAt": "2026-04-19T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-20",
+    "notifyAt": "2026-04-20T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-20",
+    "notifyAt": "2026-04-20T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-20",
+    "notifyAt": "2026-04-20T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-21",
+    "notifyAt": "2026-04-21T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-21",
+    "notifyAt": "2026-04-21T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-21",
+    "notifyAt": "2026-04-21T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-21",
+    "notifyAt": "2026-04-21T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-21",
+    "notifyAt": "2026-04-21T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-21",
+    "notifyAt": "2026-04-21T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-21",
+    "notifyAt": "2026-04-21T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-21",
+    "notifyAt": "2026-04-21T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-21",
+    "notifyAt": "2026-04-21T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-21",
+    "notifyAt": "2026-04-20T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-21",
+    "notifyAt": "2026-04-20T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-21",
+    "notifyAt": "2026-04-21T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-21",
+    "notifyAt": "2026-04-21T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-21",
+    "notifyAt": "2026-04-21T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-22",
+    "notifyAt": "2026-04-22T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-22",
+    "notifyAt": "2026-04-22T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-22",
+    "notifyAt": "2026-04-22T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-23",
+    "notifyAt": "2026-04-23T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-23",
+    "notifyAt": "2026-04-23T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-23",
+    "notifyAt": "2026-04-23T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_o9asst165_1772052470926_2026-04-22",
+    "notifyAt": "2026-04-22T09:52:00.000Z",
+    "title": "S7 nach Sleep 1",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 12:12. Bitte bereit halten.",
+      "icon": "/res/s7.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_o9asst165_1772052470926_2026-04-22",
+    "notifyAt": "2026-04-22T10:12:00.000Z",
+    "title": "S7 nach Sleep 1",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 12:12.",
+      "icon": "/res/s7.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-22",
+    "notifyAt": "2026-04-22T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-22",
+    "notifyAt": "2026-04-22T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-22",
+    "notifyAt": "2026-04-22T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-23",
+    "notifyAt": "2026-04-23T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-23",
+    "notifyAt": "2026-04-23T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-23",
+    "notifyAt": "2026-04-23T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-22",
+    "notifyAt": "2026-04-22T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-22",
+    "notifyAt": "2026-04-22T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-22",
+    "notifyAt": "2026-04-22T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-23",
+    "notifyAt": "2026-04-23T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-23",
+    "notifyAt": "2026-04-23T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-23",
+    "notifyAt": "2026-04-23T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-22",
+    "notifyAt": "2026-04-21T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-22",
+    "notifyAt": "2026-04-21T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-23",
+    "notifyAt": "2026-04-22T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-23",
+    "notifyAt": "2026-04-22T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-22",
+    "notifyAt": "2026-04-22T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-22",
+    "notifyAt": "2026-04-22T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-22",
+    "notifyAt": "2026-04-22T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-23",
+    "notifyAt": "2026-04-23T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-23",
+    "notifyAt": "2026-04-23T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-23",
+    "notifyAt": "2026-04-23T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_l3nlk881y_1772051906345_2026-04-24",
+    "notifyAt": "2026-04-24T13:25:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 15:45. Bitte bereit halten.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_l3nlk881y_1772051906345_2026-04-24",
+    "notifyAt": "2026-04-24T13:45:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 15:45.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_l3nlk881y_1772051906345_2026-04-24",
+    "notifyAt": "2026-04-24T15:15:00.000Z",
+    "title": "S62 nach Seminar Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 17:15. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s62.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_x5kwy82hz_1772054002600_2026-04-24",
+    "notifyAt": "2026-04-24T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_x5kwy82hz_1772054002600_2026-04-24",
+    "notifyAt": "2026-04-24T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_x5kwy82hz_1772054002600_2026-04-24",
+    "notifyAt": "2026-04-24T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-24",
+    "notifyAt": "2026-04-24T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-24",
+    "notifyAt": "2026-04-24T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-24",
+    "notifyAt": "2026-04-24T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-24",
+    "notifyAt": "2026-04-23T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-24",
+    "notifyAt": "2026-04-23T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-24",
+    "notifyAt": "2026-04-24T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-24",
+    "notifyAt": "2026-04-24T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-24",
+    "notifyAt": "2026-04-24T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_c5b05xd7h_1772054033691_2026-04-25",
+    "notifyAt": "2026-04-25T05:40:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 08:00. Bitte bereit halten.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_c5b05xd7h_1772054033691_2026-04-25",
+    "notifyAt": "2026-04-25T06:00:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 08:00.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_c5b05xd7h_1772054033691_2026-04-25",
+    "notifyAt": "2026-04-25T07:30:00.000Z",
+    "title": "S6 nach Konstruktionslehre",
+    "options": {
+      "body": "Ankunft pünktlich um 09:30. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s6.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_mnjj8dnec_1772057764071_2026-04-25",
+    "notifyAt": "2026-04-24T21:40:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 00:00. Bitte bereit halten.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_mnjj8dnec_1772057764071_2026-04-25",
+    "notifyAt": "2026-04-24T22:00:00.000Z",
+    "title": "S1 nach All aboard the stem train",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 00:00.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "win-stem_fkti1oep0_1775379142172_2026-04-25",
+    "notifyAt": "2026-04-25T15:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Abfahrt heute pünktlich um 17:30. Bitte bereit halten.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "dep-stem_fkti1oep0_1775379142172_2026-04-25",
+    "notifyAt": "2026-04-25T15:30:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ihre Reise geht jetzt los. Abfahrt heute pünktlich um 17:30.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        300,
+        100,
+        300
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-stem_fkti1oep0_1775379142172_2026-04-25",
+    "notifyAt": "2026-04-25T16:10:00.000Z",
+    "title": "S95 nach Fachschaftssitzung",
+    "options": {
+      "body": "Ankunft pünktlich um 18:10. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s95.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "chg-train_wlj6surg6_1776019574435-canceled",
+    "notifyAt": "2026-04-12T19:03:20.213Z",
+    "title": "S1 nach HIHIHIHI POP THE NOFFS",
+    "options": {
+      "body": "Abfahrt ursprünglich 21:08. Fällt heute aus. Wir bitten um Entschuldigung.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200,
+        100,
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  },
+  {
+    "id": "end-train_wlj6surg6_1776019574435",
+    "notifyAt": "2026-04-12T19:23:00.000Z",
+    "title": "S1 nach HIHIHIHI POP THE NOFFS",
+    "options": {
+      "body": "Ankunft um 21:23. Vielen Dank und auf Wiedersehen.",
+      "icon": "/res/s1.svg",
+      "vibrate": [
+        200
+      ],
+      "data": {
+        "url": "http://localhost:3000/"
+      }
+    }
+  }
+]

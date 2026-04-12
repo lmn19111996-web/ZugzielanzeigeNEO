@@ -43,9 +43,16 @@
       return null;
     }
 
+    // === TEMPORARY DEBUG FLAG ===
+    // Set to false to re-enable in-app notifications.
+    const _IN_APP_NOTIF_DISABLED = true;
+
     // Called after every data change AND on the 15 s fallback interval.
     function checkTrainArrivals() {
-      if (Notification.permission !== 'granted') return;
+      if (_IN_APP_NOTIF_DISABLED) {
+        // In-app notifications temporarily disabled for push debug.
+        return;
+      }
       if (!processedTrainData.localTrains) return;
 
       const now = new Date();
@@ -205,6 +212,252 @@
         }
         console.log('🧪 Debug notif fired (no train in schedule)');
       }
+    };
+
+    // === WEB PUSH ===
+
+    // Register this device for server-sent push notifications.
+    // Safe to call multiple times — server deduplicates by endpoint.
+    async function subscribeToPush() {
+      console.log('[Push] subscribeToPush() called');
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.warn('[Push] ServiceWorker or PushManager not available in this browser');
+        return;
+      }
+      if (Notification.permission !== 'granted') {
+        console.warn('[Push] Notification permission not granted — skipping subscription');
+        return;
+      }
+
+      try {
+        console.log('[Push] Fetching VAPID public key from server...');
+        const keyRes = await fetch('/api/push/vapid-public-key');
+        if (!keyRes.ok) {
+          console.warn('[Push] Server returned', keyRes.status, '— push not configured on server');
+          return;
+        }
+        const { publicKey } = await keyRes.json();
+        console.log('[Push] VAPID public key received:', publicKey.slice(0, 20) + '...');
+
+        const reg = await navigator.serviceWorker.ready;
+        console.log('[Push] Service worker ready, scope:', reg.scope);
+
+        let sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          console.log('[Push] Existing subscription found:', sub.endpoint.slice(0, 60) + '...');
+        } else {
+          console.log('[Push] No existing subscription — creating new one...');
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: _urlBase64ToUint8Array(publicKey)
+          });
+          console.log('[Push] New subscription created:', sub.endpoint.slice(0, 60) + '...');
+        }
+
+        console.log('[Push] Registering subscription with server...');
+        const regRes = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub.toJSON())
+        });
+        if (regRes.ok) {
+          console.log('[Push] ✅ Subscription registered with server successfully');
+        } else {
+          console.warn('[Push] Server rejected subscription:', regRes.status, await regRes.text());
+        }
+      } catch (e) {
+        console.error('[Push] subscribeToPush error:', e);
+      }
+    }
+
+    function _urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    }
+
+    // Build the full list of push events for the next `days` days, based on
+    // processedTrainData.localTrains. Called by saveSchedule() before POSTing.
+    // Returns an array of { id, notifyAt (ISO), title, options } objects.
+    //
+    // Mirrors Path A behaviour exactly:
+    //   win-{id}         → 20 min before departure (window entry)
+    //   chg-{id}-{key}   → immediate, when train is already in window and status changed
+    //   dep-{id}         → at exact departure time ("Ihre Reise geht jetzt los")
+    //   end-{id}         → at occupation end (dauer / checkoutTime)
+    function buildPushEvents(days = 14) {
+      if (!processedTrainData || !Array.isArray(processedTrainData.localTrains)) return [];
+      const now = new Date();
+      const windowStart = now;
+      const windowEnd = new Date(now.getTime() + 20 * 60000);
+      const cutoff = new Date(now.getTime() + days * 86400000);
+      const events = [];
+
+      processedTrainData.localTrains.forEach(train => {
+        if (!train.plan && !train.actual) return;
+        const trainTime = parseTime(train.actual || train.plan, now, train.date);
+        if (!trainTime || trainTime < now || trainTime > cutoff) return;
+
+        const lineLabel = train.linie || '';
+        const dest = train.ziel || '';
+        const planTime = train.plan ? parseTime(train.plan, now, train.date) : trainTime;
+        const planClock = formatClock(planTime);
+        const delay = getDelay(train.plan, train.actual, now, train.date);
+        const title = `${lineLabel} nach ${dest}`.trim();
+        const appUrl = window.location.origin + '/';
+        const trainId = train._uniqueId || getTrainNotifyId(train);
+
+        // Compute a status key matching Path A so IDs are deterministic per status.
+        const statusKey = train.canceled ? 'canceled'
+          : delay > 0 ? `late:${delay}`
+          : delay < 0 ? `early:${-delay}`
+          : 'ontime';
+
+        const inWindow = trainTime >= windowStart && trainTime < windowEnd;
+
+        // ── Immediate status-change notification (train already in window) ──
+        // Fires ~3s after save. ID is deterministic per status so a repeated
+        // save with the same status doesn't re-queue a duplicate.
+        if (inWindow) {
+          let chgBody;
+          if (train.canceled) {
+            chgBody = `Abfahrt ursprünglich ${planClock}. Fällt heute aus. Wir bitten um Entschuldigung.`;
+          } else if (delay > 0) {
+            chgBody = `Abfahrt ursprünglich ${planClock}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
+          } else if (delay < 0) {
+            chgBody = `Abfahrt ursprünglich ${planClock}, heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
+          } else {
+            chgBody = `Abfahrt heute pünktlich um ${planClock}. Bitte bereit halten.`;
+          }
+          events.push({
+            id: `chg-${trainId}-${statusKey}`,
+            notifyAt: new Date(now.getTime() + 3000).toISOString(),
+            title,
+            options: {
+              body: chgBody,
+              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              vibrate: [200, 100, 200],
+              data: { url: appUrl }
+            }
+          });
+        }
+
+        // ── Window-entry notification: 20 min before trainTime ──────────
+        const windowNotifyAt = new Date(trainTime.getTime() - 20 * 60000);
+        if (windowNotifyAt > now) {
+          let windowBody;
+          if (train.canceled) {
+            windowBody = `Abfahrt ursprünglich ${planClock}. Fällt heute aus. Wir bitten um Entschuldigung.`;
+          } else if (delay > 0) {
+            windowBody = `Abfahrt ursprünglich ${planClock}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
+          } else if (delay < 0) {
+            windowBody = `Abfahrt ursprünglich ${planClock}, heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
+          } else {
+            windowBody = `Abfahrt heute pünktlich um ${planClock}. Bitte bereit halten.`;
+          }
+          events.push({
+            id: `win-${trainId}`,
+            notifyAt: windowNotifyAt.toISOString(),
+            title,
+            options: {
+              body: windowBody,
+              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              vibrate: [200, 100, 200],
+              data: { url: appUrl }
+            }
+          });
+        }
+
+        // ── Departure notification: at trainTime ─────────────────────────
+        if (trainTime > now && !train.canceled) {
+          let depBody;
+          if (delay > 0) {
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
+          } else if (delay < 0) {
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
+          } else {
+            depBody = `Ihre Reise geht jetzt los. Abfahrt heute pünktlich um ${planClock}.`;
+          }
+          events.push({
+            id: `dep-${trainId}`,
+            notifyAt: trainTime.toISOString(),
+            title,
+            options: {
+              body: depBody,
+              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              vibrate: [300, 100, 300],
+              data: { url: appUrl }
+            }
+          });
+        }
+
+        // ── Occupation-end notification ───────────────────────────────────
+        const occupationEnd = train.checkoutTime
+          ? parseTime(train.checkoutTime, now, train.date)
+          : (train.dauer && train.dauer > 0 ? new Date(trainTime.getTime() + train.dauer * 60000) : null);
+
+        if (occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
+          const depClock = formatClock(occupationEnd);
+          const endBody = delay <= 0
+            ? `Ankunft pünktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`
+            : `Ankunft um ${depClock}. Vielen Dank und auf Wiedersehen.`;
+          events.push({
+            id: `end-${trainId}`,
+            notifyAt: occupationEnd.toISOString(),
+            title,
+            options: {
+              body: endBody,
+              icon: lineLabel ? `/res/${lineLabel.toLowerCase()}.svg` : '/res/6.png',
+              vibrate: [200],
+              data: { url: appUrl }
+            }
+          });
+        }
+      });
+
+      console.log(`📅 buildPushEvents: ${events.length} event(s) for next ${days} days`);
+      if (events.length > 0) {
+        console.log('[Push] First event:', events[0].id, '@', events[0].notifyAt, '—', events[0].options.body);
+        console.log('[Push] Last event: ', events[events.length-1].id, '@', events[events.length-1].notifyAt);
+      }
+      return events;
+    }
+
+    // === END WEB PUSH CLIENT ===
+
+    // Console debug helper — call window.debugPushStatus() at any time.
+    window.debugPushStatus = async function() {
+      console.group('[Push] Debug Status');
+      console.log('In-app notif disabled:', _IN_APP_NOTIF_DISABLED);
+      console.log('Notification.permission:', Notification.permission);
+      console.log('ServiceWorker supported:', 'serviceWorker' in navigator);
+      console.log('PushManager supported:', 'PushManager' in window);
+
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        console.log('SW registration:', reg ? reg.scope : 'none');
+        console.log('SW controller:', navigator.serviceWorker.controller ? 'active' : 'none');
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          console.log('Push subscription:', sub ? sub.endpoint.slice(0, 80) + '...' : 'none');
+        }
+      }
+
+      try {
+        const serverDebug = await fetch('/api/push/debug');
+        if (serverDebug.ok) {
+          const d = await serverDebug.json();
+          console.log('Server subscriptions:', d.subscriptionCount);
+          console.log('Server pending events:', d.pendingEventCount);
+          console.log('Server next event:', d.nextEvent || 'none');
+        }
+      } catch (e) {
+        console.warn('Could not reach /api/push/debug:', e.message);
+      }
+
+      console.log('_notifState entries:', _notifState.size);
+      console.groupEnd();
     };
 
     // Fetch data from server API

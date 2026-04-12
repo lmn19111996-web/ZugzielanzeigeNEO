@@ -433,6 +433,9 @@ if ('serviceWorker' in navigator) {
 
         // Initial check (seeds _notifState without firing — first-observation guard)
         checkTrainArrivals();
+
+        // Register this device for Web Push (all devices receive every notification)
+        subscribeToPush().catch(e => console.warn('Push subscribe failed:', e));
       }
 
       // Some browsers only allow permission prompts after user interaction

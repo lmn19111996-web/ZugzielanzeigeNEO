@@ -235,6 +235,13 @@
           projects: dataToSave.projects.length
         });
         
+        // Attach push events so server can fire them when app is closed
+        if (typeof buildPushEvents === 'function') {
+          try { dataToSave.pushEvents = buildPushEvents(14); } catch (e) {
+            console.warn('buildPushEvents failed:', e);
+          }
+        }
+
         const res = await fetch('/api/schedule', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

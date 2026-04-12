@@ -13,6 +13,7 @@ const path = require('path');
 const express = require('express');
 const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
+const webPush = require('web-push');
 
 // --- Config ---
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -50,6 +51,108 @@ if (!process.env.DB_CLIENT_ID || !process.env.DB_API_KEY) {
     console.warn('Could not read key.env:', e.message);
   }
 }
+
+// === WEB PUSH ===
+const PUSH_SUBS_FILE  = path.join(__dirname, 'push_subscriptions.json');
+const PUSH_EVENTS_FILE = path.join(__dirname, 'push_events.json');
+// In-memory pending push timeouts: Map<eventId, { handle, event }>
+const pendingPushTimeouts = new Map();
+
+// Load VAPID keys (already in process.env from key.env loader above)
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webPush.setVapidDetails(
+    'mailto:push@zugzielanzeige.local',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  console.log('🔔 VAPID keys loaded');
+} else {
+  console.warn('⚠️  VAPID keys not set — Web Push disabled');
+}
+
+function loadPushSubscriptions() {
+  try {
+    if (fs.existsSync(PUSH_SUBS_FILE))
+      return JSON.parse(fs.readFileSync(PUSH_SUBS_FILE, 'utf8'));
+  } catch {}
+  return [];
+}
+
+function savePushSubscriptions(subs) {
+  fs.writeFileSync(PUSH_SUBS_FILE, JSON.stringify(subs, null, 2), 'utf8');
+}
+
+async function sendPushToAll(title, options) {
+  if (!process.env.VAPID_PUBLIC_KEY) {
+    console.warn('[Push] sendPushToAll called but VAPID not configured');
+    return;
+  }
+  const subs = loadPushSubscriptions();
+  console.log(`[Push] 🔔 Firing: "${title}" → ${subs.length} subscription(s)`);
+  console.log(`[Push]    Body: ${options && options.body ? options.body : '(no body)'}`);
+  const dead = [];
+  await Promise.all(subs.map(async sub => {
+    try {
+      await webPush.sendNotification(sub, JSON.stringify({ title, options }));
+      console.log(`[Push]    ✅ Delivered to ${sub.endpoint.slice(0, 60)}...`);
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        dead.push(sub.endpoint);
+        console.log(`[Push]    ♻️  Dead subscription removed: ${sub.endpoint.slice(0, 60)}...`);
+      } else {
+        console.warn(`[Push]    ❌ Delivery failed (${err.statusCode}): ${err.message}`);
+      }
+    }
+  }));
+  if (dead.length) {
+    const cleaned = subs.filter(s => !dead.includes(s.endpoint));
+    savePushSubscriptions(cleaned);
+  }
+}
+
+function schedulePushEvents(events) {
+  // Cancel previous timeouts
+  pendingPushTimeouts.forEach(({ handle }) => clearTimeout(handle));
+  pendingPushTimeouts.clear();
+
+  const now = Date.now();
+  (events || []).forEach(ev => {
+    const fireAt = new Date(ev.notifyAt).getTime();
+    const delay = fireAt - now;
+    if (delay < -60000) return; // already more than 1 min past — skip
+    const clampedDelay = Math.max(0, delay);
+    const handle = setTimeout(async () => {
+      console.log(`[Push] ⏰ Timeout fired for: ${ev.id} ("${ev.title}")`);
+      await sendPushToAll(ev.title, ev.options);
+      pendingPushTimeouts.delete(ev.id);
+    }, clampedDelay);
+    pendingPushTimeouts.set(ev.id, { handle, event: ev });
+  });
+
+  console.log(`[Push] 📅 Scheduled ${pendingPushTimeouts.size} push event(s):`);
+  // Print each scheduled event sorted by fire time
+  const sorted = [...pendingPushTimeouts.values()]
+    .sort((a, b) => new Date(a.event.notifyAt) - new Date(b.event.notifyAt));
+  sorted.forEach(({ event: ev }) => {
+    const inMs = new Date(ev.notifyAt) - new Date();
+    const inMin = Math.round(inMs / 60000);
+    console.log(`[Push]   • ${ev.id}  @ ${ev.notifyAt}  (in ${inMin} min)  "${ev.title}"`);
+  });
+}
+
+// Restore push events that survived a server restart
+(async () => {
+  try {
+    if (fs.existsSync(PUSH_EVENTS_FILE)) {
+      const events = JSON.parse(fs.readFileSync(PUSH_EVENTS_FILE, 'utf8'));
+      schedulePushEvents(events);
+    }
+  } catch (e) {
+    console.warn('Could not restore push events:', e.message);
+  }
+})();
+
+// === END WEB PUSH INIT ===
 
 const DB_API_BASE = 'https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1';
 const dbClient = axios.create({
@@ -1267,6 +1370,16 @@ app.post('/api/schedule', async (req, res) => {
     scheduleCache = toSave;
     scheduleCacheTime = Date.now();
 
+    // Schedule push notifications sent by the client
+    if (Array.isArray(body.pushEvents)) {
+      try {
+        fs.writeFileSync(PUSH_EVENTS_FILE, JSON.stringify(body.pushEvents, null, 2), 'utf8');
+        schedulePushEvents(body.pushEvents);
+      } catch (pe) {
+        console.warn('Could not schedule push events:', pe.message);
+      }
+    }
+
     // Notify listeners
     try { broadcastUpdate('manual-save'); } catch {}
     res.json({ ok: true, savedAt: toSave._meta.lastSaved, prunedCount: rawSpontaneous.length - prunedSpontaneous.length });
@@ -1312,6 +1425,66 @@ app.post('/api/prune', async (req, res) => {
     res.status(500).json({ error: e.message || 'Unexpected error' });
   }
 });
+
+// === WEB PUSH ENDPOINTS ===
+
+// Return VAPID public key so the client can subscribe
+app.get('/api/push/vapid-public-key', (req, res) => {
+  if (!process.env.VAPID_PUBLIC_KEY)
+    return res.status(503).json({ error: 'Push not configured' });
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+// Register a push subscription (all devices stored, all receive every push)
+app.post('/api/push/subscribe', (req, res) => {
+  const sub = req.body;
+  if (!sub || !sub.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
+  const subs = loadPushSubscriptions();
+  if (!subs.find(s => s.endpoint === sub.endpoint)) {
+    subs.push(sub);
+    savePushSubscriptions(subs);
+    console.log(`🔔 New push subscription registered. Total: ${subs.length}`);
+  }
+  res.json({ ok: true });
+});
+
+// Remove a push subscription (e.g. user revokes permission)
+app.post('/api/push/unsubscribe', (req, res) => {
+  const { endpoint } = req.body || {};
+  if (!endpoint) return res.status(400).json({ error: 'Missing endpoint' });
+  const subs = loadPushSubscriptions().filter(s => s.endpoint !== endpoint);
+  savePushSubscriptions(subs);
+  console.log(`🔕 Push subscription removed. Remaining: ${subs.length}`);
+  res.json({ ok: true });
+});
+
+// Debug: inspect current push state without triggering anything
+app.get('/api/push/debug', (req, res) => {
+  const subs = loadPushSubscriptions();
+  const pending = [];
+  pendingPushTimeouts.forEach(({ event: ev }) => {
+    const inMs = new Date(ev.notifyAt) - new Date();
+    pending.push({
+      id: ev.id,
+      title: ev.title,
+      notifyAt: ev.notifyAt,
+      inMinutes: Math.round(inMs / 60000),
+      body: ev.options && ev.options.body ? ev.options.body : null
+    });
+  });
+  pending.sort((a, b) => new Date(a.notifyAt) - new Date(b.notifyAt));
+
+  console.log(`[Push] /api/push/debug — subs: ${subs.length}, pending timeouts: ${pending.length}`);
+  res.json({
+    vapidConfigured: !!process.env.VAPID_PUBLIC_KEY,
+    subscriptionCount: subs.length,
+    subscriptionEndpoints: subs.map(s => s.endpoint.slice(0, 60) + '...'),
+    pendingEventCount: pending.length,
+    scheduledEvents: pending  // sorted by notifyAt, includes title + body + inMinutes
+  });
+});
+
+// === END WEB PUSH ENDPOINTS ===
 
 // --- Journal / Review API ---
 const JOURNAL_FILE = path.join(__dirname, 'journal.json');
