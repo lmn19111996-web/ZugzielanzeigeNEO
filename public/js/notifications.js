@@ -1,4 +1,6 @@
 ﻿// === TRAIN ARRIVAL NOTIFICATIONS ===
+    const TRAIN_NOTIFICATION_WINDOW_MINUTES = 15;
+
     async function requestNotificationPermission() {
       if (!('Notification' in window)) {
         console.warn('This browser does not support notifications');
@@ -21,10 +23,38 @@
       return train.id || train._uniqueId || `${train.linie || train.line || ''}-${train.plan || ''}-${train.date || ''}-${train.ziel || train.destination || ''}`;
     }
 
+    async function showTrainNotification(title, options) {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          if (registration && typeof registration.showNotification === 'function') {
+            await registration.showNotification(title, options);
+            return true;
+          }
+        } catch (error) {
+          console.warn('Service worker notification path failed, falling back to window notification:', error);
+        }
+      }
+
+      try {
+        const notification = new Notification(title, options);
+        setTimeout(() => notification.close(), 10000);
+        notification.onclick = function() {
+          window.focus();
+          notification.close();
+        };
+        return true;
+      } catch (error) {
+        console.error('Failed to show train notification:', error);
+        return false;
+      }
+    }
+
     function checkTrainArrivals() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
       const now = new Date();
-      const zeroMinutesFromNow = now;
-      const twentyMinutesFromNow = new Date(now.getTime() + 20 * 60000);
+      const windowEnd = new Date(now.getTime() + TRAIN_NOTIFICATION_WINDOW_MINUTES * 60000);
       
       if (!processedTrainData.localTrains) return;
       
@@ -39,20 +69,24 @@
         if (!trainTime) return;
         
         const statusKey = `${train.canceled ? 'canceled' : 'active'}|${train.plan || ''}|${train.actual || ''}|${train.dauer || ''}`;
-        const previousStatus = lastTrainStatusById.get(trainId);
+        const notifyKey = `${statusKey}|${train.date || ''}|${train.actual || train.plan || ''}`;
         lastTrainStatusById.set(trainId, statusKey);
 
-        // Only notify when the train status changes (skip first observation)
-        if (!previousStatus || previousStatus === statusKey) {
+        const isUpcoming = trainTime >= now && trainTime < windowEnd;
+
+        if (!isUpcoming) {
+          if (trainTime < now) {
+            lastNotifiedStatusById.delete(trainId);
+          }
           return;
         }
 
-        // Check if train arrives between 0 and 20 minutes from now
-        if (trainTime >= zeroMinutesFromNow && trainTime < twentyMinutesFromNow) {
-          if (lastNotifiedStatusById.get(trainId) !== statusKey) {
-            sendTrainNotification(train, trainTime);
-            lastNotifiedStatusById.set(trainId, statusKey);
-          }
+        if (lastNotifiedStatusById.get(trainId) !== notifyKey) {
+          sendTrainNotification(train, trainTime).then(function(sent) {
+            if (sent) {
+              lastNotifiedStatusById.set(trainId, notifyKey);
+            }
+          });
         }
       });
       
@@ -75,14 +109,16 @@
       });
     }
     
-    function sendTrainNotification(train, trainTime) {
-      if (Notification.permission !== 'granted') return;
+    async function sendTrainNotification(train, trainTime) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
       
       const lineLabel = train.linie || train.line || '';
       const destinationLabel = train.ziel || train.destination || '';
       const planTime = train.plan ? parseTime(train.plan, new Date(), train.date) : null;
       const planClock = planTime ? formatClock(planTime) : formatClock(trainTime);
       const delay = getDelay(train.plan, train.actual, new Date(), train.date);
+      const iconLine = String(lineLabel || '').toLowerCase();
+      const notifyId = getTrainNotifyId(train);
 
       const title = `${lineLabel} nach ${destinationLabel}`.trim();
       let body = `Abfahrt ${planClock} von Gleis --.`;
@@ -95,25 +131,23 @@
         body = `Abfahrt ursprünglich ${planClock}, heute ${-delay} Minuten früher.`;
       }
       
-      const notification = new Notification(title, {
+      const sent = await showTrainNotification(title, {
         body: body,
-        icon: train.line ? `./res/${train.line.toLowerCase()}.svg` : undefined,
-        badge: train.line ? `./res/${train.line.toLowerCase()}.svg` : undefined,
-        tag: `train-${train.id}`, // Prevent duplicate notifications
+        icon: iconLine ? `/res/${iconLine}.svg` : undefined,
+        badge: iconLine ? `/res/${iconLine}.svg` : undefined,
+        tag: `train-${notifyId}`,
         requireInteraction: false,
-        silent: false
+        silent: false,
+        data: {
+          url: '/mobile.html',
+          trainId: notifyId
+        }
       });
+
+      if (!sent) return false;
       
-      // Auto-close after 10 seconds
-      setTimeout(() => notification.close(), 10000);
-      
-      // Optional: focus the window when notification is clicked
-      notification.onclick = function() {
-        window.focus();
-        notification.close();
-      };
-      
-      console.log(`📢 Notification sent for train ${train.line} to ${train.destination} at ${timeStr}`);
+      console.log(`📢 Notification sent for train ${lineLabel} to ${destinationLabel} at ${formatClock(trainTime)}`);
+      return true;
     }
 
     // Fetch data from server API

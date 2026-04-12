@@ -403,7 +403,13 @@
 
 if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/public/service-worker.js');
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+          .then(function(registration) {
+            console.log('Service worker registered with scope:', registration.scope);
+          })
+          .catch(function(error) {
+            console.error('Service worker registration failed:', error);
+          });
       });
     }
     
@@ -413,12 +419,13 @@ if ('serviceWorker' in navigator) {
     // Initialize notifications for train arrivals
     (function initializeNotifications() {
       let notificationIntervalId = null;
+      let activationHandlerAttached = false;
 
       async function startNotifications() {
         const granted = await requestNotificationPermission();
         if (!granted) {
           console.log('Notification permission not granted - arrival alerts disabled');
-          return;
+          return false;
         }
 
         console.log('Notification permission granted - will alert for trains arriving in 15 minutes');
@@ -431,13 +438,27 @@ if ('serviceWorker' in navigator) {
 
         // Initial check
         checkTrainArrivals();
+        return true;
+      }
+
+      async function handleNotificationActivation() {
+        const started = await startNotifications();
+        if (started || Notification.permission !== 'default') {
+          window.removeEventListener('click', handleNotificationActivation);
+          activationHandlerAttached = false;
+        }
       }
 
       // Some browsers only allow permission prompts after user interaction
       if ('Notification' in window && Notification.permission === 'default') {
-        window.addEventListener('click', startNotifications, { once: true });
+        window.addEventListener('click', handleNotificationActivation);
+        activationHandlerAttached = true;
       } else if ('Notification' in window) {
         startNotifications();
+      }
+
+      if (!activationHandlerAttached && 'Notification' in window && Notification.permission === 'default') {
+        window.addEventListener('click', handleNotificationActivation);
       }
     })();
 // ══════════════════════════════════════════════════════════════
