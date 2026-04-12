@@ -2,3 +2,4 @@
 /public/data.json
 train_logs/
 journal.json
+train_logs_legacy/
