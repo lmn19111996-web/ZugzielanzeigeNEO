@@ -346,7 +346,10 @@
       
       // Re-render all affected UI components
       renderCurrentWorkspaceView();
-      
+
+      // Check notification window immediately after any data change
+      if (typeof checkTrainArrivals === 'function') checkTrainArrivals();
+
       // If project drawer is open, refresh it with updated data
       if (isProjectDrawerOpen && currentProjectId) {
         const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);

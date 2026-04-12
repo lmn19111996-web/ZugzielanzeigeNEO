@@ -29,8 +29,7 @@
     let workspaceModeBeforeProjectDrawer = null; // Track workspace mode before opening project drawer
     
     // Notification tracking
-    let lastTrainStatusById = new Map();
-    let lastNotifiedStatusById = new Map();
+    // lastTrainStatusById / lastNotifiedStatusById removed — state now owned by _notifState in notifications.js
     
     // Save queue variables
     let saveInProgress = false;

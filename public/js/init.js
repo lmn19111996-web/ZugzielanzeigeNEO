@@ -425,12 +425,13 @@ if ('serviceWorker' in navigator) {
         console.log('Notification permission granted - will alert for trains arriving in 15 minutes');
 
         if (!notificationIntervalId) {
+          // 15 s fallback for pure time-based window crossings (no data change fires these).
           notificationIntervalId = setInterval(() => {
             checkTrainArrivals();
-          }, 60000);
+          }, 15000);
         }
 
-        // Initial check
+        // Initial check (seeds _notifState without firing — first-observation guard)
         checkTrainArrivals();
       }
 
