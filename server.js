@@ -10,13 +10,19 @@
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const path = require('path');
+const http = require('http');
+const https = require('https');
 const express = require('express');
 const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
 
 // --- Config ---
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT ? Number(process.env.HTTPS_PORT) : 3443;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const CERT_DIR = path.join(__dirname, 'certs');
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH || path.join(CERT_DIR, 'localhost-key.pem');
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH || path.join(CERT_DIR, 'localhost.pem');
 const DEFAULT_EVA = process.env.EVA || '8000152'; // Hannover Hbf by default
 const TRAIN_LOG_DIR = path.join(__dirname, 'train_logs');
 const LAST_LOG_TIME_FILE = path.join(__dirname, 'train_logs', '.last_log_time');
@@ -1496,9 +1502,8 @@ async function periodicRefresh() {
 // setInterval(periodicRefresh, 30000);
 // setTimeout(periodicRefresh, 2000);
 
-// Start server
-app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`Server listening on http://0.0.0.0:${PORT}`);
+async function onServerStarted(protocol, port) {
+  console.log(`Server listening on ${protocol}://0.0.0.0:${port}`);
   console.log('📊 Daily batch train logging enabled - writes once every 24 hours');
   console.log(`📁 Log directory: ${TRAIN_LOG_DIR}`);
   console.log(`📅 Current week: ${getWeekIdentifier()}`);
@@ -1519,4 +1524,38 @@ app.listen(PORT, '0.0.0.0', async () => {
   // Set up periodic check (every hour)
   setInterval(checkAndFlushIfNeeded, CHECK_INTERVAL_MS);
   console.log('✅ Daily logging timer started');
+}
+
+let startupInitialized = false;
+async function handleStartup(protocol, port) {
+  if (startupInitialized) {
+    console.log(`Additional listener active on ${protocol}://0.0.0.0:${port}`);
+    return;
+  }
+  startupInitialized = true;
+  await onServerStarted(protocol, port);
+}
+
+// Start HTTP server
+http.createServer(app).listen(PORT, '0.0.0.0', async () => {
+  await handleStartup('http', PORT);
 });
+
+// Start optional HTTPS server when local cert files are available.
+if (fs.existsSync(SSL_KEY_PATH) && fs.existsSync(SSL_CERT_PATH)) {
+  try {
+    const httpsOptions = {
+      key: fs.readFileSync(SSL_KEY_PATH),
+      cert: fs.readFileSync(SSL_CERT_PATH)
+    };
+
+    https.createServer(httpsOptions, app).listen(HTTPS_PORT, '0.0.0.0', async () => {
+      await handleStartup('https', HTTPS_PORT);
+      console.log(`🔐 HTTPS enabled using cert files ${SSL_CERT_PATH} and ${SSL_KEY_PATH}`);
+    });
+  } catch (error) {
+    console.warn('HTTPS startup skipped due to certificate error:', error.message);
+  }
+} else {
+  console.log(`🔓 HTTPS disabled - missing cert files at ${SSL_CERT_PATH} and/or ${SSL_KEY_PATH}`);
+}

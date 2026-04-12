@@ -420,8 +420,29 @@ if ('serviceWorker' in navigator) {
     (function initializeNotifications() {
       let notificationIntervalId = null;
       let activationHandlerAttached = false;
+      const activationEvents = ['pointerdown', 'keydown'];
+
+      function detachActivationHandlers() {
+        activationEvents.forEach((eventName) => {
+          window.removeEventListener(eventName, handleNotificationActivation, true);
+        });
+        activationHandlerAttached = false;
+      }
+
+      function attachActivationHandlers() {
+        if (activationHandlerAttached) return;
+        activationEvents.forEach((eventName) => {
+          window.addEventListener(eventName, handleNotificationActivation, true);
+        });
+        activationHandlerAttached = true;
+      }
 
       async function startNotifications() {
+        if (!window.isSecureContext) {
+          console.warn('Notification startup skipped: app is not running in a secure context.');
+          return false;
+        }
+
         const granted = await requestNotificationPermission();
         if (!granted) {
           console.log('Notification permission not granted - arrival alerts disabled');
@@ -444,21 +465,25 @@ if ('serviceWorker' in navigator) {
       async function handleNotificationActivation() {
         const started = await startNotifications();
         if (started || Notification.permission !== 'default') {
-          window.removeEventListener('click', handleNotificationActivation);
-          activationHandlerAttached = false;
+          detachActivationHandlers();
         }
       }
 
+      console.log('Notification capability:', {
+        secureContext: window.isSecureContext,
+        hasNotificationApi: 'Notification' in window,
+        permission: 'Notification' in window ? Notification.permission : 'unsupported'
+      });
+
       // Some browsers only allow permission prompts after user interaction
       if ('Notification' in window && Notification.permission === 'default') {
-        window.addEventListener('click', handleNotificationActivation);
-        activationHandlerAttached = true;
+        attachActivationHandlers();
       } else if ('Notification' in window) {
         startNotifications();
       }
 
       if (!activationHandlerAttached && 'Notification' in window && Notification.permission === 'default') {
-        window.addEventListener('click', handleNotificationActivation);
+        attachActivationHandlers();
       }
     })();
 // ══════════════════════════════════════════════════════════════

@@ -6,6 +6,11 @@
         console.warn('This browser does not support notifications');
         return false;
       }
+
+      if (!window.isSecureContext) {
+        console.warn('Notifications require a secure context (HTTPS or localhost).');
+        return false;
+      }
       
       if (Notification.permission === 'granted') {
         return true;
