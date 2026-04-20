@@ -200,11 +200,11 @@ function pruneExpiredEntries(spontaneousEntries) {
   const now = new Date();
   const before = spontaneousEntries.length;
   const pruned = spontaneousEntries.filter(t => {
-    if (!t.date) return true;           // no date = note/undated, keep
-    // Past project train with dauer 0: remove project link so it gets pruned normally
-    if (t.projectId && t.date < todayStr && (Number(t.dauer) || 0) === 0) {
+    // Past project train with dauer 0: strip project link so it gets pruned normally
+    if (t.projectId && t.date && t.date < todayStr && (Number(t.dauer) || 0) === 0) {
       t.projectId = null;
     }
+    if (!t.date) return true;           // no date = note/undated, keep
     if (t.projectId) return true;       // project task, always keep
     if (t.date >= todayStr) return true; // today or future, always keep
     // Past date, no project: keep only if end time (plan/actual + dauer) is still in the future
