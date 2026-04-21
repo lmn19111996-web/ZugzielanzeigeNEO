@@ -1014,6 +1014,54 @@ html, body {
       color: white;
     }
 
+    /* Cancelled train destination toggle */
+    .zugziel:has(.canceled-ziel-toggle) {
+      overflow: visible;
+    }
+
+    .canceled-ziel-toggle {
+      position: relative;
+      display: block;
+      width: 100%;
+      /* Height matches zugziel line-height so absolute children stay centred */
+      height: 1em;
+      line-height: 1em;
+      overflow: visible;
+    }
+
+    .canceled-ziel-ausfall,
+    .canceled-ziel-original {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      /* inherit font-size from .zugziel so ribbon (4.2vh) and list (3.4vh) both match */
+      font-size: inherit;
+      font-weight: inherit;
+      font-stretch: inherit;
+      letter-spacing: inherit;
+      color: inherit;
+    }
+
+    .canceled-ziel-ausfall {
+      opacity: 1;
+      animation: pastTrainTimeToggle 10s infinite;
+    }
+
+    .canceled-ziel-original {
+      opacity: 0;
+      animation: pastTrainStatusToggle 10s infinite;
+    }
+
+    /* Cancelled train time: strikethrough */
+    .departure[data-canceled="true"] {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
     /* Train info container */
     .train-info {
       display: flex;

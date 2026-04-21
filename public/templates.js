@@ -33,8 +33,33 @@ const Templates = {
       trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
     }
     
-    // Determine destination text
-    const destinationText = train.canceled ? 'Zug fällt aus' : (train.ziel || '');
+    // Determine destination HTML
+    let destinationHTML;
+    if (train.canceled) {
+      const _zielToggle = document.createElement('div');
+      _zielToggle.className = 'canceled-ziel-toggle';
+
+      const _ausfallDiv = document.createElement('div');
+      _ausfallDiv.className = 'canceled-ziel-ausfall';
+      const _ausfallSpan = document.createElement('span');
+      _ausfallSpan.textContent = 'Zug fällt aus';
+      _ausfallDiv.appendChild(_ausfallSpan);
+
+      const _zielDiv = document.createElement('div');
+      _zielDiv.className = 'canceled-ziel-original';
+      const _zielSpan = document.createElement('span');
+      _zielSpan.style.textDecoration = 'line-through';
+      _zielSpan.textContent = train.ziel || '';
+      _zielDiv.appendChild(_zielSpan);
+
+      _zielToggle.appendChild(_ausfallDiv);
+      _zielToggle.appendChild(_zielDiv);
+      const _zielTemp = document.createElement('div');
+      _zielTemp.appendChild(_zielToggle);
+      destinationHTML = _zielTemp.innerHTML;
+    } else {
+      destinationHTML = train.ziel || '';
+    }
     
     // Entry classes
     const entryClasses = ['train-entry'];
@@ -151,7 +176,7 @@ const Templates = {
     return `
       <div class="${entryClasses.join(' ')}" 
            data-linie="${train.linie || ''}" 
-           data-ziel="${destinationText || ''}"
+           data-ziel="${train.canceled ? 'Zug fällt aus' : (train.ziel || '')}"
            data-plan="${train.plan || ''}" 
            data-date="${train.date || ''}" 
          data-train-type="${train.type || 'train'}"
@@ -162,7 +187,7 @@ const Templates = {
           <div class="symbol-slot">
             ${trainSymbolHTML}
           </div>
-          <div class="zugziel">${destinationText}</div>
+          <div class="zugziel">${destinationHTML}</div>
         </div>
         <div class="right-block">
           ${durationSlotHTML}

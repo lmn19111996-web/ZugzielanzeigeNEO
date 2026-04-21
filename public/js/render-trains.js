@@ -19,7 +19,9 @@
                            existingDeparture.dataset.dauer !== String(currentTrain.dauer || '') ||
                            existingDeparture.dataset.canceled !== String(currentTrain.canceled ? 'true' : 'false') ||
                            !existingEntry.querySelector('.zugziel') ||
-                           existingEntry.querySelector('.zugziel').textContent !== (currentTrain.canceled ? 'Zug fällt aus' : currentTrain.ziel);
+                           (currentTrain.canceled
+                             ? !existingEntry.querySelector('.canceled-ziel-toggle')
+                             : existingEntry.querySelector('.zugziel').textContent !== currentTrain.ziel);
         
         if (trainChanged) {
           // Only recreate if train changed
