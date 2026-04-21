@@ -230,8 +230,14 @@ const Templates = {
       const pctRound = Math.round(pct);
       const color = getLineColor(line);
       const label = `${line} · ${dur} min`;
-      // Only render percentage text when segment is wide enough to read
-      const text = pct >= 6 ? `<span class="day-stack-label">${pctRound}%</span>` : '';
+      // Only render toggle labels when segment is wide enough to read
+      let text = '';
+      if (pct >= 6) {
+        const h = Math.floor(dur / 60);
+        const m = dur % 60;
+        const durLabel = h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`;
+        text = `<span class="day-stack-label day-stack-label--pct">${pctRound}%</span><span class="day-stack-label day-stack-label--dur">${durLabel}</span>`;
+      }
       return `<div class="day-stack-segment" style="width:${pct}%;background:${color}" title="${label}" aria-label="${label}">${text}</div>`;
     }).join('');
     return `<div class="day-stack-bar" role="img" aria-label="Tagesübersicht">${segments}</div>`;

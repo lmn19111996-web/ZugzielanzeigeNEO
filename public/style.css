@@ -1868,6 +1868,7 @@ html, body {
 
     .day-stack-segment {
       height: 100%;
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1882,6 +1883,17 @@ html, body {
       color: rgb(255, 255, 255);
       white-space: nowrap;
       pointer-events: none;
+      position: absolute;
+    }
+
+    .day-stack-label--pct {
+      opacity: 0;
+      animation: pastTrainTimeToggle 10s infinite;
+    }
+
+    .day-stack-label--dur {
+      opacity: 0;
+      animation: pastTrainStatusToggle 10s infinite;
     }
 
 @media (max-width: 768px) {
