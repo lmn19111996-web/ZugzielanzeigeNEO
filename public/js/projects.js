@@ -88,31 +88,10 @@
           icon.src = getTrainSVG(project.linie || 'S1');
           iconFallback.textContent = lineName;
           
-          // Adjust font size based on text length for project card fallback
-          const adjustCardFallbackFontSize = () => {
-            const textLength = lineName.length;
-            let fontSize;
-            
-            if (textLength <= 2) {
-              fontSize = '2.2vh';
-            } else if (textLength === 3) {
-              fontSize = '1.9vh';
-            } else if (textLength === 4) {
-              fontSize = '1.7vh';
-            } else if (textLength <= 6) {
-              fontSize = '1.5vh';
-            } else {
-              fontSize = '1.2vh';
-            }
-            
-            iconFallback.style.fontSize = fontSize;
-          };
-          
           // Show fallback if image fails to load
           icon.onerror = function() {
             icon.style.display = 'none';
             iconFallback.style.display = 'flex';
-            adjustCardFallbackFontSize();
           };
           
           icon.onload = function() {
@@ -334,32 +313,10 @@
       symbol.src = getTrainSVG(project.linie || 's1');
       symbolFallback.textContent = lineName;
       
-      // Adjust font size based on text length for fallback badge
-      const adjustFallbackFontSize = () => {
-        const textLength = lineName.length;
-        let fontSize;
-        
-        // Dynamic font sizing based on text length (scaled for smaller badge)
-        if (textLength <= 2) {
-          fontSize = '3.2vh';
-        } else if (textLength === 3) {
-          fontSize = '2.8vh';
-        } else if (textLength === 4) {
-          fontSize = '2.5vh';
-        } else if (textLength <= 6) {
-          fontSize = '2.2vh';
-        } else {
-          fontSize = '1.8vh';
-        }
-        
-        symbolFallback.style.fontSize = fontSize;
-      };
-      
       // Show fallback if image fails to load
       symbol.onerror = function() {
         symbol.style.display = 'none';
         symbolFallback.style.display = 'flex';
-        adjustFallbackFontSize();
       };
       
       symbol.onload = function() {

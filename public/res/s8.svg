@@ -1,9 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 8">
-            <!-- pill background -->
-            <rect x="0" y="0" width="16" height="8" rx="4" ry="4" fill="#6da939" />
-            <!-- text -->
-            <text x="48%" y="60%" text-anchor="middle" dominant-baseline="middle"
-                font-family="Bahnschrift, sans-serif" font-size="7" fill="white" font-weight="600">
-                S8
-            </text>
-        </svg>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 8">
+  <defs>
+    <radialGradient id="s8bg" cx="45%" cy="45%" r="70%">
+      <stop offset="0%"   stop-color="#4e7a28"/>
+      <stop offset="55%"  stop-color="#284515"/>
+      <stop offset="100%" stop-color="#0e1e07"/>
+    </radialGradient>
+    <linearGradient id="s8stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#c0e870"/>
+      <stop offset="50%"  stop-color="#6da939"/>
+      <stop offset="100%" stop-color="#4a8020"/>
+    </linearGradient>
+    <linearGradient id="s8text" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#c8ee70"/>
+      <stop offset="60%"  stop-color="#f0fae4"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="s8shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.13"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="15" height="7" rx="3.5" ry="3.5" fill="url(#s8bg)" stroke="url(#s8stroke)" stroke-width="1"/>
+  <rect x="1" y="0.8" width="14" height="2.2" rx="2.2" ry="2.2" fill="url(#s8shine)"/>
+  <text x="48%" y="60%" text-anchor="middle" dominant-baseline="middle"
+      font-family="Bahnschrift, sans-serif" font-size="7" fill="url(#s8text)" font-weight="600">S8</text>
+</svg>

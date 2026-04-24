@@ -28,7 +28,7 @@ const Templates = {
     // Determine train symbol HTML
     let trainSymbolHTML = '';
     if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
-      trainSymbolHTML = `<img class="train-symbol" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge\\'>${train.linie || ''}</div>'">`;
+      trainSymbolHTML = `<img class="train-symbol" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${train.linie || ''}</div>'">`;  
     } else {
       trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
     }
@@ -298,9 +298,9 @@ const Templates = {
     if (duration >= 30) {
       let lineIconHTML = '';
       if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
-        lineIconHTML = `<img class="belegungsplan-line-icon" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge\\' style=\\'font-size: 2.5vh\\'>${train.linie || ''}</div>'">`;
+        lineIconHTML = `<img class="belegungsplan-line-icon" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill belegungsplan-line-badge\\'>${train.linie || ''}</div>'">`;  
       } else {
-        lineIconHTML = `<div class="line-badge" style="font-size: 2.5vh">${train.linie || ''}</div>`;
+        lineIconHTML = `<div class="line-badge belegungsplan-line-badge">${train.linie || ''}</div>`;
       }
       
       headerHTML = `
@@ -409,7 +409,7 @@ const Templates = {
    */
   lineIcon(linie, className = 'train-symbol', fontSize = 'inherit') {
     if (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || /^\d+$/.test(linie))) {
-      return `<img class="${className}" src="${getTrainSVG(linie)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge\\' style=\\'font-size: ${fontSize}\\'>${linie || ''}</div>'">`;
+      return `<img class="${className}" src="${getTrainSVG(linie)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\' style=\\'font-size: ${fontSize}\\'>${linie || ''}</div>'">`;  
     } else {
       return `<div class="line-badge" style="font-size: ${fontSize}">${linie || ''}</div>`;
     }
@@ -699,17 +699,18 @@ const Templates = {
   /**
    * Create line badge for focus mode (when line icon fails to load or is not an S-Bahn)
    */
-  lineBadge(linie, isEditable, fontSize = 'clamp(18px, 5vh, 40px)') {
-    const editableAttrs = isEditable 
-      ? `data-editable="true" style="cursor: pointer; font-size: ${fontSize};"` 
-      : `style="font-size: ${fontSize};"`;
-    
+  lineBadge(linie, isEditable, fontSize = null) {
+    const classes = 'line-badge line-badge--pill';
+    const editableAttrs = isEditable
+      ? `data-editable="true" style="cursor: pointer;${fontSize ? ` font-size: ${fontSize};` : ''}"`
+      : (fontSize ? `style="font-size: ${fontSize};"` : '');
+
     return `
-      <div class="line-badge" 
-           data-field="linie" 
-           data-value="${linie || ''}" 
-           data-input-type="text" 
-           data-placeholder="Linie" 
+      <div class="${classes}"
+           data-field="linie"
+           data-value="${linie || ''}"
+           data-input-type="text"
+           data-placeholder="Linie"
            ${editableAttrs}>
         ${linie || ''}
       </div>

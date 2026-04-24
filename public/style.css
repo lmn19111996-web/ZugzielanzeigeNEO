@@ -98,7 +98,8 @@ html, body {
     }
 
     #first-train-container .symbol-slot {
-      width: 7.5vh;
+      width: auto;
+      min-width: 7.5vh;
     }
 
     #first-train-container .line-badge {
@@ -645,6 +646,15 @@ html, body {
       flex-shrink: 0;
     }
 
+    /* Fallback badge inside occupancy view — match icon height */
+    .belegungsplan-line-badge {
+      height: 1.75vh;
+      min-width: 3.5vh;
+      font-size: 1.4vh;
+      padding: 0 0.4vh;
+      flex-shrink: 0;
+    }
+
     .belegungsplan-destination {
       font-size: 3vh;
       font-weight: 400;
@@ -1072,7 +1082,8 @@ html, body {
 
     /* Symbol slot */
     .symbol-slot {
-      width: 6vh;
+      width: auto;
+      min-width: 6vh;
       display: flex;
       align-items: center;
       justify-content: flex-start;
@@ -1085,20 +1096,31 @@ html, body {
       height: 6vh;
     }
 
-    .line-badge { 
+    .line-badge {
+      /* Match SVG viewBox 16:8 → 2:1 aspect ratio, same height as SVG renders */
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 4.5vh;
-      padding: 0.45vh 1.2vh;
-      border-radius: 0.6vh;
-      font-weight: 500;
-      font-size: 2.4vh;
+      height: 3vh;
+      min-width: 6vh;
+      padding: 0 1vh;
+      box-sizing: border-box;
+      /* Rectangle: small corner radius */
+      border-radius: 0.4vh;
+      font-family: 'Bahnschrift', sans-serif;
+      font-weight: 600;
+      font-size: 2.6vh;   /* ~87.5% of 3vh, mirrors font-size="7" on 8-unit SVG */
       font-stretch: condensed;
       color: white;
-      background: transparent;
+      background: rgba(110, 110, 120, 0.9);
       text-transform: none;
       letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    /* S-Bahn SVG failed to load — full pill (rx = 50% of height, mirrors rx="4" on height="8") */
+    .line-badge--pill {
+      border-radius: 1.5vh;
     }
 
     /* Destination */
@@ -1180,6 +1202,18 @@ html, body {
       opacity: 0.6;
       font-weight: 400;
       color: rgba(255, 255, 255, 1);
+    }
+
+    /* FEX past train: restore dark text on white background */
+    .train-entry.past-train.fex-entry .zugziel {
+      color: var(--color-bg-primary);
+    }
+
+    .train-entry.past-train.fex-entry .departure,
+    .train-entry.past-train.fex-entry .past-train-actual-time,
+    .train-entry.past-train.fex-entry .past-train-planned-time,
+    .train-entry.past-train.fex-entry .past-status-text {
+      color: var(--color-bg-primary);
     }
 
     .train-entry.past-train .departure {
@@ -2363,6 +2397,17 @@ html, body {
       padding-left: 0.5vh;
     }
 
+    /* Fallback badge inside konflikt panel — constrain to icon size */
+    [data-konflikt="main-icon"].line-badge,
+    [data-konflikt="conflict-icon"].line-badge,
+    .line-badge.konflikt-line-icon {
+      height: 2vh;
+      min-width: 3vh;
+      font-size: 1.4vh;
+      padding: 0 0.4vh;
+      border-radius: 999px;
+    }
+
     .konflikt-destination {
       flex: 0 0 auto;
       width: 100%;
@@ -2497,6 +2542,17 @@ html, body {
       padding-left: 0.5vh;
       padding-right: 1vh;
       object-fit: contain;
+    }
+
+    /* Fallback badge inside announcement panel — match icon height */
+    .announcement-group-icon-type .line-badge {
+      height: clamp(1.5vh, 2.5vh, 2.5vw);
+      min-width: clamp(3vh, 5vh, 5vw);
+      font-size: clamp(1.2vh, 2vh, 2vw);
+      padding: 0 0.5vh;
+      margin-left: 0.5vh;
+      margin-right: 1vh;
+      flex-shrink: 0;
     }
 
     .announcement-time-slot {
@@ -4349,31 +4405,7 @@ html, body {
   justify-content: flex-start;
 }
 
-.project-card-icon-fallback {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  width: auto;
-  min-width: 3vh;
-  max-width: 12vh;
-  height: 3vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.6vh;
-  font-size: 2.2vh;
-  font-weight: 500;
-  font-stretch: condensed;
-  color: rgba(255, 255, 255, 0.925);
-  border: 0.2vh solid rgba(255, 255, 255, 0.912);
-  border-radius: 0.5vh;
-  cursor: pointer;
-  background: rgba(0, 0, 0, 0.1);
-  letter-spacing: -0.05em;
-  white-space: nowrap;
-  box-sizing: border-box;
-}
+
 
 .project-card-name {
   font-size: 2.8vh;
@@ -4462,31 +4494,14 @@ body.project-drawer-open .right-panel.is-open {
   justify-content: flex-start;
 }
 
-.project-drawer-symbol-fallback {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  width: auto;
-  min-width: 5vh;
-  max-width: 20vh;
-  height: 5vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.8vh;
-  font-size: 4vh;
-  font-weight: 500;
-  font-stretch: condensed;
-  color: rgba(255, 255, 255, 0.925);
-  border: 0.3vh solid rgba(255, 255, 255, 0.912);
-  border-radius: 0.8vh;
-  cursor: pointer;
-  background: rgba(0, 0, 0, 0.1);
-  letter-spacing: -0.05em;
-  white-space: nowrap;
-  box-sizing: border-box;
-}
+    /* Fallback badge inside project drawer — scale up to match 10vh SVG */
+    .project-symbol-wrapper .line-badge {
+      height: 5vh;
+      min-width: 10vh;
+      font-size: 4vh;
+      padding: 0 1.2vh;
+      border-radius: 999px;
+    }
 
 .project-drawer-title {
   flex: 1;
@@ -5188,17 +5203,6 @@ font-weight: 500;
     height: 5vh;
   }
   
-  .project-card-icon-fallback {
-    width: auto;
-    min-width: 2.5vh;
-    max-width: 10vh;
-    height: 2.5vh;
-    padding: 0 0.5vh;
-    font-size: 1.8vh;
-    border-width: 0.15vh;
-    border-radius: 0.4vh;
-  }
-  
   .project-card-name {
     font-size: 2.5vh;
   }
@@ -5229,16 +5233,13 @@ font-weight: 500;
     min-width: 6vh;
     height: 6vh;
   }
-  
-  .project-drawer-symbol-fallback {
-    width: auto;
-    min-width: 3.5vh;
-    max-width: 15vh;
-    height: 3.5vh;
-    padding: 0 0.6vh;
-    font-size: 2.5vh;
-    border-width: 0.2vh;
-    border-radius: 0.5vh;
+
+  /* Mobile: scale project drawer badge down to match 6vh SVG */
+  .project-symbol-wrapper .line-badge {
+    height: 3vh;
+    min-width: 6vh;
+    font-size: 2.6vh;
+    padding: 0 1vh;
   }
   
   .project-task-col-plan,

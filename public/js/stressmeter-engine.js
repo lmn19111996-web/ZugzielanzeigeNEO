@@ -82,6 +82,7 @@ const TASK_LOAD = {
   s62: { basePoint:    0, loadFactor:  100 },  // Seminar in uni
   s7:  { basePoint:    0, loadFactor:  130 },  // Self-study session
   s75: { basePoint:   20, loadFactor:  160 },  // Intensive study (exam prep)
+  fex: { basePoint:   20, loadFactor:  160 },  // FEX — same weight as s75
   s8:  { basePoint: -100, loadFactor:  -50 },  // Leisure travel
   s85: { basePoint: -150, loadFactor: -100 },  // Long trip (>1000 km)
   s9:  { basePoint:   30, loadFactor:  100 },  // Group work (unreviewed)

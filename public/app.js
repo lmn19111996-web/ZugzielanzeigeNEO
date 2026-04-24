@@ -190,10 +190,13 @@
         's60': '#8b8d26',
         's62': '#c17b36',
         's7': '#AEC926',
+        's74': '#746b86',
         's75': '#7f6ea3',
         's8': '#6da939',
         's85': '#6da939',
         's9': '#962d44',
+        's17': '#6a47b6',
+        's21': '#00793B',
         'fex': '#FF0000'
       };
       return lineColors[line.toLowerCase()] || '#7D66AD';
@@ -1252,31 +1255,10 @@
           icon.src = getTrainSVG(project.linie || 'S1');
           iconFallback.textContent = lineName;
           
-          // Adjust font size based on text length for project card fallback
-          const adjustCardFallbackFontSize = () => {
-            const textLength = lineName.length;
-            let fontSize;
-            
-            if (textLength <= 2) {
-              fontSize = '2.2vh';
-            } else if (textLength === 3) {
-              fontSize = '1.9vh';
-            } else if (textLength === 4) {
-              fontSize = '1.7vh';
-            } else if (textLength <= 6) {
-              fontSize = '1.5vh';
-            } else {
-              fontSize = '1.2vh';
-            }
-            
-            iconFallback.style.fontSize = fontSize;
-          };
-          
           // Show fallback if image fails to load
           icon.onerror = function() {
             icon.style.display = 'none';
             iconFallback.style.display = 'flex';
-            adjustCardFallbackFontSize();
           };
           
           icon.onload = function() {
@@ -1710,32 +1692,10 @@
       symbol.src = getTrainSVG(project.linie || 's1');
       symbolFallback.textContent = lineName;
       
-      // Adjust font size based on text length for fallback badge
-      const adjustFallbackFontSize = () => {
-        const textLength = lineName.length;
-        let fontSize;
-        
-        // Dynamic font sizing based on text length (scaled for smaller badge)
-        if (textLength <= 2) {
-          fontSize = '3.2vh';
-        } else if (textLength === 3) {
-          fontSize = '2.8vh';
-        } else if (textLength === 4) {
-          fontSize = '2.5vh';
-        } else if (textLength <= 6) {
-          fontSize = '2.2vh';
-        } else {
-          fontSize = '1.8vh';
-        }
-        
-        symbolFallback.style.fontSize = fontSize;
-      };
-      
       // Show fallback if image fails to load
       symbol.onerror = function() {
         symbol.style.display = 'none';
         symbolFallback.style.display = 'flex';
-        adjustFallbackFontSize();
       };
       
       symbol.onload = function() {
