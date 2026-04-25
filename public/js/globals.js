@@ -91,6 +91,24 @@
       // Get all trains (IDs already assigned at load time)
       processedTrainData.allTrains = (schedule.trains || []).slice();
       processedTrainData.localTrains = (schedule.localTrains || []).slice();
+
+      // DATA MANIPULATION: S6 → FEX promotion
+      // S6 trains with a destination prefixed "[PRÜ]" are promoted to FEX
+      // exactly 14 days before (and including) their departure date.
+      // This mutates the in-memory linie field; the stored schedule is not affected.
+      const _today = new Date(); _today.setHours(0, 0, 0, 0);
+      [...processedTrainData.allTrains, ...processedTrainData.localTrains].forEach(t => {
+        if ((t.linie || '').toUpperCase() === 'S6' &&
+            typeof t.ziel === 'string' &&
+            t.ziel.trimStart().toUpperCase().startsWith('[PRÜ]') &&
+            t.date) {
+          const dep = new Date(t.date + 'T00:00:00');
+          const daysUntil = Math.round((dep - _today) / 86400000);
+          if (daysUntil >= 0 && daysUntil <= 14) {
+            t.linie = 'FEX';
+          }
+        }
+      });
       
       // Separate notes (objects with type='note') from scheduled trains.
       // Notes can be in schedule.trains (legacy) or schedule.spontaneousEntries (new format).

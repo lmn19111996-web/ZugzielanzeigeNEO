@@ -39,17 +39,6 @@
             if (!train._uniqueId) {
               train._uniqueId = 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
             }
-            // Backward compatibility: Convert old format notes (name && !linie) to new format
-            if (train.name && !train.linie && train.type !== 'note') {
-              train.linie = 'NOTE';
-              train.type = 'note';
-              // Use name as ziel if ziel is empty
-              if (!train.ziel) {
-                train.ziel = train.name;
-              }
-              // Remove the name attribute after conversion
-              delete train.name;
-            }
             return train;
           };
           

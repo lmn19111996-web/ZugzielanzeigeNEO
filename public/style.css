@@ -4509,14 +4509,12 @@ body.project-drawer-open .right-panel.is-open {
   font-size: 5vh;
   font-weight: 500;
   font-stretch: condensed;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.04em;
-  padding: 0 2%;
-  cursor: text;
-  transition: background 0.1s ease;
-  border-radius: 4px;
+  cursor: pointer;
+  color: white;
 }
 
 .project-drawer-title input {

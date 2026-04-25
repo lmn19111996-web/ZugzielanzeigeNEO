@@ -301,9 +301,20 @@
       openEditorDrawer(train);
       hideWorkspacePlaceholder();
       
-      // Apply line color to editor drawer border
+      // Apply line color / VIP gradient to editor drawer border
       const lineColor = getLineColor(train.linie || 'S1');
-      panel.style.borderLeft = `4px solid ${lineColor}`;
+      const vip = typeof getVipConfig === 'function' ? getVipConfig(train.linie) : null;
+      if (vip) {
+        panel.style.borderLeft = '4px solid transparent';
+        panel.style.borderImage = `linear-gradient(to bottom, ${vip.c3}, ${vip.c2}, ${vip.c1}) 1`;
+        panel.style.borderImageSlice = '1';
+        panel.dataset.vipLine = (train.linie || '').toLowerCase();
+      } else {
+        panel.style.borderLeft = `4px solid ${lineColor}`;
+        panel.style.borderImage = '';
+        panel.style.borderImageSlice = '';
+        delete panel.dataset.vipLine;
+      }
       panel.style.borderTopLeftRadius = '8px';
       panel.style.borderBottomLeftRadius = '8px';
       
