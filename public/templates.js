@@ -189,6 +189,9 @@ const Templates = {
           </div>
           <div class="zugziel">${destinationHTML}</div>
         </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="${getCarriageSVG(train.dauer, train.linie === 'FEX')}" alt="">
+        </div>
         <div class="right-block">
           ${durationSlotHTML}
           <div class="departure-slot">
