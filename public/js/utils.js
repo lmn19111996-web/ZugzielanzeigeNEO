@@ -55,7 +55,8 @@
     function getCarriageSVG(dauer, isFEX = false) {
       const n = Number(dauer);
       const prefix = isFEX ? 'cb' : 'c';
-      if (!Number.isFinite(n) || n <= 0) return `./res/${prefix}3.svg`;
+      if (!Number.isFinite(n) || n < 0) return `./res/${prefix}3.svg`;
+      if (n === 0) return `./res/${prefix}0.svg`;
       if (n <= 30) return `./res/${prefix}1.svg`;
       if (n <= 60) return `./res/${prefix}2.svg`;
       if (n <= 90) return `./res/${prefix}3.svg`;
