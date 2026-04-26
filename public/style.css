@@ -114,6 +114,10 @@ html, body {
       font-size: 3.75vh;
     }
 
+    #first-train-container .carriage-slot {
+      display: none;
+    }
+
     /* Desktop ribbon: "Ankunft in" label is gray, countdown time stays white */
     #first-train-container .countdown-label {
       color: rgba(255, 255, 255, 0.695);

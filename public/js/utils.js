@@ -87,6 +87,17 @@
       return !!(train && typeof train.plan === 'string' && train.plan.trim() !== '');
     }
 
+    function expandDestinationPrefix(ziel) {
+      if (typeof ziel !== 'string' || !ziel) return ziel || '';
+      return ziel.replace(/^\s*\[(ZF|PRÜ|PRUE|EF)\]/i, (match, code) => {
+        const key = String(code).toUpperCase();
+        if (key === 'ZF') return '[Zusatzfahrt]';
+        if (key === 'PRÜ' || key === 'PRUE') return '[Prüfung]';
+        if (key === 'EF') return '[Ersatzfahrt]';
+        return match;
+      });
+    }
+
     function formatDurationOnlyText(dauer) {
       const minutes = Math.max(0, Math.round(Number(dauer) || 0));
       if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {

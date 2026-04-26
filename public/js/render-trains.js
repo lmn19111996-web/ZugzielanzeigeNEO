@@ -7,6 +7,7 @@
       
       if (currentTrain) {
         const existingEntry = firstTrainContainer.querySelector('.train-entry');
+        const expandedCurrentZiel = expandDestinationPrefix(currentTrain.ziel || '');
         
         // Check if the train has changed - compare all train attributes
         const existingDeparture = existingEntry ? existingEntry.querySelector('[data-departure]') : null;
@@ -21,7 +22,7 @@
                            !existingEntry.querySelector('.zugziel') ||
                            (currentTrain.canceled
                              ? !existingEntry.querySelector('.canceled-ziel-toggle')
-                             : existingEntry.querySelector('.zugziel').textContent !== currentTrain.ziel);
+                             : existingEntry.querySelector('.zugziel').textContent !== expandedCurrentZiel);
         
         if (trainChanged) {
           // Only recreate if train changed

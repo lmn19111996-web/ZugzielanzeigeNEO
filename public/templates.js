@@ -34,6 +34,7 @@ const Templates = {
     }
     
     // Determine destination HTML
+    const expandedZiel = expandDestinationPrefix(train.ziel || '');
     let destinationHTML;
     if (train.canceled) {
       const _zielToggle = document.createElement('div');
@@ -49,7 +50,7 @@ const Templates = {
       _zielDiv.className = 'canceled-ziel-original';
       const _zielSpan = document.createElement('span');
       _zielSpan.style.textDecoration = 'line-through';
-      _zielSpan.textContent = train.ziel || '';
+      _zielSpan.textContent = expandedZiel;
       _zielDiv.appendChild(_zielSpan);
 
       _zielToggle.appendChild(_ausfallDiv);
@@ -58,7 +59,7 @@ const Templates = {
       _zielTemp.appendChild(_zielToggle);
       destinationHTML = _zielTemp.innerHTML;
     } else {
-      destinationHTML = train.ziel || '';
+      destinationHTML = expandedZiel;
     }
     
     // Entry classes
@@ -176,7 +177,7 @@ const Templates = {
     return `
       <div class="${entryClasses.join(' ')}" 
            data-linie="${train.linie || ''}" 
-           data-ziel="${train.canceled ? 'Zug fällt aus' : (train.ziel || '')}"
+           data-ziel="${train.canceled ? 'Zug fällt aus' : expandedZiel}"
            data-plan="${train.plan || ''}" 
            data-date="${train.date || ''}" 
          data-train-type="${train.type || 'train'}"
