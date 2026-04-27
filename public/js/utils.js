@@ -49,18 +49,66 @@
         '17': '#72bf43'
 
       };
-      return lineColors[line.toLowerCase()] || '#004E9D';
+      return lineColors[line.toLowerCase()] || '#8c8c8c';
     }
 
-    function getCarriageSVG(dauer, isFEX = false) {
+    function getCarriageSVG(dauer, isFEX = false, line = '') {
+      function brightenHexColor(hex, amount = 0.22) {
+        const raw = String(hex || '').trim();
+        const match = raw.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+        if (!match) return '#5e7fb8';
+        let h = match[1];
+        if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        const lift = (v) => Math.round(v + (255 - v) * amount);
+        const toHex = (v) => lift(v).toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+      }
+
       const n = Number(dauer);
-      const prefix = isFEX ? 'cb' : 'c';
-      if (!Number.isFinite(n) || n < 0) return `./res/${prefix}3.svg`;
-      if (n === 0) return `./res/${prefix}0.svg`;
-      if (n <= 30) return `./res/${prefix}1.svg`;
-      if (n <= 60) return `./res/${prefix}2.svg`;
-      if (n <= 90) return `./res/${prefix}3.svg`;
-      return `./res/${prefix}4.svg`;
+      let level = 3;
+      if (Number.isFinite(n) && n >= 0) {
+        if (n === 0) level = 0;
+        else if (n <= 30) level = 1;
+        else if (n <= 60) level = 2;
+        else if (n <= 90) level = 3;
+        else level = 4;
+      }
+
+      if (isFEX) {
+        return `./res/cb${level}.svg`;
+      }
+
+      const baseColor = getLineColor(line || 's1');
+      const fillColor = brightenHexColor(baseColor, 0.7);
+      const polygonPoints = [
+        '69,274 69,243 215,78 702,78 702,274',
+        '724,274 724,243 870,78 1257,78 1257,274',
+        '1283,274 1283,243 1429,78 1716,78 1716,274',
+        '1740,274 1740,243 1889,78 2073,78 2073,274'
+      ];
+      const rects = [
+        { x: 69, width: 633 },
+        { x: 724, width: 533 },
+        { x: 1283, width: 433 },
+        { x: 1740, width: 333 }
+      ];
+
+      const polygons = level > 0
+        ? polygonPoints
+            .slice(polygonPoints.length - level)
+            .map((points) => `<polygon points="${points}" fill="${fillColor}"/>`)
+            .join('')
+        : '';
+
+      const rectMarkup = rects
+        .map((r) => `<rect x="${r.x}" y="284" width="${r.width}" height="31" fill="${fillColor}"/>`)
+        .join('');
+
+      const svg = `<svg viewBox="0 0 2140 383" xmlns="http://www.w3.org/2000/svg">${polygons}${rectMarkup}</svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
     }
 
     function formatClock(date) {
