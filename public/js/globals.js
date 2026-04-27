@@ -92,6 +92,11 @@
       processedTrainData.allTrains = (schedule.trains || []).slice();
       processedTrainData.localTrains = (schedule.localTrains || []).slice();
 
+      // _isPastTrain is a transient UI flag. Recompute it every cycle so
+      // edited trains (e.g. moved from past to future) never keep stale styling.
+      processedTrainData.allTrains.forEach(t => { if (t) t._isPastTrain = false; });
+      processedTrainData.localTrains.forEach(t => { if (t) t._isPastTrain = false; });
+
       // DATA MANIPULATION: S6 → FEX promotion
       // S6 trains with a destination prefixed "[PRÜ]" are promoted to FEX
       // exactly 14 days before (and including) their departure date.

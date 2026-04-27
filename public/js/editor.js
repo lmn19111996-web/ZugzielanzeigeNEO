@@ -902,7 +902,9 @@
           if (hasChanges) {
             console.log('✅ Changes detected, saving...');
             // Update the schedule train with all changes
-            Object.assign(scheduleTrain, train);
+            const { _isPastTrain, ...persistableTrain } = train;
+            Object.assign(scheduleTrain, persistableTrain);
+            delete scheduleTrain._isPastTrain;
             
             // OPTIMISTIC UI: Render immediately, then save in background
             refreshUIOnly();
