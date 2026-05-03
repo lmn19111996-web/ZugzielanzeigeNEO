@@ -562,6 +562,7 @@
 
     function renderProjectTask(train, index, totalTasks, lineColor, projectId, today) {
       const rowClass = index % 2 === 0 ? 'project-task-row-bright' : 'project-task-row-dark';
+      const isCancelled = !!train.canceled;
       // Use plannedDate (original date) and date (current date) instead of plan/actual which are times
       const planDate = train.plannedDate ? new Date(train.plannedDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '';
       const actualDate = train.date ? new Date(train.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : planDate;
@@ -574,17 +575,22 @@
       if (isBeforeOrToday) {
         statusDotClass += ' project-task-status-active';
       }
+      if (isCancelled) {
+        statusDotClass += ' project-task-status-cancelled';
+      }
       
       const dotColor = isBeforeOrToday ? lineColor : '#666';
+      const taskNameClass = isCancelled ? 'project-task-name project-task-name-cancelled' : 'project-task-name';
+      const statusDotInner = isCancelled ? '<span class="project-task-status-cross">✕</span>' : '';
       
       return `
-        <div class="project-task-row ${rowClass}" data-task-id="${train._uniqueId}" data-task-active="${isBeforeOrToday}">
+        <div class="project-task-row ${rowClass}" data-task-id="${train._uniqueId}" data-task-active="${isBeforeOrToday}" data-task-cancelled="${isCancelled}">
           <span class="project-task-plan">${planDate}</span>
           <span style="width: 8%; display: flex; justify-content: center; flex-shrink: 0;">
-            <span class="${statusDotClass}" style="background-color: ${dotColor}; --line-color: ${dotColor};"></span>
+            <span class="${statusDotClass}" style="background-color: ${dotColor}; --line-color: ${dotColor};">${statusDotInner}</span>
           </span>
           <span class="project-task-actual">${actualDate}</span>
-          <span class="project-task-name">${train.ziel || 'Unbenannte Aufgabe'}</span>
+          <span class="${taskNameClass}">${train.ziel || 'Unbenannte Aufgabe'}</span>
           <span class="spacer"></span>
           <img src="res/remove.svg" class="project-task-remove-icon" data-task-action="remove">
         </div>

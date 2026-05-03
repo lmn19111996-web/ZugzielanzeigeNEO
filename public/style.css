@@ -4956,6 +4956,17 @@ font-weight: 500;
   --line-color: #666;
 }
 
+.project-task-status-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -52%);
+  font-size: 2.1vh;
+  line-height: 1;
+  font-weight: 800;
+  color: #c0392b;
+}
+
 .project-task-status-dot::before,
 .project-task-status-dot::after {
   content: '';
@@ -5004,6 +5015,25 @@ font-weight: 500;
 .project-task-status-dot.project-task-status-active::before,
 .project-task-status-dot.project-task-status-active::after {
   background: var(--line-color, inherit);
+}
+
+.project-task-status-dot.project-task-status-cancelled {
+  background: transparent !important;
+  border-radius: 0;
+}
+
+/* Cancelled tasks break the vertical connector to show disruption */
+.project-task-row[data-task-cancelled="true"] .project-task-status-dot::before,
+.project-task-row[data-task-cancelled="true"] .project-task-status-dot::after {
+  display: none;
+}
+
+.project-task-row[data-task-cancelled="true"] .project-task-plan,
+.project-task-row[data-task-cancelled="true"] .project-task-actual,
+.project-task-row[data-task-cancelled="true"] .project-task-name {
+  text-decoration: line-through;
+  text-decoration-thickness: 2.8px;
+  text-decoration-color: rgba(30, 30, 30, 0.7);
 }
 
 /* Project Progress Line */
