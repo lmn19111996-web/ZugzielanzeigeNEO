@@ -1070,8 +1070,8 @@
               noneOption.textContent = 'Kein Projekt';
               input.appendChild(noneOption);
               
-              // Add all projects as options
-              const projects = schedule.projects || [];
+              // Add all projects as options (exclude archived)
+              const projects = (schedule.projects || []).filter(p => !p.archived);
               projects.forEach(project => {
                 const option = document.createElement('option');
                 option.value = project._uniqueId;

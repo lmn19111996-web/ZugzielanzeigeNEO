@@ -264,7 +264,7 @@ html, body {
       width: 100%;
       height: 5vh;
       padding: 1.2vh;
-      background: none;
+      background: var(--color-bg-taskbar);
       border: none;
       outline: none;
       cursor: pointer;
@@ -315,9 +315,7 @@ html, body {
       flex-direction: column;
       align-items: center;
       gap: 0.4vh;
-      margin-bottom: 1.5vh;
-      padding-bottom: 1.5vh;
-      border-bottom: 0.5px solid var(--color-divider);
+      border-bottom: 0.5px solid var(--color-divider)
     }
 
     /* Left panel - scrollable train list (now inside left column) */
@@ -3180,7 +3178,7 @@ html, body {
 
       .task-icon-group {
         border-bottom: none;
-        padding-bottom: 2vh;
+        padding-bottom: 0;
       }
 
       .left-panel {
@@ -4534,6 +4532,7 @@ body.project-drawer-open .right-panel.is-open {
 .project-drawer-title {
   flex: 1;
   min-width: 0;
+  padding-left: 0.8vh;
   font-size: 5vh;
   font-weight: 500;
   font-stretch: condensed;
@@ -5204,10 +5203,192 @@ font-weight: 500;
   filter: invert(0.3);
 }
 
+/* Project footer actions group */
+.project-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4vw;
+}
+
+.project-footer-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4vh 0.6vw;
+  border-radius: 0.4vh;
+  opacity: 0.45;
+  transition: opacity 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-footer-btn:hover {
+  opacity: 0.75;
+  background: rgba(255,255,255,0.08);
+}
+
+.project-footer-btn.active {
+  opacity: 1;
+}
+
+.project-footer-btn-icon {
+  width: 2.5vh;
+  height: 2.5vh;
+  filter: invert(0.5);
+}
+
+.project-footer-btn.active .project-footer-btn-icon {
+  filter: invert(0.5);
+}
+
+.project-footer-btn-archive-icon {
+  width: 2.5vh;
+  height: 2.5vh;
+  filter: invert(0.5);
+}
+
+.project-footer-btn.active .project-footer-btn-archive-icon {
+  filter: invert(0.5);
+}
+
+/* Pinned project badge on project cards */
+.project-card--pinned::after {
+  content: '';
+  position: absolute;
+  top: 0.7vh;
+  right: 0.8vw;
+  width: 1.8vh;
+  height: 1.8vh;
+  background: url('res/pin.svg') center/contain no-repeat;
+  filter: brightness(0) invert(1) opacity(0.7);
+}
+
+.project-card {
+  position: relative;
+}
+
+/* Archived project card style */
+.project-card--archived {
+  opacity: 0.55;
+}
+
+/* Archived section in projects page */
+.projects-archived-section {
+  margin-top: 2vh;
+  grid-column: 1 / -1;
+}
+
+.projects-archived-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  padding: 1vh 0.5vw;
+  cursor: pointer;
+  font-size: 2vh;
+  opacity: 0.6;
+  user-select: none;
+}
+
+.projects-archived-header:hover {
+  opacity: 0.85;
+}
+
+.projects-archived-arrow {
+  font-size: 1.4vh;
+  transition: transform 0.22s ease;
+  display: inline-block;
+}
+
+.projects-archived-arrow.open {
+  transform: rotate(90deg);
+}
+
+.projects-archived-list {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.28s ease, opacity 0.22s ease;
+  opacity: 0;
+}
+
+.projects-archived-list.open {
+  max-height: 9999px;
+  opacity: 1;
+}
+
+.projects-archived-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  gap: 2vh 1vw;
+}
+
+/* Pinned projects section in taskbar */
+.taskbar-pinned-projects {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2vh;
+}
+
+.taskbar-pinned-chip {
+  position: relative;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.taskbar-pinned-chip img {
+  object-fit: contain;
+  filter: none;
+}
+
+.taskbar-pinned-fallback {
+  font-size: 1.2vh !important;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Hover tooltip card expanding from the chip */
+.taskbar-pinned-chip .taskbar-pin-tooltip {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  height: 100%;
+  transform: none;
+  clip-path: inset(0 100% 0 0);
+  background: #000;
+  border-left: none;
+  border-bottom: 0.5vh solid var(--pin-line-color, #fff);
+  border-top: none;
+  border-right: none;
+  padding: 0 0.5vw;
+  white-space: nowrap;
+  font-size: 2.4vh;
+  font-weight: 600;
+  color: #fff;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  transition: clip-path 0.1s ease;
+  z-index: 0;
+  border-radius: 0;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.5);
+  font-stretch: condensed;
+}
+
+.taskbar-pinned-chip:hover .taskbar-pin-tooltip {
+  clip-path: inset(0 0% 0 0);
+}
+
 /* ==================== END PROJECT MANAGEMENT STYLES ==================== */
 
 /* Mobile responsiveness for project management */
 @media (max-width: 768px) {
+  /* Hide desktop tooltip on mobile — label is shown instead */
+  .taskbar-pinned-chip .taskbar-pin-tooltip {
+    display: none;
+  }
+
   .projects-page {
     padding: 2vh 4vw;
   }

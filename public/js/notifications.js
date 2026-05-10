@@ -232,7 +232,7 @@
           ? parseTime(train.checkoutTime, now, train.date)
           : (train.dauer && train.dauer > 0 ? new Date(trainTime.getTime() + train.dauer * 60000) : null);
 
-        if (occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
+        if (!train.canceled && occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
           const depClock = formatClock(occupationEnd);
           const endBody = delay <= 0
             ? `Ankunft pünktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`

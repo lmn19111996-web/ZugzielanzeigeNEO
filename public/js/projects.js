@@ -1,4 +1,118 @@
 ﻿// === PROJECT MANAGEMENT ===
+    function buildProjectCard(project, cardTemplate) {
+      const lineColor = getLineColor(project.linie || 's1');
+      const deadlineDate = project.deadline ? new Date(project.deadline) : null;
+      const deadlineStr = deadlineDate ? deadlineDate.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }) : 'Open-Ended';
+      
+      const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
+      const today = new Date().toISOString().split('T')[0];
+      const taskCount = projectTasks.length;
+      const completedTasks = projectTasks.filter(t => t.date && t.date <= today).length;
+      
+      const cardClone = cardTemplate.content.cloneNode(true);
+      const card = cardClone.querySelector('[data-projects="card"]');
+      card.setAttribute('data-project-id', project._uniqueId);
+      card.style.borderLeft = `4px solid ${lineColor}`;
+      
+      if (project.pinned) card.classList.add('project-card--pinned');
+      
+      const icon = cardClone.querySelector('[data-projects="icon"]');
+      const iconFallback = cardClone.querySelector('[data-projects="icon-fallback"]');
+      const lineName = (project.linie || 'S1').toUpperCase();
+      icon.src = getTrainSVG(project.linie || 'S1');
+      iconFallback.textContent = lineName;
+      icon.onerror = function() { icon.style.display = 'none'; iconFallback.style.display = 'flex'; };
+      icon.onload = function() { icon.style.display = 'block'; iconFallback.style.display = 'none'; };
+      
+      cardClone.querySelector('[data-projects="name"]').textContent = project.name || 'Unbenanntes Projekt';
+      cardClone.querySelector('[data-projects="deadline"]').textContent = deadlineStr;
+      cardClone.querySelector('[data-projects="progress"]').textContent = `${completedTasks} / ${taskCount} Aufgaben abgeschlossen`;
+      
+      // Return the actual card element (not the fragment)
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(cardClone);
+      return wrapper.firstElementChild;
+    }
+
+    function renderPinnedProjectsInSidebar() {
+      const taskbar = document.querySelector('.taskbar');
+      if (!taskbar) return;
+      
+      const isMobile = window.innerWidth <= 768;
+      
+      // Remove any existing pinned chips/strip
+      taskbar.querySelectorAll('.taskbar-pinned-chip, .taskbar-pinned-projects').forEach(el => el.remove());
+      
+      const projects = schedule.projects || [];
+      const pinned = projects.filter(p => p.pinned && !p.archived);
+      if (pinned.length === 0) return;
+      
+      const buildChip = (project) => {
+        const lineColor = getLineColor(project.linie || 's1');
+        const btn = document.createElement('button');
+        // Use exactly the same class as normal task buttons, plus marker for cleanup
+        btn.className = 'task-icon-button taskbar-pinned-chip';
+        btn.setAttribute('data-pinned-project-id', project._uniqueId);
+        btn.style.setProperty('--pin-line-color', lineColor);
+        
+        const img = document.createElement('img');
+        img.src = getTrainSVG(project.linie || 's1');
+        img.alt = (project.linie || 'S1').toUpperCase();
+        
+        const fallback = document.createElement('div');
+        fallback.className = 'line-badge line-badge--pill taskbar-pinned-fallback';
+        fallback.textContent = (project.linie || 'S1').toUpperCase();
+        fallback.style.display = 'none';
+        
+        img.onerror = function() { img.style.display = 'none'; fallback.style.display = 'flex'; };
+        img.onload = function() { img.style.display = 'block'; fallback.style.display = 'none'; };
+        
+        btn.appendChild(img);
+        btn.appendChild(fallback);
+        
+        // Label: always present; CSS shows it on mobile, hides on desktop
+        const label = document.createElement('span');
+        label.className = 'task-icon-label';
+        label.textContent = project.name || 'Unbenanntes Projekt';
+        btn.appendChild(label);
+        
+        // Tooltip: desktop hover card, hidden on mobile via CSS
+        const tooltip = document.createElement('span');
+        tooltip.className = 'taskbar-pin-tooltip';
+        tooltip.textContent = project.name || 'Unbenanntes Projekt';
+        btn.appendChild(tooltip);
+        
+        btn.addEventListener('click', function() {
+          const drawer = document.getElementById('project-drawer');
+          if (drawer && drawer.classList.contains('is-open') && currentProjectId === project._uniqueId) {
+            closeProjectDrawer();
+          } else {
+            openProjectEditor(project._uniqueId);
+          }
+        });
+        
+        return btn;
+      };
+      
+      if (isMobile) {
+        // Append directly into the task-icon-group — identical to all other mobile buttons
+        const group = taskbar.querySelector('.task-icon-group');
+        const target = group || taskbar;
+        pinned.forEach(project => target.appendChild(buildChip(project)));
+      } else {
+        // Desktop: separate wrapper at bottom of taskbar
+        const strip = document.createElement('div');
+        strip.className = 'taskbar-pinned-projects';
+        pinned.forEach(project => strip.appendChild(buildChip(project)));
+        taskbar.appendChild(strip);
+      }
+    }
+
     function renderProjectsPage() {
       const trainListEl = document.getElementById('train-list');
       if (!trainListEl) return;
@@ -13,7 +127,10 @@
       const projectsList = pageClone.querySelector('[data-projects="list"]');
       
       // Apply sorting based on currentProjectSortMode
-      const sortedProjects = [...projects].sort((a, b) => {
+      const activeProjects = projects.filter(p => !p.archived);
+      const archivedProjects = projects.filter(p => p.archived);
+      
+      const sortedProjects = [...activeProjects].sort((a, b) => {
         switch (currentProjectSortMode) {
           case 'name':
             const nameA = (a.name || 'Unbenanntes Projekt').toLowerCase();
@@ -58,57 +175,49 @@
         if (!cardTemplate) return;
         
         sortedProjects.forEach(project => {
-          const lineColor = getLineColor(project.linie || 's1');
-          const deadlineDate = project.deadline ? new Date(project.deadline) : null;
-          const deadlineStr = deadlineDate ? deadlineDate.toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          }) : 'Open-Ended';
-          
-          // Get tasks for this project from spontaneousEntries
-          const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
-          const today = new Date().toISOString().split('T')[0];
-          
-          const taskCount = projectTasks.length;
-          const completedTasks = projectTasks.filter(t => t.date && t.date <= today).length;
-          
-          // Clone card template and populate
-          const cardClone = cardTemplate.content.cloneNode(true);
-          const card = cardClone.querySelector('[data-projects="card"]');
-          
-          card.setAttribute('data-project-id', project._uniqueId);
-          card.style.borderLeft = `4px solid ${lineColor}`;
-          
-          const icon = cardClone.querySelector('[data-projects="icon"]');
-          const iconFallback = cardClone.querySelector('[data-projects="icon-fallback"]');
-          const lineName = (project.linie || 'S1').toUpperCase();
-          
-          icon.src = getTrainSVG(project.linie || 'S1');
-          iconFallback.textContent = lineName;
-          
-          // Show fallback if image fails to load
-          icon.onerror = function() {
-            icon.style.display = 'none';
-            iconFallback.style.display = 'flex';
-          };
-          
-          icon.onload = function() {
-            icon.style.display = 'block';
-            iconFallback.style.display = 'none';
-          };
-          
-          cardClone.querySelector('[data-projects="name"]').textContent = project.name || 'Unbenanntes Projekt';
-          cardClone.querySelector('[data-projects="deadline"]').textContent = deadlineStr;
-          cardClone.querySelector('[data-projects="progress"]').textContent = `${completedTasks} / ${taskCount} Aufgaben abgeschlossen`;
-          
-          projectsList.appendChild(cardClone);
+          projectsList.appendChild(buildProjectCard(project, cardTemplate));
         });
+      }
+      
+      // Add archived section if there are archived projects
+      if (archivedProjects.length > 0) {
+        const cardTemplate = document.getElementById('project-card-template');
+        const isOpen = (window._archivedSectionOpen === true);
+        const archivedSection = document.createElement('div');
+        archivedSection.className = 'projects-archived-section';
+        archivedSection.innerHTML = `
+          <div class="projects-archived-header" data-action="toggle-archived">
+            <span class="projects-archived-arrow${isOpen ? ' open' : ''}">▶</span>
+            <span>Archiv (${archivedProjects.length})</span>
+          </div>
+          <div class="projects-archived-list${isOpen ? ' open' : ''}"></div>
+        `;
+        const archivedList = archivedSection.querySelector('.projects-archived-list');
+        if (cardTemplate) {
+          archivedProjects.forEach(project => {
+            const card = buildProjectCard(project, cardTemplate);
+            card.classList.add('project-card--archived');
+            archivedList.appendChild(card);
+          });
+        }
+        projectsList.appendChild(archivedSection);
       }
       
       trainListEl.innerHTML = '';
       trainListEl.appendChild(pageClone);
+      
+      // Archived section toggle
+      const archivedHeader = trainListEl.querySelector('[data-action="toggle-archived"]');
+      if (archivedHeader) {
+        archivedHeader.addEventListener('click', function() {
+          const list = this.closest('.projects-archived-section').querySelector('.projects-archived-list');
+          const arrow = this.querySelector('.projects-archived-arrow');
+          const nowOpen = !list.classList.contains('open');
+          list.classList.toggle('open', nowOpen);
+          arrow.classList.toggle('open', nowOpen);
+          window._archivedSectionOpen = nowOpen;
+        });
+      }
       
       // Add event listeners
       const createBtn = document.getElementById('create-project-btn');
@@ -480,6 +589,26 @@
       const createdDateField = clone.querySelector('[data-project="created-date"]');
       createdDateField.textContent = 'Erstellt am ' + createdDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
       
+      // Populate pin button
+      const pinBtn = clone.querySelector('[data-project="pin-btn"]');
+      pinBtn.id = 'project-pin-btn';
+      const pinIcon = pinBtn.querySelector('img.project-footer-btn-icon');
+      if (project.pinned) {
+        pinBtn.classList.add('active');
+        if (pinIcon) pinIcon.src = 'res/unpin.svg';
+        pinBtn.title = 'Von Taskleiste lösen';
+      } else {
+        if (pinIcon) pinIcon.src = 'res/pin.svg';
+        pinBtn.title = 'An Taskleiste anpinnen';
+      }
+      
+      // Populate archive button
+      const archiveBtn = clone.querySelector('[data-project="archive-btn"]');
+      archiveBtn.id = 'project-archive-btn';
+      if (project.archived) {
+        archiveBtn.classList.add('active');
+      }
+      
       // Populate delete button
       const deleteBtn = clone.querySelector('[data-project="delete-btn"]');
       deleteBtn.id = 'project-delete-btn';
@@ -623,6 +752,38 @@
         closeBtn.addEventListener('click', () => {
           closeProjectDrawer();
           restoreWorkspaceModeAfterProjectDrawer();
+        });
+      }
+      
+      // Pin button
+      const pinBtn = document.getElementById('project-pin-btn');
+      if (pinBtn) {
+        pinBtn.addEventListener('click', () => {
+          const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+          if (!liveProject) return;
+          liveProject.pinned = !liveProject.pinned;
+          renderProjectDrawer(liveProject);
+          renderPinnedProjectsInSidebar();
+          saveSchedule();
+        });
+      }
+      
+      // Archive button
+      const archiveBtn = document.getElementById('project-archive-btn');
+      if (archiveBtn) {
+        archiveBtn.addEventListener('click', () => {
+          const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId);
+          if (!liveProject) return;
+          liveProject.archived = !liveProject.archived;
+          // Unpin if archiving
+          if (liveProject.archived && liveProject.pinned) {
+            liveProject.pinned = false;
+            renderPinnedProjectsInSidebar();
+          }
+          closeProjectDrawer();
+          restoreWorkspaceModeAfterProjectDrawer();
+          renderProjectsPage();
+          saveSchedule();
         });
       }
       

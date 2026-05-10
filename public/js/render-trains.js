@@ -694,7 +694,7 @@
           toggleBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
           toggleBtn.innerHTML = `
             <span class="duration-only-day-chevron">▸</span>
-            <span class="duration-only-day-title">Dauereinträge</span>
+            <span class="duration-only-day-title">FÜSQ</span>
           `;
           dayGroup.appendChild(toggleBtn);
 
@@ -766,6 +766,7 @@
         append: false,
         durationOnlyEntries: processedTrainData.durationOnlyTrains
       });
+      renderPinnedProjectsInSidebar();
     }
 
     // ===== DATE JUMP POPUP =====

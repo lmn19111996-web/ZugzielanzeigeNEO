@@ -273,14 +273,33 @@ const Templates = {
    */
   belegungsplanBlock(train, pos, overlapLevel, now) {
     const blockClasses = ['belegungsplan-train-block', `overlap-${overlapLevel}`];
+    const normalizedLine = typeof train.linie === 'string' ? train.linie.trim() : '';
+    const isFexLine = /^fex$/i.test(normalizedLine);
+    const lineColor = getLineColor(normalizedLine || 's1');
+
+    let lineBgColor = lineColor;
+    const hexColor = String(lineColor).match(/^#([0-9a-fA-F]{6})$/);
+    if (hexColor) {
+      const h = hexColor[1];
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      lineBgColor = `rgba(${r}, ${g}, ${b}, 0.6)`;
+    }
     
     // Add FEX class
-    if (train.linie === 'FEX') {
+    if (isFexLine) {
       blockClasses.push('fex-entry');
-    } else if (typeof train.linie === 'string' && /^S\d+/i.test(train.linie)) {
+    } else if (/^S\d+/i.test(normalizedLine)) {
       // Add S-Bahn color class
-      const lineClass = `s-bahn-${train.linie.toLowerCase()}`;
+      const lineClass = `s-bahn-${normalizedLine.toLowerCase()}`;
       blockClasses.push(lineClass);
+    }
+
+    const blockStyleParts = [`top: ${pos.top}vh`, `height: ${pos.height}vh`];
+    if (!isFexLine) {
+      blockStyleParts.push(`background: ${lineBgColor}`);
+      blockStyleParts.push(`border-color: ${lineColor}`);
     }
     
     // Check if currently occupying
@@ -317,7 +336,7 @@ const Templates = {
     
     return `
       <div class="${blockClasses.join(' ')}" 
-           style="top: ${pos.top}vh; height: ${pos.height}vh;" 
+           style="${blockStyleParts.join('; ')};" 
            data-unique-id="${train._uniqueId || ''}" 
            data-linie="${train.linie || ''}" 
            data-plan="${train.plan || ''}">

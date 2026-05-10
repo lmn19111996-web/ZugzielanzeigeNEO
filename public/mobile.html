@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿<!-- The html landing page. Idk why its called mobile.html anymore but basically this is where all the scripts are called. Is A CENTER PIECE OF THE APP. -->
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <link rel="stylesheet" href="style.css">
@@ -227,7 +228,15 @@
       
       <div class="project-footer">
         <div class="project-created-date" data-project="created-date">Erstellt am</div>
-        <img src="res/delete.svg" class="project-delete-icon" data-project="delete-btn">
+        <div class="project-footer-actions">
+          <button class="project-footer-btn" data-project="pin-btn" title="An Seitenleiste anpinnen">
+            <img src="res/pin.svg" class="project-footer-btn-icon" alt="Pin">
+          </button>
+          <button class="project-footer-btn" data-project="archive-btn" title="Archivieren">
+            <img src="res/inventory.svg" class="project-footer-btn-archive-icon" alt="Archiv">
+          </button>
+          <img src="res/delete.svg" class="project-delete-icon" data-project="delete-btn">
+        </div>
       </div>
     </div>
   </template>

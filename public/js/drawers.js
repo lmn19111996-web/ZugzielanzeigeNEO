@@ -364,6 +364,10 @@
           if (trainEditor && trainEditor.contains(e.target)) {
             return;
           }
+          // Don't close if clicking a pinned project chip — let the chip handler toggle
+          if (e.target.closest('.taskbar-pinned-chip')) {
+            return;
+          }
           closeProjectDrawer();
           restoreWorkspaceModeAfterProjectDrawer();
         }
