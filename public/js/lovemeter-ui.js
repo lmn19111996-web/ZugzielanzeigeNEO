@@ -360,7 +360,7 @@
     var color;
     if      (state.zone === 'colorless')     color = '#b91c1c';
     else if (state.zone === 'moody')         color = '#c2410c';
-    else if (state.zone === 'normal')        color = '#22c55e';
+    else if (state.zone === 'normal')        color = '#60a5fa';
     else if (state.zone === 'crush')         color = '#ff69b4';
     else if (state.zone === 'severe')        color = '#c026d3';
     else                                     color = '#7c3aed';
@@ -372,8 +372,10 @@
 
     if (badgeTrend) {
       var rising = state.slope > 0;
-      badgeTrend.textContent = rising ? '↑' : state.slope < 0 ? '↓' : '→';
-      badgeTrend.style.color = rising ? '#ff69b4' : '#9ca3af';
+      var flat   = state.slope === 0;
+      badgeTrend.src = rising ? 'res/doubleup.svg' : flat ? 'res/doubleup.svg' : 'res/doubledown.svg';
+      badgeTrend.classList.toggle('trend-up',   rising || flat);
+      badgeTrend.classList.toggle('trend-down', !rising && !flat);
     }
 
     badge.className = badge.className

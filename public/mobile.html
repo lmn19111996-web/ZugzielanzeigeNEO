@@ -300,8 +300,14 @@
       <!-- Top ribbon with clock + journal island -->
       <div class="top-bar">
         <div class="top-bar-main">
-          <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span id="sg-badge-edit" class="badge-edit" title="Energiepunkt jetzt setzen">✎</span><span class="badge-label" id="sg-badge-label"></span></button>
-          <button id="lovemeter-badge" aria-label="Lovemeter" aria-expanded="false"><span class="lm-badge-heart">♥</span><span class="badge-num" id="lm-badge-num">—</span><span id="lm-badge-trend" class="lm-badge-trend">→</span><span id="lm-badge-edit" class="badge-edit" title="Mood-Event eintragen">✎</span><span class="badge-label" id="lm-badge-label"></span></button>
+          <div class="badge-rotator" id="badge-rotator">
+            <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span id="sg-badge-edit" class="badge-edit" title="Energiepunkt jetzt setzen">✎</span><span class="badge-label" id="sg-badge-label"></span></button>
+            <button id="lovemeter-badge" aria-label="Lovemeter" aria-expanded="false"><span class="lm-badge-heart">♥</span><span class="badge-num" id="lm-badge-num">—</span><img id="lm-badge-trend" src="res/doubleup.svg" class="badge-trend-icon lm-badge-trend" alt=""><span id="lm-badge-edit" class="badge-edit" title="Mood-Event eintragen">✎</span><span class="badge-label" id="lm-badge-label"></span></button>
+            <div class="badge-rotator-menu" id="badge-rotator-menu" role="menu">
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="badge-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="badge-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
+            </div>
+          </div>
           <div class="top-ribbon now-card">
             <div class="clockSlot">
               <div class="aclock">
@@ -663,6 +669,44 @@
 <script src="js/lovemeter-ui.js?v=1"></script>
 <script src="js/checkin.js"></script>
 <script src="js/init.js"></script>
+
+<script>
+// ── Badge rotator: alternates energy / lovemeter every 5 s ──────────────────
+(function () {
+  var rotator  = document.getElementById('badge-rotator');
+  var menuEnergy   = document.getElementById('badge-menu-energy');
+  var menuLovemeter = document.getElementById('badge-menu-lovemeter');
+  if (!rotator) return;
+
+  // Both badges animate on the same 10 s CSS cycle (pastTrainTimeToggle /
+  // pastTrainStatusToggle) — no JS interval needed for the fade.
+  // We still toggle pointer-events classes so only the visible badge is clickable.
+  rotator.classList.add('showing-energy');
+  setInterval(function () {
+    rotator.classList.toggle('showing-energy');
+    rotator.classList.toggle('showing-lovemeter');
+  }, 5000); // swap pointer-events target in sync with CSS mid-cycle
+
+  // Clicking the rotator background (i.e. the currently visible badge itself)
+  // is handled by the badge's own click listener — no extra code needed.
+
+  // Menu items explicitly open the respective UI regardless of rotation phase
+  if (menuEnergy) {
+    menuEnergy.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var smBadge = document.getElementById('stressmeter-badge');
+      if (smBadge) smBadge.click();
+    });
+  }
+  if (menuLovemeter) {
+    menuLovemeter.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var lmBadge = document.getElementById('lovemeter-badge');
+      if (lmBadge) lmBadge.click();
+    });
+  }
+}());
+</script>
 </body>
 </html>
 
