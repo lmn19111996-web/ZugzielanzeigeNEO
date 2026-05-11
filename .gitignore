@@ -5,3 +5,5 @@ journal.json
 train_logs_legacy/
 push_events.json
 push_subscriptions.json
+lovemeter_data.json
+lovemeter_presets.json
