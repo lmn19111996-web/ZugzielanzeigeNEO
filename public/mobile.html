@@ -306,6 +306,7 @@
             <div class="badge-rotator-menu" id="badge-rotator-menu" role="menu">
               <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="badge-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
               <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="badge-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--search" id="badge-menu-search" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>Suche</button>
             </div>
           </div>
           <div class="top-ribbon now-card">
@@ -319,6 +320,12 @@
             </div>
             <!-- First train entry will be rendered here by updateClock() -->
             <div id="first-train-container"></div>
+            <!-- Search bar (shown in search mode instead of first-train-container) -->
+            <div id="train-search-bar" class="train-search-bar">
+              <svg class="train-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+              <input type="text" id="train-search-input" class="train-search-input" placeholder="Linie, Ziel, Beschreibung …" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              <button id="train-search-close" class="train-search-close" aria-label="Suche schließen">✕</button>
+            </div>
           </div>
         </div>
         <!-- Right-side floating group: journal island, centred on ribbon height -->
@@ -703,6 +710,111 @@
       e.stopPropagation();
       var lmBadge = document.getElementById('lovemeter-badge');
       if (lmBadge) lmBadge.click();
+    });
+  }
+
+  // ── Search ──────────────────────────────────────────────────────────────────
+  var menuSearch     = document.getElementById('badge-menu-search');
+  var searchInput    = document.getElementById('train-search-input');
+  var searchClose    = document.getElementById('train-search-close');
+  var trainListEl    = document.getElementById('train-list');
+  var isSearchMode   = false;
+
+  var topRibbonEl = document.querySelector('.top-ribbon');
+
+  function openSearch() {
+    if (isSearchMode) return;
+    isSearchMode = true;
+    if (topRibbonEl)  topRibbonEl.classList.add('search-active');
+    if (trainListEl)  trainListEl.classList.add('search-mode');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.focus();
+    }
+    renderSearchResults('');
+  }
+
+  function closeSearch() {
+    if (!isSearchMode) return;
+    isSearchMode = false;
+    if (topRibbonEl)  topRibbonEl.classList.remove('search-active');
+    if (trainListEl)  trainListEl.classList.remove('search-mode');
+    if (typeof renderCurrentWorkspaceView === 'function') {
+      renderCurrentWorkspaceView({ includeHeadline: false });
+    } else if (typeof renderTrainList === 'function') {
+      renderTrainList();
+    }
+  }
+
+  function renderSearchResults(query) {
+    if (!trainListEl || typeof renderTrainListWithEntries !== 'function') return;
+
+    // Normalize umlauts so ä/ö/ü/ß match both directions
+    function normalizeUmlauts(s) {
+      return (s || '')
+        .toLowerCase()
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue')
+        .replace(/ß/g, 'ss')
+        .replace(/Ä/g, 'ae').replace(/Ö/g, 'oe').replace(/Ü/g, 'ue');
+    }
+    var q = normalizeUmlauts(query.trim());
+
+    // Use scheduledTrains (timed) + durationOnlyTrains as the full searchable pool
+    var pd = window.processedTrainData || processedTrainData;
+    var timed    = (pd && pd.scheduledTrains)    || [];
+    var durOnly  = (pd && pd.durationOnlyTrains) || [];
+
+    function matches(t) {
+      if (!t) return false;
+      if (!q) return true;
+      return (
+        normalizeUmlauts(t.linie        || '').includes(q) ||
+        normalizeUmlauts(t.ziel         || '').includes(q) ||
+        normalizeUmlauts(t.beschreibung || '').includes(q)
+      );
+    }
+
+    var matchedTimed   = timed.filter(matches);
+    var matchedDurOnly = durOnly.filter(matches);
+
+    // Sort chronologically
+    function chronoSort(a, b) {
+      var da = (a.date || '') + (a.plan || a.actual || '');
+      var db = (b.date || '') + (b.plan || b.actual || '');
+      return da < db ? -1 : da > db ? 1 : 0;
+    }
+    matchedTimed.sort(chronoSort);
+    matchedDurOnly.sort(chronoSort);
+
+    renderTrainListWithEntries(matchedTimed, {
+      showHeadline:   false,
+      preserveScroll: false,
+      enableSwipe:    false,
+      enableDateJump: false,
+      append:         false,
+      durationOnlyEntries: matchedDurOnly
+    });
+    trainListEl.classList.add('search-mode');
+  }
+
+  if (menuSearch) {
+    menuSearch.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openSearch();
+    });
+  }
+  if (searchClose) {
+    searchClose.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeSearch();
+    });
+  }
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      renderSearchResults(searchInput.value);
+    });
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeSearch();
     });
   }
 }());
