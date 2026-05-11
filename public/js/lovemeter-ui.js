@@ -526,8 +526,8 @@
     // Expanded by 8px on all sides so point markers at the edges aren't cropped.
     var _clipId = 'lm-chart-clip-' + W_chart;
     var _clipPad = 20;
-    s += '<defs><clipPath id="' + _clipId + '"><rect x="' + (L_YAXIS - _clipPad) + '" y="' + (T - _clipPad) +
-         '" width="' + (W_chart + _clipPad * 2) + '" height="' + (DH + _clipPad * 2) + '"/></clipPath></defs>';
+    s += '<defs><clipPath id="' + _clipId + '"><rect x="' + (L_YAXIS - _clipPad) + '" y="' + T +
+         '" width="' + (W_chart + _clipPad * 2) + '" height="' + (DH + _clipPad) + '"/></clipPath></defs>';
 
     // ── Gradient background (gray→brown→pink→purple→black, 0..3000) ─────────
     s += _buildGradientDef();
@@ -664,28 +664,77 @@
       s += '<circle cx="' + dpX + '" cy="' + dpY + '" r="4" fill="rgba(0,0,0,0.25)"' +
            ' stroke="' + C.curveHistory + '" stroke-width="1.5"/>';
       s += '<circle cx="' + dpX + '" cy="' + dpY + '" r="1.8" fill="#ffffff"/>';
+    });
 
-      // All-bubbles mode: foreignObject bubble with full CSS word-wrap
-      if (_showAllBubbles && dp.event) {
-        var dSign = (dp.delta !== undefined && dp.delta !== null) ? ((dp.delta >= 0 ? '+' : '') + Math.round(dp.delta) + '  ') : '';
-        var label = dSign + dp.event;
-        var foW = 200;
-        var cx2 = parseFloat(dpX);
-        var cy2 = parseFloat(dpY);
-        var foX = cx2 - foW / 2;
-        var bubbleH = 40; // approx; foreignObject content flows beyond if multi-line
-        var nearTop = cy2 - T < 60;
-        var foY = nearTop ? cy2 + 10 : cy2 - 10 - bubbleH;
-        s += '<foreignObject x="' + f(foX) + '" y="' + f(foY) + '" width="' + foW + '" height="200" overflow="visible">' +
+    // ── All-bubbles layout: collect, then resolve collisions ─────────────
+    if (_showAllBubbles) {
+      var bubbles = [];
+      _resolvedPoints.forEach(function (dp) {
+        if (!dp.event) return;
+        var t_min2 = (dp.ts - nowMs) / 60000;
+        if (t_min2 < vMin || t_min2 > vMax) return;
+        var dSign2 = (dp.delta !== undefined && dp.delta !== null) ? ((dp.delta >= 0 ? '+' : '') + Math.round(dp.delta) + '  ') : '';
+        var label2 = dSign2 + dp.event;
+        var foW2   = 200;
+        var cx2    = tMinToPx(t_min2, W_chart);
+        var cy2    = (dp.M <= Y_MAX && dp.M >= Y_MIN) ? yPx(dp.M, H) : (dp.M > Y_MAX ? T : H - B);
+        // Estimate bubble height based on label length (approx 16px font, ~18ch/line)
+        var estLines = Math.max(1, Math.ceil(label2.length / 22));
+        var estH = estLines * 22 + 12;
+        var preferAbove = (cy2 - T) >= 60;
+        var foY2 = preferAbove ? cy2 - 10 - estH : cy2 + 10;
+        bubbles.push({ label: label2, foW: foW2, cx: cx2, cy: cy2, x: cx2 - foW2 / 2, y: foY2, h: estH, anchorCy: cy2 });
+      });
+
+      // Simple iterative collision resolver: nudge overlapping bubbles vertically
+      var MAX_ITER = 40;
+      for (var iter = 0; iter < MAX_ITER; iter++) {
+        var moved = false;
+        for (var bi = 0; bi < bubbles.length; bi++) {
+          for (var bj = bi + 1; bj < bubbles.length; bj++) {
+            var a = bubbles[bi], b = bubbles[bj];
+            // Check X overlap
+            var xOverlap = a.x < b.x + b.foW && a.x + a.foW > b.x;
+            if (!xOverlap) continue;
+            // Check Y overlap
+            var aBottom = a.y + a.h + 4;
+            var bBottom = b.y + b.h + 4;
+            var yOverlap = a.y < bBottom && aBottom > b.y;
+            if (!yOverlap) continue;
+            // Push them apart: move the lower one down, upper one up
+            var overlapAmt = (aBottom - b.y) / 2 + 1;
+            if (a.y <= b.y) {
+              b.y += overlapAmt;
+              a.y -= overlapAmt;
+            } else {
+              a.y += overlapAmt;
+              b.y -= overlapAmt;
+            }
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+
+      // Clamp to SVG bounds and emit
+      bubbles.forEach(function (bb) {
+        var foY3 = Math.max(2, Math.min(H - bb.h - 2, bb.y));
+        var foX3 = Math.max(L_YAXIS, Math.min(SVG_W - R - bb.foW, bb.x));
+        // Connector line from anchor dot to bubble
+        var lineY = foY3 > bb.anchorCy ? foY3 : foY3 + bb.h;
+        s += '<line x1="' + f(bb.cx) + '" y1="' + f(bb.anchorCy) + '" x2="' + f(bb.cx) + '" y2="' + f(lineY) +
+             '" stroke="rgba(255,105,180,0.35)" stroke-width="1" stroke-dasharray="3 2"/>';
+        s += '<foreignObject x="' + f(foX3) + '" y="' + f(foY3) + '" width="' + bb.foW + '" height="' + (bb.h + 20) + '" overflow="visible">' +
              '<div xmlns="http://www.w3.org/1999/xhtml" style="' +
-               'display:inline-block;max-width:' + foW + 'px;padding:5px 8px;' +
+               'display:inline-block;max-width:' + bb.foW + 'px;padding:5px 8px;' +
                'background:rgba(15,17,23,0.93);border:1px solid rgba(255,105,180,0.35);' +
                'border-radius:5px;font-size:16px;font-weight:600;color:rgba(255,255,255,0.92);' +
                'word-break:break-word;line-height:1.35;font-family:sans-serif;' +
-             '">' + esc(label) + '</div>' +
+             '">' + esc(bb.label) + '</div>' +
              '</foreignObject>';
-      }
-    });
+      });
+    }
+
 
     // ── Hover crosshair elements (hidden initially) ───────────────────────
     s += '<rect id="lm-hit" x="' + L_YAXIS + '" y="0" width="' + W_chart + '" height="' + H +
