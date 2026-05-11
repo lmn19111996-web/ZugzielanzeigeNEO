@@ -182,6 +182,11 @@ function resolveDataPoints(rawPoints) {
       if (resolved.length === 0) {
         baselineM = cfg.M_BASE;
       } else if (resolved.length === 1) {
+        // Only one resolved point — if pt.ts is beyond it, trust stored M (future anchor)
+        if (pt.ts > resolved[0].ts) {
+          resolved.push(Object.assign({}, pt));
+          continue;
+        }
         baselineM = resolved[0].M;
       } else {
         var spline = buildMoodSpline(resolved);
@@ -189,9 +194,14 @@ function resolveDataPoints(rawPoints) {
         if (val !== null) {
           baselineM = val;
         } else if (pt.ts < resolved[0].ts) {
+          // Before all resolved points — extrapolate flat from first
           baselineM = resolved[0].M;
         } else {
-          baselineM = resolved[resolved.length - 1].M;
+          // Beyond the spline range (future point): the delta was applied against
+          // the live ODE prediction at creation time, which is already baked into pt.M.
+          // Trust the stored M directly — treat as absolute anchor.
+          resolved.push(Object.assign({}, pt));
+          continue;
         }
       }
       resolved.push(Object.assign({}, pt, { M: Math.max(cfg.M_MIN, baselineM + pt.delta) }));

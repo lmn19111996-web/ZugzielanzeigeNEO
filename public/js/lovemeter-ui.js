@@ -73,6 +73,7 @@
   var _graphCache      = { key: '', markup: '' };
   var _nowLineEl       = null;
   var _dataPoints      = [];     // live array of {ts, M}
+  var _resolvedCache   = [];     // resolved (delta-applied) copy, kept in sync with renderGraph
   var SNAP_PX          = 20;     // pixels within which cursor snaps to a data point
 
   // ── Pan / swipe state ─────────────────────────────────────────────────────
@@ -454,6 +455,7 @@
     // scales to what the user can actually see, not the entire dataset.
     var helper   = getLovemeterHelperArray(_dataPoints);
     var _resolvedPoints = resolveDataPoints(_dataPoints);
+    _resolvedCache = _resolvedPoints;  // keep in sync for hover/snap
     var _yFocusHalf = _focusMode ? LINEAR_CLAMP_MIN : VIEW_HALF_MIN;
     var _vMin    = viewOffset - _yFocusHalf;   // minutes-from-now, viewport left edge
     var _vMax    = viewOffset + _yFocusHalf;   // minutes-from-now, viewport right edge
@@ -665,7 +667,7 @@
 
       // All-bubbles mode: foreignObject bubble with full CSS word-wrap
       if (_showAllBubbles && dp.event) {
-        var dSign = (dp.delta !== undefined && dp.delta !== null) ? ((dp.delta >= 0 ? '+' : '') + dp.delta + '  ') : '';
+        var dSign = (dp.delta !== undefined && dp.delta !== null) ? ((dp.delta >= 0 ? '+' : '') + Math.round(dp.delta) + '  ') : '';
         var label = dSign + dp.event;
         var foW = 200;
         var cx2 = parseFloat(dpX);
@@ -767,8 +769,8 @@
     var _vpMax = viewOffset + VIEW_HALF_MIN;
     _snapPoint = null;
     var bestDist = SNAP_PX;
-    for (var si = 0; si < _dataPoints.length; si++) {
-      var dp = _dataPoints[si];
+    for (var si = 0; si < _resolvedCache.length; si++) {
+      var dp = _resolvedCache[si];
       var dpTMin = (dp.ts - svg._nowMs) / 60000;
       if (dpTMin < _vpMin || dpTMin > _vpMax) continue;
       if (dp.M > Y_MAX || dp.M < Y_MIN) continue;  // skip out-of-range markers
@@ -810,7 +812,7 @@
         var labelText = evtName || (dStr + ' ' + tStr + '  ♥ ' + Mdisp);
         if (evtDelta !== null) {
           var dSign = evtDelta >= 0 ? '+' : '';
-          labelText += '  (' + dSign + evtDelta + ')';
+          labelText += '  (' + dSign + Math.round(evtDelta) + ')';
         }
         bubbleEvent.textContent = labelText;
         bubbleEvent.style.display = '';
