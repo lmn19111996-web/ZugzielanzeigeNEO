@@ -717,14 +717,14 @@
 
       // Energy curve
       s += '<g filter="url(#sg-bf)">';
-      for (var m = 0; m < 1437; m += 3) {
-        var s1 = steps[m], s2 = steps[m + 3];
+      for (var m = 0; m < 1430; m += 10) {
+        var s1 = steps[m], s2 = steps[m + 10];
         if (!s1 || !s2) continue;
         var taskId = s1.task ? s1.task.linie : null;
         var col    = (taskId && typeof getLineColor === 'function') ? getLineColor(taskId) : IDLE_C;
         if ((s1.task && s1.task._alertLvl === 3) || s1.E < cfg.OVERLOAD_E_THRESHOLD || s2.E < cfg.OVERLOAD_E_THRESHOLD) col = '#FF0000';
-        s += '<line x1="' + f(colX + (m       / 1440) * DAY_W) + '" y1="' + f(yPx(s1.E, H)) +
-             '" x2="' + f(colX + ((m + 3) / 1440) * DAY_W) + '" y2="' + f(yPx(s2.E, H)) +
+        s += '<line x1="' + f(colX + (m        / 1440) * DAY_W) + '" y1="' + f(yPx(s1.E, H)) +
+             '" x2="' + f(colX + ((m + 10) / 1440) * DAY_W) + '" y2="' + f(yPx(s2.E, H)) +
              '" stroke="' + col + '" stroke-width="2.0" stroke-linecap="round"/>';
       }
       s += '</g>';

@@ -5322,6 +5322,44 @@ font-weight: 500;
   gap: 2vh 1vw;
 }
 
+/* Generic taskbar button tooltip (same mechanic as pinned chip tooltip) */
+.task-icon-button {
+  position: relative;
+}
+
+.task-icon-button .taskbar-tooltip {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  height: 100%;
+  clip-path: inset(0 100% 0 0);
+  background: var(--color-bg-taskbar);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 0 0.5vw;
+  white-space: nowrap;
+  font-size: 2.4vh;
+  font-weight: 500;
+  color: #e3e3e3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  transition: clip-path 0.1s ease;
+  z-index: 0;
+  border-radius: 1px;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.5);
+}
+
+.task-icon-button:hover .taskbar-tooltip {
+  clip-path: inset(0 0% 0 0);
+}
+
+/* Hide on mobile — label is already visible */
+@media (max-width: 768px) {
+  .task-icon-button .taskbar-tooltip {
+    display: none;
+  }
+}
+
 /* Pinned projects section in taskbar */
 .taskbar-pinned-projects {
   width: 100%;
