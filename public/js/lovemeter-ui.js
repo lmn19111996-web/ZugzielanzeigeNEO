@@ -1377,6 +1377,12 @@
   // ── Public API ────────────────────────────────────────────────────────────
   window.updateLovemeterBadge = updateLovemeterBadge;
 
+  window.openLovemeterEventDrawer = function () {
+    var nowMs2 = Date.now();
+    var M2 = getLovemeterMoodAt(nowMs2, _dataPoints);
+    _openEventDrawer(nowMs2, M2, null);
+  };
+
   window.lovemeterOnDataChanged = function () {
     loadLovemeterDataPoints().then(function(pts) {
       _dataPoints = pts;

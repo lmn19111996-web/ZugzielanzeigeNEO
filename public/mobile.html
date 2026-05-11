@@ -310,6 +310,12 @@
             </div>
           </div>
           <div class="top-ribbon now-card">
+            <!-- Mobile ribbon-tap dropdown menu -->
+            <div class="mobile-ribbon-menu" id="mobile-ribbon-menu" role="menu">
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="mob-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="mob-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--search" id="mob-menu-search" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>Suche</button>
+            </div>
             <div class="clockSlot">
               <div class="aclock">
                 <div class="center"></div>
@@ -713,7 +719,38 @@
     });
   }
 
-  // ── Search ──────────────────────────────────────────────────────────────────
+  // ── Mobile ribbon menu item wiring ──────────────────────────────────────────
+  function closeMobMenu() {
+    var m = document.getElementById('mobile-ribbon-menu');
+    if (m) m.classList.remove('is-open');
+  }
+  var mobMenuEnergy   = document.getElementById('mob-menu-energy');
+  var mobMenuLovemeter = document.getElementById('mob-menu-lovemeter');
+  var mobMenuSearch   = document.getElementById('mob-menu-search');
+  if (mobMenuEnergy) {
+    mobMenuEnergy.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMobMenu();
+      var smBadge = document.getElementById('stressmeter-badge');
+      if (smBadge) smBadge.click();
+    });
+  }
+  if (mobMenuLovemeter) {
+    mobMenuLovemeter.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMobMenu();
+      if (typeof window.openLovemeterEventDrawer === 'function') {
+        window.openLovemeterEventDrawer();
+      }
+    });
+  }
+  if (mobMenuSearch) {
+    mobMenuSearch.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMobMenu();
+      openSearch();
+    });
+  }
   var menuSearch     = document.getElementById('badge-menu-search');
   var searchInput    = document.getElementById('train-search-input');
   var searchClose    = document.getElementById('train-search-close');

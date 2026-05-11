@@ -859,9 +859,22 @@
           const shell = entry.closest('.mobile-entry-shell');
           const bar = shell && shell.querySelector('.mobile-action-bar');
           if (!bar) {
-            // No action bar (header / first-train) → open stress dashboard on mobile
-            const badge = document.getElementById('stressmeter-badge');
-            if (badge) badge.click();
+            // No action bar (header / first-train) → toggle mobile ribbon menu
+            const mobMenu = document.getElementById('mobile-ribbon-menu');
+            if (mobMenu) {
+              const opening = !mobMenu.classList.contains('is-open');
+              mobMenu.classList.toggle('is-open', opening);
+              if (opening) {
+                // Close on next outside tap
+                const outsideClose = (ev) => {
+                  if (!mobMenu.contains(ev.target) && !entry.contains(ev.target)) {
+                    mobMenu.classList.remove('is-open');
+                    document.removeEventListener('pointerdown', outsideClose, true);
+                  }
+                };
+                setTimeout(() => document.addEventListener('pointerdown', outsideClose, true), 0);
+              }
+            }
             document.querySelectorAll('.train-entry').forEach(en => en.classList.remove('selected'));
             entry.classList.add('selected');
             return;

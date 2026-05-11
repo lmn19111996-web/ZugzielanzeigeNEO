@@ -3266,6 +3266,7 @@ html, body {
         height: 6vh;
         width: auto;
         box-sizing: border-box;
+        position: relative; /* anchor for mobile-ribbon-menu */
       }
 
       .clockSlot {
@@ -6631,8 +6632,68 @@ body.review-write-drawer-open .left-column {
 #train-list.search-mode .day-separator { opacity: 0.55; }
 #train-list.search-mode .day-separator-line { display: none; }
 
+.mobile-ribbon-menu { display: none; }
+
 @media (max-width: 768px) {
   .badge-rotator { display: none; }
+
+  /* Mobile ribbon-tap menu — appears below the top-ribbon */
+  .mobile-ribbon-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #000;
+    border-radius: 0 0 4px 4px;
+    display: flex;
+    flex-direction: column;
+    clip-path: inset(0 0 100% 0);
+    pointer-events: none;
+    transition: clip-path 0.18s ease;
+    z-index: 1100;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .mobile-ribbon-menu.is-open {
+    clip-path: inset(0 0 0% 0);
+    pointer-events: auto;
+  }
+  /* Reuse badge-rotator-menu-item sizing but make them finger-friendly */
+  .mobile-ribbon-menu .badge-rotator-menu-item {
+    font-size: 4.5vw;
+    padding: 3.5vw 4vw;
+    gap: 3vw;
+  }
+  .mobile-ribbon-menu .badge-rotator-menu-icon {
+    width: 5vw;
+    height: 5vw;
+  }
+  .mobile-ribbon-menu .badge-rotator-menu-heart {
+    font-size: 5vw;
+  }
+
+  /* Lovemeter attribute grid: 1 column on mobile */
+  .lm-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Lovemeter overlay: full width on mobile (nav rail is at bottom, not left) */
+  .lm-overlay {
+    left: 0 !important;
+  }
+  /* Reset the 2-col alternating colour pattern to simple every-other-row */
+  .lm-stats-grid .lm-stat-row:nth-child(4n+1),
+  .lm-stats-grid .lm-stat-row:nth-child(4n+2),
+  .lm-stats-grid .lm-stat-row:nth-child(4n+3),
+  .lm-stats-grid .lm-stat-row:nth-child(4n+4) {
+    background: transparent;
+  }
+  .lm-stats-grid .lm-stat-row:nth-child(odd) {
+    background: rgba(255,255,255,0.06);
+  }
+  .lm-stat-row {
+    padding-left: 4vw;
+  }
 }
 
 /* Hide both badges whenever any drawer is open */
