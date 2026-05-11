@@ -157,6 +157,49 @@ function buildMoodSpline(dataPoints) {
   };
 }
 
+/**
+ * Resolve relative (delta) data points against the evolving spline.
+ * Points are processed left-to-right in chronological order.
+ *   - Absolute points (no delta field): M used as stored.
+ *   - Relative points (delta field present): M = spline_baseline_at_ts + delta,
+ *     where the baseline spline is built from all previously resolved points.
+ * This ensures that editing a past point cascades correctly to all
+ * downstream relative points.
+ */
+function resolveDataPoints(rawPoints) {
+  const cfg    = LOVEMETER_CONFIG;
+  const sorted = rawPoints.slice().sort((a, b) => a.ts - b.ts);
+  const resolved = [];
+
+  for (var i = 0; i < sorted.length; i++) {
+    var pt = sorted[i];
+    if (pt.delta === undefined || pt.delta === null) {
+      // Absolute / override point — M is canonical, use as-is
+      resolved.push(Object.assign({}, pt));
+    } else {
+      // Relative point — baseline = spline of resolved so far at pt.ts
+      var baselineM;
+      if (resolved.length === 0) {
+        baselineM = cfg.M_BASE;
+      } else if (resolved.length === 1) {
+        baselineM = resolved[0].M;
+      } else {
+        var spline = buildMoodSpline(resolved);
+        var val    = spline(pt.ts);
+        if (val !== null) {
+          baselineM = val;
+        } else if (pt.ts < resolved[0].ts) {
+          baselineM = resolved[0].M;
+        } else {
+          baselineM = resolved[resolved.length - 1].M;
+        }
+      }
+      resolved.push(Object.assign({}, pt, { M: Math.max(cfg.M_MIN, baselineM + pt.delta) }));
+    }
+  }
+  return resolved;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ODE PREDICTION ENGINE (spec §2.12)
 // Euler integration of the two-state ODE:
@@ -217,7 +260,7 @@ let _lmHelperCacheKey = '';
 function getLovemeterHelperArray(dataPoints) {
   const cfg    = LOVEMETER_CONFIG;
   const nowMs  = Date.now();
-  const dpKey  = dataPoints.map(p => p.ts + ':' + p.M).join('|');
+  const dpKey  = dataPoints.map(p => p.ts + ':' + p.M + ':' + (p.delta !== undefined ? p.delta : '')).join('|');
 
   // Reuse cache if data unchanged and computed within the last 60 minutes
   if (_lmHelperCache && _lmHelperCacheKey === dpKey) {
@@ -227,7 +270,9 @@ function getLovemeterHelperArray(dataPoints) {
   const TOTAL_MINS = (cfg.PAST_DAYS + cfg.FUTURE_DAYS) * 1440;
   const startMs    = nowMs - cfg.PAST_DAYS * 24 * 60 * 60 * 1000;
 
-  const sorted      = dataPoints.slice().sort((a, b) => a.ts - b.ts);
+  // Resolve relative (delta) points against the evolving baseline
+  const resolved    = resolveDataPoints(dataPoints);
+  const sorted      = resolved.slice().sort((a, b) => a.ts - b.ts);
   const lastPt      = sorted.length > 0 ? sorted[sorted.length - 1] : null;
   const lastDataMs  = lastPt ? lastPt.ts : null;
 
