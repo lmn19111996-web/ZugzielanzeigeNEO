@@ -1,0 +1,668 @@
+﻿<!-- The html landing page. Idk why its called mobile.html anymore but basically this is where all the scripts are called. Is A CENTER PIECE OF THE APP. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<link rel="stylesheet" href="style.css">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mobile Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#161B75">
+  <!-- style extracted to style.css -->
+</head>
+<body>
+  <!-- Save Status Indicator -->
+  <div id="save-status-indicator"></div>
+  <!-- Debug notification button — only visible with ?debug=1 in the URL -->
+  <button id="debug-notif-btn" onclick="fireDebugNotification()" style="display:none;position:fixed;bottom:80px;right:16px;z-index:9999;padding:8px 14px;background:#ff6b35;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔔 Test Notif</button>
+  <script>if (new URLSearchParams(location.search).get('debug') === '1') { document.getElementById('debug-notif-btn').style.display = ''; }</script>
+  
+  <!-- Focus mode template -->
+  <template id="focus-template">
+    <div class="editor-container">
+      <div class="editor-field" data-field="linie" data-input-type="text" data-editable="true">
+        <div class="editor-field-label">Linie</div>
+        <div class="editor-field-value" data-focus="line"></div>
+      </div>
+      
+      <div class="editor-field" data-field="ziel" data-input-type="text" data-editable="true">
+        <div class="editor-field-label">Ziel</div>
+        <div class="editor-field-value" data-focus="destination"></div>
+      </div>
+      
+      <div class="editor-field" data-field="date" data-input-type="date" data-editable="true">
+        <div class="editor-field-label">
+          Datum
+          <span class="recurrence-config-badge project-badge" data-focus-action="toggle-recurrence" style="display:none;">Wiederholung konfigurieren →</span>
+        </div>
+        <div class="editor-field-value" data-focus="date"></div>
+      </div>
+
+      <div class="editor-field" data-field="recurrencePattern" style="display:none;">
+        <div class="editor-field-label">
+          Wiederholung
+          <span class="vorlage-link-badge project-badge" data-focus-action="toggle-mode" style="display:none;">Zur Vorlage →</span>
+        </div>
+        <div class="editor-field-value"></div>
+      </div>
+      
+      <div class="editor-field" data-field="plan" data-input-type="time" data-editable="true">
+        <div class="editor-field-label">Planmäßige Abfahrt - Ankunft</div>
+        <div class="editor-field-value" data-focus="arrival-plan"></div>
+      </div>
+      
+      <div class="editor-field" data-field="actual" data-input-type="time" data-editable="true">
+        <div class="editor-field-label">Tatsächliche Abfahrt - Ankunft</div>
+        <div class="editor-field-value" data-focus="arrival-actual"></div>
+      </div>
+      
+      <div class="editor-delay-buttons">
+        <button class="editor-btn-delay" data-delay-action="minus5" tabindex="-1">-5</button>
+        <button class="editor-btn-delay" data-delay-action="plus5" tabindex="-1">+5</button>
+        <button class="editor-btn-delay" data-delay-action="plus10" tabindex="-1">+10</button>
+        <button class="editor-btn-delay" data-delay-action="plus30" tabindex="-1">+30</button>
+      </div>
+      
+      <div class="editor-field" data-field="dauer" data-input-type="number" data-editable="true">
+        <div class="editor-field-label">Dauer</div>
+        <div class="editor-field-value" data-focus="duration"></div>
+      </div>
+      
+      <div class="editor-field editor-field-multiline" data-field="zwischenhalte" data-input-type="textarea" data-editable="true">
+        <div class="editor-field-label">Zwischenhalte</div>
+        <div class="editor-field-value" data-focus="stops"></div>
+      </div>
+      
+      <div class="editor-field" data-field="projectId" data-input-type="select" data-editable="true">
+        <div class="editor-field-label">
+          Projekt
+          <span class="project-badge" style="display: none;">Zum Projekt →</span>
+        </div>
+        <div class="editor-field-value" data-focus="project"></div>
+      </div>
+      
+      <div class="editor-actions" data-focus="actions">
+        <button class="editor-btn editor-btn-save" tabindex="-1">Speichern</button>
+        <button class="editor-btn editor-btn-cancel" data-focus-action="cancel" tabindex="-1">Durchstreichen</button>
+        <button class="editor-btn editor-btn-delete" data-focus-action="delete" tabindex="-1">Löschen</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- End of focus mode template-->
+
+  <!-- Announcement template -->
+  <template id="announcement-template">
+    <div class="announcement-container">
+      <div class="announcement-panel">
+        <div class="announcement-headline late" data-announcement="headline"> ✕ Zug fällt aus </div>
+        <div class="announcement-group-icon-type">
+          <div class="announcement-time-slot">
+            <div class="announcement-plan" data-announcement="plan"></div>
+            <div class="announcement-delayed" data-announcement="delayed" style="display: none;"></div>
+          </div>
+          <img class="announcement-line-icon" src="" alt="Train Icon" data-announcement="line-icon">
+        </div>
+        <div class="announcement-destination" data-announcement="destination"></div>
+        <div class="announcement-content-panel" data-announcement="content"></div>
+      </div>
+    </div>
+  </template>
+  <!-- End of announcement template -->
+
+  <!-- Note template -->
+  <template id="note-template">
+    <div class="announcement-container">
+      <div class="announcement-panel note-panel">
+        <div class="announcement-headline note"></div>
+        <div class="announcement-destination" data-note="destination"></div>
+        <div class="announcement-date" data-note="date"></div>
+        <div class="announcement-content-panel" data-note="content"></div>
+      </div>
+    </div>
+  </template>
+  <!-- End of note template -->
+
+  <!-- Konflikt announcement template -->
+  <template id="konflikt-template">
+    <div class="announcement-container">
+      <div class="announcement-panel konflikt-announcement-panel">
+        <div class="announcement-headline cancelled">
+          <span>⚠︎ Konflikt</span>
+          <button class="konflikt-resolve-button" data-konflikt="resolve-button">Lösen</button>
+        </div>
+        
+        <!-- Main train block 1 -->
+        <div class="konflikt-block konflikt-main-block">
+          <img class="konflikt-line-icon" src="" alt="Train Icon" data-konflikt="main-icon">
+          <div class="konflikt-destination" data-konflikt="main-destination"></div>
+          <div class="konflikt-panel" data-konflikt="main-stops"></div>
+        </div>
+
+        <!-- Main train block 2 (empty) -->
+        <div class="konflikt-block konflikt-main-block"></div>
+        
+        <!-- Main train block 3 (full height for train-in-train, half height for nested) -->
+        <div class="konflikt-block konflikt-main-block" data-konflikt="main-block-3"></div>
+
+        <!-- Conflict train block (middle position for train-in-train, nested position for overlap) -->
+        <div class="konflikt-block konflikt-color" data-konflikt="conflict-block">
+          <img class="konflikt-line-icon" src="" alt="Train Icon" data-konflikt="conflict-icon">
+          <div class="konflikt-destination" data-konflikt="conflict-destination"></div>
+          <div class="konflikt-panel" data-konflikt="conflict-stops"></div>
+        </div>
+
+        <!-- Time slot 1: Main train departure -->
+        <div class="konflikt-time-slot konflikt-time-slot-1" data-konflikt="time-1">
+          <div class="konflikt-plan" data-konflikt="time-1-plan"></div>
+          <div class="konflikt-delayed delayed-main" data-konflikt="time-1-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 2: Conflict arrival (always red) -->
+        <div class="konflikt-time-slot konflikt-time-slot-2" data-konflikt="time-2">
+          <div class="konflikt-plan" data-konflikt="time-2-plan"></div>
+          <div class="konflikt-delayed delayed-konflikt" data-konflikt="time-2-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 3: Conflict end (train-in-train) OR Main end (nested) -->
+        <div class="konflikt-time-slot konflikt-time-slot-3" data-konflikt="time-3">
+          <div class="konflikt-plan" data-konflikt="time-3-plan"></div>
+          <div class="konflikt-delayed" data-konflikt="time-3-delayed" style="display: none;"></div>
+        </div>
+
+        <!-- Time slot 4: Main end (train-in-train) OR Conflict end (nested) -->
+        <div class="konflikt-time-slot konflikt-time-slot-4" data-konflikt="time-4">
+          <div class="konflikt-plan" data-konflikt="time-4-plan"></div>
+          <div class="konflikt-delayed" data-konflikt="time-4-delayed" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <!-- End of konflikt template -->
+
+  <!-- Project drawer template -->
+  <template id="project-drawer-template">
+    <div class="project-drawer-container">
+      <div class="project-drawer-header" data-project="header">
+        <div class="project-symbol-wrapper">
+          <img src="res/s1.svg" class="project-drawer-symbol" data-project="symbol" alt="Line">
+          <div class="line-badge line-badge--pill" data-project="symbol-fallback" style="display: none;">S1</div>
+        </div>
+        <div class="project-drawer-title" data-project="name" data-editable="true">Unbenanntes Projekt</div>
+        <button class="project-drawer-close" data-project="close-btn">✕</button>
+      </div>
+      
+      <div class="project-info-section">
+        <div class="project-field-label">Fälligkeit</div>
+        <div class="project-field-value" data-project="deadline" data-editable="true" data-input-type="datetime-local">Kein Fälligkeitsdatum</div>
+      </div>
+      
+      <div class="project-info-section">
+        <div class="project-field-label">Ansicht</div>
+        <select class="project-view-selector" data-project="view-selector">
+          <option value="aufgabe">Aufgabe</option>
+          <option value="todo">To-Do Liste</option>
+        </select>
+      </div>
+      
+      <div class="project-tasks-header" data-project="tasks-header">
+        <span class="project-task-col-plan">Gep.</span>
+        <span class="project-task-col-status"></span>
+        <span class="project-task-col-actual">Akt.</span>
+        <span class="project-task-col-name">Aufgabe</span>
+      </div>
+      
+      <div class="project-tasks-header project-todos-header" data-project="todos-header" style="display: none;">
+        <span class="project-todo-col-due-date">Datum</span>
+        <span class="project-todo-col-checkbox"></span>
+        <span class="project-todo-col-name">To-Do</span>
+      </div>
+      
+      <div class="project-tasks-list" data-project="tasks-list">
+        <!-- Tasks will be inserted here -->
+      </div>
+      
+      <!-- Statistics Board (inserted dynamically for task view only) -->
+      
+      
+      <div class="project-footer">
+        <div class="project-created-date" data-project="created-date">Erstellt am</div>
+        <div class="project-footer-actions">
+          <button class="project-footer-btn" data-project="pin-btn" title="An Seitenleiste anpinnen">
+            <img src="res/pin.svg" class="project-footer-btn-icon" alt="Pin">
+          </button>
+          <button class="project-footer-btn" data-project="archive-btn" title="Archivieren">
+            <img src="res/inventory.svg" class="project-footer-btn-archive-icon" alt="Archiv">
+          </button>
+          <img src="res/delete.svg" class="project-delete-icon" data-project="delete-btn">
+        </div>
+      </div>
+    </div>
+  </template>
+  <!-- End of project drawer template -->
+
+  <!-- Projects page template -->
+  <template id="projects-page-template">
+    <div class="projects-page">
+      <div class="projects-header">
+        <h2 class="projects-title">Projekte</h2>
+        <div class="projects-actions">
+          <div class="project-sort-container">
+            <span class="project-sort-label">Sortieren nach:</span>
+            <select class="project-sort-selector" id="project-sort-selector">
+              <option value="creation">Erstellungsdatum</option>
+              <option value="name">Name</option>
+              <option value="line">Linie</option>
+              <option value="deadline">Fälligkeit</option>
+              <option value="tasks">Aufgabenanzahl</option>
+            </select>
+          </div>
+          <button class="project-create-btn" id="create-project-btn">+ Neues Projekt</button>
+        </div>
+      </div>
+      <div class="projects-list" data-projects="list">
+        <!-- Project cards will be inserted here -->
+      </div>
+    </div>
+  </template>
+  <!-- End of projects page template -->
+
+  <!-- Project card template -->
+  <template id="project-card-template">
+    <div class="project-card" data-project-id="" data-projects="card">
+      <div class="project-card-header">
+        <div class="project-card-icon-wrapper">
+          <img src="" class="project-card-icon" alt="Line" data-projects="icon">
+          <div class="line-badge line-badge--pill" data-projects="icon-fallback" style="display: none;">S1</div>
+        </div>
+        <div class="project-card-name" data-projects="name">Unbenanntes Projekt</div>
+      </div>
+      <div style="display: flex; gap: 1vw; align-items: center; margin-top: 0.5vh;">
+        <div class="project-card-deadline" data-projects="deadline">Open-Ended</div>
+        <div class="project-card-progress" data-projects="progress">0 / 0 Aufgaben abgeschlossen</div>
+      </div>
+    </div>
+  </template>
+  <!-- End of project card template -->
+
+  <!-- Projects empty state template -->
+  <template id="projects-empty-template">
+    <div class="projects-empty">Keine Projekte vorhanden. Erstellen Sie ein neues Projekt.</div>
+  </template>
+  <!-- End of projects empty state template -->
+
+  <!-- Main display area -->
+
+  <div id="container">
+    <!-- Left column: clock + train list -->
+    <div class="left-column">
+      <!-- Top ribbon with clock + journal island -->
+      <div class="top-bar">
+        <div class="top-bar-main">
+          <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span id="sg-badge-edit" class="badge-edit" title="Energiepunkt jetzt setzen">✎</span><span class="badge-label" id="sg-badge-label"></span></button>
+          <button id="lovemeter-badge" aria-label="Lovemeter" aria-expanded="false"><span class="lm-badge-heart">♥</span><span class="badge-num" id="lm-badge-num">—</span><span id="lm-badge-trend" class="lm-badge-trend">→</span><span id="lm-badge-edit" class="badge-edit" title="Mood-Event eintragen">✎</span><span class="badge-label" id="lm-badge-label"></span></button>
+          <div class="top-ribbon now-card">
+            <div class="clockSlot">
+              <div class="aclock">
+                <div class="center"></div>
+                <div class="hand hour" id="hour"></div>
+                <div class="hand minute" id="minute"></div>
+              </div>
+              <div class="clock" id="clock">--:--</div>
+            </div>
+            <!-- First train entry will be rendered here by updateClock() -->
+            <div id="first-train-container"></div>
+          </div>
+        </div>
+        <!-- Right-side floating group: journal island, centred on ribbon height -->
+        <div class="top-bar-right-group">
+          <div id="journal-island" class="journal-island" aria-label="Tagebuch öffnen">
+            <span class="journal-island-icon">★</span>
+            <span class="journal-island-label">Rezension</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stressmeter dashboard: slides down from top bar when badge is clicked -->
+      <div id="stress-dashboard" class="stress-dashboard" aria-hidden="true">
+        <div class="sg-chart-shell">
+          <svg id="sg-yaxis" aria-hidden="true"></svg>
+          <div class="sg-scroll-wrap" id="sg-scroll-wrap" tabindex="0" aria-label="Energie-Zeitverlauf">
+            <svg id="stress-svg" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
+          </div>
+          <!-- Hover tooltip — content injected by stressmeter-ui.js -->
+          <div id="sg-tooltip" class="sg-tooltip" role="tooltip" aria-live="polite">
+            <div class="sg-tip-header">
+              <span class="sg-tip-date" id="sg-tip-date"></span>
+              <span class="sg-tip-time" id="sg-tip-time"></span>
+            </div>
+            <div class="sg-tip-body">
+              <div class="sg-tip-energy-row">
+                <span class="sg-tip-energy" id="sg-tip-energy"></span>
+                <span class="sg-tip-delta"  id="sg-tip-delta"></span>
+              </div>
+              <div class="sg-tip-task"   id="sg-tip-task"></div>
+              <div class="sg-tip-window" id="sg-tip-window"></div>
+              <div class="sg-tip-rate">Rate: <span class="sg-tip-rate-val" id="sg-tip-rate"></span> E/min</div>
+              <div class="sg-tip-muls">
+                <span id="sg-tip-fatigue"></span>
+                <span id="sg-tip-circadian"></span>
+                <span id="sg-tip-context"></span>
+              </div>
+              <div class="sg-tip-alert" id="sg-tip-alert"></div>
+              <div class="sg-tip-override-actions" id="sg-tip-override-actions" style="display:none;">
+                <button class="sg-tip-action-btn" id="sg-tip-override-edit" type="button">Bearbeiten</button>
+                <button class="sg-tip-action-btn sg-tip-action-btn-danger" id="sg-tip-override-remove" type="button">Entfernen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Lovemeter overlay: full left-column panel, toggled by badge / Ctrl+A -->
+      <div id="lm-overlay" class="lm-overlay" aria-hidden="true">
+        <!-- Back button -->
+        <button id="lm-back-btn" class="lm-back-btn" title="Back to main screen" aria-label="Back to main screen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <!-- TOP HALF: chart -->
+        <div class="lm-overlay-chart-zone">
+          <div class="sg-chart-shell lm-chart-shell">
+            <svg id="lm-yaxis" aria-hidden="true"></svg>
+            <div class="sg-scroll-wrap lm-scroll-nowrap" id="lm-scroll-wrap" tabindex="0" aria-label="Mood Timeline">
+              <svg id="lovemeter-svg" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
+            </div>
+            <div id="lm-point-bubble" class="lm-point-bubble" role="tooltip" aria-live="polite">
+              <div class="lm-bubble-event" id="lm-bubble-event"></div>
+              <div class="lm-bubble-arrow"></div>
+            </div>
+          </div>
+          <!-- Icon sidebar: focus + show-all-bubbles -->
+          <div class="lm-chart-sidebar">
+            <button id="lm-focus-btn" class="lm-chart-icon-btn" title="Focus Y-axis on ±6h window">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            </button>
+            <button id="lm-bubbles-btn" class="lm-chart-icon-btn" title="Show all event bubbles">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <button id="lm-center-now-btn" class="lm-chart-icon-btn" title="Center on NOW">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+        <!-- BOTTOM HALF: stats grid -->
+        <div class="lm-overlay-stats-zone" id="lm-stats-zone">
+          <!-- filled by lovemeter-ui.js -->
+        </div>
+      </div>
+
+      <!--Taskbar-->
+      <div class="container-task-panel">
+        <div class="taskbar">
+          <div class="task-icon-group">
+            <button class="task-icon-button" id="station-select-button">
+              <img src="res/DB_logo_white_rgb_100px.svg" alt="Station Selection">
+              <span class="task-icon-label">Station</span>
+            </button>
+            <button class="task-button nav-only" id="sidebar-add-button">+</button>
+            <button class="task-icon-button nav-only" id="list-view-button">
+              <img src="res/list.png" alt="List View">
+              <span class="task-icon-label">Liste</span>
+              <span class="taskbar-tooltip">Liste</span>
+            </button>
+            <button class="task-icon-button nav-only" id="occupancy-view-button">
+              <img src="res/occupancy.svg" alt="Occupancy View">
+              <span class="task-icon-label">Belegung</span>
+              <span class="taskbar-tooltip">Belegung</span>
+            </button>
+            <button class="task-icon-button" id="announcements-button">
+              <img src="res/announcement.png" alt="Announcements">
+              <span class="task-icon-label">Meldungen</span>
+              <span class="taskbar-tooltip">Meldungen</span>
+            </button>
+            <button class="task-icon-button" id="notes-button">
+              <img src="res/notes.png" alt="Notes">
+              <span class="task-icon-label">Notizen</span>
+              <span class="taskbar-tooltip">Notizen</span>
+            </button>
+            <button class="task-icon-button" data-mode="projects">
+              <img src="res/project.svg" alt="Projects">
+              <span class="task-icon-label">Projekte</span>
+              <span class="taskbar-tooltip">Projekte</span>
+            </button>
+            <button class="task-icon-button" data-mode="log-viewer">
+              <img src="res/list.png" alt="Log Viewer">
+              <span class="task-icon-label">Logs</span>
+              <span class="taskbar-tooltip">Logs</span>
+            </button>
+            <button class="task-icon-button nav-only task-icon-button--star" data-mode="reviews">
+              <span class="task-icon-star">★</span>
+              <span class="task-icon-label">Rezensionen</span>
+              <span class="taskbar-tooltip">Rezensionen</span>
+            </button>
+            <button class="task-icon-button mobile-only" id="lm-quick-log-btn">
+              <span class="lm-taskbar-heart">♥</span>
+              <span class="task-icon-label">Lovemeter</span>
+            </button>
+          </div>
+          <div class="date-selector mobile-only" id="date-selector">
+            <span id="date-display">Heute</span>
+          </div>
+        </div>
+        <!-- Train list -->
+        <div class="left-panel" id="train-list">
+          <!-- Train entries will be inserted here -->
+        </div>
+        <div class="mode-placeholder" id="mode-placeholder" aria-live="polite"></div>
+      </div>
+      
+      <!-- Floating add button (mobile only) -->
+      <button class="task-button mobile-only" id="add-train-button">
+        <img src="res/plus.svg" alt="Add">
+      </button>
+      
+    </div>
+
+    <!-- Right column: announcements drawer -->
+    <div class="right-panel" id="announcement-drawer">
+      <div class="announcement-drawer-header">
+        <span class="announcement-drawer-title">#DranDenken</span>
+        <button class="announcement-drawer-close" id="announcement-drawer-close" aria-label="Close announcements">✕</button>
+      </div>
+      <div class="right-panel-bottom" id="announcement-panel"></div>
+    </div>
+    
+    <!-- Note drawer -->
+    <div class="right-panel" id="note-drawer">
+      <div class="announcement-drawer-header">
+        <span class="announcement-drawer-title">Notizen</span>
+        <div class="note-header-buttons">
+          <button class="note-add-button" id="note-add-button" aria-label="Add note">+</button>
+          <button class="announcement-drawer-close" id="note-drawer-close" aria-label="Close notes">✕</button>
+        </div>
+      </div>
+      <div class="right-panel-bottom" id="note-panel"></div>
+    </div>
+
+    <!-- Review write drawer -->
+    <div class="review-write-drawer" id="review-write-drawer" aria-hidden="true">
+      <div class="review-write-drawer-header" id="review-write-drawer-header">
+        <span class="review-write-drawer-title" id="review-write-drawer-title">Wie war dein Tag?</span>
+        <button class="review-write-drawer-close-btn" id="review-write-drawer-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="review-write-drawer-body">
+        <div class="review-write-date" id="review-write-date"></div>
+        <div class="journal-star-row" id="review-write-stars">
+          <span class="journal-star" data-val="1">★</span>
+          <span class="journal-star" data-val="2">★</span>
+          <span class="journal-star" data-val="3">★</span>
+          <span class="journal-star" data-val="4">★</span>
+          <span class="journal-star" data-val="5">★</span>
+        </div>
+        <textarea id="review-write-text" class="review-write-textarea"
+                  placeholder="Schreib was dazu!"></textarea>
+        <button id="review-write-submit" class="review-write-submit-btn" disabled>Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Focus panel drawer (desktop) -->
+  <div class="right-panel-top" id="focus-panel"></div>
+
+  <!-- Project drawer (right side) -->
+  <div class="project-drawer" id="project-drawer"></div>
+
+  <!-- Lovemeter event drawer (fixed right panel, project-drawer style) -->
+  <div id="lm-event-drawer" class="lm-event-drawer" aria-hidden="true">
+    <div class="lm-event-drawer-container">
+      <div class="lm-event-drawer-header project-drawer-header">
+        <div class="lm-event-drawer-title" id="lm-drawer-title">WHAT HAPPENED???</div>
+        <button class="project-drawer-close" id="lm-drawer-close">✕</button>
+      </div>
+
+      <div class="lm-event-drawer-body">
+
+      <!-- Saved presets -->
+      <div class="project-info-section lm-drawer-section-presets">
+        <div class="lm-preset-list" id="lm-drawer-preset-list">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Add new preset (Enter to add + apply) -->
+      <div class="project-info-section lm-drawer-section-add-preset">
+        <div class="project-field-label">Or add new</div>
+        <div class="lm-add-preset-row">
+          <input type="text"   id="lm-new-preset-name"  class="lm-drawer-input lm-add-preset-name"  placeholder="Event name…">
+          <input type="number" id="lm-new-preset-delta" class="lm-drawer-input lm-add-preset-delta" placeholder="ΔM" step="1">
+        </div>
+      </div>
+
+      <!-- When -->
+      <div class="project-info-section">
+        <div class="project-field-label">When</div>
+        <input type="datetime-local" id="lm-drawer-when" class="lm-drawer-when project-field-value">
+      </div>
+
+      <!-- Eye contact -->
+      <div class="project-info-section">
+        <div class="project-field-label">Did yall make eye-contact!!?</div>
+        <div class="lm-eye-row">
+          <button class="lm-preset-btn lm-eye-btn" id="lm-drawer-eye-btn">YESSSSSSS</button>
+          <div class="lm-eye-inline" id="lm-eye-duration" style="display:none">
+            <span class="lm-eye-duration-label">OMG YASSSS how long?!??</span>
+            <input type="number" id="lm-drawer-eye-dur" class="lm-drawer-input lm-eye-input" min="0" step="1" placeholder="0">
+            <span class="lm-eye-unit">ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Override absolute -->
+      <div class="project-info-section">
+        <div class="project-field-label">Override absolute M</div>
+        <input type="number" id="lm-drawer-abs" class="lm-drawer-input" min="0" step="1">
+      </div>
+
+      <div class="lm-event-drawer-footer">
+        <button class="lm-drawer-log-btn" id="lm-drawer-log">Log</button>
+        <button class="lm-drawer-save-btn" id="lm-drawer-save" style="display:none">Save</button>
+        <button class="lm-drawer-delete-btn" id="lm-drawer-delete" style="display:none">Delete</button>
+      </div>
+
+      </div><!-- /.lm-event-drawer-body -->
+    </div>
+  </div>
+
+  <!-- Mode switcher drawer (desktop) -->
+  <div class="mode-drawer" id="mode-drawer" aria-hidden="true">
+    <div class="mode-drawer-header">
+      <div class="mode-drawer-title">Modus</div>
+      <button class="mode-drawer-close" id="mode-drawer-close">✕</button>
+    </div>
+    <div class="mode-drawer-section">
+      <button class="mode-drawer-item" data-mode="add">Eintrag hinzufuegen</button>
+      <button class="mode-drawer-item" data-mode="list">Listenansicht</button>
+      <button class="mode-drawer-item" data-mode="occupancy">Belegungsplan</button>
+      <button class="mode-drawer-item" data-mode="announcements">Ankuendigungen</button>
+      <button class="mode-drawer-item" data-mode="db-api">DB API</button>
+      <button class="mode-drawer-item" data-mode="log-viewer">Log Viewer</button>
+    </div>
+    <div class="mode-drawer-section">
+      <button class="mode-drawer-item" data-mode="projects">Projekte</button>
+      <button class="mode-drawer-item" data-mode="reviews">Rezensionen</button>
+      <button class="mode-drawer-item" data-mode="meals">Mahlzeiten</button>
+      <button class="mode-drawer-item" data-mode="groceries">Einkauf</button>
+      <button class="mode-drawer-item" data-mode="inventory">Inventar</button>
+    </div>
+  </div>
+  <div class="mode-drawer-scrim" id="mode-drawer-scrim" aria-hidden="true"></div>
+
+  <!-- Station selection sidebar -->
+  <div id="station-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlay-card">
+      <h2 class="overlay-title">Bahnhof auswählen</h2>
+      <div class="overlay-sub">Leer lassen für den aktuellen Uni-Stundenplan.</div>
+      <div class="station-input-wrap">
+        <input id="station-input" class="station-input" type="text" placeholder="Stationsnamen eingeben..." autocomplete="off" />
+      </div>
+      <div id="overlay-hint" class="overlay-hint"></div>
+      <div id="station-suggestions" class="suggestions" style="display:none"></div>
+    </div>
+  </div>
+  
+  <!-- Swipe undo toast (mobile only) -->
+  <div id="swipe-undo-toast">
+    <span class="swipe-toast-label">Änderung vorgenommen</span>
+    <button id="swipe-undo-btn">Rückgängig</button>
+  </div>
+
+  <!-- Journal Card (hidden by default) -->
+  <div id="journal-card" class="journal-card" aria-hidden="true">
+    <div class="journal-card-header">
+      <span class="journal-card-title">Wie war dein Tag?</span>
+      <button class="journal-card-close" id="journal-card-close" aria-label="Schließen">✕</button>
+    </div>
+    <div class="journal-card-body">
+      <div class="journal-card-date" id="journal-card-date"></div>
+      <div class="journal-star-row" id="journal-star-row">
+        <span class="journal-star" data-val="1">★</span>
+        <span class="journal-star" data-val="2">★</span>
+        <span class="journal-star" data-val="3">★</span>
+        <span class="journal-star" data-val="4">★</span>
+        <span class="journal-star" data-val="5">★</span>
+      </div>
+      <textarea id="journal-text" class="journal-textarea" placeholder="Schreib was dazu!"></textarea>
+      <button id="journal-submit" class="journal-submit-btn" disabled>Speichern</button>
+    </div>
+  </div>
+  <!-- End of Journal Island -->
+
+  <!-- script extracted to app.js -->
+<script src="templates.js"></script>
+<!-- JS modules — load order is critical (globals first, init last) -->
+<script src="js/globals.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/schedule.js"></script>
+<script src="js/announcements.js"></script>
+<script src="js/drawers.js"></script>
+<script src="js/workspace.js"></script>
+<script src="js/render-trains.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/swipe.js"></script>
+<script src="js/time-suggestion.js"></script>
+<script src="js/station.js"></script>
+<script src="js/clock.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/stressmeter-engine.js?v=17"></script>
+<script src="js/stressmeter-ui.js?v=29"></script>
+<script src="js/lovemeter-engine.js?v=1"></script>
+<script src="js/lovemeter-ui.js?v=1"></script>
+<script src="js/checkin.js"></script>
+<script src="js/init.js"></script>
+</body>
+</html>
+

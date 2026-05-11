@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check-in / Check-out Animation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --anim: 0.225s; /* 2x faster than before */
+      --fade: 0.2s;
+      --hold: 1000ms;
+      --collapsed-width: 56px;
+      --expanded-width: 285px;
+      --height: 56px;
+      --radius: 18px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f6f6f6;
+      font-family: Arial, sans-serif;
+    }
+
+    .wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .checkin-shell {
+      position: relative;
+      width: var(--collapsed-width);
+      height: var(--height);
+      transition: width var(--anim) ease;
+      overflow: visible;
+    }
+
+    .checkin-shell.success {
+      width: var(--expanded-width);
+    }
+
+    .checkin-box {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: var(--radius);
+      background: #ffd84d;
+      color: #6b5600;
+      cursor: pointer;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: background-color var(--fade) ease;
+    }
+
+    .checkin-shell.success .checkin-box {
+      background: #e6f0b8;
+    }
+
+    .checkin-shell.fade-accent .checkin-box {
+      background: #ffffff;
+    }
+
+    .checkin-content {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .checkin-icon {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+      color: #d5a300;
+      flex: 0 0 auto;
+    }
+
+    .checkin-text {
+      max-width: 0;
+      opacity: 0;
+      margin-left: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      color: #667a1f;
+      font-size: 15px;
+      font-weight: 600;
+      transition:
+        max-width var(--anim) ease,
+        opacity 0.16s ease,
+        margin-left var(--anim) ease,
+        color var(--fade) ease;
+    }
+
+    .checkin-shell.success .checkin-text {
+      max-width: 220px;
+      opacity: 1;
+      margin-left: 12px;
+    }
+
+    .checkin-shell.fade-accent .checkin-text {
+      color: #7a6500;
+    }
+
+    /* Border hugs shell exactly while shell expands */
+    .checkin-border {
+      position: absolute;
+      inset: -2px;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--fade) ease;
+    }
+
+    .checkin-border svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .checkin-border rect {
+      fill: none;
+      stroke: #e0b800;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+
+      /* chosen to fully cover this rect size */
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+    }
+
+    .checkin-shell.success .checkin-border {
+      opacity: 1;
+    }
+
+    .checkin-shell.success .checkin-border rect {
+      animation: drawBorderClockwise var(--anim) linear forwards;
+    }
+
+    .checkin-shell.fade-accent .checkin-border {
+      opacity: 0;
+    }
+
+    @keyframes drawBorderClockwise {
+      from {
+        stroke-dashoffset: 900;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .checkout-box {
+      height: var(--height);
+      width: 0;
+      margin-left: 0;
+      padding: 0;
+      border: none;
+      border-radius: var(--radius);
+      background: #ffd84d;
+      color: #6b5600;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      opacity: 0;
+      transition:
+        width var(--anim) ease,
+        opacity 0.18s ease,
+        margin-left var(--anim) ease,
+        padding var(--anim) ease;
+    }
+
+    .wrap.show-checkout .checkout-box {
+      width: 145px;
+      margin-left: 12px;
+      padding: 0 20px;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap">
+    <div class="checkin-shell" id="checkinShell">
+      <div class="checkin-border" aria-hidden="true">
+        <svg viewBox="0 0 285 56" preserveAspectRatio="none">
+          <rect x="2" y="2" width="281" height="52" rx="18" ry="18"></rect>
+        </svg>
+      </div>
+
+      <button class="checkin-box" id="checkinBtn" type="button">
+        <span class="checkin-content">
+          <span class="checkin-icon">✓</span>
+          <span class="checkin-text">Erfolgreich eingecheckt</span>
+        </span>
+      </button>
+    </div>
+
+    <button class="checkout-box" id="checkoutBtn" type="button">
+      Check-out
+    </button>
+  </div>
+
+  <script>
+    const wrap = document.getElementById("wrap");
+    const checkinShell = document.getElementById("checkinShell");
+    const checkinBtn = document.getElementById("checkinBtn");
+
+    let locked = false;
+
+    checkinBtn.addEventListener("click", () => {
+      if (locked) return;
+      locked = true;
+
+      checkinShell.classList.add("success");
+
+      setTimeout(() => {
+        checkinShell.classList.add("fade-accent");
+        wrap.classList.add("show-checkout");
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,834 @@
+/**
+ * HTML Template System for ZugzielanzeigeNEO
+ * 
+ * This module provides reusable HTML templates to replace dynamic DOM creation
+ * scattered throughout app.js. Each template is a function that returns an HTML string
+ * or DocumentFragment, ready to be inserted into the DOM.
+ */
+
+const Templates = {
+  /**
+   * Create a train entry for the train list view
+   */
+  trainEntry(train, now, isFirstTrain = false) {
+    const isDurationOnly = isDurationOnlyTrain(train);
+    const delay = train.canceled ? 0 : getDelay(train.plan, train.actual, now, train.date);
+    const tTime = parseTime(train.actual || train.plan, now, train.date);
+    const occEnd = getOccupancyEnd(train, now);
+    const isCurrent = train.actual && occEnd && parseTime(train.actual, now, train.date) <= now && occEnd > now;
+    
+    // Determine indicator class
+    let indicatorClass = 'indicator-dot';
+    if (train.canceled) {
+      indicatorClass += ' cancelled';
+    } else if (isCurrent) {
+      indicatorClass += ' current';
+    }
+    
+    // Determine train symbol HTML
+    let trainSymbolHTML = '';
+    if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+      trainSymbolHTML = `<img class="train-symbol" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${train.linie || ''}</div>'">`;  
+    } else {
+      trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
+    }
+    
+    // Determine destination HTML
+    const expandedZiel = expandDestinationPrefix(train.ziel || '');
+    let destinationHTML;
+    if (train.canceled) {
+      const _zielToggle = document.createElement('div');
+      _zielToggle.className = 'canceled-ziel-toggle';
+
+      const _ausfallDiv = document.createElement('div');
+      _ausfallDiv.className = 'canceled-ziel-ausfall';
+      const _ausfallSpan = document.createElement('span');
+      _ausfallSpan.textContent = 'Zug fällt aus';
+      _ausfallDiv.appendChild(_ausfallSpan);
+
+      const _zielDiv = document.createElement('div');
+      _zielDiv.className = 'canceled-ziel-original';
+      const _zielSpan = document.createElement('span');
+      _zielSpan.style.textDecoration = 'line-through';
+      _zielSpan.textContent = expandedZiel;
+      _zielDiv.appendChild(_zielSpan);
+
+      _zielToggle.appendChild(_ausfallDiv);
+      _zielToggle.appendChild(_zielDiv);
+      const _zielTemp = document.createElement('div');
+      _zielTemp.appendChild(_zielToggle);
+      destinationHTML = _zielTemp.innerHTML;
+    } else {
+      destinationHTML = expandedZiel;
+    }
+    
+    // Entry classes
+    const entryClasses = ['train-entry'];
+    if (isFirstTrain) entryClasses.push('first-train');
+    if (train.linie === 'FEX') entryClasses.push('fex-entry');
+    if (train._isPreview) entryClasses.push('preview-train');
+    if (train._isPastTrain) entryClasses.push('past-train');
+    
+    // Create a temporary container for departure HTML
+    const tempDiv = document.createElement('div');
+    
+    // Determine if this is truly a past train using multiple indicators
+    // to handle cases where _isPastTrain flag might not be set yet
+    const _d = now;
+    const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+    const isToday = train.date === todayDate;
+    const isCheckedOut = !!train.checkoutTime;
+    const hasOpenCheckinSession = !!train.checkinTime;
+    const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut;
+    const isPastTrainDetected = !isDurationOnly && !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
+    
+    if (isFirstTrain) {
+      tempDiv.appendChild(formatCountdown(train, now));
+    } else if (isDurationOnly) {
+      tempDiv.appendChild(document.createTextNode(formatDurationOnlyText(train.dauer)));
+    } else if (isPastTrainDetected) {
+      // For past trains, use special time formatting
+      // Pass check-in status to determine animation display
+      tempDiv.appendChild(formatPastTrainTime(train.plan, train.actual, train.dauer, train.date, now, !!train.checkinTime));
+    } else {
+      tempDiv.appendChild(formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date));
+    }
+    const departureHTML = tempDiv.innerHTML;
+    const durationText = Number.isFinite(Number(train.dauer)) && Number(train.dauer) > 0
+      ? `${Math.round(Number(train.dauer))} min`
+      : '-';
+    const durationSlotHTML = train._showDurationColumn
+      ? `<div class="duration-slot" title="Dauer">${durationText}</div>`
+      : '';
+
+    // ── Check-in / Check-out widget ──────────────────────────────────────────
+    // Only rendered for today's non-cancelled trains (not the headline first-train).
+    const isCheckedIn   = hasOpenCheckinSession;
+    const uid           = train._uniqueId || '';
+
+    let checkinWidgetHTML = '';
+    if (!train._readOnly && isToday && !train.canceled && !isFirstTrain) {
+      // Show widget for all today's non-canceled tasks (including past tasks)
+      // until they are checked out.
+      if (isCheckedOut && !isDurationOnly) {
+        // Completed: hide check-in/check-out widget entirely
+        checkinWidgetHTML = '';
+      } else if (isCheckedIn) {
+        // Stable checked-in state (loaded from saved data — no animation)
+        checkinWidgetHTML = `
+            <div class="checkin-wrap show-checkout">
+              <div class="checkin-shell checked-in stable">
+                <div class="checkin-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </div>
+                <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Eingecheckt">
+                  <span class="checkin-content">
+                    <img class="ci-icon ci-icon--checked" src="res/eingecheckt.svg" alt="">
+                    <span class="checkin-text">Erfolgreich eingecheckt</span>
+                  </span>
+                </button>
+              </div>
+              <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
+                <span class="checkout-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </span>
+                <span class="checkout-content">
+                  <img class="co-icon" src="res/checkout.svg" alt="">
+                  <span class="checkout-text">Erfolgreich ausgescheckt</span>
+                </span>
+              </button>
+            </div>`;
+      } else {
+        // Idle: yellow check-in button waiting to be clicked
+        checkinWidgetHTML = `
+            <div class="checkin-wrap">
+              <div class="checkin-shell">
+                <div class="checkin-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </div>
+                <button class="checkin-box" type="button" data-ci-uid="${uid}" aria-label="Einchecken">
+                  <span class="checkin-content">
+                    <img class="ci-icon" src="res/checkin.svg" alt="">
+                    <span class="checkin-text">Erfolgreich eingecheckt</span>
+                  </span>
+                </button>
+              </div>
+              <button class="checkout-btn" type="button" data-co-uid="${uid}" aria-label="Auschecken">
+                <span class="checkout-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </span>
+                <span class="checkout-content">
+                  <img class="co-icon" src="res/checkout.svg" alt="">
+                  <span class="checkout-text">Erfolgreich ausgescheckt</span>
+                </span>
+              </button>
+            </div>`;
+      }
+    }
+    
+    return `
+      <div class="${entryClasses.join(' ')}" 
+           data-linie="${train.linie || ''}" 
+           data-ziel="${train.canceled ? 'Zug fällt aus' : expandedZiel}"
+           data-plan="${train.plan || ''}" 
+           data-date="${train.date || ''}" 
+         data-train-type="${train.type || 'train'}"
+           data-unique-id="${train._uniqueId || ''}">
+        <div class="train-info">
+          <div class="${indicatorClass}"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            ${trainSymbolHTML}
+          </div>
+          <div class="zugziel">${destinationHTML}</div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="${getCarriageSVG(train.dauer, train.linie === 'FEX', train.linie)}" alt="">
+        </div>
+        <div class="right-block">
+          ${durationSlotHTML}
+          <div class="departure-slot">
+            <div class="departure" 
+                 data-departure="1" 
+                 data-plan="${train.plan || ''}" 
+                 data-actual="${train.actual || ''}" 
+                 data-dauer="${train.dauer != null ? String(train.dauer) : ''}" 
+                 data-date="${train.date || ''}" 
+                 data-canceled="${train.canceled ? 'true' : 'false'}" 
+                 ${isFirstTrain ? 'data-is-headline="true"' : ''}>
+              ${departureHTML}
+            </div>
+          </div>
+        </div>
+        ${checkinWidgetHTML}
+      </div>
+    `;
+  },
+
+  /**
+   * Horizontal stacked bar showing task type breakdown for a day.
+   * Segments sized by total duration, sorted longest → shortest (left → right),
+   * coloured by line colour.
+   */
+  dayStackedBar(trainsForDay) {
+    const durByLine = {};
+    trainsForDay.forEach(t => {
+      if (t.canceled) return;
+      const line = (t.linie || '').trim();
+      if (!line) return;
+      durByLine[line] = (durByLine[line] || 0) + (Number(t.dauer) || 0);
+    });
+    const total = Object.values(durByLine).reduce((a, b) => a + b, 0);
+    if (total === 0) return '';
+    const sorted = Object.entries(durByLine).sort((a, b) => b[1] - a[1]);
+    const segments = sorted.map(([line, dur]) => {
+      const pct = (dur / total * 100).toFixed(2);
+      const pctRound = Math.round(pct);
+      const color = getLineColor(line);
+      const label = `${line} · ${dur} min`;
+      // Only render toggle labels when segment is wide enough to read
+      let text = '';
+      if (pct >= 6) {
+        const h = Math.floor(dur / 60);
+        const m = dur % 60;
+        const durLabel = h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`;
+        text = `<span class="day-stack-label day-stack-label--pct">${pctRound}%</span><span class="day-stack-label day-stack-label--dur">${durLabel}</span>`;
+      }
+      return `<div class="day-stack-segment" style="width:${pct}%;background:${color}" title="${label}" aria-label="${label}">${text}</div>`;
+    }).join('');
+    return `<div class="day-stack-bar" role="img" aria-label="Tagesübersicht">${segments}</div>`;
+  },
+
+  /**
+   * Create a day separator element
+   */
+  daySeparator(trainDate, trainsForDay = []) {
+    const dateObj = new Date(trainDate);
+    const dateText = dateObj.toLocaleDateString('de-DE', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit'
+    });
+    const bar = trainsForDay.length > 0 ? this.dayStackedBar(trainsForDay) : '';
+    
+    return `
+      <div class="day-separator">
+        <span class="day-separator-date day-separator-date--clickable" data-jump-date="${trainDate}" title="Zu Datum springen">${dateText} <span class="day-separator-jump-icon">↗</span></span>
+        ${bar}
+        <div class="day-separator-line"></div>
+      </div>
+    `;
+  },
+
+  /**
+   * Create a Belegungsplan train block
+   */
+  belegungsplanBlock(train, pos, overlapLevel, now) {
+    const blockClasses = ['belegungsplan-train-block', `overlap-${overlapLevel}`];
+    const normalizedLine = typeof train.linie === 'string' ? train.linie.trim() : '';
+    const isFexLine = /^fex$/i.test(normalizedLine);
+    const lineColor = getLineColor(normalizedLine || 's1');
+
+    let lineBgColor = lineColor;
+    const hexColor = String(lineColor).match(/^#([0-9a-fA-F]{6})$/);
+    if (hexColor) {
+      const h = hexColor[1];
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      lineBgColor = `rgba(${r}, ${g}, ${b}, 0.6)`;
+    }
+    
+    // Add FEX class
+    if (isFexLine) {
+      blockClasses.push('fex-entry');
+    } else if (/^S\d+/i.test(normalizedLine)) {
+      // Add S-Bahn color class
+      const lineClass = `s-bahn-${normalizedLine.toLowerCase()}`;
+      blockClasses.push(lineClass);
+    }
+
+    const blockStyleParts = [`top: ${pos.top}vh`, `height: ${pos.height}vh`];
+    if (!isFexLine) {
+      blockStyleParts.push(`background: ${lineBgColor}`);
+      blockStyleParts.push(`border-color: ${lineColor}`);
+    }
+    
+    // Check if currently occupying
+    const trainStart = parseTime(train.actual || train.plan, now, train.date);
+    const trainEnd = getOccupancyEnd(train, now);
+    if (trainStart && trainEnd && trainStart <= now && trainEnd > now) {
+      blockClasses.push('current');
+    }
+    
+    // Add preview class
+    if (train._isPreview) {
+      blockClasses.push('preview-train');
+    }
+    
+    // Only show header content for blocks 30 minutes or longer
+    const duration = Number(train.dauer) || 0;
+    let headerHTML = '';
+    
+    if (duration >= 30) {
+      let lineIconHTML = '';
+      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+        lineIconHTML = `<img class="belegungsplan-line-icon" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill belegungsplan-line-badge\\'>${train.linie || ''}</div>'">`;  
+      } else {
+        lineIconHTML = `<div class="line-badge belegungsplan-line-badge">${train.linie || ''}</div>`;
+      }
+      
+      headerHTML = `
+        <div class="belegungsplan-header">
+          ${lineIconHTML}
+          <div class="belegungsplan-destination">${train.ziel || ''}</div>
+        </div>
+      `;
+    }
+    
+    return `
+      <div class="${blockClasses.join(' ')}" 
+           style="${blockStyleParts.join('; ')};" 
+           data-unique-id="${train._uniqueId || ''}" 
+           data-linie="${train.linie || ''}" 
+           data-plan="${train.plan || ''}">
+        ${headerHTML}
+      </div>
+    `;
+  },
+
+  /**
+   * Create a Belegungsplan hour line with marker
+   */
+  belegungsplanHourLine(markerTime, markerY, isNewDay) {
+    const lineClass = isNewDay ? 'belegungsplan-hour-line midnight' : 'belegungsplan-hour-line';
+    
+    return `
+      <div class="${lineClass}" style="top: ${markerY}vh;"></div>
+      <div class="belegungsplan-time-marker" style="top: ${markerY}vh;">${formatClock(markerTime)}</div>
+    `;
+  },
+
+  /**
+   * Create a Belegungsplan date separator
+   */
+  belegungsplanDateSeparator(markerTime, markerY) {
+    const dateObj = new Date(markerTime);
+    const dateText = dateObj.toLocaleDateString('de-DE', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+    });
+    
+    return `
+      <div class="belegungsplan-date-separator" style="top: ${markerY}vh;">${dateText}</div>
+    `;
+  },
+
+  /**
+   * Create current time indicator line for Belegungsplan
+   */
+  belegungsplanCurrentTimeLine(currentTimeY) {
+    return `<div class="belegungsplan-current-time-line" style="top: ${currentTimeY}vh;"></div>`;
+  },
+
+  /**
+   * Create an editable field wrapper
+   */
+  editableField(fieldName, value, inputType, placeholder, additionalStyles = '') {
+    return `
+      <div data-field="${fieldName}" 
+           data-value="${value || ''}" 
+           data-input-type="${inputType}" 
+           data-placeholder="${placeholder || ''}" 
+           data-editable="true" 
+           style="cursor: pointer; ${additionalStyles}">
+        ${value || ''}
+      </div>
+    `;
+  },
+
+  /**
+   * Create a train badge for API or fixed schedule indicators
+   */
+  trainBadge(type, isFixed = false) {
+    if (type === 'db-api') {
+      return `<div style="position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.3); padding: 0.5vh 1vw; border-radius: 2px;">DB API - Nur Lesen</div>`;
+    } else if (type === 'fixed-schedule') {
+      return `<div style="position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,200,100,0.8); background: rgba(100,60,0,0.4); padding: 0.5vh 1vw; border-radius: 2px; border: 1px solid rgba(255,200,100,0.3);" title="Datum kann nicht bearbeitet werden - dieser Termin wiederholt sich wöchentlich">🔒 Wiederholender Termin</div>`;
+    }
+    return '';
+  },
+
+  /**
+   * Create mobile train badge
+   */
+  mobileBadge(type) {
+    if (type === 'db-api') {
+      return `<div class="mobile-train-badge" style="position: fixed; top: 6vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;">DB API - Nur Lesen</div>`;
+    } else if (type === 'fixed-schedule') {
+      return `<div class="mobile-train-badge" style="position: fixed; top: 6vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 1px solid rgba(255,200,100,0.4); z-index: 5001;">🔒 Wiederholender Termin</div>`;
+    }
+    return '';
+  },
+
+  /**
+   * Create empty state message
+   */
+  emptyState(message) {
+    return `<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center; padding: 2vh;">${message}</div>`;
+  },
+
+  /**
+   * Create line icon element (img or badge)
+   */
+  lineIcon(linie, className = 'train-symbol', fontSize = 'inherit') {
+    if (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || /^\d+$/.test(linie))) {
+      return `<img class="${className}" src="${getTrainSVG(linie)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\' style=\\'font-size: ${fontSize}\\'>${linie || ''}</div>'">`;  
+    } else {
+      return `<div class="line-badge" style="font-size: ${fontSize}">${linie || ''}</div>`;
+    }
+  },
+
+  /**
+   * Create focus mode date display
+   */
+  focusDateDisplay(train, now) {
+    const trainDate = train.date ? new Date(train.date) : now;
+    const dateDisplay = trainDate.toLocaleDateString('de-DE', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    return dateDisplay;
+  },
+
+  /**
+   * Create focus mode arrival time HTML
+   */
+  focusArrivalTime(train, isEditable) {
+    const planHTML = `
+      <div class="focus-plan" 
+           data-field="plan" 
+           data-value="${train.plan || ''}" 
+           data-input-type="time" 
+           ${isEditable ? 'data-editable="true" style="cursor: pointer;"' : ''}
+           ${train.canceled ? 'style="text-decoration: line-through;"' : ''}>
+        ${train.plan || ''}
+      </div>
+    `;
+    
+    const hasDelay = train.actual && train.actual !== train.plan;
+    const delayedStyle = hasDelay ? 'display: block;' : (isEditable ? 'display: block; opacity: 0.5;' : 'display: none;');
+    
+    const delayedHTML = `
+      <div class="focus-delayed" 
+           style="${delayedStyle} ${train.canceled ? 'text-decoration: line-through;' : ''}" 
+           data-field="actual" 
+           data-value="${train.actual || ''}" 
+           data-input-type="time" 
+           ${isEditable ? 'data-editable="true" style="cursor: pointer;"' : ''}>
+        ${train.actual || train.plan || ''}
+      </div>
+    `;
+    
+    return planHTML + delayedHTML;
+  },
+
+  /**
+   * Create focus mode departure time HTML
+   */
+  focusDepartureTime(train, now) {
+    if (!train.plan || !train.dauer) {
+      return '';
+    }
+    
+    const arrivalDate = parseTime(train.plan, now, train.date);
+    const depDate = new Date(arrivalDate.getTime() + Number(train.dauer) * 60000);
+    const depPlan = formatClock(depDate);
+    
+    const planHTML = `
+      <div class="focus-plan" ${train.canceled ? 'style="text-decoration: line-through;"' : ''}>
+        ${depPlan}
+      </div>
+    `;
+    
+    const hasDepDelay = train.actual && train.actual !== train.plan;
+    let delayedHTML = '';
+    
+    if (hasDepDelay) {
+      const actualArrivalDate = parseTime(train.actual, now, train.date);
+      const actualDepDate = new Date(actualArrivalDate.getTime() + Number(train.dauer) * 60000);
+      const depActual = formatClock(actualDepDate);
+      
+      delayedHTML = `
+        <div class="focus-delayed" 
+             style="display: block; ${train.canceled ? 'text-decoration: line-through;' : ''}" >
+          ${depActual}
+        </div>
+      `;
+    }
+    
+    return planHTML + delayedHTML;
+  },
+
+  /**
+   * Create mobile line description field
+   */
+  mobileLineDescription(train) {
+    const descriptionPresets = {
+      'S1': ' - Pause',
+      'S2': ' - Vorbereitung',
+      'S3': ' - Kreativität',
+      'S4': " - Girls' Night Out",
+      'S45': ' - FLURUS',
+      'S46': ' - Fachschaftsarbeit',
+      'S5': ' - Sport',
+      'S6': ' - Lehrveranstaltung',
+      'S60': ' - Vortragsübung',
+      'S62': ' - Tutorium',
+      'S7': ' - Selbststudium',
+      'S8': ' - Reise',
+      'S85': ' - Reise'
+    };
+    
+    const defaultDescription = descriptionPresets[train.linie] || '';
+    
+    return `
+      <div class="mobile-line-description" 
+           data-field="beschreibung" 
+           data-value="${defaultDescription}" 
+           data-input-type="text" 
+           data-placeholder="Linienbeschreibung...">
+        ${train.beschreibung || defaultDescription}
+      </div>
+    `;
+  },
+
+  /**
+   * Create focus mode button group
+   */
+  focusButtons() {
+    return `
+      <div class="focus-buttons">
+        <div class="focus-buttons-row">
+          <button class="focus-btn focus-btn-cancel" data-focus-action="cancel">✕</button>
+          <button class="focus-btn focus-btn-delete" data-focus-action="delete">Löschen</button>
+        </div>
+        <button class="focus-btn focus-btn-minus5" data-focus-action="minus5">-5</button>
+        <button class="focus-btn focus-btn-plus5" data-focus-action="plus5">+5</button>
+        <button class="focus-btn focus-btn-plus10" data-focus-action="plus10">+10</button>
+        <button class="focus-btn focus-btn-plus30" data-focus-action="plus30">+30</button>
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile focus button group
+   */
+  mobileFocusButtons() {
+    return `
+      <div class="mobile-taskbar-placeholder">
+        <button class="mobile-focus-btn mobile-focus-btn-return" data-mobile-focus-action="return">←</button>
+        <button class="mobile-focus-btn mobile-focus-btn-cancel" data-mobile-focus-action="cancel">✕</button>
+        <button class="mobile-focus-btn" data-mobile-focus-action="minus5">-5</button>
+        <button class="mobile-focus-btn" data-mobile-focus-action="plus5">+5</button>
+        <button class="mobile-focus-btn" data-mobile-focus-action="plus10">+10</button>
+        <button class="mobile-focus-btn" data-mobile-focus-action="plus30">+30</button>
+        <button class="mobile-focus-btn mobile-focus-btn-delete" data-mobile-focus-action="delete">🗑</button>
+      </div>
+    `;
+  },
+
+  /**
+   * Create "train deleted" message for focus panel
+   */
+  trainDeletedMessage() {
+    return '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center; padding: 2vh;">Zug gelöscht</div>';
+  },
+
+  /**
+   * Create "no announcements" message
+   */
+  noAnnouncementsMessage() {
+    return '<div style="font-size: 2vw; color: rgba(255,255,255,0.5); text-align: center;">Keine Ankündigungen</div>';
+  },
+
+  /**
+   * Create strikethrough text for cancelled trains
+   */
+  strikethrough(text) {
+    return `<s>${text || ''}</s>`;
+  },
+
+  /**
+   * Create line picker option button (mobile)
+   */
+  linePickerOption(linie, beschreibung) {
+    const iconHTML = (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || /^\d+$/.test(linie)))
+      ? `<img src="${getTrainSVG(linie)}" alt="${linie}" style="height: 2vh; width: auto;" onerror="this.outerHTML='<div style=\\'padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;\\'>${linie}</div>'">`
+      : `<div style="padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;">${linie}</div>`;
+    
+    return `
+      <button class="line-picker-option" data-linie="${linie}" data-beschreibung="${beschreibung}" style="
+        width: 100%;
+        padding: 1vh 3vw;
+        margin: 1vh 0;
+        background: rgba(255, 255, 255, 0.1);
+        border: 0.3px solid rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+        color: white;
+        font-size: 2.5vh;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 2vw;
+        transition: background 0.2s;
+      ">
+        ${iconHTML}
+        <span style="flex: 1; text-align: left; color: rgba(255, 255, 255, 0.8);">${beschreibung}</span>
+      </button>
+    `;
+  },
+
+  /**
+   * Create line picker overlay (mobile)
+   */
+  linePickerOverlay() {
+    const lineOptions = [
+      { linie: 'S1', beschreibung: 'Pause' },
+      { linie: 'S2', beschreibung: 'Vorbereitung' },
+      { linie: 'S3', beschreibung: 'Kreativität' },
+      { linie: 'S4', beschreibung: "Girls' Night Out" },
+      { linie: 'S45', beschreibung: 'FLURUS' },
+      { linie: 'S46', beschreibung: 'Fachschaftsarbeit' },
+      { linie: 'S5', beschreibung: 'Sport' },
+      { linie: 'S6', beschreibung: 'Lehrveranstaltung' },
+      { linie: 'S60', beschreibung: 'Vortragsübung' },
+      { linie: 'S62', beschreibung: 'Tutorium' },
+      { linie: 'S7', beschreibung: 'Selbststudium' },
+      { linie: 'S8', beschreibung: 'Reise' },
+      { linie: 'S85', beschreibung: 'Reise' },
+      { linie: 'FEX', beschreibung: 'Wichtig ' }
+    ];
+
+    const optionsHTML = lineOptions.map(opt => this.linePickerOption(opt.linie, opt.beschreibung)).join('');
+
+    return `
+      <div class="line-picker-overlay" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 5002;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div class="line-picker-dropdown" style="
+          background: #1a1f4d;
+          border-radius: 8px;
+          padding: 2vh;
+          width: 70vw;
+          max-height: 70vh;
+          overflow-y: auto;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+          scrollbar-width: none;
+        ">
+          <div style="
+            font-size: 3vh;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 2vh;
+            text-align: center;
+          ">Linie auswählen</div>
+          ${optionsHTML}
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile line picker button (when no line selected)
+   */
+  mobileLinePickerButton() {
+    return `
+      <button class="mobile-line-picker-button" style="
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.7);
+        padding: 2vh 4vw;
+        font-size: 2.5vh;
+        cursor: pointer;
+        width: 100%;
+        text-align: center;
+        margin: 1vh 0;
+      ">Linie auswählen</button>
+    `;
+  },
+
+  /**
+   * Create line badge for focus mode (when line icon fails to load or is not an S-Bahn)
+   */
+  lineBadge(linie, isEditable, fontSize = null) {
+    const classes = 'line-badge line-badge--pill';
+    const editableAttrs = isEditable
+      ? `data-editable="true" style="cursor: pointer;${fontSize ? ` font-size: ${fontSize};` : ''}"`
+      : (fontSize ? `style="font-size: ${fontSize};"` : '');
+
+    return `
+      <div class="${classes}"
+           data-field="linie"
+           data-value="${linie || ''}"
+           data-input-type="text"
+           data-placeholder="Linie"
+           ${editableAttrs}>
+        ${linie || ''}
+      </div>
+    `;
+  },
+
+  /**
+   * Create DB API badge indicator
+   */
+  dbApiBadge() {
+    return `
+      <div style="position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.3); padding: 0.5vh 1vw; border-radius: 2px;">
+        DB API - Nur Lesen
+      </div>
+    `;
+  },
+
+  /**
+   * Create fixed schedule badge indicator
+   */
+  fixedScheduleBadge() {
+    return `
+      <div style="position: absolute; top: 1vh; right: 1vw; font-size: 1.5vh; color: rgba(255,200,100,0.8); background: rgba(100,60,0,0.4); padding: 0.5vh 1vw; border-radius: 2px; border: 1px solid rgba(255,200,100,0.3);" title="Datum kann nicht bearbeitet werden - dieser Termin wiederholt sich wöchentlich">
+        🔒 Wiederholender Termin
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile DB API badge
+   */
+  mobileDbApiBadge() {
+    return `
+      <div class="mobile-train-badge" style="position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.4); padding: 0.5vh 2vw; border-radius: 4px; z-index: 5001;">
+        DB API - Nur Lesen
+      </div>
+    `;
+  },
+
+  /**
+   * Create mobile fixed schedule badge
+   */
+  mobileFixedScheduleBadge() {
+    return `
+      <div class="mobile-train-badge" style="position: fixed; top: 3vh; right: 2vw; font-size: 1.8vh; color: rgba(255,200,100,0.9); background: rgba(100,60,0,0.5); padding: 0.5vh 2vw; border-radius: 4px; border: 0.5px solid rgba(255,200,100,0.4); z-index: 5001;">
+        🔒 Wiederholender Termin
+      </div>
+    `;
+  },
+
+  /**
+   * Create pagination dots for announcement carousel
+   */
+  paginationDots(totalPages, currentPage) {
+    let dotsHTML = '';
+    for (let i = 0; i < totalPages; i++) {
+      const activeClass = i === currentPage ? ' active' : '';
+      dotsHTML += `<div class="pagination-dot${activeClass}"></div>`;
+    }
+    return `<div class="pagination-dots">${dotsHTML}</div>`;
+  },
+
+  /**
+   * Create station search suggestion item
+   */
+  stationSuggestion(station) {
+    const label = station.ds100 ? `${station.name} (${station.ds100})` : station.name;
+    return `
+      <div class="suggestion-item" title="${label}">
+        ${label}
+      </div>
+    `;
+  },
+
+  /**
+   * Create line picker cancel button
+   */
+  linePickerCancelButton() {
+    return `
+      <button style="
+        width: 100%;
+        margin-top: 1vh;
+        padding: 1vh;
+        background: rgba(255, 100, 100, 0.3);
+        border: none;
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 2vh;
+        cursor: pointer;
+      ">Abbrechen</button>
+    `;
+  }
+};
+
+// Export for use in app.js
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Templates;
+}
