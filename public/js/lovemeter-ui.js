@@ -453,6 +453,7 @@
     // Only scan the visible viewport window [viewOffset±2d] so the Y-axis
     // scales to what the user can actually see, not the entire dataset.
     var helper   = getLovemeterHelperArray(_dataPoints);
+    var _resolvedPoints = resolveDataPoints(_dataPoints);
     var _yFocusHalf = _focusMode ? LINEAR_CLAMP_MIN : VIEW_HALF_MIN;
     var _vMin    = viewOffset - _yFocusHalf;   // minutes-from-now, viewport left edge
     var _vMax    = viewOffset + _yFocusHalf;   // minutes-from-now, viewport right edge
@@ -499,7 +500,7 @@
 
     // Build cache key: data signature + size + now-minute + dynamic Y_MAX
     var nowMin = Math.floor(nowMs / 60000);
-    var dpSig  = _dataPoints.map(function(p){ return p.ts + ':' + p.M; }).join('|');
+    var dpSig  = _dataPoints.map(function(p){ return p.ts + ':' + p.M + ':' + (p.delta !== undefined ? p.delta : ''); }).join('|');
     var cacheKey = [dpSig, SVG_W, H, nowMin, Y_MAX, Math.round(viewOffset)].join('::');
 
     if (_graphCache.key === cacheKey && _graphCache.markup) {
@@ -652,7 +653,7 @@
     }
 
     // ── Data point markers ────────────────────────────────────────────────
-    _dataPoints.forEach(function (dp) {
+    _resolvedPoints.forEach(function (dp) {
       var t_min = (dp.ts - nowMs) / 60000;
       if (t_min < vMin || t_min > vMax) return;
       if (dp.M > Y_MAX || dp.M < Y_MIN) return;  // hide markers outside display range
