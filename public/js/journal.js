@@ -287,7 +287,8 @@
     if (textarea) setTimeout(function() { textarea.focus(); }, 100);
   }
 
-  function closeDrawer() {
+  // Raw DOM close — does NOT save. Called internally after save completes.
+  function closeDrawerNow() {
     drawer.classList.remove('is-open');
     drawer.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('review-write-drawer-open');
@@ -299,6 +300,17 @@
     if (_clickOutHandler) {
       document.removeEventListener('click', _clickOutHandler, true);
       _clickOutHandler = null;
+    }
+  }
+
+  // Public close — auto-saves pending changes first.
+  function closeDrawer() {
+    if (selectedRating > 0 &&
+        !(submitBtn.disabled && submitBtn.textContent === '…') &&
+        submitBtn.textContent !== '✓ Gespeichert') {
+      doSave({ silent: true });
+    } else {
+      closeDrawerNow();
     }
   }
 
@@ -342,23 +354,25 @@
     submitBtn.disabled = false;
   });
 
-  // ── Submit ───────────────────────────────────────────────────
-  submitBtn.addEventListener('click', async function() {
+  // ── Save logic (shared by submit button and auto-save on close) ─
+  async function doSave(opts) {
+    // opts.silent = true → save quietly (no UI feedback, close immediately after)
+    const silent = opts && opts.silent;
     if (!selectedRating) return;
+    if (submitBtn.disabled && submitBtn.textContent === '…') return; // already saving
+
     submitBtn.disabled = true;
-    submitBtn.textContent = '…';
+    if (!silent) submitBtn.textContent = '…';
 
     try {
       let res;
       if (_editEntry) {
-        // Update existing review
         res = await fetch('/api/journal/' + _editEntry.id, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rating: selectedRating, text: textarea.value.trim() })
         });
       } else {
-        // Create new review
         res = await fetch('/api/journal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -371,36 +385,57 @@
         throw new Error(err.error || 'Fehler beim Speichern');
       }
 
-      const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
-        ? currentAccentColor : '#ffcc00';
-      submitBtn.textContent = '✓ Gespeichert';
-      submitBtn.style.background = ac;
-      submitBtn.style.color = '#111';
-
       const savedCallback = _onSaved;
-      setTimeout(function() {
-        closeDrawer();
-        if (typeof savedCallback === 'function') {
-          savedCallback();
-        } else if (typeof renderReviewsPage === 'function' &&
+
+      if (silent) {
+        closeDrawerNow();
+        if (typeof savedCallback === 'function') savedCallback();
+        else if (typeof renderReviewsPage === 'function' &&
             typeof currentWorkspaceMode !== 'undefined' &&
             currentWorkspaceMode === 'reviews') {
           renderReviewsPage();
         }
-      }, 1000);
+      } else {
+        const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
+          ? currentAccentColor : '#ffcc00';
+        submitBtn.textContent = '✓ Gespeichert';
+        submitBtn.style.background = ac;
+        submitBtn.style.color = '#111';
+
+        setTimeout(function() {
+          closeDrawerNow();
+          if (typeof savedCallback === 'function') {
+            savedCallback();
+          } else if (typeof renderReviewsPage === 'function' &&
+              typeof currentWorkspaceMode !== 'undefined' &&
+              currentWorkspaceMode === 'reviews') {
+            renderReviewsPage();
+          }
+        }, 1000);
+      }
 
     } catch (e) {
-      submitBtn.textContent = e.message;
-      submitBtn.style.background = '#c0392b';
-      submitBtn.style.color = '#fff';
-      submitBtn.disabled = false;
-      setTimeout(function() {
-        submitBtn.textContent = 'Speichern';
-        submitBtn.style.background = '';
-        submitBtn.style.color = '';
-        applyAccent();
-      }, 2500);
+      if (!silent) {
+        submitBtn.textContent = e.message;
+        submitBtn.style.background = '#c0392b';
+        submitBtn.style.color = '#fff';
+        submitBtn.disabled = false;
+        setTimeout(function() {
+          submitBtn.textContent = 'Speichern';
+          submitBtn.style.background = '';
+          submitBtn.style.color = '';
+          applyAccent();
+        }, 2500);
+      } else {
+        // silent save failed — still close, don't leave drawer stuck open
+        closeDrawerNow();
+      }
     }
+  }
+
+  // ── Submit ───────────────────────────────────────────────────
+  submitBtn.addEventListener('click', function() {
+    doSave({ silent: false });
   });
 
 })();
