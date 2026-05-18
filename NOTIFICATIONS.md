@@ -1,26 +1,16 @@
-# Notification System
+pre# Notification System
 
-This document describes the full notification architecture for Zugzielanzeige — covering both the in-app notification path (app open / background tab) and the Web Push path (app fully closed).
+This document describes the notification architecture for Zugzielanzeige. The sole active delivery channel is Web Push (Path B). The former in-app notification path (Path A) has been discontinued.
 
 ---
 
 ## Overview
 
-Two parallel paths deliver notifications to the user:
+Notifications are delivered exclusively via Web Push (Path B):
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  PATH A — In-app (app open or backgrounded in browser)      │
-│                                                             │
-│  15 s interval + every refreshUIOnly()                      │
-│    → checkTrainArrivals()                                   │
-│      → sendTrainNotification()                              │
-│        → SW: reg.showNotification()   (Android)             │
-│        → new Notification()           (desktop fallback)    │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│  PATH B — Web Push (app fully closed / Chrome killed)       │
+│  PATH B — Web Push (only active path)                       │
 │                                                             │
 │  saveSchedule()                                             │
 │    → buildPushEvents(14 days)                               │
@@ -33,8 +23,9 @@ Two parallel paths deliver notifications to the user:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Path A gives immediate, reactive notifications while the app is running.  
 Path B covers the "set and forget" case — user sets up the schedule, closes the browser, still gets notified.
+
+> **Path A (in-app notifications) has been discontinued.** `checkTrainArrivals()` is now a no-op. See the archived section below for historical reference.
 
 ---
 
@@ -66,7 +57,7 @@ Triggered when a train's departure time (actual or planned) is between now and 2
 | On time | *Ihre Reise geht los. Abfahrt heute pünktlich um HH:MM.* |
 | Delayed | *Abfahrt ursprünglich HH:MM, heute N Minuten später um HH:MM.* |
 | Early | *Abfahrt ursprünglich HH:MM, heute N Minuten früher um HH:MM.* |
-| Canceled | *Abfahrt ursprünglich HH:MM. Fällt heute aus. Wir bitten um Entschuldigung.* |
+| Canceled | *Abfahrt ursprünglich HH:MM[ von STOPS]. Fällt heute aus.[ Grund dafür ist REASON.] Wir bitten um Entschuldigung.* |
 
 ### 2. Status change while already in the window
 If a train is already within the 20-minute window and its delay, cancellation, or time changes, a new notification fires immediately reflecting the updated status.
@@ -85,9 +76,11 @@ Fires when `now >= trainTime + dauer` (computed) or when `train.checkoutTime` is
 
 ---
 
-## Path A: In-App Notifications
+## Path A: In-App Notifications ~~(discontinued)~~
 
-### State machine (`_notifState`)
+> This path has been retired. `checkTrainArrivals()` is a no-op. All notifications are now delivered via Web Push (Path B).
+
+### State machine (`_notifState`) — archived
 
 A private `Map<trainId, state>` is owned entirely by `notifications.js`. Each entry holds:
 
@@ -121,28 +114,26 @@ inWindow + statusChanged → fire if lastFiredKey !== fireKey
 inWindow + no change   → update state silently, no fire
 ```
 
-### Trigger points
+### Trigger points — archived
 
-`checkTrainArrivals()` is called from:
-- **`refreshUIOnly()`** in `schedule.js` — fires immediately on every local data change (delay edit, cancel, check-in, check-out)
-- **15-second interval** — catches pure time-based window crossings (train enters the 20-min window due to clock advancing, with no data change)
-- **SSE update handler** — fires after server-pushed data arrives
+`checkTrainArrivals()` was called from:
+- **`refreshUIOnly()`** in `schedule.js` — on every local data change
+- **15-second interval** — for time-based window crossings
+- **SSE update handler** — after server-pushed data arrived
 
-### Delivery
+### Delivery — archived
 
-On Android Chrome, `new Notification()` is blocked. The module detects whether the SW is controlling the page and routes accordingly:
+On Android Chrome, `new Notification()` is blocked. The module routed via the Service Worker:
 
 ```js
 if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-  // Android + modern desktop: use SW showNotification()
   navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
 } else {
-  // Desktop fallback: direct Notification API
-  new Notification(title, options);
+  new Notification(title, options); // desktop fallback
 }
 ```
 
-Auto-close after 12 seconds (Path A only — SW notifications are dismissed by the user or OS).
+Auto-close after 12 seconds was Path A only.
 
 ---
 
@@ -150,7 +141,7 @@ Auto-close after 12 seconds (Path A only — SW notifications are dismissed by t
 
 ### Push event types
 
-Path B mirrors Path A exactly. For each train, `buildPushEvents()` generates up to four events:
+For each train, `buildPushEvents()` generates up to four events:
 
 | Event ID prefix | Fires at | Purpose |
 |---|---|---|

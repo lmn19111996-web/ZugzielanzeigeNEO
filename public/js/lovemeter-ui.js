@@ -64,6 +64,9 @@
   var _drawerPoint     = null;   // existing data point being edited, or null
   var _drawerTs        = null;   // timestamp for the drawer
   var _drawerM         = null;   // current M at drawerTs
+  var _drawerOrigTs    = null;   // ts at open time (for dirty-check)
+  var _drawerOrigM     = null;   // M at open time (for dirty-check)
+  var _drawerClickOut  = null;   // registered click-outside handler
   var _eyeActive       = false;  // eye contact toggle state
   var _lastBadgeM      = -1;
   var _hoverRaf        = null;
@@ -1006,6 +1009,10 @@
     if (drawerSave)   drawerSave.style.display   = existingPoint ? '' : 'none';
     if (drawerDelete) drawerDelete.style.display = existingPoint ? '' : 'none';
 
+    // Record original values for dirty-checking on auto-save
+    _drawerOrigTs = ts;
+    _drawerOrigM  = existingPoint ? existingPoint.M : null;
+
     // Open
     if (eventDrawer) {
       eventDrawer.classList.add('is-open');
@@ -1013,16 +1020,50 @@
     }
     document.body.classList.add('lm-drawer-open');
     _drawerOpen = true;
+
+    // Click-outside: close (and auto-save if editing)
+    _drawerClickOut = function (e) {
+      if (!eventDrawer.contains(e.target)) {
+        e.stopPropagation();
+        _closeEventDrawer();
+      }
+    };
+    setTimeout(function () {
+      document.addEventListener('click', _drawerClickOut, true);
+    }, 50);
   }
 
-  function _closeEventDrawer() {
+  // Raw DOM close — does NOT save. Used internally after a commit completes.
+  function _closeEventDrawerNow() {
     if (eventDrawer) {
       eventDrawer.classList.remove('is-open');
       eventDrawer.setAttribute('aria-hidden', 'true');
     }
     document.body.classList.remove('lm-drawer-open');
+    if (_drawerClickOut) {
+      document.removeEventListener('click', _drawerClickOut, true);
+      _drawerClickOut = null;
+    }
     _drawerOpen  = false;
     _drawerPoint = null;
+    _drawerOrigTs = null;
+    _drawerOrigM  = null;
+  }
+
+  // Public close — auto-saves pending changes when editing an existing point.
+  function _closeEventDrawer() {
+    if (_drawerPoint) {
+      var currentTs  = _currentTs();
+      var absVal     = (drawerAbs && drawerAbs.value !== '') ? Number(drawerAbs.value) : null;
+      var currentM   = (absVal !== null && !isNaN(absVal)) ? absVal : _drawerPoint.M;
+      var tsChanged  = (currentTs !== _drawerOrigTs);
+      var mChanged   = (currentM  !== _drawerOrigM);
+      if (tsChanged || mChanged) {
+        _drawerSaveAndClose();
+        return;
+      }
+    }
+    _closeEventDrawerNow();
   }
 
   // ── Save helpers ─────────────────────────────────────────────────────────
@@ -1041,7 +1082,7 @@
       _renderStats();
       if (dashboardOpen) renderGraph();
     });
-    _closeEventDrawer();
+    _closeEventDrawerNow();
   }
 
   function _drawerApplyDelta(eventName, deltaM) {
@@ -1095,7 +1136,7 @@
     drawerDelete.addEventListener('click', function () {
       if (!_drawerPoint) return;
       var pt = _drawerPoint;
-      _closeEventDrawer();
+      _closeEventDrawerNow();
       deleteLovemeterPoint(pt.ts).then(function(pts) {
         _dataPoints = pts;
         _snapPoint  = null;
@@ -1384,6 +1425,8 @@
   };
 
   window.lovemeterOnDataChanged = function () {
+    // Skip server re-fetch while the event drawer is open (local edit in progress)
+    if (_drawerOpen) return;
     loadLovemeterDataPoints().then(function(pts) {
       _dataPoints = pts;
       invalidateLovemeterCache();

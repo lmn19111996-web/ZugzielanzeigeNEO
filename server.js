@@ -1598,6 +1598,7 @@ app.post('/api/lovemeter', async (req, res) => {
     else points.push(point);
     points.sort((a, b) => a.ts - b.ts);
     await writeLovemeterPoints(points);
+    broadcastUpdate('lovemeter-change', { dataType: 'lovemeter' });
     res.json({ ok: true, points });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1614,6 +1615,7 @@ app.delete('/api/lovemeter/:ts', async (req, res) => {
     const next = points.filter(p => p.ts !== ts);
     if (next.length === before) return res.status(404).json({ error: 'not found' });
     await writeLovemeterPoints(next);
+    broadcastUpdate('lovemeter-change', { dataType: 'lovemeter' });
     res.json({ ok: true, points: next });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1627,6 +1629,7 @@ app.put('/api/lovemeter', async (req, res) => {
     if (!Array.isArray(points)) return res.status(400).json({ error: 'expected array' });
     points.sort((a, b) => a.ts - b.ts);
     await writeLovemeterPoints(points);
+    broadcastUpdate('lovemeter-change', { dataType: 'lovemeter' });
     res.json({ ok: true, points });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1731,14 +1734,15 @@ app.get('/events', (req, res) => {
   });
 });
 
-function broadcastUpdate(source = 'unknown') {
+function broadcastUpdate(source = 'unknown', extra = {}) {
   const stack = new Error().stack.split('\n')[2].trim();
   console.log(`📡 Broadcasting SSE update to ${clients.size} client(s) - Source: ${source}`);
   console.log(`   Called from: ${stack}`);
+  const payload = JSON.stringify({ time: new Date().toISOString(), source, ...extra });
   for (const { res } of clients) {
     try {
       res.write(`event: update\n`);
-      res.write(`data: {"time":"${new Date().toISOString()}"}\n\n`);
+      res.write(`data: ${payload}\n\n`);
     } catch {
       // connection might be closed; let close handler clean up
     }

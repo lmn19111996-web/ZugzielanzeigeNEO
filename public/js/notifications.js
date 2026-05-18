@@ -140,9 +140,23 @@
 
         const inWindow = trainTime >= windowStart && trainTime < windowEnd;
 
-        // Build zwischenhalte suffix (max 100 chars)
-        const _zh = Array.isArray(train.zwischenhalte) ? train.zwischenhalte.filter(s => s && s.trim()).join(', ') : '';
+        // Build zwischenhalte suffix (max 100 chars) and extract cancel reason from [brackets]
+        const _zhRaw = Array.isArray(train.zwischenhalte) ? train.zwischenhalte.filter(s => s && s.trim()) : [];
+        // Strip [reason] from each entry for the "von" text; grab first reason found
+        let _cancelReason = '';
+        const _zhClean = _zhRaw.map(s => {
+          const m = s.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+          if (m) {
+            if (!_cancelReason) _cancelReason = m[2].trim();
+            return m[1].trim();
+          }
+          return s.trim();
+        }).filter(Boolean);
+        const _zh = _zhClean.join(', ');
         const zhSuffix = _zh ? (' von ' + (_zh.length > 100 ? _zh.slice(0, 100) + '\u2026' : _zh)) : '';
+        // Canceled message parts
+        const _cancelVon = _zh ? ` von ${_zh.length > 100 ? _zh.slice(0, 100) + '\u2026' : _zh}` : '';
+        const _cancelGrund = _cancelReason ? ` Grund dafür ist ${_cancelReason}.` : '';
 
         // -- Immediate status-change notification (train already in window) --
         // Only fires when the status is different from what was last pushed for this train.
@@ -152,7 +166,7 @@
           if (statusChanged) {
             let chgBody;
             if (train.canceled) {
-              chgBody = `Abfahrt ursprünglich ${planClock}. Fällt heute aus. Wir bitten um Entschuldigung.`;
+              chgBody = `Abfahrt ursprünglich ${planClock}${_cancelVon}. Fällt heute aus.${_cancelGrund} Wir bitten um Entschuldigung.`;
             } else if (delay > 0) {
               chgBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
             } else if (delay < 0) {
@@ -183,7 +197,7 @@
         if (windowNotifyAt > now) {
           let windowBody;
           if (train.canceled) {
-            windowBody = `Abfahrt ursprünglich ${planClock}. Fällt heute aus. Wir bitten um Entschuldigung.`;
+            windowBody = `Abfahrt ursprünglich ${planClock}${_cancelVon}. Fällt heute aus.${_cancelGrund} Wir bitten um Entschuldigung.`;
           } else if (delay > 0) {
             windowBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
           } else if (delay < 0) {

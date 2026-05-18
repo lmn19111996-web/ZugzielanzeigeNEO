@@ -209,6 +209,12 @@
       // Parse event data
       const eventData = JSON.parse(event.data);
       const serverVersion = eventData.version;
+
+      // Lovemeter-only update — refresh lovemeter data without touching schedule
+      if (eventData.dataType === 'lovemeter') {
+        if (typeof window.lovemeterOnDataChanged === 'function') window.lovemeterOnDataChanged();
+        return;
+      }
       
       // Complete save status indicator (if saving)
       completeSaveStatus();
