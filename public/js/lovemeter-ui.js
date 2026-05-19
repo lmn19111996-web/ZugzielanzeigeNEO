@@ -620,9 +620,10 @@
     var predPoints = [];
 
     var TOTAL_HELPER = helper.points.length;
-    // Sample every minute; clipped to the 4-day viewport window
-    var renderFrom = Math.max(T_PAST_MIN,   vMin);
-    var renderTo   = Math.min(T_FUTURE_MIN, vMax);
+    // Sample every minute; clipped to the visible viewport window
+    var helperStartMin = (helper.startMs - nowMs) / 60000;
+    var renderFrom = Math.max(helperStartMin, vMin);
+    var renderTo   = Math.min(T_FUTURE_MIN,  vMax);
     var lastHistPx = -999, lastPredPx = -999;
     for (var hi = 0; hi < TOTAL_HELPER; hi++) {
       var ts_i   = helper.startMs + hi * 60000;
