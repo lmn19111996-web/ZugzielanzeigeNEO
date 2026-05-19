@@ -277,14 +277,19 @@ function getLovemeterHelperArray(dataPoints) {
     if ((nowMs - _lmHelperCache.computedAt) < 60 * 60000) return _lmHelperCache;
   }
 
-  const TOTAL_MINS = (cfg.PAST_DAYS + cfg.FUTURE_DAYS) * 1440;
-  const startMs    = nowMs - cfg.PAST_DAYS * 24 * 60 * 60 * 1000;
-
   // Resolve relative (delta) points against the evolving baseline
   const resolved    = resolveDataPoints(dataPoints);
   const sorted      = resolved.slice().sort((a, b) => a.ts - b.ts);
   const lastPt      = sorted.length > 0 ? sorted[sorted.length - 1] : null;
   const lastDataMs  = lastPt ? lastPt.ts : null;
+
+  // startMs: reach back to the earliest recorded data point (no fixed cap).
+  // Falls back to cfg.PAST_DAYS when there is no data.
+  const fallbackStartMs = nowMs - cfg.PAST_DAYS * 24 * 60 * 60 * 1000;
+  const startMs = sorted.length > 0
+    ? Math.min(sorted[0].ts, fallbackStartMs)
+    : fallbackStartMs;
+  const TOTAL_MINS = Math.ceil((nowMs + cfg.FUTURE_DAYS * 1440 * 60000 - startMs) / 60000) + 2;
 
   // Build spline evaluator for the historical region
   const getMood = buildMoodSpline(sorted);

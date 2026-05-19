@@ -66,7 +66,9 @@
   var _drawerM         = null;   // current M at drawerTs
   var _drawerOrigTs    = null;   // ts at open time (for dirty-check)
   var _drawerOrigM     = null;   // M at open time (for dirty-check)
-  var _drawerClickOut  = null;   // registered click-outside handler
+  var _drawerClickOut     = null;   // registered click-outside handler
+  var _drawerEscHandler   = null;   // registered ESC keydown handler
+  var _drawerBackHandler  = null;   // registered popstate (back-button) handler
   var _eyeActive       = false;  // eye contact toggle state
   var _lastBadgeM      = -1;
   var _hoverRaf        = null;
@@ -91,6 +93,7 @@
   loadLovemeterDataPoints().then(function(pts) {
     _dataPoints = pts;
     invalidateLovemeterCache();
+    _updateViewBounds();
     _lastBadgeM = -1;
     updateLovemeterBadge();
     if (dashboardOpen) { _graphCache.key = ''; renderGraph(); }
@@ -190,8 +193,7 @@
   var ALPHA = CFG.ALPHA;
   var EPS   = CFG.EPSILON_MIN;
 
-  // Full calculated helper-array bounds (minutes from now)
-  var T_PAST_MIN   = -CFG.PAST_DAYS   * 1440;   // -7200
+  // Future bound (minutes from now) — fixed by config
   var T_FUTURE_MIN = +CFG.FUTURE_DAYS * 1440;   // +30240
 
   // ── Viewport geometry ─────────────────────────────────────────────────
@@ -205,9 +207,17 @@
   var VIEW_HALF_MIN  = VIEW_HALF_DAYS * 1440;   // 2880 minutes = 2 days
   var LINEAR_CLAMP_MIN = 360;                    // 6 hours in minutes
 
-  // Viewport center constraints (so the 4-day window never leaves the helper array)
-  var MIN_VIEW_OFFSET = T_PAST_MIN   + VIEW_HALF_MIN;  // −5d+2d = −3d
-  var MAX_VIEW_OFFSET = T_FUTURE_MIN - VIEW_HALF_MIN;  // +21d−2d = +19d
+  // Viewport center constraints — MIN_VIEW_OFFSET is dynamic (updated from
+  // helper-array startMs so the user can scroll back to the earliest data point).
+  var MIN_VIEW_OFFSET = -CFG.PAST_DAYS * 1440 + VIEW_HALF_MIN;  // initial fallback
+  var MAX_VIEW_OFFSET = T_FUTURE_MIN - VIEW_HALF_MIN;            // +21d−2d = +19d
+
+  /** Recompute MIN_VIEW_OFFSET from the actual helper-array start. Call after any data change. */
+  function _updateViewBounds() {
+    var h = getLovemeterHelperArray(_dataPoints);
+    var pastMin = Math.round((h.startMs - Date.now()) / 60000); // negative
+    MIN_VIEW_OFFSET = pastMin + VIEW_HALF_MIN;
+  }
 
   // Precompute abstract-x boundaries for the NL zones (relative to viewport center,
   // evaluated at the two boundary magnitudes: 6 h and 2 days). Both outer zones are
@@ -1021,16 +1031,55 @@
     document.body.classList.add('lm-drawer-open');
     _drawerOpen = true;
 
-    // Click-outside: close (and auto-save if editing)
+    // Back-button (mobile)
+    _drawerBackHandler = function (e) {
+      if (_drawerOpen) {
+        _closeEventDrawer();
+        e.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener('popstate', _drawerBackHandler, true);
+    window.history.pushState({ drawer: 'lovemeter' }, '');
+
+    _setupEventDrawerCloseHandlers();
+  }
+
+  function _setupEventDrawerCloseHandlers() {
+    // Remove stale handlers before re-registering
+    if (_drawerEscHandler) {
+      document.removeEventListener('keydown', _drawerEscHandler, true);
+    }
+    if (_drawerClickOut) {
+      document.removeEventListener('click', _drawerClickOut, true);
+    }
+
+    // ESC handler (scoped to drawer lifecycle)
+    _drawerEscHandler = function (e) {
+      if (e.key !== 'Escape') return;
+      if (!_drawerOpen) return;
+      // Let editor drawer handle ESC first if it is open
+      var editorDrawer = document.getElementById('focus-panel');
+      if (editorDrawer && editorDrawer.classList.contains('is-open')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      _closeEventDrawer();
+    };
+    document.addEventListener('keydown', _drawerEscHandler, true);
+
+    // Click-outside handler
     _drawerClickOut = function (e) {
       if (!eventDrawer.contains(e.target)) {
+        // Don't close if clicking the lovemeter trigger button
+        var lmBtn = document.getElementById('lovemeter-button');
+        if (lmBtn && lmBtn.contains(e.target)) return;
+        // Don't close if clicking inside the editor drawer
+        var editorDrawer = document.getElementById('focus-panel');
+        if (editorDrawer && editorDrawer.contains(e.target)) return;
         e.stopPropagation();
         _closeEventDrawer();
       }
     };
-    setTimeout(function () {
-      document.addEventListener('click', _drawerClickOut, true);
-    }, 50);
+    document.addEventListener('click', _drawerClickOut, true);
   }
 
   // Raw DOM close — does NOT save. Used internally after a commit completes.
@@ -1040,9 +1089,17 @@
       eventDrawer.setAttribute('aria-hidden', 'true');
     }
     document.body.classList.remove('lm-drawer-open');
+    if (_drawerEscHandler) {
+      document.removeEventListener('keydown', _drawerEscHandler, true);
+      _drawerEscHandler = null;
+    }
     if (_drawerClickOut) {
       document.removeEventListener('click', _drawerClickOut, true);
       _drawerClickOut = null;
+    }
+    if (_drawerBackHandler) {
+      window.removeEventListener('popstate', _drawerBackHandler, true);
+      _drawerBackHandler = null;
     }
     _drawerOpen  = false;
     _drawerPoint = null;
@@ -1302,12 +1359,9 @@
     var tag = active ? active.tagName : '';
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
 
-    // Escape: close drawer if open, otherwise close lovemeter
+    // Escape: close lovemeter overlay (drawer ESC is handled by _setupEventDrawerCloseHandlers)
     if (e.key === 'Escape') {
-      if (_drawerOpen) {
-        e.preventDefault();
-        _closeEventDrawer();
-      } else if (dashboardOpen) {
+      if (!_drawerOpen && dashboardOpen) {
         e.preventDefault();
         _toggleDashboard();
       }
@@ -1430,6 +1484,7 @@
     loadLovemeterDataPoints().then(function(pts) {
       _dataPoints = pts;
       invalidateLovemeterCache();
+      _updateViewBounds();
       _graphCache.key = '';
       _lastBadgeM = -1;
       updateLovemeterBadge();
