@@ -180,10 +180,40 @@
             if (!dbRes.ok) return;
             
             const dbData = await dbRes.json();
-            const dbTrains = (dbData.trains || []).map(t => ({
-              ...t,
-              source: 'db-api'
-            }));
+            let dbTrains = (dbData.trains || []).map(t => {
+              const normalized = { ...t, source: 'db-api' };
+              if (t.stops && !t.zwischenhalte) {
+                normalized.zwischenhalte = t.stops;
+                delete normalized.stops;
+              }
+              return normalized;
+            });
+
+            // Hide terminus arrivals (same as real DB API behaviour)
+            dbTrains = dbTrains.filter(t => t.ziel !== 'Ankunft');
+
+            // Filter by platform if set
+            if (currentPlatformFilter) {
+              const allowedPlatforms = parsePlatformFilter(currentPlatformFilter);
+              if (allowedPlatforms) dbTrains = dbTrains.filter(t => allowedPlatforms(t.platform || t.plannedPlatform));
+            }
+
+            // For custom trains, trim zwischenhalte to only show stops AFTER
+            // the selected station (the selected stop is already the departure point)
+            if (String(currentEva).startsWith('CUSTOM_')) {
+              const selectedStopName = (dbData.metadata && dbData.metadata.stationName) || null;
+              if (selectedStopName) {
+                dbTrains = dbTrains.map(t => {
+                  if (!t.zwischenhalte || !t.custom) return t;
+                  const parts = t.zwischenhalte.split(' • ');
+                  const idx = parts.findIndex(p => p.trim() === selectedStopName.trim());
+                  if (idx !== -1 && idx < parts.length - 1) {
+                    return { ...t, zwischenhalte: parts.slice(idx + 1, parts.length - 1).join(' • ') };
+                  }
+                  return t;
+                });
+              }
+            }
             
             // Update display with DB trains
             schedule.trains = dbTrains;

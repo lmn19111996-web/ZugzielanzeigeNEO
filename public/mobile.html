@@ -10,6 +10,127 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#161B75">
   <!-- style extracted to style.css -->
+
+  <!-- ── Static Dashboard (Abfahrtstafel) Mode ── -->
+  <style id="dashboard-styles">
+    #dashboard-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #161B75;
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+      font-stretch: condensed;
+      color: white;
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    #dashboard-board {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      box-sizing: border-box;
+    }
+
+    #dashboard-rows-grid {
+      display: grid;
+      grid-template-columns: 3vw max-content 1fr 11vw;
+      grid-template-rows: auto auto repeat(10, 1fr);
+      flex: 1;
+      min-height: 0;
+      margin: 0 0.2vw;
+    }
+
+    /* Column rules (scoped to dashboard overlay) */
+    #dashboard-overlay .col-dot         { width: 3vw; flex-shrink: 0; }
+    #dashboard-overlay .col-time        { margin: 0 1vw; border-top: 1px solid white; box-sizing: border-box; min-width: 0; }
+    #dashboard-overlay .col-destination { min-width: 0; margin: 0 2vw; border-top: 1px solid white; box-sizing: border-box; }
+    #dashboard-overlay .col-platform    { width: 9vw; flex-shrink: 0; margin: 0 1vw; border-top: 1px solid white; box-sizing: border-box; }
+    #dashboard-overlay .dep-empty       { border-top: none !important; }
+    /* Station overlay must appear above dashboard */
+    #station-overlay                     { z-index: 10000; }
+
+    /* Header layout */
+    #dashboard-overlay .board-header,
+    #dashboard-overlay .header-main-row,
+    #dashboard-overlay .header-label-row,
+    #dashboard-overlay .departure-row    { display: contents; }
+
+    #dashboard-overlay .header-dot,
+    #dashboard-overlay .header-time-main,
+    #dashboard-overlay .header-destination-main,
+    #dashboard-overlay .header-platform-main {
+      border-top: none !important;
+      padding-top: 0.8vh;
+      padding-bottom: 1.8vh;
+      display: flex;
+      align-items: center;
+    }
+    #dashboard-overlay .header-time-labels,
+    #dashboard-overlay .header-destination-labels { border-top: none !important; padding-bottom: 0.6vh; }
+    #dashboard-overlay .header-platform-labels    { align-self: end; display: flex; padding-bottom: 0.6vh; border-top: none !important; }
+
+    /* Clock */
+    #dashboard-overlay .clock-row   { display: flex; align-items: center; }
+    #dashboard-overlay .aclock      { position: relative; width: 2.6vh; height: 2.6vh; border: 2.5px solid white; border-radius: 50%; flex-shrink: 0; }
+    #dashboard-overlay .aclock .center { position: absolute; width: 0.4vh; height: 0.4vh; background: white; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 10; }
+    #dashboard-overlay .hand         { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; transform: translateX(-50%); }
+    #dashboard-overlay .hour         { width: 0.25vh; height: 0.9vh;  background: white; z-index: 3; }
+    #dashboard-overlay .minute       { width: 0.25vh; height: 1.15vh; background: white; z-index: 2; }
+    #dashboard-overlay .digital-clock { font-size: 3.5vh; font-weight: 500; letter-spacing: 0.04em; }
+    #dashboard-overlay .col-labels   { display: flex; flex-direction: column; font-size: 1.5vh; line-height: 1.4; }
+
+    /* Header text */
+    #dashboard-overlay .header-destination-main { display: flex; }
+    #dashboard-overlay .header-destination-labels { display: flex; }
+    #dashboard-overlay .header-platform-main    { display: flex; justify-content: center; }
+    #dashboard-overlay .abfahrt-title  { font-size: 3.5vh; font-weight: 400; line-height: 1.1; }
+    #dashboard-overlay .abfahrt-title em { font-style: italic; font-weight: 300; }
+    #dashboard-overlay .station-name   { background: white; font-size: 4vh; color: #161B75; border-radius: 2px; padding: 0.1vh 0.7vh; }
+    #dashboard-overlay .db-logo        { height: 5vh; width: auto; display: block; }
+    #dashboard-overlay .dest-sublabels { font-size: 1.5vh; line-height: 1.4; }
+    #dashboard-overlay .gleis-label    { font-size: 1.5vh; line-height: 1.4; }
+
+    /* Departure cells */
+    #dashboard-overlay .dep-dot { display: flex; align-items: center; justify-content: center; }
+    #dashboard-overlay .dep-dot .indicator-dot {
+      width: 1vh; height: 1vh; margin-right: 0; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2vh; font-weight: bold; box-sizing: border-box;
+    }
+    #dashboard-overlay .dep-dot .indicator-dot.current   { border-radius: 50%; background: white; }
+    #dashboard-overlay .dep-dot .indicator-dot.cancelled::before { content: '✕'; color: white; font-size: 3.5vh; }
+
+    #dashboard-overlay .dep-time {
+      display: flex; flex-direction: column; justify-content: flex-start;
+      align-items: flex-start; gap: 0.8vh; padding-top: 0.8vh; box-sizing: border-box;
+    }
+    #dashboard-overlay .train-symbol { height: 2vh; width: auto; display: block; }
+    #dashboard-overlay .time-row     { display: flex; flex-direction: row; align-items: center; gap: 10px; }
+    #dashboard-overlay .dep-time .line-badge { height: 2.5vh; min-width: 4.5vh; font-size: 2.1vh; border-radius: 0.3vh; }
+    #dashboard-overlay .dep-sched    { font-size: 4vh; font-weight: 350; letter-spacing: 0.03em; line-height: 1; }
+    #dashboard-overlay .dep-delayed  { font-size: 3vh; font-weight: 450; color: #161B75; background: white; line-height: 1.05; border-radius: 1px; align-self: center; }
+
+    #dashboard-overlay .dep-destination { display: flex; flex-direction: column; justify-content: flex-end; flex: 1; overflow: hidden; box-sizing: border-box; padding-bottom: 0.5vh; }
+    #dashboard-overlay .via-stops  { font-size: 2.2vh; font-weight: 300; white-space: nowrap; overflow: hidden; line-height: 1.3; }
+    #dashboard-overlay .via-scroll-text { display: inline-block; white-space: nowrap; }
+    #dashboard-overlay .dest-name  { font-size: 4vh; font-weight: 350; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #dashboard-overlay .dep-platform { display: flex; align-items: flex-end; justify-content: center; font-size: 4vh; font-weight: 500; padding-bottom: 0.5vh; }
+
+    /* Cancelled */
+    #dashboard-overlay .departure-row.cancelled .dep-destination,
+    #dashboard-overlay .departure-row.cancelled .dep-time,
+    #dashboard-overlay .departure-row.cancelled .dep-platform { background: white; color: #161B75; border-radius: 1px; }
+    #dashboard-overlay .departure-row.cancelled .dep-destination { padding: 0.3vh 0.6vw; }
+    #dashboard-overlay .departure-row.cancelled .dep-time       { padding: 0.3vh 0.4vw; }
+    #dashboard-overlay .departure-row.cancelled .dep-platform   { padding-bottom: 0.5vh; }
+    #dashboard-overlay .departure-row.cancelled .via-stops,
+    #dashboard-overlay .departure-row.cancelled .dest-name,
+    #dashboard-overlay .departure-row.cancelled .dep-sched,
+    #dashboard-overlay .departure-row.cancelled .dep-platform   { text-decoration: line-through; text-decoration-color: #161B75; }
+  </style>
 </head>
 <body>
   <!-- Save Status Indicator -->
@@ -625,6 +746,9 @@
       <div class="station-input-wrap">
         <input id="station-input" class="station-input" type="text" placeholder="Stationsnamen eingeben..." autocomplete="off" />
       </div>
+      <div class="station-input-wrap" style="margin-top:8px">
+        <input id="platform-filter-input" class="station-input" type="text" placeholder="Gleise filtern: z.B. 1,2 oder 3-5 (leer = alle)" autocomplete="off" />
+      </div>
       <div id="overlay-hint" class="overlay-hint"></div>
       <div id="station-suggestions" class="suggestions" style="display:none"></div>
     </div>
@@ -659,6 +783,49 @@
 
   <!-- script extracted to app.js -->
 <script src="templates.js"></script>
+
+  <!-- ── Static Dashboard Overlay ── -->
+  <div id="dashboard-overlay" style="display:none;">
+    <div id="dashboard-board">
+      <div id="dashboard-rows-grid">
+        <!-- HEADER -->
+        <div class="board-header">
+          <div class="header-main-row">
+            <div class="col-dot header-dot"></div>
+            <div class="col-time header-time-main">
+              <div class="clock-row">
+                <div class="aclock">
+                  <div class="center"></div>
+                  <div class="hand hour" id="dashboard-hour"></div>
+                  <div class="hand minute" id="dashboard-minute"></div>
+                </div>
+                <div class="digital-clock" id="dashboard-clock">00:00</div>
+              </div>
+            </div>
+            <div class="col-destination header-destination-main">
+              <div class="abfahrt-title">Abfahrt <em>Departure</em> &nbsp; <span class="station-name" id="dashboard-station-name">Abfahrt</span></div>
+            </div>
+            <div class="col-platform header-platform-main">
+              <img class="db-logo" src="res/DB_logo_white_rgb_100px.svg" alt="DB">
+            </div>
+          </div>
+          <div class="header-label-row">
+            <div class="col-dot header-dot"></div>
+            <div class="col-time header-time-labels">
+              <div class="col-labels"><span>Zug / Train</span><span>Zeit / Time</span></div>
+            </div>
+            <div class="col-destination header-destination-labels">
+              <div class="dest-sublabels"><div>Über / Via</div><div>Ziel / Destination</div></div>
+            </div>
+            <div class="col-platform header-platform-labels">
+              <div class="gleis-label">Gleis / Track</div>
+            </div>
+          </div>
+        </div>
+        <!-- Departure rows inserted by dashboard.js -->
+      </div>
+    </div>
+  </div>
 <!-- JS modules — load order is critical (globals first, init last) -->
 <script src="js/globals.js"></script>
 <script src="js/utils.js"></script>
@@ -682,6 +849,7 @@
 <script src="js/lovemeter-ui.js?v=1"></script>
 <script src="js/checkin.js"></script>
 <script src="js/init.js"></script>
+<script src="js/dashboard.js"></script>
 
 <script>
 // ── Badge rotator: alternates energy / lovemeter every 5 s ──────────────────

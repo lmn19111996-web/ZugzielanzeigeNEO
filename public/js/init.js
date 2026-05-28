@@ -3,9 +3,11 @@
     (function loadSavedStation() {
       const savedEva = localStorage.getItem('selectedEva');
       const savedName = localStorage.getItem('selectedStationName');
+      const savedPF = localStorage.getItem('selectedPlatformFilter');
       if (savedEva && savedName) {
         currentEva = savedEva;
         currentStationName = savedName;
+        if (savedPF) currentPlatformFilter = savedPF;
         console.log(`Loaded saved station: ${savedName} (EVA: ${savedEva})`);
       }
       
@@ -367,7 +369,8 @@
       // Update status indicators
       document.querySelectorAll('.indicator-dot').forEach((dot) => {
         const entry = dot.closest('.train-entry');
-        const departure = entry.querySelector('[data-departure]');
+        const departure = entry && entry.querySelector('[data-departure]');
+        if (!entry || !departure) return;
         if (entry.dataset.trainType === 'duration-only') {
           return;
         }

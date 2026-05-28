@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Timetable Editor</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #161B75;
+      --panel:     #0F1450;
+      --card:      #171d5e;
+      --btn:       #2e3273;
+      --btn-hover: #1f2478;
+      --accent:    #f9c74f;
+      --green:     #4caf50;
+      --red:       #e53935;
+      --border:    rgba(255,255,255,0.15);
+      --text:      #ffffff;
+      --muted:     rgba(255,255,255,0.60);
+      --font:      "Bahnschrift Condensed", "Arial Narrow", Arial, sans-serif;
+    }
+
+    html, body {
+      height: 100%; background: var(--bg); color: var(--text);
+      font-family: var(--font); font-size: 15px;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    #app {
+      display: grid;
+      grid-template-rows: 48px 1fr;
+      height: 100vh;
+    }
+
+    header {
+      background: var(--panel);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 18px; font-weight: 700; letter-spacing: 1px;
+    }
+    header .logo { color: var(--accent); font-size: 22px; }
+
+    .tab-bar {
+      display: flex; gap: 4px; margin-left: auto;
+    }
+    .tab-btn {
+      padding: 6px 16px; border: none; cursor: pointer;
+      background: transparent; color: var(--muted);
+      border-bottom: 2px solid transparent;
+      font-family: var(--font); font-size: 14px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    main {
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* ── Sections / Tabs ──────────────────────────────────────── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-title {
+      font-size: 20px; font-weight: 700; letter-spacing: .5px;
+      margin-bottom: 16px; color: var(--accent);
+    }
+
+    /* ── Cards & Panels ──────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .card-title { font-size: 16px; font-weight: 600; }
+
+    /* ── Form Elements ────────────────────────────────────────── */
+    .form-row {
+      display: flex; gap: 10px; align-items: flex-end;
+      flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+    .field label { font-size: 12px; color: var(--muted); }
+    .field input, .field select, .field textarea {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text);
+      padding: 7px 10px; font-family: var(--font); font-size: 14px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--accent);
+    }
+    .field select option { background: var(--panel); }
+
+    /* ── Buttons ──────────────────────────────────────────────── */
+    .btn {
+      padding: 7px 16px; border: none; border-radius: 5px;
+      cursor: pointer; font-family: var(--font); font-size: 14px;
+      transition: background .15s, opacity .15s;
+    }
+    .btn-primary { background: var(--accent); color: #111; font-weight: 700; }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.14); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { opacity: .85; }
+    .btn-sm { padding: 4px 10px; font-size: 13px; }
+
+    /* ── Stop List ────────────────────────────────────────────── */
+    .stop-list { list-style: none; }
+    .stop-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stop-item:last-child { border-bottom: none; }
+    .stop-name { flex: 1; font-size: 15px; }
+    .stop-eva { font-size: 12px; color: var(--muted); min-width: 80px; }
+
+    /* ── Line Stop Sequence ───────────────────────────────────── */
+    .seq-list { list-style: none; }
+    .seq-item {
+      display: grid;
+      grid-template-columns: 24px 1fr 90px 90px 90px 36px;
+      gap: 6px; align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .seq-item:last-child { border-bottom: none; }
+    .seq-num { font-size: 12px; color: var(--muted); text-align: center; }
+    .seq-item input {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); padding: 5px 8px;
+      font-family: var(--font); font-size: 13px; outline: none;
+    }
+    .seq-item input:focus { border-color: var(--accent); }
+    .seq-col-label {
+      font-size: 11px; color: var(--muted); text-align: center;
+    }
+    .seq-headers {
+      display: grid;
+      grid-template-columns: 24px 1fr 90px 90px 90px 36px;
+      gap: 6px; padding: 0 0 4px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    /* ── Departure Entries ────────────────────────────────────── */
+    .dep-list { list-style: none; }
+    .dep-entry {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 14px;
+    }
+    .dep-entry:last-child { border-bottom: none; }
+    .dep-raw { flex: 1; font-family: monospace; color: var(--accent); font-size: 13px; }
+    .dep-count { font-size: 12px; color: var(--muted); min-width: 80px; text-align: right; }
+
+    /* ── Board ────────────────────────────────────────────────── */
+    /* ── Timetable (Kursbuch) ──────────────────────────────────── */
+    .tt-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 15px;
+    }
+    .tt-table th {
+      background: var(--panel); padding: 8px 14px;
+      font-size: 12px; color: var(--muted);
+      border-bottom: 2px solid var(--border);
+      text-align: left;
+    }
+    .tt-table th:first-child { text-align: center; width: 52px; }
+    .tt-table td {
+      padding: 5px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      vertical-align: top;
+    }
+    .tt-table td:first-child {
+      text-align: center; width: 52px;
+      font-size: 22px; font-weight: 700; color: var(--accent);
+      border-right: 2px solid var(--border);
+      vertical-align: middle;
+      font-family: monospace;
+    }
+    .tt-table tr.current-hour td:first-child { background: rgba(249,199,79,0.12); }
+    .tt-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .tt-mins {
+      display: flex; flex-wrap: wrap; gap: 4px 8px;
+      align-items: center; padding: 6px 0;
+    }
+    .tt-min {
+      font-family: monospace; font-size: 16px; font-weight: 600;
+      padding: 2px 6px; border-radius: 4px;
+      background: rgba(255,255,255,0.07);
+      cursor: pointer;
+      transition: background .1s, color .1s;
+      user-select: none;
+    }
+    .tt-min:hover { background: rgba(229,57,53,0.35); color: #fff; outline: 1px solid var(--red); }
+    .tt-min.hovered { background: rgba(229,57,53,0.55) !important; outline: 2px solid var(--red) !important; }
+    .tt-min.past { opacity: .35; }
+    .tt-min.now {
+      background: var(--accent); color: #111;
+      box-shadow: 0 0 6px rgba(249,199,79,.5);
+    }
+    .tt-empty { color: var(--muted); font-size: 13px; padding: 6px 0; }
+    .time-cell { font-family: monospace; font-size: 15px; color: var(--accent); }
+    .passed { opacity: .4; }
+
+    /* ── Station Board ─────────────────────────────────────── */
+    .sboard-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .sboard-table th {
+      background: var(--panel); padding: 8px 14px;
+      font-size: 12px; color: var(--muted); border-bottom: 2px solid var(--border);
+      text-align: left;
+    }
+    .sboard-table td { padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sboard-table tr:hover td { background: rgba(255,255,255,0.04); }
+    .sboard-table tr.past-row td { opacity: .38; }
+    .sboard-time { font-family: monospace; font-size: 18px; font-weight: 700; color: var(--accent); }
+    .sboard-line { display: inline-block; min-width: 36px; text-align: center; padding: 1px 8px; border-radius: 4px; background: rgba(255,255,255,0.12); font-weight: 700; font-size: 14px; }
+    .sboard-dir { font-size: 14px; }
+    .sboard-plat { font-size: 13px; color: var(--muted); }
+
+    /* ── Line Selector ────────────────────────────────────────── */
+    .line-pill {
+      display: inline-block; padding: 3px 12px;
+      background: var(--btn); border-radius: 20px;
+      font-size: 13px; cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .15s, border-color .15s;
+    }
+    .line-pill.selected { background: var(--accent); color: #111; border-color: var(--accent); }
+
+    /* ── Utility ──────────────────────────────────────────────── */
+    .empty { color: var(--muted); font-size: 14px; padding: 12px 0; text-align: center; }
+    .tag { display: inline-block; background: rgba(255,255,255,0.10); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+    .tag-green { background: rgba(76,175,80,0.25); color: #a5d6a7; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+    .gap-top { margin-top: 12px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header>
+    <span class="logo">🚉</span>
+    Custom Timetable Editor
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="stops">Stops</button>
+      <button class="tab-btn" data-tab="lines">Lines</button>
+      <button class="tab-btn" data-tab="departures">Departures</button>
+      <button class="tab-btn" data-tab="board">Board</button>
+      <button class="tab-btn" data-tab="station">Station</button>
+    </nav>
+  </header>
+
+  <!-- ── Main ────────────────────────────────────────────────── -->
+  <main>
+
+    <!-- ════════════════════ STOPS ═══════════════════════════ -->
+    <section id="tab-stops" class="section active">
+      <div class="section-title">Stops</div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">Add Stop</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Station Name *</label>
+            <input id="stop-name" type="text" placeholder="e.g. Hauptbahnhof" onkeydown="if(event.key==='Enter')addStop()" />
+          </div>
+          <div class="field" style="max-width:180px">
+            <label>EVA Number (optional)</label>
+            <input id="stop-eva" type="text" placeholder="e.g. 8000105" />
+          </div>
+          <button class="btn btn-primary" onclick="addStop()">Add Stop</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Stops</span>
+          <span id="stop-count" class="tag">0</span>
+        </div>
+        <ul class="stop-list" id="stop-list">
+          <li class="empty">No stops yet.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ════════════════════ LINES ═══════════════════════════ -->
+    <section id="tab-lines" class="section">
+      <div class="section-title">Lines</div>
+
+      <div class="two-col">
+        <!-- Left: create / edit -->
+        <div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px" id="line-form-title">New Line</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Line Name *</label>
+                <input id="line-name" type="text" placeholder="e.g. S1" />
+              </div>
+            </div>
+
+            <!-- Stop sequence builder -->
+            <div style="margin-top:12px">
+              <div style="font-size:13px; color:var(--muted); margin-bottom:6px">Stop Sequence</div>
+              <div class="seq-headers">
+                <span class="seq-col-label">#</span>
+                <span class="seq-col-label">Stop</span>
+                <span class="seq-col-label">Platform</span>
+                <span class="seq-col-label">Dwell (s)</span>
+                <span class="seq-col-label">Travel (s)</span>
+                <span></span>
+              </div>
+              <ul class="seq-list" id="seq-list"></ul>
+              <div class="form-row gap-top">
+                <div class="field">
+                  <label>Add Stop</label>
+                  <select id="seq-stop-select">
+                    <option value="">— choose stop —</option>
+                  </select>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="addStopToSeq()" style="margin-bottom:1px">+ Add</button>
+              </div>
+              <div style="font-size:11px; color:var(--muted); margin-top:4px">
+                Travel time = time to travel <em>from</em> this stop to the next stop.
+                Last stop travel time is ignored.
+              </div>
+            </div>
+
+            <div class="form-row gap-top">
+              <button class="btn btn-primary" onclick="saveLine()">Save Line</button>
+              <button class="btn btn-ghost btn-sm" onclick="resetLineForm()">Reset</button>
+            </div>
+            <input type="hidden" id="line-edit-id" value="" />
+          </div>
+        </div>
+
+        <!-- Right: list of lines -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">All Lines</span>
+              <span id="line-count" class="tag">0</span>
+            </div>
+            <div id="line-list"><div class="empty">No lines yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════ DEPARTURES ══════════════════════ -->
+    <section id="tab-departures" class="section">
+      <div class="section-title">Departures</div>
+
+      <div class="card" style="max-width:480px">
+        <div class="card-title" style="margin-bottom:10px">Select Line</div>
+        <div id="dep-line-selector" class="form-row" style="gap:8px; flex-wrap:wrap">
+          <span class="empty">No lines defined yet.</span>
+        </div>
+      </div>
+
+      <div id="dep-editor" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Add Departure Entry</span>
+          </div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:10px; line-height:1.6">
+            Formats:<br>
+            &nbsp;<code>HH:MM:SS</code> — single departure<br>
+            &nbsp;<code>HH:MM:SS + NN*HH1:MM1:SS1</code> — NN repeats every HH1:MM1:SS1 starting at HH:MM:SS
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Departure Expression *</label>
+              <input id="dep-input" type="text" placeholder="06:00:00 + 20*00:30:00" />
+            </div>
+            <button class="btn btn-primary" onclick="addDeparture()">Add</button>
+          </div>
+          <div id="dep-parse-preview" style="font-size:12px; color:var(--muted); min-height:18px;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Departures for <span id="dep-line-name" style="color:var(--accent)"></span> <span style="font-size:12px;color:var(--muted);font-weight:400">(click a minute to delete)</span></span>
+            <button class="btn btn-danger btn-sm" onclick="clearAllDepartures()">Clear All</button>
+          </div>
+          <div class="form-row" style="margin-bottom:10px; align-items:center; gap:8px">
+            <span style="font-size:13px; color:var(--muted)">Shift all:</span>
+            <input id="shift-minutes" type="number" placeholder="±min" style="width:80px" />
+            <button class="btn btn-sm" onclick="shiftDepartures()">Apply</button>
+            <span id="shift-feedback" style="font-size:12px; color:var(--green); min-width:80px"></span>
+          </div>
+          <ul class="dep-list" id="dep-list">
+            <li class="empty">No departures.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════ BOARD ════════════════════════════ -->
+    <section id="tab-board" class="section">
+      <div class="section-title">Departure Board</div>
+
+      <div class="card" style="max-width:480px">
+        <div class="card-title" style="margin-bottom:10px">Select Line</div>
+        <div id="board-line-selector" class="form-row" style="gap:8px; flex-wrap:wrap">
+          <span class="empty">No lines defined yet.</span>
+        </div>
+      </div>
+
+      <div id="board-content" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px">
+          <div>
+            Line: <strong id="board-line-name" style="color:var(--accent)"></strong>
+            &nbsp;<span id="board-total" class="tag"></span>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center">
+            <label style="font-size:13px; color:var(--muted)">
+              <input type="checkbox" id="board-hide-past" checked onchange="renderBoard()" />
+              Hide past departures
+            </label>
+            <label style="font-size:13px; color:var(--muted)">
+              Showing from stop:
+              <select id="board-from-stop" onchange="renderBoard()"
+                style="background:rgba(255,255,255,0.08); border:1px solid var(--border);
+                       border-radius:4px; color:var(--text); padding:4px 8px;
+                       font-family:var(--font); font-size:13px">
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="card" style="padding:0; overflow-x:auto">
+          <table class="tt-table">
+            <thead>
+              <tr>
+                <th>Hour</th>
+                <th>Departure minutes</th>
+              </tr>
+            </thead>
+            <tbody id="board-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════ STATION BOARD ═══════════════════ -->
+    <section id="tab-station" class="section">
+      <div class="section-title">Station Departure Board</div>
+
+      <div class="card" style="max-width:600px">
+        <div class="card-title" style="margin-bottom:10px">Select Stop</div>
+        <div id="station-stop-selector" class="form-row" style="gap:8px; flex-wrap:wrap">
+          <span class="empty">No stops defined yet.</span>
+        </div>
+      </div>
+
+      <div id="station-board-content" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px">
+          <div>
+            Stop: <strong id="station-stop-name" style="color:var(--accent)"></strong>
+            &nbsp;<span id="station-total" class="tag"></span>
+          </div>
+          <label style="font-size:13px; color:var(--muted)">
+            <input type="checkbox" id="station-hide-past" checked onchange="renderStationBoard()" />
+            Hide past departures
+          </label>
+        </div>
+        <div class="card" style="padding:0; overflow-x:auto">
+          <table class="sboard-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Line</th>
+                <th>Direction</th>
+                <th>Platform</th>
+              </tr>
+            </thead>
+            <tbody id="station-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  DATA STORE  (server-backed, localStorage as offline cache)
+// ═══════════════════════════════════════════════════════════════
+const STORAGE_KEY = 'custom_timetable_v1';
+
+function loadDataLocal() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { stops: [], lines: [] }; }
+  catch { return { stops: [], lines: [] }; }
+}
+
+let _saveTimer = null;
+function saveData(data) {
+  // Always persist to localStorage immediately (offline fallback)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Debounce server save by 400 ms to avoid hammering on rapid edits
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    fetch('/api/custom-timetable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => {
+      if (!r.ok) console.warn('Failed to save custom timetable to server');
+    }).catch(e => console.warn('Server save error:', e));
+  }, 400);
+}
+
+async function loadFromServer() {
+  try {
+    const res = await fetch('/api/custom-timetable');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.stops) && Array.isArray(data.lines)) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not load from server, using localStorage:', e);
+  }
+  return loadDataLocal();
+}
+
+let db = loadDataLocal(); // start with cache; will be refreshed from server on init
+
+// ── helpers ───────────────────────────────────────────────────
+function uid() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TAB NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'lines') refreshStopDropdown();
+    if (btn.dataset.tab === 'departures') renderDepLineSelector();
+    if (btn.dataset.tab === 'board') renderBoardLineSelector();
+    if (btn.dataset.tab === 'station') renderStationStopSelector();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  STOPS
+// ═══════════════════════════════════════════════════════════════
+function addStop() {
+  const name = document.getElementById('stop-name').value.trim();
+  const eva  = document.getElementById('stop-eva').value.trim();
+  if (!name) { alert('Station name is required.'); return; }
+  db.stops.push({ id: uid(), name, eva });
+  saveData(db);
+  document.getElementById('stop-name').value = '';
+  document.getElementById('stop-eva').value  = '';
+  renderStopList();
+  refreshStopDropdown();
+}
+
+function deleteStop(id) {
+  // prevent deletion if stop is used in a line
+  const used = db.lines.some(l => l.stops.some(s => s.stopId === id));
+  if (used) { alert('Cannot delete: stop is used in one or more lines.'); return; }
+  db.stops = db.stops.filter(s => s.id !== id);
+  saveData(db);
+  renderStopList();
+}
+
+function renderStopList() {
+  const list = document.getElementById('stop-list');
+  document.getElementById('stop-count').textContent = db.stops.length;
+  if (!db.stops.length) {
+    list.innerHTML = '<li class="empty">No stops yet.</li>';
+    return;
+  }
+  list.innerHTML = db.stops.map(s => `
+    <li class="stop-item">
+      <span class="stop-name">${esc(s.name)}</span>
+      <span class="stop-eva">${s.eva ? `EVA ${esc(s.eva)}` : '<span style="opacity:.4">—</span>'}</span>
+      <button class="btn btn-danger btn-sm" onclick="deleteStop('${s.id}')">✕</button>
+    </li>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LINES — form state
+// ═══════════════════════════════════════════════════════════════
+let lineSeq = []; // [{ stopId, platform, dwellTime, travelTime }]
+
+function refreshStopDropdown() {
+  const sel = document.getElementById('seq-stop-select');
+  sel.innerHTML = '<option value="">— choose stop —</option>' +
+    db.stops.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+}
+
+function addStopToSeq() {
+  const sel = document.getElementById('seq-stop-select');
+  const stopId = sel.value;
+  if (!stopId) return;
+  lineSeq.push({ stopId, platform: '', dwellTime: 30, travelTime: 60 });
+  renderSeqList();
+}
+
+function removeSeqStop(idx) {
+  lineSeq.splice(idx, 1);
+  renderSeqList();
+}
+
+function renderSeqList() {
+  const ul = document.getElementById('seq-list');
+  if (!lineSeq.length) { ul.innerHTML = ''; return; }
+  ul.innerHTML = lineSeq.map((item, i) => {
+    const stop = db.stops.find(s => s.id === item.stopId);
+    const isLast = i === lineSeq.length - 1;
+    return `
+    <li class="seq-item">
+      <span class="seq-num">${i + 1}</span>
+      <span style="font-size:14px">${stop ? esc(stop.name) : '<em>unknown</em>'}</span>
+      <input type="text" value="${esc(item.platform)}"
+        placeholder="Gl. 1" title="Platform"
+        oninput="lineSeq[${i}].platform = this.value" />
+      <input type="number" value="${item.dwellTime}" min="0"
+        title="Dwell time (seconds)"
+        oninput="lineSeq[${i}].dwellTime = +this.value" />
+      <input type="number" value="${item.travelTime}" min="0"
+        title="Travel time to next stop (seconds)"
+        ${isLast ? 'disabled style="opacity:.35"' : ''}
+        oninput="lineSeq[${i}].travelTime = +this.value" />
+      <button class="btn btn-danger btn-sm" onclick="removeSeqStop(${i})">✕</button>
+    </li>`;
+  }).join('');
+}
+
+function saveLine() {
+  const name = document.getElementById('line-name').value.trim();
+  if (!name) { alert('Line name is required.'); return; }
+  if (lineSeq.length < 2) { alert('A line needs at least 2 stops.'); return; }
+
+  const editId = document.getElementById('line-edit-id').value;
+  const lineData = {
+    id: editId || uid(),
+    name,
+    stops: lineSeq.map(s => ({ ...s })),
+    departures: []
+  };
+
+  if (editId) {
+    const existing = db.lines.find(l => l.id === editId);
+    if (existing) lineData.departures = existing.departures; // preserve departures
+    db.lines = db.lines.map(l => l.id === editId ? lineData : l);
+  } else {
+    db.lines.push(lineData);
+  }
+
+  saveData(db);
+  resetLineForm();
+  renderLineList();
+}
+
+function editLine(id) {
+  const line = db.lines.find(l => l.id === id);
+  if (!line) return;
+  document.getElementById('line-name').value    = line.name;
+  document.getElementById('line-edit-id').value = line.id;
+  document.getElementById('line-form-title').textContent = 'Edit Line';
+  lineSeq = line.stops.map(s => ({ ...s }));
+  refreshStopDropdown();
+  renderSeqList();
+}
+
+function deleteLine(id) {
+  if (!confirm('Delete this line and all its departures?')) return;
+  db.lines = db.lines.filter(l => l.id !== id);
+  saveData(db);
+  renderLineList();
+}
+
+function reverseLine(id) {
+  const line = db.lines.find(l => l.id === id);
+  if (!line) return;
+  // Build reversed stop sequence: flip order, swap travel times so
+  // travelTime[i] in the reversed line = travelTime[original length-2-i]
+  // (each travelTime belongs to the leg *after* that stop)
+  const origStops = line.stops;
+  const n = origStops.length;
+  const reversedStops = origStops.slice().reverse().map((s, i) => ({
+    stopId:     s.stopId,
+    platform:   s.platform,
+    dwellTime:  s.dwellTime,
+    // travel time from this stop to the next = travel time of the original stop
+    // that had the next leg in reverse = original stop at index (n-2-i)
+    travelTime: i < n - 1 ? origStops[n - 2 - i].travelTime : s.travelTime,
+  }));
+  const newLine = {
+    id:         uid(),
+    name:       line.name + ' (R)',
+    stops:      reversedStops,
+    departures: [...line.departures],
+  };
+  db.lines.push(newLine);
+  saveData(db);
+  renderLineList();
+}
+
+function resetLineForm() {
+  document.getElementById('line-name').value    = '';
+  document.getElementById('line-edit-id').value = '';
+  document.getElementById('line-form-title').textContent = 'New Line';
+  lineSeq = [];
+  renderSeqList();
+}
+
+function renderLineList() {
+  const el = document.getElementById('line-list');
+  document.getElementById('line-count').textContent = db.lines.length;
+  if (!db.lines.length) { el.innerHTML = '<div class="empty">No lines yet.</div>'; return; }
+  el.innerHTML = db.lines.map(l => {
+    const stopNames = l.stops.map(s => {
+      const st = db.stops.find(x => x.id === s.stopId);
+      return st ? esc(st.name) : '?';
+    }).join(' → ');
+    const depCount = expandDepartures(l.departures).length;
+    return `
+    <div class="card" style="margin-bottom:8px; padding:12px">
+      <div class="card-header" style="margin-bottom:6px">
+        <strong style="font-size:16px">${esc(l.name)}</strong>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editLine('${l.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="reverseLine('${l.id}')">Reverse</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLine('${l.id}')">Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--muted); line-height:1.8">
+        ${l.stops.length} stops &nbsp;|&nbsp; ${depCount} departures/day<br>
+        <span style="font-size:11px; opacity:.7">${stopNames}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DEPARTURES
+// ═══════════════════════════════════════════════════════════════
+let selectedDepLine = null;
+
+function renderDepLineSelector() {
+  const el = document.getElementById('dep-line-selector');
+  if (!db.lines.length) {
+    el.innerHTML = '<span class="empty">No lines defined yet.</span>';
+    document.getElementById('dep-editor').style.display = 'none';
+    return;
+  }
+  el.innerHTML = db.lines.map(l =>
+    `<span class="line-pill ${selectedDepLine === l.id ? 'selected' : ''}"
+       onclick="selectDepLine('${l.id}')">${esc(l.name)}</span>`
+  ).join('');
+}
+
+function selectDepLine(id) {
+  selectedDepLine = id;
+  renderDepLineSelector();
+  renderDepList();
+  document.getElementById('dep-line-name').textContent = db.lines.find(l => l.id === id)?.name || '';
+  document.getElementById('dep-editor').style.display = 'block';
+}
+
+// Live parse preview
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('dep-input').addEventListener('input', function() {
+    const preview = document.getElementById('dep-parse-preview');
+    const expr = this.value.trim();
+    if (!expr) { preview.textContent = ''; return; }
+    try {
+      const times = parseDepExpression(expr);
+      preview.textContent = `→ ${times.length} departure(s): first ${times[0] || '?'} … last ${times[times.length-1] || '?'}`;
+      preview.style.color = 'var(--green)';
+    } catch(e) {
+      preview.textContent = '✕ ' + e.message;
+      preview.style.color = 'var(--red)';
+    }
+  });
+  // Load data from server (authoritative), fall back to localStorage cache
+  db = await loadFromServer();
+  renderStopList();
+  renderLineList();
+  refreshStopDropdown();
+});
+
+function addDeparture() {
+  const expr = document.getElementById('dep-input').value.trim();
+  if (!expr) return;
+  if (!selectedDepLine) { alert('Select a line first.'); return; }
+  let times;
+  try {
+    times = parseDepExpression(expr);
+  } catch(e) {
+    alert('Invalid expression: ' + e.message); return;
+  }
+  // filter out times beyond 23:59:59 (>= 86400s)
+  const valid = times.filter(t => timeToSec(t) <= 86399);
+  if (!valid.length) { alert('All generated times exceed 23:59:59 and were discarded.'); return; }
+  const line = db.lines.find(l => l.id === selectedDepLine);
+  if (!line) return;
+  // push individual fixed times (deduplicate)
+  const existing = new Set(line.departures);
+  let added = 0;
+  for (const t of valid) { if (!existing.has(t)) { line.departures.push(t); added++; } }
+  saveData(db);
+  document.getElementById('dep-input').value = '';
+  document.getElementById('dep-parse-preview').textContent = `✓ Added ${added} departure(s) (${valid.length - added} duplicate(s) skipped)`;
+  document.getElementById('dep-parse-preview').style.color = 'var(--green)';
+  renderDepList();
+  renderLineList();
+}
+
+function removeDeparture(timeStr) {
+  const line = db.lines.find(l => l.id === selectedDepLine);
+  if (!line) return;
+  const idx = line.departures.indexOf(timeStr);
+  if (idx !== -1) line.departures.splice(idx, 1);
+  saveData(db);
+  renderDepList();
+  renderLineList();
+}
+
+function clearAllDepartures() {
+  if (!confirm('Clear all departure entries for this line?')) return;
+  const line = db.lines.find(l => l.id === selectedDepLine);
+  if (!line) return;
+  line.departures = [];
+  saveData(db);
+  renderDepList();
+  renderLineList();
+}
+
+function shiftDepartures() {
+  const minutesRaw = document.getElementById('shift-minutes').value.trim();
+  const minutes = parseInt(minutesRaw, 10);
+  const fb = document.getElementById('shift-feedback');
+  if (isNaN(minutes) || minutes === 0) { fb.textContent = 'Enter ±minutes'; fb.style.color = 'var(--muted)'; return; }
+  const line = db.lines.find(l => l.id === selectedDepLine);
+  if (!line || !line.departures.length) { fb.textContent = 'No departures'; fb.style.color = 'var(--muted)'; return; }
+  const deltaSec = minutes * 60;
+  const shifted = [];
+  let discarded = 0;
+  for (const t of line.departures) {
+    const s = timeToSec(t) + deltaSec;
+    if (s < 0 || s > 86399) { discarded++; continue; }
+    shifted.push(secToTime(s));
+  }
+  // deduplicate after shift
+  line.departures = [...new Set(shifted)];
+  saveData(db);
+  document.getElementById('shift-minutes').value = '';
+  fb.textContent = `✓ Shifted ${line.departures.length}` + (discarded ? `, ${discarded} discarded` : '');
+  fb.style.color = 'var(--green)';
+  renderDepList();
+  renderLineList();
+}
+
+function renderDepList() {
+  const ul = document.getElementById('dep-list');
+  const line = db.lines.find(l => l.id === selectedDepLine);
+  if (!line || !line.departures.length) {
+    ul.innerHTML = '<li class="empty">No departures.</li>';
+    return;
+  }
+  // display sorted
+  const sorted = [...line.departures].sort();
+  // group by hour for readability
+  const byHour = {};
+  for (const t of sorted) {
+    const h = t.slice(0,2);
+    if (!byHour[h]) byHour[h] = [];
+    byHour[h].push(t);
+  }
+  ul.innerHTML = Object.entries(byHour).map(([h, times]) =>
+    `<li class="dep-entry" style="align-items:flex-start; gap:12px">
+      <span style="font-family:monospace; font-size:20px; font-weight:700; color:var(--accent); min-width:28px">${h}</span>
+      <div style="display:flex; flex-wrap:wrap; gap:4px; flex:1; padding-top:2px">${
+        times.map(t => {
+          const mm = t.slice(3,5);
+          const ss = t.slice(6,8);
+          const label = ss !== '00' ? `${mm}<sup style="font-size:10px">${ss}</sup>` : mm;
+          return `<span class="tt-min" style="cursor:pointer" title="${esc(t)} — click to delete" onclick="removeDeparture('${esc(t)}')"
+            onmouseenter="this.title='Delete ${esc(t)}'">${label}</span>`;
+        }).join('')
+      }</div>
+    </li>`
+  ).join('');
+}
+
+// ── Expression parser ─────────────────────────────────────────
+function timeToSec(str) {
+  const parts = str.trim().split(':');
+  if (parts.length !== 3) throw new Error(`Invalid time "${str}"`);
+  const [h, m, s] = parts.map(Number);
+  if ([h,m,s].some(isNaN)) throw new Error(`Invalid time "${str}"`);
+  return h * 3600 + m * 60 + s;
+}
+
+function secToTime(sec) {
+  const s = sec % 60;
+  const m = Math.floor(sec / 60) % 60;
+  const h = Math.floor(sec / 3600);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function parseDepExpression(expr) {
+  expr = expr.trim();
+  // Pattern: HH:MM:SS + NN*HH1:MM1:SS1
+  const repeatMatch = expr.match(/^(\d{1,2}:\d{2}:\d{2})\s*\+\s*(\d+)\s*\*\s*(\d{1,2}:\d{2}:\d{2})$/);
+  if (repeatMatch) {
+    const startSec    = timeToSec(repeatMatch[1]);
+    const count       = parseInt(repeatMatch[2], 10);
+    const intervalSec = timeToSec(repeatMatch[3]);
+    if (count < 1)       throw new Error('Repeat count must be ≥ 1');
+    if (intervalSec < 1) throw new Error('Interval must be > 0');
+    const times = [];
+    for (let i = 0; i <= count; i++) {
+      const t = startSec + i * intervalSec;
+      if (t < 86400 * 2) times.push(secToTime(t)); // allow wrap past midnight
+    }
+    return times;
+  }
+  // Pattern: HH:MM:SS (single)
+  const singleMatch = expr.match(/^(\d{1,2}:\d{2}:\d{2})$/);
+  if (singleMatch) {
+    return [singleMatch[1]];
+  }
+  throw new Error('Use HH:MM:SS or HH:MM:SS + NN*HH1:MM1:SS1');
+}
+
+function expandDepartures(depArray) {
+  // departures are now stored as flat HH:MM:SS strings
+  return [...depArray].sort();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BOARD
+// ═══════════════════════════════════════════════════════════════
+let selectedBoardLine = null;
+
+function renderBoardLineSelector() {
+  const el = document.getElementById('board-line-selector');
+  if (!db.lines.length) {
+    el.innerHTML = '<span class="empty">No lines defined yet.</span>';
+    document.getElementById('board-content').style.display = 'none';
+    return;
+  }
+  el.innerHTML = db.lines.map(l =>
+    `<span class="line-pill ${selectedBoardLine === l.id ? 'selected' : ''}"
+       onclick="selectBoardLine('${l.id}')">${esc(l.name)}</span>`
+  ).join('');
+}
+
+function selectBoardLine(id) {
+  selectedBoardLine = id;
+  renderBoardLineSelector();
+  const line = db.lines.find(l => l.id === id);
+  document.getElementById('board-line-name').textContent = line?.name || '';
+  document.getElementById('board-content').style.display = 'block';
+
+  // populate from-stop selector
+  const fromSel = document.getElementById('board-from-stop');
+  fromSel.innerHTML = line.stops.map((s, i) => {
+    const st = db.stops.find(x => x.id === s.stopId);
+    return `<option value="${i}">${st ? esc(st.name) : '?'}</option>`;
+  }).join('');
+
+  renderBoard();
+}
+
+function renderBoard() {
+  const line = db.lines.find(l => l.id === selectedBoardLine);
+  if (!line) return;
+
+  const hidePast = document.getElementById('board-hide-past').checked;
+  const fromIdx  = parseInt(document.getElementById('board-from-stop').value, 10) || 0;
+  const departures = expandDepartures(line.departures);
+
+  // compute offset to fromIdx stop
+  let offsetSec = 0;
+  for (let i = 0; i < fromIdx; i++) {
+    offsetSec += (line.stops[i].travelTime || 0) + (line.stops[i].dwellTime || 0);
+  }
+
+  const now    = new Date();
+  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+  // resolve each departure at the chosen stop, discard anything beyond 23:59:59
+  const resolved = [];
+  for (const dep of departures) {
+    const sec = timeToSec(dep) + offsetSec;
+    if (sec > 86399) continue;          // beyond 23:59:59 — ignore
+    resolved.push(sec);
+  }
+  resolved.sort((a, b) => a - b);
+
+  const total   = resolved.length;
+  const visible = hidePast ? resolved.filter(s => s >= nowSec) : resolved;
+
+  document.getElementById('board-total').textContent = `${visible.length} / ${total}`;
+
+  // group minutes by hour (0-23)
+  const byHour = {};
+  for (const sec of resolved) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    if (!byHour[h]) byHour[h] = [];
+    byHour[h].push({ m, sec });
+  }
+
+  const tbody = document.getElementById('board-tbody');
+  if (!total) {
+    tbody.innerHTML = `<tr><td colspan="2" class="empty" style="padding:14px">No departures defined.</td></tr>`;
+    return;
+  }
+
+  const nowH = now.getHours();
+  const nowM = now.getMinutes();
+
+  // determine which hours to show
+  const hours = hidePast
+    ? Array.from({length: 24}, (_, i) => i).filter(h => h >= nowH)
+    : Array.from({length: 24}, (_, i) => i);
+
+  if (!hours.length) {
+    tbody.innerHTML = `<tr><td colspan="2" class="empty" style="padding:14px">No remaining departures today.</td></tr>`;
+    return;
+  }
+
+  // map resolved sec back to original departure time string for deletion
+  // resolved[] contains sec values; we need to find the HH:MM:SS in line.departures
+  // build a reverse map: resolvedSec -> original departure string
+  // Note: multiple deps could resolve to same sec (after offset); track all
+  const secToOrigMap = {};
+  for (const dep of line.departures) {
+    const sec = timeToSec(dep) + offsetSec;
+    if (sec > 86399) continue;
+    if (!secToOrigMap[sec]) secToOrigMap[sec] = dep;
+  }
+
+  tbody.innerHTML = hours.map(h => {
+    const minsData = byHour[h] || [];
+    const isCurrent = h === nowH;
+    const minsHtml = minsData.length
+      ? minsData.map(({ m, sec }) => {
+          const past = sec < nowSec;
+          const isNow = isCurrent && m === nowM;
+          const origDep = secToOrigMap[sec] || '';
+          const label = String(m).padStart(2,'0');
+          return `<span class="tt-min${past ? ' past' : ''}${isNow ? ' now' : ''}"
+            title="${String(h).padStart(2,'0')}:${label} — hover &amp; press Delete to remove"
+            data-orig="${esc(origDep)}"
+            data-lineid="${esc(selectedBoardLine)}"
+            onmouseenter="boardHoverDep(this)"
+            onmouseleave="boardClearHover()"
+          >${label}</span>`;
+        }).join('')
+      : `<span class="tt-empty">—</span>`;
+    return `<tr class="${isCurrent ? 'current-hour' : ''}">
+      <td>${String(h).padStart(2,'0')}</td>
+      <td><div class="tt-mins">${minsHtml}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+let _boardHoveredEl = null;
+function boardHoverDep(el) {
+  if (_boardHoveredEl) _boardHoveredEl.classList.remove('hovered');
+  _boardHoveredEl = el;
+  el.classList.add('hovered');
+}
+function boardClearHover() {
+  if (_boardHoveredEl) _boardHoveredEl.classList.remove('hovered');
+  _boardHoveredEl = null;
+}
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && _boardHoveredEl) {
+    const orig = _boardHoveredEl.dataset.orig;
+    const lineId = _boardHoveredEl.dataset.lineid;
+    if (!orig || !lineId) return;
+    const line = db.lines.find(l => l.id === lineId);
+    if (!line) return;
+    const idx = line.departures.indexOf(orig);
+    if (idx !== -1) line.departures.splice(idx, 1);
+    saveData(db);
+    _boardHoveredEl = null;
+    renderBoard();
+    renderLineList();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  STATION BOARD
+// ═══════════════════════════════════════════════════════════════
+let selectedStation = null;
+
+function renderStationStopSelector() {
+  const el = document.getElementById('station-stop-selector');
+  if (!db.stops.length) {
+    el.innerHTML = '<span class="empty">No stops defined yet.</span>';
+    document.getElementById('station-board-content').style.display = 'none';
+    return;
+  }
+  el.innerHTML = db.stops.map(s =>
+    `<span class="line-pill ${selectedStation === s.id ? 'selected' : ''}"
+       onclick="selectStation('${s.id}')">${esc(s.name)}</span>`
+  ).join('');
+}
+
+function selectStation(stopId) {
+  selectedStation = stopId;
+  renderStationStopSelector();
+  const stop = db.stops.find(s => s.id === stopId);
+  document.getElementById('station-stop-name').textContent = stop?.name || '';
+  document.getElementById('station-board-content').style.display = 'block';
+  renderStationBoard();
+}
+
+function renderStationBoard() {
+  if (!selectedStation) return;
+  const hidePast = document.getElementById('station-hide-past').checked;
+  const now    = new Date();
+  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+  // collect all departures at this stop from all lines
+  const rows = [];
+  for (const line of db.lines) {
+    const stopIdx = line.stops.findIndex(s => s.stopId === selectedStation);
+    if (stopIdx === -1) continue; // this line doesn't serve this stop
+
+    // compute travel offset to reach this stop from first stop
+    let offsetSec = 0;
+    for (let i = 0; i < stopIdx; i++) {
+      offsetSec += (line.stops[i].travelTime || 0) + (line.stops[i].dwellTime || 0);
+    }
+
+    const platform = line.stops[stopIdx].platform || '—';
+
+    // direction = last stop after this one (terminus)
+    const terminusIdx = line.stops.length - 1;
+    const terminusStop = terminusIdx > stopIdx
+      ? db.stops.find(x => x.id === line.stops[terminusIdx].stopId)
+      : null;
+    const direction = terminusStop ? terminusStop.name : 'Arrival';
+
+    for (const dep of line.departures) {
+      const sec = timeToSec(dep) + offsetSec;
+      if (sec > 86399) continue;
+      rows.push({ sec, timeStr: secToTime(sec), line: line.name, direction, platform });
+    }
+  }
+
+  rows.sort((a, b) => a.sec - b.sec);
+  const total = rows.length;
+  const filtered = hidePast ? rows.filter(r => r.sec >= nowSec) : rows;
+
+  document.getElementById('station-total').textContent = `${filtered.length} / ${total}`;
+
+  const tbody = document.getElementById('station-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty" style="padding:14px">${total ? 'No remaining departures today.' : 'No departures at this stop.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+    const past = r.sec < nowSec;
+    return `<tr class="${past ? 'past-row' : ''}">
+      <td class="sboard-time">${r.timeStr}</td>
+      <td><span class="sboard-line">${esc(r.line)}</span></td>
+      <td class="sboard-dir">${esc(r.direction)}</td>
+      <td class="sboard-plat">${esc(r.platform)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

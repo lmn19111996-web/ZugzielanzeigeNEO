@@ -5,6 +5,7 @@
     let stationsIndex = null;
     let currentEva = null;
     let currentStationName = null;
+    let currentPlatformFilter = null; // e.g. '1,2' or '1-4' or null for all
     
     // Global view mode tracking
     let currentViewMode = 'belegungsplan';

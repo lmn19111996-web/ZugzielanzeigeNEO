@@ -80,10 +80,19 @@
       async function ensureStationsIndex() {
         if (stationsIndex) return stationsIndex;
         try {
-          const res = await fetch('/stations.json');
+          const [res, customRes] = await Promise.all([
+            fetch('/stations.json'),
+            fetch('/api/custom-stations').catch(() => null),
+          ]);
           if (!res.ok) throw new Error('stations.json not found');
           const json = await res.json();
-          stationsIndex = Array.isArray(json) ? json : (json.stations || []);
+          const base = Array.isArray(json) ? json : (json.stations || []);
+          let custom = [];
+          if (customRes && customRes.ok) {
+            try { custom = await customRes.json(); } catch {}
+          }
+          // Custom stops appear first so they show up at the top of results
+          stationsIndex = [...custom, ...base];
           return stationsIndex;
         } catch (e) {
           console.warn('Failed loading stations.json', e);
@@ -91,6 +100,14 @@
           return stationsIndex;
         }
       }
+
+      // Invalidate cached stations index when switching to this overlay
+      // so newly added custom stops are always reflected
+      stationsIndex = null;
+
+      // Populate platform filter from current setting
+      const platformInput = document.getElementById('platform-filter-input');
+      if (platformInput) platformInput.value = currentPlatformFilter || '';
 
       function updateActiveSuggestion() {
         const items = Array.from(sugg.children);
@@ -130,8 +147,10 @@
       function choosePersonal() {
         currentEva = null;
         currentStationName = null;
+        currentPlatformFilter = null;
         localStorage.removeItem('selectedEva');
         localStorage.removeItem('selectedStationName');
+        localStorage.removeItem('selectedPlatformFilter');
         overlay.classList.add('hidden');
         
         // Clean up back button handler
@@ -154,8 +173,12 @@
       function chooseLive(station) {
         currentEva = station.eva;
         currentStationName = station.name;
+        const pfInput = document.getElementById('platform-filter-input');
+        currentPlatformFilter = pfInput && pfInput.value.trim() ? pfInput.value.trim() : null;
         localStorage.setItem('selectedEva', currentEva);
         localStorage.setItem('selectedStationName', currentStationName);
+        if (currentPlatformFilter) localStorage.setItem('selectedPlatformFilter', currentPlatformFilter);
+        else localStorage.removeItem('selectedPlatformFilter');
         overlay.classList.add('hidden');
         
         // Clean up back button handler
@@ -180,8 +203,8 @@
         })();
       }
 
-      // Input handler
-      input.addEventListener('input', async () => {
+      // Input handler (assign per-open so once-attached delegates always call the latest closure)
+      input._handleInput = async () => {
         const val = input.value.trim();
         sugg.style.display = 'none';
         sugg.innerHTML = '';
@@ -195,10 +218,10 @@
           hint.textContent = matches.length ? 'Bitte auswählen:' : 'Keine passenden Bahnhöfe gefunden.';
           renderSuggestions(matches);
         }, 150);
-      });
+      };
 
-      // Keyboard navigation
-      input.addEventListener('keydown', async (e) => {
+      // Keyboard navigation (assign per-open)
+      input._handleKeydown = async (e) => {
         const itemsCount = sugg.children.length;
         if (e.key === 'ArrowDown') {
           if (!itemsCount) return;
@@ -225,10 +248,10 @@
             stationOverlayBackHandler = null;
           }
         }
-      });
+      };
 
-      // Close on background click (clicking outside the sidebar)
-      overlay.addEventListener('click', (e) => {
+      // Background click (assign per-open)
+      overlay._handleClick = (e) => {
         if (e.target === overlay) {
           overlay.classList.add('hidden');
           // Clean up back button handler
@@ -237,7 +260,15 @@
             stationOverlayBackHandler = null;
           }
         }
-      });
+      };
+
+      // Attach delegating listeners only once
+      if (!input._listenersAttached) {
+        input._listenersAttached = true;
+        input.addEventListener('input', () => input._handleInput && input._handleInput());
+        input.addEventListener('keydown', (e) => input._handleKeydown && input._handleKeydown(e));
+        overlay.addEventListener('click', (e) => overlay._handleClick && overlay._handleClick(e));
+      }
     }
 
     // Keyboard shortcuts

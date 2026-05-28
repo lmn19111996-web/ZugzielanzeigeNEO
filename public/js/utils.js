@@ -4,6 +4,28 @@
       return `./res/${line.toLowerCase()}.svg`;
     }
 
+    // Parse a platform filter string like "1,2,3" or "3-5" or "1,3-5,7"
+    // Returns a predicate function (platform => bool), or null if filter is empty/invalid.
+    function parsePlatformFilter(filterStr) {
+      if (!filterStr || !filterStr.trim()) return null;
+      const norm = p => String(p || '').trim().toLowerCase();
+      const allowed = new Set();
+      const ranges = [];
+      filterStr.split(',').forEach(part => {
+        part = part.trim();
+        const range = part.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (range) {
+          const lo = parseInt(range[1], 10), hi = parseInt(range[2], 10);
+          for (let i = lo; i <= hi; i++) allowed.add(String(i));
+          ranges.push([lo, hi]);
+        } else if (part) {
+          allowed.add(norm(part));
+        }
+      });
+      if (!allowed.size) return null;
+      return (platform) => allowed.has(norm(platform));
+    }
+
     function getLineColor(line) {
       const lineColors = {
         's1': '#7D66AD',

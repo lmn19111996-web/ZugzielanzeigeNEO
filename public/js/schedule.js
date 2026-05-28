@@ -114,6 +114,34 @@
             }
             return normalized;
           });
+
+          // Hide terminus arrivals (same as real DB API behaviour)
+          dbTrains = dbTrains.filter(t => t.ziel !== 'Ankunft');
+
+          // Filter by platform if set
+          if (currentPlatformFilter) {
+            const allowedPlatforms = parsePlatformFilter(currentPlatformFilter);
+            if (allowedPlatforms) dbTrains = dbTrains.filter(t => allowedPlatforms(t.platform || t.plannedPlatform));
+          }
+
+          // For custom trains, trim zwischenhalte to only show stops AFTER
+          // the selected station (the selected stop is already the departure point)
+          if (currentEva && String(currentEva).startsWith('CUSTOM_')) {
+            const selectedStopName = (dbData.metadata && dbData.metadata.stationName) || null;
+            if (selectedStopName) {
+              dbTrains = dbTrains.map(t => {
+                if (!t.zwischenhalte || !t.custom) return t;
+                // zwischenhalte is "Stop1 • Stop2 • Stop3 • ..."
+                const parts = t.zwischenhalte.split(' • ');
+                const idx = parts.findIndex(p => p.trim() === selectedStopName.trim());
+                if (idx !== -1 && idx < parts.length - 1) {
+                  // Exclude last stop — it's already shown as destination (ziel)
+                  return { ...t, zwischenhalte: parts.slice(idx + 1, parts.length - 1).join(' • ') };
+                }
+                return t;
+              });
+            }
+          }
         }
         
         // If station is selected, use ONLY DB API trains for display

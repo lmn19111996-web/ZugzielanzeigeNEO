@@ -21,6 +21,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const DEFAULT_EVA = process.env.EVA || '8000152'; // Hannover Hbf by default
 const TRAIN_LOG_DIR = path.join(__dirname, 'train_logs');
 const LAST_LOG_TIME_FILE = path.join(__dirname, 'train_logs', '.last_log_time');
+const CUSTOM_TIMETABLE_FILE = path.join(__dirname, 'custom_timetable.json');
 const LOG_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every 1 hour
 const TRAIN_LOG_SCHEMA_VERSION = 3;
@@ -1007,10 +1008,13 @@ function buildTrainsFromTimetables({ p1, p2, ch }) {
     if (Number(ev.hidden) === 1) continue;
     const id = stop.id || stop.i || null;
     const { plan, actual, date } = extractTimesAndDate(stop);
+    const dpEv = extractEvent(stop.dp);
+    const plannedPlat = dpEv.plannedPlatform ? String(dpEv.plannedPlatform) : null;
     const record = {
       linie: extractLine(stop),
       ziel: extractDestination(stop) || '',
-      platform: extractPlatform(stop) || null,
+      platform: plannedPlat,
+      plannedPlatform: plannedPlat,
       plan,
       actual, // might be null if no change
       canceled: extractCanceled(stop),
@@ -1048,8 +1052,12 @@ function buildTrainsFromTimetables({ p1, p2, ch }) {
     }
     const dest = ev.changedDistant || ev.plannedDistant;
     if (dest) target.ziel = String(dest);
-    const plat = ev.changedPlatform || ev.plannedPlatform;
-    if (plat) target.platform = String(plat);
+    if (ev.changedPlatform) {
+      target.platform = String(ev.changedPlatform);
+      target.platformChanged = target.plannedPlatform != null && target.platform !== target.plannedPlatform;
+    } else if (ev.plannedPlatform) {
+      target.platform = String(ev.plannedPlatform);
+    }
     if (extractCanceled(stop)) target.canceled = true;
     const pathStr = ev.changedPath || ev.plannedPath;
     if (pathStr) target.stops = String(pathStr).split('|').filter(Boolean).join(' • ');
@@ -1065,6 +1073,7 @@ function buildTrainsFromTimetables({ p1, p2, ch }) {
       linie: t.linie || 'Unknown',
       ziel: t.ziel || '',
       platform: t.platform || undefined,
+      platformChanged: Boolean(t.platformChanged),
       plan: t.plan || undefined,
       actual: t.actual || undefined,
       canceled: Boolean(t.canceled),
@@ -1090,6 +1099,85 @@ async function loadDbDepartures(eva = DEFAULT_EVA) {
     return aTime.localeCompare(bTime);
   });
   return { trains, metadata: { stationEva: eva, fetchedAt: new Date().toISOString() } };
+}
+
+// ─── Custom Timetable helpers ────────────────────────────────────────────────
+function loadCustomTimetable() {
+  try {
+    if (fs.existsSync(CUSTOM_TIMETABLE_FILE))
+      return JSON.parse(fs.readFileSync(CUSTOM_TIMETABLE_FILE, 'utf8'));
+  } catch (e) {
+    console.warn('Could not read custom_timetable.json:', e.message);
+  }
+  return { stops: [], lines: [] };
+}
+
+function saveCustomTimetable(data) {
+  fs.writeFileSync(CUSTOM_TIMETABLE_FILE, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// Build a { trains, metadata } response matching /api/db-departures format
+function buildCustomDepartures(evaStr) {
+  const stopId = evaStr.slice('CUSTOM_'.length);
+  const ct = loadCustomTimetable();
+  const stop = ct.stops.find(s => s.id === stopId);
+  if (!stop) return { trains: [], metadata: { stationEva: evaStr, fetchedAt: new Date().toISOString() } };
+
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  const trains = [];
+  for (const line of (ct.lines || [])) {
+    const stopIdx = line.stops.findIndex(s => s.stopId === stopId);
+    if (stopIdx === -1) continue;
+
+    // time offset from first stop to this stop
+    let offsetSec = 0;
+    for (let i = 0; i < stopIdx; i++) {
+      offsetSec += (Number(line.stops[i].travelTime) || 0) + (Number(line.stops[i].dwellTime) || 0);
+    }
+
+    const platform = line.stops[stopIdx].platform || undefined;
+    const isTerminus = stopIdx === line.stops.length - 1;
+
+    // direction = next terminus after this stop
+    const terminusEntry = isTerminus ? null : line.stops[line.stops.length - 1];
+    const terminusStop  = terminusEntry ? ct.stops.find(s => s.id === terminusEntry.stopId) : null;
+    const ziel = isTerminus ? 'Ankunft' : (terminusStop ? terminusStop.name : '');
+
+    // stops path (all stops on line)
+    const stopsPath = line.stops.map(s => {
+      const st = ct.stops.find(x => x.id === s.stopId);
+      return st ? st.name : '?';
+    }).join(' • ');
+
+    for (const dep of (line.departures || [])) {
+      const parts = dep.split(':').map(Number);
+      if (parts.length !== 3 || parts.some(isNaN)) continue;
+      const baseSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+      const arrSec  = baseSec + offsetSec;
+      if (arrSec > 86399) continue; // beyond midnight
+      const arrH = Math.floor(arrSec / 3600);
+      const arrM = Math.floor((arrSec % 3600) / 60);
+      const planStr = `${String(arrH).padStart(2,'0')}:${String(arrM).padStart(2,'0')}`;
+      trains.push({
+        linie:           line.name,
+        ziel,
+        platform,
+        plannedPlatform: platform,
+        platformChanged: false,
+        plan:            planStr,
+        actual:          undefined,
+        canceled:        false,
+        date:            dateStr,
+        stops:           stopsPath,
+        dauer:           null,
+        custom:          true,
+      });
+    }
+  }
+  trains.sort((a, b) => (a.plan || '99:99').localeCompare(b.plan || '99:99'));
+  return { trains, metadata: { stationEva: evaStr, stationName: stop.name, fetchedAt: new Date().toISOString() } };
 }
 
 // --- Express app ---
@@ -1674,9 +1762,43 @@ app.put('/api/lovemeter-presets', async (req, res) => {
 let cachedData = { trains: [], metadata: null };
 let lastFetchOk = false;
 
+// Custom timetable CRUD
+app.get('/api/custom-timetable', (req, res) => {
+  res.json(loadCustomTimetable());
+});
+
+app.post('/api/custom-timetable', (req, res) => {
+  const data = req.body;
+  if (!data || !Array.isArray(data.stops) || !Array.isArray(data.lines))
+    return res.status(400).json({ error: 'Invalid data: expected { stops[], lines[] }' });
+  try {
+    saveCustomTimetable(data);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save', details: e.message });
+  }
+});
+
+// Custom stations list (for station-selection drawer)
+app.get('/api/custom-stations', (req, res) => {
+  const ct = loadCustomTimetable();
+  const stations = (ct.stops || []).map(s => ({
+    name:   s.name,
+    eva:    `CUSTOM_${s.id}`,
+    ds100:  null,
+    tags:   ['SUBURBAN_TRAIN'],
+    custom: true,
+  }));
+  res.json(stations);
+});
+
 app.get('/api/db-departures', async (req, res) => {
   try {
     const eva = (req.query.eva || DEFAULT_EVA).toString();
+    // Intercept custom station EVAs — no DB API call needed
+    if (eva.startsWith('CUSTOM_')) {
+      return res.json(buildCustomDepartures(eva));
+    }
     const data = await loadDbDepartures(eva);
     cachedData = data;
     lastFetchOk = true;

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Abfahrtstafel</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#161B75">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #161B75;
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+      font-stretch: condensed;
+      color: white;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #board {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      box-sizing: border-box;
+    }
+
+    /* ── Column widths ── */
+    .col-dot         
+    { 
+        width: 3vw; flex-shrink: 0; 
+    }
+
+    .col-time        
+    { 
+        margin: 0 1vw;
+        border-top: 1px solid white; 
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    .col-destination 
+    { 
+        min-width: 0;
+        margin: 0 2vw;
+        border-top: 1px solid white;
+        box-sizing: border-box; 
+    }
+
+    .col-platform    
+    { 
+        width: 9vw; flex-shrink: 0; 
+        margin: 0 1vw;
+        border-top: 1px solid white;
+        box-sizing: border-box;
+    }
+
+    /* ── HEADER ROW ── */
+    .board-header {
+      display: contents;
+    }
+
+    .header-main-row {
+      display: contents;
+    }
+
+    .header-label-row {
+      display: contents;
+    }
+
+    /* Header cells: no border-top, padding for spacing */
+    .header-dot,
+    .header-time-main,
+    .header-destination-main,
+    .header-platform-main {
+      border-top: none !important;
+      padding-top: 0.8vh;
+      padding-bottom: 1.8vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .header-time-labels,
+    .header-destination-labels {
+      border-top: none !important;
+      padding-bottom: 0.6vh;
+    }
+
+    .header-platform-labels {
+      align-self: end;
+      display: flex;
+      padding-bottom: 0.6vh;
+      border-top: none !important;
+    }
+
+    .clock-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .aclock {
+      position: relative;
+      width: 2.6vh;
+      height: 2.6vh;
+      border: 2.5px solid white;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .aclock .center {
+      position: absolute;
+      width: 0.4vh; height: 0.4vh;
+      background: white;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+    .hand {
+      position: absolute;
+      bottom: 50%; left: 50%;
+      transform-origin: bottom center;
+      transform: translateX(-50%);
+    }
+    .hour   { width: 0.25vh; height: 0.9vh;  background: white; z-index: 3; }
+    .minute { width: 0.25vh; height: 1.15vh; background: white; z-index: 2; }
+
+    .digital-clock {
+      font-size: 3.5vh;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    .col-labels {
+      display: flex;
+      flex-direction: column;
+      font-size: 1.5vh;
+      line-height: 1.4;
+    }
+
+    .header-destination-main {
+      display: flex;
+    }
+
+    .header-destination-labels {
+      display: flex;
+    }
+
+    .header-platform-main {
+      display: flex;
+      justify-content: center;
+    }
+
+    .abfahrt-title {
+      font-size: 3.5vh;
+      font-weight: 400;
+      line-height: 1.1;
+    }
+    .abfahrt-title em {
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .station-name {
+      background: white;
+      font-size: 4vh;
+      color: #161B75;
+      border-radius: 2px;
+      padding: 0.1vh 0.7vh;
+    }
+
+    .db-logo {
+      height: 5vh;
+      width: auto;
+      display: block;
+    }
+
+    .dest-sublabels {
+      font-size: 1.5vh;
+      line-height: 1.4;
+    }
+
+    .header-platform-main {
+      display: flex;
+    }
+    .gleis-label {
+      font-size: 1.5vh;
+      line-height: 1.4;
+    }
+
+    /* ── DEPARTURE ROWS ── */
+    .departure-row {
+      display: contents;
+    }
+
+    #rows-grid {
+      display: grid;
+      grid-template-columns: 3vw max-content 1fr 11vw;
+      grid-template-rows: auto auto repeat(10, 1fr);
+      flex: 1;
+      min-height: 0;
+      margin: 0 0.2vw;
+    }
+
+    .dep-dot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Inherit indicator-dot from main app, scaled for board */
+    .dep-dot .indicator-dot {
+      width: 1vh;
+      height: 1vh;
+      margin-right: 0;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2vh;
+      font-weight: bold;
+      box-sizing: border-box;
+    }
+
+    .dep-dot .indicator-dot.current {
+      border-radius: 50%;
+      background: white;
+    }
+
+    .dep-dot .indicator-dot.cancelled::before {
+      content: '✕';
+      color: white;
+      font-size: 3.5vh;
+    }
+
+    .dep-time {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 0.8vh;
+      padding-top: 0.8vh;
+      box-sizing: border-box;
+    }
+
+    .train-symbol {
+      height: 2vh;
+      width: auto;
+      display: block;
+    }
+
+    .time-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dep-time .line-badge {
+      height: 2.5vh;
+      min-width: 4.5vh;
+      font-size: 2.1vh;
+      border-radius: 0.3vh;
+    }
+
+    .dep-sched {
+      font-size: 4vh;
+      font-weight: 350;
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+
+    .dep-delayed {
+      font-size: 3vh;
+      font-weight: 450;
+      color: #161B75;
+      background: white;
+      line-height: 1.05;
+      border-radius: 1px;
+      align-self: center;
+    }
+
+    .entry-bullet {
+      font-size: 2.2vh;
+      line-height: 1;
+      align-self: flex-start;
+    }
+
+    .dep-destination {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      flex: 1;
+      gap: 0vh;
+      overflow: hidden;
+      box-sizing: border-box;
+      padding-bottom: 0.5vh;
+    }
+
+    .via-stops {
+      font-size: 2.2vh;
+      font-weight: 300;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    .dest-name {
+      font-size: 4vh;
+      font-weight: 350;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dep-platform {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-size: 4vh;
+      font-weight: 500;
+      padding-bottom: 0.5vh;
+    }
+
+    .dep-platform.platform-changed {
+      background: white;
+      color: #161B75;
+      margin: 1vh 1vw;
+      box-sizing: border-box;
+    }
+
+    /* ── CANCELLED TRAIN ── */
+    .departure-row.cancelled .dep-destination,
+    .departure-row.cancelled .dep-time,
+    .departure-row.cancelled .dep-platform {
+      background: white;
+      color: #161B75;
+      border-radius: 1px;
+    }
+
+    .departure-row.cancelled .dep-destination {
+      padding: 0.3vh 0.6vw;
+    }
+
+    .departure-row.cancelled .dep-time {
+      padding: 0.3vh 0.4vw 0.3vh 0.4vw;
+    }
+
+    .departure-row.cancelled .dep-platform {
+      padding-bottom: 0.5vh;
+    }
+
+    .departure-row.cancelled .via-stops,
+    .departure-row.cancelled .dest-name,
+    .departure-row.cancelled .dep-sched,
+    .departure-row.cancelled .dep-platform {
+      text-decoration: line-through;
+      text-decoration-color: #161B75;
+    }
+
+
+  </style>
+</head>
+<body>
+  <div id="board">
+
+    <div id="rows-grid">
+    <!-- HEADER -->
+    <div class="board-header">
+      <!-- Main row -->
+      <div class="header-main-row">
+        <div class="col-dot header-dot"></div>
+        <div class="col-time header-time-main">
+          <div class="clock-row">
+            <div class="aclock">
+              <div class="center"></div>
+              <div class="hand hour" id="hour"></div>
+              <div class="hand minute" id="minute"></div>
+            </div>
+            <div class="digital-clock" id="clock">16:11</div>
+          </div>
+        </div>
+        <div class="col-destination header-destination-main">
+          <div class="abfahrt-title">Abfahrt <em>Departure</em> &nbsp; <span class="station-name">Hannover Hbf</span></div>
+        </div>
+        <div class="col-platform header-platform-main">
+          <img class="db-logo" src="res/DB_logo_white_rgb_100px.svg" alt="DB">
+        </div>
+      </div>
+      <!-- Label row -->
+      <div class="header-label-row">
+        <div class="col-dot header-dot"></div>
+        <div class="col-time header-time-labels">
+          <div class="col-labels">
+            <span>Zug / Train</span>
+            <span>Zeit / Time</span>
+          </div>
+        </div>
+        <div class="col-destination header-destination-labels">
+          <div class="dest-sublabels">
+            <div>Über / Via</div>
+            <div>Ziel / Destination</div>
+          </div>
+        </div>
+        <div class="col-platform header-platform-labels">
+          <div class="gleis-label">Gleis / Track</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 1 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot"></div></div>
+      <div class="col-time dep-time">
+        <img class="train-symbol" src="res/s7.svg" alt="S7">
+        <div class="time-row">
+          <span class="dep-sched">16:04</span>
+          <span class="dep-delayed">16:22</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">H-Kleefeld – H K.-Wiechert-A. – H-Anderten-Misb. – Ahlten – Lehrte – Burgdorf</div>
+        <div class="dest-name">Celle</div>
+      </div>
+      <div class="col-platform dep-platform">—</div>
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot"></div></div>
+      <div class="col-time dep-time">
+        <img class="train-symbol" src="res/s5.svg" alt="S5">
+        <div class="time-row">
+          <span class="dep-sched">16:05</span>
+          <span class="dep-delayed">16:39</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">H-Nordstadt – H-Ledeburg – H-Vinnhorst – Lgh-Mitte – Lgh-Pferdemarkt</div>
+        <div class="dest-name">Hannover ✈</div>
+      </div>
+      <div class="col-platform dep-platform">14</div>
+    </div>
+
+    <!-- ROW 3 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot current"></div></div>
+      <div class="col-time dep-time">
+        <div class="line-badge">Bus RE10</div>
+        <div class="time-row">
+          <span class="dep-sched">16:15</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">Bus RE10</div>
+        <div class="dest-name">Sarstedt</div>
+      </div>
+      <div class="col-platform dep-platform">2</div>
+    </div>
+
+    <!-- ROW 4 -->
+    <div class="departure-row cancelled">
+      <div class="col-dot dep-dot"><div class="indicator-dot cancelled"></div></div>
+      <div class="col-time dep-time">
+        <div class="line-badge">RE 70</div>
+        <div class="time-row">
+          <span class="dep-sched">16:16</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">RE 70 / 95809</div>
+        <div class="dest-name">Braunschweig Hbf</div>
+      </div>
+      <div class="col-platform dep-platform">—</div>
+    </div>
+
+    <!-- ROW 5 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot"></div></div>
+      <div class="col-time dep-time">
+        <div class="line-badge">FLX 30</div>
+        <div class="time-row">
+          <span class="dep-sched">16:17</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">Bielefeld Hbf – Dortmund Hbf – Essen Hbf – Düsseldorf Hbf</div>
+        <div class="dest-name">Köln Hbf</div>
+      </div>
+      <div class="col-platform dep-platform platform-changed">13</div>
+    </div>
+
+    <!-- ROW 6 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot"></div></div>
+      <div class="col-time dep-time">
+        <img class="train-symbol" src="res/s4.svg" alt="S4">
+        <div class="time-row">
+          <span class="dep-sched">16:19</span>
+          <span class="dep-delayed">16:22</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">H-Bismarckstraße – Hannover Messe/L. – H-Rethen (Leine) – Sarstedt – Barnten</div>
+        <div class="dest-name">Hildesheim Hbf</div>
+      </div>
+      <div class="col-platform dep-platform">1</div>
+    </div>
+
+    <!-- ROW 7 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot"></div></div>
+      <div class="col-time dep-time">
+        <img class="train-symbol" src="res/s3.svg" alt="S3">
+        <div class="time-row">
+          <span class="dep-sched">16:21</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">H-Leinhausen – Wunstorf</div>
+        <div class="dest-name">Haste</div>
+      </div>
+      <div class="col-platform dep-platform">7</div>
+    </div>
+
+    <!-- ROW 8 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot current"></div></div>
+      <div class="col-time dep-time">
+        <div class="line-badge">IC 2043</div>
+        <div class="time-row">
+          <span class="dep-sched">16:24</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">IC 2043</div>
+        <div class="dest-name">Hamburg Hbf</div>
+      </div>
+      <div class="col-platform dep-platform">5</div>
+    </div>
+
+    <!-- ROW 9 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot"></div></div>
+      <div class="col-time dep-time">
+        <img class="train-symbol" src="res/s6.svg" alt="S6">
+        <div class="time-row">
+          <span class="dep-sched">16:26</span>
+          <span class="dep-delayed">16:31</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">H-Misburg – H-Anderten – Lehrte – Sehnde</div>
+        <div class="dest-name">Hildesheim Hbf</div>
+      </div>
+      <div class="col-platform dep-platform">3</div>
+    </div>
+
+    <!-- ROW 10 -->
+    <div class="departure-row">
+      <div class="col-dot dep-dot"><div class="indicator-dot current"></div></div>
+      <div class="col-time dep-time">
+        <div class="line-badge">RE 8</div>
+        <div class="time-row">
+          <span class="dep-sched">16:29</span>
+        </div>
+      </div>
+      <div class="col-destination dep-destination">
+        <div class="via-stops">RE 8 / 4721 · Nienburg – Wunstorf – Hannover-Linden</div>
+        <div class="dest-name">Hannover Hbf</div>
+      </div>
+      <div class="col-platform dep-platform">9</div>
+    </div>
+    </div>
+
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+      document.getElementById('clock').textContent =
+        String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+      const hourDeg   = (h % 12) * 30 + m * 0.5;
+      const minuteDeg = m * 6 + s * 0.1;
+      document.getElementById('hour').style.transform   = `translateX(-50%) rotate(${hourDeg}deg)`;
+      document.getElementById('minute').style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

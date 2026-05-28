@@ -373,6 +373,9 @@
         includeAnnouncements = true,
         includeHeadline = true 
       } = options;
+
+      // Refresh dashboard if it is currently open
+      if (typeof window.renderDashboardIfOpen === 'function') window.renderDashboardIfOpen();
       
       // Render based on current workspace mode (only 3 actual workspaces)
       switch (currentWorkspaceMode) {
