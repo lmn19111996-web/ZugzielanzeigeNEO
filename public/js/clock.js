@@ -167,18 +167,25 @@
             materializeFromStems();
             regenerateTrainsFromSchedule();
             processTrainData(schedule);
-            
+
             // Re-render UI
             renderCurrentWorkspaceView();
             checkTrainArrivals();
           }
           // else: Version matches - silent success, no action needed
-          
+
           // Also poll DB API if station selected
-          if (currentEva) {
+          if (isRealStation()) {
             const dbRes = await fetch(`/api/db-departures?eva=${currentEva}`);
-            if (!dbRes.ok) return;
-            
+            if (!dbRes.ok) {
+              // API failed — wipe trains and render empty (never show stale/personal data)
+              schedule.trains = [];
+              processTrainData(schedule);
+              renderCurrentWorkspaceView();
+              checkTrainArrivals();
+              return;
+            }
+
             const dbData = await dbRes.json();
             let dbTrains = (dbData.trains || []).map(t => {
               const normalized = { ...t, source: 'db-api' };
@@ -214,7 +221,7 @@
                 });
               }
             }
-            
+
             // Update display with DB trains
             schedule.trains = dbTrains;
             processTrainData(schedule);

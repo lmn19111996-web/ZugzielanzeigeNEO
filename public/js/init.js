@@ -1,15 +1,17 @@
 ﻿// === INITIALIZATION & STARTUP ===
     // Load saved station BEFORE initial load
     (function loadSavedStation() {
-      const savedEva = localStorage.getItem('selectedEva');
-      const savedName = localStorage.getItem('selectedStationName');
-      const savedPF = localStorage.getItem('selectedPlatformFilter');
-      if (savedEva && savedName) {
+      const savedEva   = localStorage.getItem('selectedEva');
+      const savedName  = localStorage.getItem('selectedStationName');
+      const savedPF    = localStorage.getItem('selectedPlatformFilter');
+      const stationMode = localStorage.getItem('stationMode') || 'personal';
+      if (stationMode === 'live' && savedEva && savedName) {
         currentEva = savedEva;
         currentStationName = savedName;
         if (savedPF) currentPlatformFilter = savedPF;
         console.log(`Loaded saved station: ${savedName} (EVA: ${savedEva})`);
       }
+      // else: stay in PERSONAL_EVA mode (default)
       
       // Load saved view mode
       const savedViewMode = localStorage.getItem('viewMode');
@@ -28,6 +30,9 @@
 
       const defaultMode = currentViewMode === 'belegungsplan' ? 'occupancy' : 'list';
       setWorkspaceMode(defaultMode);
+
+      // Open dashboard on startup
+      if (typeof window.openDashboardMode === 'function') window.openDashboardMode();
       
       // Add train button event listener (after DOM is ready)
       const addTrainBtn = document.getElementById('add-train-button');

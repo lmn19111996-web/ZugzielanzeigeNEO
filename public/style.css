@@ -6569,6 +6569,14 @@ body.review-write-drawer-open .left-column {
   color: #38bdf8;
   stroke: #38bdf8;
 }
+.badge-rotator-menu-item--dashboard {
+  border-left-color: #a78bfa;
+}
+.badge-rotator-menu-item--dashboard .badge-rotator-menu-icon {
+  filter: none;
+  color: #a78bfa;
+  stroke: #a78bfa;
+}
 
 /* ── Train search bar (replaces headline train slot in top ribbon) ─────────── */
 .train-search-bar {

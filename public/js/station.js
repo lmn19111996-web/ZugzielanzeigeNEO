@@ -145,11 +145,12 @@
       }
 
       function choosePersonal() {
-        currentEva = null;
+        currentEva = PERSONAL_EVA;
         currentStationName = null;
         currentPlatformFilter = null;
-        localStorage.removeItem('selectedEva');
-        localStorage.removeItem('selectedStationName');
+        // Keep selectedEva/selectedStationName so dashboard can still find the last real station.
+        // Only record that the user chose personal mode.
+        localStorage.setItem('stationMode', 'personal');
         localStorage.removeItem('selectedPlatformFilter');
         overlay.classList.add('hidden');
         
@@ -171,12 +172,20 @@
       }
 
       function chooseLive(station) {
-        currentEva = station.eva;
+        const evaVal = station.eva;
+        const hasUsableEva = !!evaVal && Number(evaVal) !== 0;
+        currentEva = hasUsableEva ? String(evaVal) : PERSONAL_EVA;
         currentStationName = station.name;
         const pfInput = document.getElementById('platform-filter-input');
         currentPlatformFilter = pfInput && pfInput.value.trim() ? pfInput.value.trim() : null;
-        localStorage.setItem('selectedEva', currentEva);
-        localStorage.setItem('selectedStationName', currentStationName);
+        if (hasUsableEva) {
+          localStorage.setItem('selectedEva', currentEva);
+          localStorage.setItem('selectedStationName', currentStationName);
+          localStorage.setItem('stationMode', 'live');
+        } else {
+          // No usable EVA — treat like personal mode so dashboard shows empty, not stale data
+          localStorage.setItem('stationMode', 'personal');
+        }
         if (currentPlatformFilter) localStorage.setItem('selectedPlatformFilter', currentPlatformFilter);
         else localStorage.removeItem('selectedPlatformFilter');
         overlay.classList.add('hidden');

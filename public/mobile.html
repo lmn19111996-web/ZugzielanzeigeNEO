@@ -428,6 +428,7 @@
               <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="badge-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
               <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="badge-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
               <button class="badge-rotator-menu-item badge-rotator-menu-item--search" id="badge-menu-search" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>Suche</button>
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--dashboard" id="badge-menu-dashboard" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="8" y1="3" x2="8" y2="9"/></svg>Abfahrtstafel</button>
             </div>
           </div>
           <div class="top-ribbon now-card">
@@ -436,6 +437,7 @@
               <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="mob-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
               <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="mob-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
               <button class="badge-rotator-menu-item badge-rotator-menu-item--search" id="mob-menu-search" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>Suche</button>
+              <button class="badge-rotator-menu-item badge-rotator-menu-item--dashboard" id="mob-menu-dashboard" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="8" y1="3" x2="8" y2="9"/></svg>Abfahrtstafel</button>
             </div>
             <div class="clockSlot">
               <div class="aclock">
@@ -886,6 +888,13 @@
       if (lmBadge) lmBadge.click();
     });
   }
+  var menuDashboard = document.getElementById('badge-menu-dashboard');
+  if (menuDashboard) {
+    menuDashboard.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (typeof window.openDashboardMode === 'function') window.openDashboardMode();
+    });
+  }
 
   // ── Mobile ribbon menu item wiring ──────────────────────────────────────────
   function closeMobMenu() {
@@ -917,6 +926,14 @@
       e.stopPropagation();
       closeMobMenu();
       openSearch();
+    });
+  }
+  var mobMenuDashboard = document.getElementById('mob-menu-dashboard');
+  if (mobMenuDashboard) {
+    mobMenuDashboard.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMobMenu();
+      if (typeof window.openDashboardMode === 'function') window.openDashboardMode();
     });
   }
   var menuSearch     = document.getElementById('badge-menu-search');

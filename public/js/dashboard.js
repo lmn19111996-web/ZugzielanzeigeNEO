@@ -1,10 +1,20 @@
 // === STATIC DASHBOARD MODE (Abfahrtstafel) ===
-// Triggered with Ctrl+L. Exit by pressing Ctrl+L twice (hold Ctrl, press L twice within 500ms).
+// Open: Ctrl+L or badge-menu button. Auto-opens on startup.
+// Exit: hold Ctrl, press L twice within 500 ms.
 
 (function () {
   let dashboardOpen = false;
   let dashboardClockInterval = null;
   let lastCtrlLTime = 0;
+
+  // Use the shared selectedEva/selectedStationName localStorage keys as the single source of truth.
+  // These are never removed when switching to personal mode — only stationMode changes.
+  function getDisplayStation() {
+    return localStorage.getItem('selectedStationName') || 'Abfahrt';
+  }
+  function getDisplayEva() {
+    return localStorage.getItem('selectedEva') || null;
+  }
 
   function isSBahnLike(linie) {
     if (typeof linie !== 'string') return false;
@@ -80,22 +90,23 @@
     if (minuteEl) minuteEl.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
   }
 
-  function renderDashboard() {
+  // trains must always be an explicit array; never reads processedTrainData directly here
+  function renderDashboard(trains) {
     const grid = document.getElementById('dashboard-rows-grid');
     if (!grid) return;
     const now = new Date();
 
     // Station name
     const stationEl = document.getElementById('dashboard-station-name');
-    if (stationEl) stationEl.textContent = currentStationName || 'Meine Fahrten';
+    if (stationEl) stationEl.textContent = getDisplayStation();
 
     // Clock
     updateDashboardClock();
 
-    // Build departure rows
-    const trains = (processedTrainData.futureTrains || []).slice(0, 10);
-    const rowsHTML = trains.map(t => buildRow(t, now)).join('');
-    const emptyCount = Math.max(0, 10 - trains.length);
+    const trainList = (trains || []).slice(0, 10);
+    const trains_ = trainList;
+    const rowsHTML = trains_.map(t => buildRow(t, now)).join('');
+    const emptyCount = Math.max(0, 10 - trains_.length);
     const emptyHTML = Array.from({ length: emptyCount }, buildEmptyRow).join('');
 
     // Replace existing departure rows
@@ -167,19 +178,63 @@
     cycle();
   }
 
+  function fetchAndRender(eva) {
+    renderDashboard([]);
+    fetch(`/api/db-departures?eva=${encodeURIComponent(eva)}`)
+      .then(r => r.ok ? r.json() : Promise.reject('not ok'))
+      .then(data => {
+        if (!dashboardOpen) return;
+        const trains = (data.trains || [])
+          .filter(t => t.ziel !== 'Ankunft')
+          .map(t => {
+            const n = { ...t, source: 'db-api' };
+            if (t.stops && !t.zwischenhalte) { n.zwischenhalte = t.stops; delete n.stops; }
+            return n;
+          });
+        renderDashboard(trains);
+      })
+      .catch(() => { if (dashboardOpen) renderDashboard([]); });
+  }
+
   function openDashboard() {
     if (dashboardOpen) return;
     dashboardOpen = true;
     const overlay = document.getElementById('dashboard-overlay');
     if (!overlay) return;
     overlay.style.display = 'flex';
-    renderDashboard();
     dashboardClockInterval = setInterval(updateDashboardClock, 1000);
+
+    // Persist current real station (if any) so subsequent opens remember it — handled by station.js/chooseLive now
+    if (isRealStation()) {
+      renderDashboard(processedTrainData.futureTrains || []);
+      return;
+    }
+
+    if (currentStationName) {
+      // Station selected but no usable EVA — show empty
+      renderDashboard([]);
+      return;
+    }
+
+    // Pure personal-timetable mode (no station selected): fetch for last real station, or show empty
+    const lastEva = getDisplayEva();
+    if (lastEva) {
+      fetchAndRender(lastEva);
+    } else {
+      renderDashboard([]);
+    }
   }
 
   // Expose so renderCurrentWorkspaceView can trigger a dashboard refresh
   window.renderDashboardIfOpen = function () {
-    if (dashboardOpen) renderDashboard();
+    if (!dashboardOpen) return;
+    if (isRealStation()) {
+      renderDashboard(processedTrainData.futureTrains || []);
+    } else if (currentStationName) {
+      // Station selected but no usable EVA — clear the board immediately
+      renderDashboard([]);
+    }
+    // Pure personal-timetable mode: do not refresh (last fetch result stays until next open)
   };
 
   function closeDashboard() {
@@ -216,4 +271,8 @@
       }
     }
   });
+
+  // Expose for startup call and badge dropdown button
+  window.openDashboardMode  = openDashboard;
+  window.closeDashboardMode = closeDashboard;
 }());

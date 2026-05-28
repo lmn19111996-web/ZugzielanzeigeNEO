@@ -1760,7 +1760,7 @@ app.put('/api/lovemeter-presets', async (req, res) => {
 
 
 let cachedData = { trains: [], metadata: null };
-let lastFetchOk = false;
+let cachedEva = null; // EVA the cachedData belongs to
 
 // Custom timetable CRUD
 app.get('/api/custom-timetable', (req, res) => {
@@ -1793,20 +1793,21 @@ app.get('/api/custom-stations', (req, res) => {
 });
 
 app.get('/api/db-departures', async (req, res) => {
+  const eva = (req.query.eva || DEFAULT_EVA).toString();
   try {
-    const eva = (req.query.eva || DEFAULT_EVA).toString();
+    console.log(`[db-departures] requested eva=${eva}, cachedEva=${cachedEva}`);
     // Intercept custom station EVAs — no DB API call needed
     if (eva.startsWith('CUSTOM_')) {
       return res.json(buildCustomDepartures(eva));
     }
     const data = await loadDbDepartures(eva);
     cachedData = data;
-    lastFetchOk = true;
+    cachedEva = eva;
     res.json(data);
   } catch (e) {
-    // If live fetch fails, return last cached data or fallback structure
+    // If live fetch fails, return last cached data only if it's for the same station
     console.warn('DB fetch failed:', e.message);
-    if (cachedData.trains?.length) return res.json(cachedData);
+    if (cachedEva === eva && cachedData.trains?.length) return res.json(cachedData);
     res.status(503).json({ trains: [], error: 'DB API unavailable' });
   }
 });
@@ -1879,16 +1880,14 @@ async function periodicRefresh() {
     const data = await loadDbDepartures(DEFAULT_EVA);
     const prev = JSON.stringify(cachedData.trains || []);
     cachedData = data;
+    cachedEva = DEFAULT_EVA;
     const curr = JSON.stringify(cachedData.trains || []);
     if (prev !== curr) {
       console.log('DB API data changed, broadcasting update');
       broadcastUpdate('db-api-change');
     }
-    // Don't broadcast if nothing changed - clients handle clock updates locally
-    lastFetchOk = true;
   } catch (e) {
     console.warn('Background refresh failed:', e.message);
-    lastFetchOk = false;
   }
 }
 

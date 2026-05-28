@@ -1,9 +1,20 @@
 ﻿// === GLOBALS & processTrainData ===
 // Extracted inline scripts from mobile.html
 
+// Sentinel value for personal-timetable mode (no DB station selected)
+    const PERSONAL_EVA = 'PERSONAL';
+    // Returns true only when a real DB station with a usable EVA is active
+    function isRealStation() {
+      return !!currentEva &&
+             currentEva !== PERSONAL_EVA &&
+             currentEva !== '' &&
+             currentEva !== '0' &&
+             Number(currentEva) !== 0;
+    }
+
 // Global variables for station
     let stationsIndex = null;
-    let currentEva = null;
+    let currentEva = PERSONAL_EVA;
     let currentStationName = null;
     let currentPlatformFilter = null; // e.g. '1,2' or '1-4' or null for all
     
@@ -76,7 +87,13 @@
 
     function processTrainData(schedule) {
       const now = new Date();
-      
+
+      // Mode gate: no-EVA station selected — wipe display trains regardless of caller.
+      // This is the single enforcement point so every path (clock, save, SSE, etc.) obeys.
+      if (currentStationName && !isRealStation()) {
+        schedule = Object.assign({}, schedule, { trains: [] });
+      }
+
       // Reset data structure
       processedTrainData = {
         allTrains: [],

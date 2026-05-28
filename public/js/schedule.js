@@ -18,8 +18,8 @@
           fetch('/api/schedule').catch(() => null)
         ];
         
-        // Also fetch DB API if a station is explicitly selected
-        if (currentEva) {
+        // Also fetch DB API if a real station is explicitly selected
+        if (isRealStation()) {
           fetchPromises.push(fetch(`/api/db-departures?eva=${currentEva}`).catch(() => null));
         }
         
@@ -147,12 +147,15 @@
         // If station is selected, use ONLY DB API trains for display
         // Local trains are kept separate only for the first train in top ribbon
         let trainsToDisplay = [];
-        
-        if (currentEva && dbTrains.length > 0) {
-          // Station selected: use only DB API trains
-          trainsToDisplay = dbTrains;
+
+        if (isRealStation()) {
+          // Real station selected: use only DB API trains — never fall back to personal schedule
+          trainsToDisplay = dbTrains; // empty array if fetch failed, that's intentional
+        } else if (currentStationName) {
+          // Station selected but no usable EVA — no API call, no personal data, show nothing
+          trainsToDisplay = [];
         } else {
-          // No station: use only local schedule
+          // Pure personal timetable mode: use local schedule
           trainsToDisplay = localTrains;
         }
         
@@ -393,7 +396,11 @@
         _uniqueId: t._uniqueId
       }));
 
-      schedule.trains = [...spontaneousAll];
+      // In real-station mode schedule.trains belongs to the DB API — don't touch it.
+      // localTrains is always kept in sync for the personal ribbon/headline.
+      if (!isRealStation()) {
+        schedule.trains = [...spontaneousAll];
+      }
       schedule.localTrains = [...spontaneousAll];
     }
 
