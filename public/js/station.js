@@ -276,6 +276,7 @@
         input._listenersAttached = true;
         input.addEventListener('input', () => input._handleInput && input._handleInput());
         input.addEventListener('keydown', (e) => input._handleKeydown && input._handleKeydown(e));
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') input._handleKeydown && input._handleKeydown(e); });
         overlay.addEventListener('click', (e) => overlay._handleClick && overlay._handleClick(e));
       }
     }
