@@ -130,6 +130,35 @@
     #dashboard-overlay .departure-row.cancelled .dest-name,
     #dashboard-overlay .departure-row.cancelled .dep-sched,
     #dashboard-overlay .departure-row.cancelled .dep-platform   { text-decoration: line-through; text-decoration-color: #161B75; }
+
+    /* ── Mobile portrait: scale down all text ── */
+    @media (max-width: 600px), (max-height: 700px) and (orientation: portrait) {
+      #dashboard-overlay .digital-clock        { font-size: 2.2vh; }
+      #dashboard-overlay .abfahrt-title        { font-size: 2.1vh; }
+      #dashboard-overlay .station-name         { font-size: 2.4vh; }
+      #dashboard-overlay .col-labels           { font-size: 1vh; }
+      #dashboard-overlay .dest-sublabels       { font-size: 1vh; }
+      #dashboard-overlay .gleis-label          { font-size: 1vh; }
+      #dashboard-overlay .dep-sched            { font-size: 2.4vh; }
+      #dashboard-overlay .dep-delayed          { font-size: 1.9vh; }
+      #dashboard-overlay .dest-name            { font-size: 2.4vh; }
+      #dashboard-overlay .via-stops            { font-size: 1.4vh; }
+      #dashboard-overlay .dep-platform         { font-size: 2.4vh; }
+      #dashboard-overlay .dep-time .line-badge { height: 1.6vh; min-width: 3vh; font-size: 1.4vh; }
+      #dashboard-overlay .train-symbol         { height: 1.4vh; }
+      #dashboard-overlay .aclock               { width: 1.8vh; height: 1.8vh; }
+      #dashboard-overlay .hour                 { height: 0.6vh; }
+      #dashboard-overlay .minute               { height: 0.8vh; }
+      #dashboard-overlay .dep-dot .indicator-dot { font-size: 1.5vh; }
+      #dashboard-overlay .dep-dot .indicator-dot.cancelled::before { font-size: 2.2vh; }
+      #dashboard-overlay .dep-time             { gap: 0.5vh; padding-top: 0.5vh; }
+      #dashboard-overlay .time-row             { gap: 6px; }
+      #dashboard-overlay .dep-destination      { padding-bottom: 0.3vh; }
+      #dashboard-overlay .dep-platform         { padding-bottom: 0.3vh; }
+      #dashboard-overlay .header-destination-main,
+      #dashboard-overlay .header-time-main,
+      #dashboard-overlay .header-platform-main { padding-bottom: 1vh; }
+    }
   </style>
 </head>
 <body>

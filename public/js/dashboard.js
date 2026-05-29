@@ -199,6 +199,7 @@
   function openDashboard() {
     if (dashboardOpen) return;
     dashboardOpen = true;
+    history.pushState({ dashboardOpen: true }, '');
     const overlay = document.getElementById('dashboard-overlay');
     if (!overlay) return;
     overlay.style.display = 'flex';
@@ -275,4 +276,11 @@
   // Expose for startup call and badge dropdown button
   window.openDashboardMode  = openDashboard;
   window.closeDashboardMode = closeDashboard;
+
+  // Browser back button exits dashboard mode
+  window.addEventListener('popstate', function (e) {
+    if (dashboardOpen) {
+      closeDashboard();
+    }
+  });
 }());
