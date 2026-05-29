@@ -362,7 +362,7 @@
     * - 'log-viewer': Time-range log viewer workspace
      * 
      * Non-workspace modes (drawers/overlays):
-     * - 'announcements', 'db-api', 'meals', 'groceries', 'inventory' are NOT workspaces
+     * - 'announcements', 'db-api' are NOT workspaces
      * 
      * @param {Object} options - Optional configuration
      * @param {boolean} options.includeAnnouncements - Whether to render announcements panel (default: true)

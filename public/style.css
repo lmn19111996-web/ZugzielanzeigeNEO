@@ -7692,3 +7692,80 @@ body.lm-open #journal-island {
   width: 70px;
   flex: 0 0 70px;
 }
+
+/* ── Keyboard shortcut hints overlay ──────────────────────────────────────── */
+#shortcut-hints-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(14, 18, 80, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 19000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+#shortcut-hints-overlay.is-visible {
+  opacity: 1;
+}
+
+.shortcut-hints-title {
+  font-size: 2vh;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.40);
+}
+
+.shortcut-hints-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  width: 80vw;
+  height: 40vh;
+}
+
+.shortcut-hint-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+  text-align: center;
+}
+
+.shortcut-hint-keys {
+  font-size: 2vh;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 8px;
+  padding: 6px 12px;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.shortcut-hint-label {
+  font-size: 2vh;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .shortcut-hints-grid {
+    grid-template-columns: repeat(3, 1fr);
+    width: 90vw;
+  }
+}

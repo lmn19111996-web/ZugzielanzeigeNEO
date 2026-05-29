@@ -112,25 +112,6 @@
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
-        case 'meals':
-          // Placeholder modes - not workspaces, don't change currentWorkspaceMode
-          closeAnnouncementsDrawer();
-          closeNoteDrawer();
-          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
-          showWorkspacePlaceholder('Mahlzeiten');
-          break;
-        case 'groceries':
-          closeAnnouncementsDrawer();
-          closeNoteDrawer();
-          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
-          showWorkspacePlaceholder('Einkauf');
-          break;
-        case 'inventory':
-          closeAnnouncementsDrawer();
-          closeNoteDrawer();
-          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
-          showWorkspacePlaceholder('Inventar');
-          break;
         default:
           break;
       }

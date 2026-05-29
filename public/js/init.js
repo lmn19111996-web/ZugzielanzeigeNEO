@@ -31,8 +31,8 @@
       const defaultMode = currentViewMode === 'belegungsplan' ? 'occupancy' : 'list';
       setWorkspaceMode(defaultMode);
 
-      // Open dashboard on startup
-      if (typeof window.openDashboardMode === 'function') window.openDashboardMode();
+      // Open dashboard on startup (desktop only)
+      if (window.innerWidth > 768 && typeof window.openDashboardMode === 'function') window.openDashboardMode();
       
       // Add train button event listener (after DOM is ready)
       const addTrainBtn = document.getElementById('add-train-button');
