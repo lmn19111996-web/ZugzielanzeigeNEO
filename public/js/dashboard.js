@@ -103,15 +103,13 @@
     // Clock
     updateDashboardClock();
 
-    const trainList = (trains || []).slice(0, 10);
+    const trainList = (trains || []);
     const trains_ = trainList;
     const rowsHTML = trains_.map(t => buildRow(t, now)).join('');
-    const emptyCount = Math.max(0, 10 - trains_.length);
-    const emptyHTML = Array.from({ length: emptyCount }, buildEmptyRow).join('');
 
     // Replace existing departure rows
     grid.querySelectorAll('.departure-row').forEach(r => r.remove());
-    grid.insertAdjacentHTML('beforeend', rowsHTML + emptyHTML);
+    grid.insertAdjacentHTML('beforeend', rowsHTML);
 
     // Apply scrolling to via-stops that overflow their container
     requestAnimationFrame(() => applyViaScrolling(grid));

@@ -33,6 +33,15 @@ const Templates = {
       trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
     }
     
+    // Extract cancellation reason from zwischenhalte entries formatted as "Stop [Reason]"
+    let cancelReason = '';
+    if (train.canceled && Array.isArray(train.zwischenhalte)) {
+      for (const s of train.zwischenhalte) {
+        const m = String(s).match(/\[([^\]]+)\]/);
+        if (m) { cancelReason = m[1].trim(); break; }
+      }
+    }
+
     // Determine destination HTML
     const expandedZiel = expandDestinationPrefix(train.ziel || '');
     let destinationHTML;
@@ -188,7 +197,9 @@ const Templates = {
           <div class="symbol-slot">
             ${trainSymbolHTML}
           </div>
-          <div class="zugziel">${destinationHTML}</div>
+          ${(cancelReason && window.innerWidth > 768)
+            ? `<div class="zugziel-wrapper"><div class="cancel-notice-tag">${cancelReason}</div><div class="zugziel">${destinationHTML}</div></div>`
+            : `<div class="zugziel">${destinationHTML}</div>`}
         </div>
         <div class="carriage-slot">
           <img class="carriage-img" src="${getCarriageSVG(train.dauer, train.linie === 'FEX', train.linie)}" alt="">

@@ -33,43 +33,59 @@
       box-sizing: border-box;
     }
 
+    #dashboard-header-grid {
+      display: grid;
+      grid-template-columns: 3vw max-content 1fr 11vw;
+      margin: 0 0.2vw;
+      flex-shrink: 0;
+    }
+
+    #dashboard-rows-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    #dashboard-rows-scroll::-webkit-scrollbar { display: none; }
+
     #dashboard-rows-grid {
       display: grid;
       grid-template-columns: 3vw max-content 1fr 11vw;
-      grid-template-rows: auto auto repeat(10, 1fr);
-      flex: 1;
-      min-height: 0;
       margin: 0 0.2vw;
     }
 
     /* Column rules (scoped to dashboard overlay) */
+    #dashboard-header-grid .col-dot,
     #dashboard-overlay .col-dot         { width: 3vw; flex-shrink: 0; }
+    #dashboard-header-grid .col-time,
     #dashboard-overlay .col-time        { margin: 0 1vw; border-top: 1px solid white; box-sizing: border-box; min-width: 0; }
+    #dashboard-header-grid .col-destination,
     #dashboard-overlay .col-destination { min-width: 0; margin: 0 2vw; border-top: 1px solid white; box-sizing: border-box; }
+    #dashboard-header-grid .col-platform,
     #dashboard-overlay .col-platform    { width: 9vw; flex-shrink: 0; margin: 0 1vw; border-top: 1px solid white; box-sizing: border-box; }
     #dashboard-overlay .dep-empty       { border-top: none !important; }
     /* Station overlay must appear above dashboard */
     #station-overlay                     { z-index: 10000; }
 
     /* Header layout */
-    #dashboard-overlay .board-header,
-    #dashboard-overlay .header-main-row,
-    #dashboard-overlay .header-label-row,
+    #dashboard-header-grid .board-header,
+    #dashboard-header-grid .header-main-row,
+    #dashboard-header-grid .header-label-row,
     #dashboard-overlay .departure-row    { display: contents; }
 
-    #dashboard-overlay .header-dot,
-    #dashboard-overlay .header-time-main,
-    #dashboard-overlay .header-destination-main,
-    #dashboard-overlay .header-platform-main {
+    #dashboard-header-grid .header-dot,
+    #dashboard-header-grid .header-time-main,
+    #dashboard-header-grid .header-destination-main,
+    #dashboard-header-grid .header-platform-main {
       border-top: none !important;
       padding-top: 0.8vh;
       padding-bottom: 1.8vh;
       display: flex;
       align-items: center;
     }
-    #dashboard-overlay .header-time-labels,
-    #dashboard-overlay .header-destination-labels { border-top: none !important; padding-bottom: 0.6vh; }
-    #dashboard-overlay .header-platform-labels    { align-self: end; display: flex; padding-bottom: 0.6vh; border-top: none !important; }
+    #dashboard-header-grid .header-time-labels,
+    #dashboard-header-grid .header-destination-labels { border-top: none !important; padding-bottom: 0.6vh; }
+    #dashboard-header-grid .header-platform-labels    { align-self: end; display: flex; padding-bottom: 0.6vh; border-top: none !important; }
 
     /* Clock */
     #dashboard-overlay .clock-row   { display: flex; align-items: center; }
@@ -815,8 +831,8 @@
   <!-- ── Static Dashboard Overlay ── -->
   <div id="dashboard-overlay" style="display:none;">
     <div id="dashboard-board">
-      <div id="dashboard-rows-grid">
-        <!-- HEADER -->
+      <!-- HEADER (fixed, not scrollable) -->
+      <div id="dashboard-header-grid">
         <div class="board-header">
           <div class="header-main-row">
             <div class="col-dot header-dot"></div>
@@ -850,7 +866,12 @@
             </div>
           </div>
         </div>
-        <!-- Departure rows inserted by dashboard.js -->
+      </div>
+      <!-- ROWS (scrollable) -->
+      <div id="dashboard-rows-scroll">
+        <div id="dashboard-rows-grid">
+          <!-- Departure rows inserted by dashboard.js -->
+        </div>
       </div>
     </div>
   </div>
