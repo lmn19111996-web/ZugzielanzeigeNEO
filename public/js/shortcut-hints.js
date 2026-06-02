@@ -20,6 +20,15 @@
     return el && el.style.display !== 'none' && el.style.display !== '';
   }
 
+  function isInTextField() {
+    const el = document.activeElement;
+    if (!el) return false;
+    const tag = el.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (el.isContentEditable) return true;
+    return false;
+  }
+
   function buildOverlay() {
     const el = document.createElement('div');
     el.id = 'shortcut-hints-overlay';
@@ -57,6 +66,7 @@
 
   function showOverlay() {
     if (isDashboardOpen()) return;
+    if (isInTextField()) return;
     if (!overlay) overlay = buildOverlay();
     overlay.classList.add('is-visible');
     visible = true;

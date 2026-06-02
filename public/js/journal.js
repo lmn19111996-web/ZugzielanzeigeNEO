@@ -274,7 +274,6 @@
     };
     _clickOutHandler = function(e) {
       if (!drawer.contains(e.target) && !e.target.closest('.reviews-new-btn')) {
-        e.stopPropagation();
         closeDrawer();
       }
     };
