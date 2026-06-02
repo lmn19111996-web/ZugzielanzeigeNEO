@@ -388,8 +388,11 @@
 
       if (silent) {
         closeDrawerNow();
-        if (typeof savedCallback === 'function') savedCallback();
-        else if (typeof renderReviewsPage === 'function' &&
+        if (typeof savedCallback === 'function' &&
+            typeof currentWorkspaceMode !== 'undefined' &&
+            currentWorkspaceMode === 'reviews') {
+          savedCallback();
+        } else if (typeof renderReviewsPage === 'function' &&
             typeof currentWorkspaceMode !== 'undefined' &&
             currentWorkspaceMode === 'reviews') {
           renderReviewsPage();
@@ -403,7 +406,9 @@
 
         setTimeout(function() {
           closeDrawerNow();
-          if (typeof savedCallback === 'function') {
+          if (typeof savedCallback === 'function' &&
+              typeof currentWorkspaceMode !== 'undefined' &&
+              currentWorkspaceMode === 'reviews') {
             savedCallback();
           } else if (typeof renderReviewsPage === 'function' &&
               typeof currentWorkspaceMode !== 'undefined' &&
