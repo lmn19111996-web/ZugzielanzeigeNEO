@@ -1096,6 +1096,12 @@ html, body {
       .cancel-notice-tag { display: none; }
     }
 
+    .fex-entry .cancel-notice-tag {
+      color: #003E8A;
+      border-bottom-color: #003E8A;
+      border-right-color: #003E8A;
+    }
+
     .cancel-notice-tag {
       font-size: 1.5vh;
       font-weight: 400;
