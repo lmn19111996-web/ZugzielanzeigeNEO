@@ -13,14 +13,20 @@
       };
       
       try {
-        // Always attempt the fetch — the service worker will serve from cache when offline
+        // Always attempt the fetch — the service worker will serve from cache when offline.
+        // Use a timeout so a silent Tailscale/server timeout doesn't block the UI.
+        const _apiFetch = (url) => (
+          typeof window.fetchWithTimeout === 'function'
+            ? window.fetchWithTimeout(url)
+            : fetch(url)
+        );
         const fetchPromises = [
-          fetch('/api/schedule').catch(() => null)
+          _apiFetch('/api/schedule').catch(() => null)
         ];
         
         // Also fetch DB API if a real station is explicitly selected (skip when offline — no cache for live departures)
         if (isRealStation() && (typeof window.isAppOnline !== 'function' || window.isAppOnline())) {
-          fetchPromises.push(fetch(`/api/db-departures?eva=${currentEva}`).catch(() => null));
+          fetchPromises.push(_apiFetch(`/api/db-departures?eva=${currentEva}`).catch(() => null));
         }
         
         const responses = await Promise.all(fetchPromises);

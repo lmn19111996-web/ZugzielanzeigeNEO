@@ -11,9 +11,24 @@
   const RETRY_INTERVAL_MS = 5000;  // check every 5 s while offline
   const HEALTH_URL        = '/api/health';
   const PROBE_TIMEOUT_MS  = 4000;
+  const FETCH_TIMEOUT_MS  = 5000; // max wait for any API GET
 
   let _serverOnline   = true;  // optimistic initial state
   let _pollTimer      = null;
+  let _initialProbeResolve = null;
+  // Resolves once the first server probe completes — awaited by init.js
+  window._offlineReady = new Promise(r => { _initialProbeResolve = r; });
+
+  // Shared helper: fetch with an AbortController timeout
+  // Exposed as window.fetchWithTimeout for use in schedule.js etc.
+  window.fetchWithTimeout = function(url, opts, timeoutMs) {
+    const ms = timeoutMs || FETCH_TIMEOUT_MS;
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...opts, signal: ctrl.signal })
+      .then(res => { clearTimeout(tid); return res; })
+      .catch(err => { clearTimeout(tid); throw err; });
+  };
 
   // ── IndexedDB outbox ────────────────────────────────────────────────────────
 
@@ -204,6 +219,7 @@
   // Do an immediate probe on load so we know the real state before any fetches
   _probeServer().then(reachable => {
     if (!reachable) _onBecameOffline();
+    if (_initialProbeResolve) { _initialProbeResolve(); _initialProbeResolve = null; }
     // Start polling loop
     _pollTimer = setTimeout(_poll, reachable ? POLL_INTERVAL_MS : RETRY_INTERVAL_MS);
   });

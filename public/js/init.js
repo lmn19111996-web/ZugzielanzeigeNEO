@@ -20,8 +20,10 @@
       }
     })();
 
-    // Initial load
+    // Initial load — wait for the offline probe first so we know server state
+    // before fetchSchedule fires (prevents 1-min TCP hang when server is unreachable)
     (async () => {
+      if (window._offlineReady) await window._offlineReady;
       const scheduleData = await fetchSchedule();
       processTrainData(scheduleData);
       renderTrains(); // Use unified render function
