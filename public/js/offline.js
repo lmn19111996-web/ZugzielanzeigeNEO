@@ -120,21 +120,64 @@
     }
   }
 
+  async function _clearOutboxByUrl(db, urlPrefix) {
+    const items = await new Promise((resolve, reject) => {
+      const tx = db.transaction('outbox', 'readonly');
+      const req = tx.objectStore('outbox').index('by_queued').getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject(req.error);
+    });
+    const toDelete = items.filter(i => i.url && i.url.startsWith(urlPrefix));
+    for (const item of toDelete) {
+      await _deleteOutboxItem(db, item.id);
+    }
+    if (toDelete.length) console.log(`[offline] Cleared ${toDelete.length} outbox item(s) for ${urlPrefix}`);
+  }
+
   async function _onBecameOnline() {
     console.log('[offline] ✅ Server reachable — switching to online mode');
     _serverOnline = true;
     _hideBanner();
-    await offlineOutboxFlush();
-    // Re-fetch schedule so the UI reflects any queued saves that just landed
-    if (typeof fetchSchedule === 'function' && typeof processTrainData === 'function') {
-      try {
-        const data = await fetchSchedule(true);
-        processTrainData(data);
-        if (typeof renderTrains === 'function') renderTrains();
-      } catch (e) {
-        console.warn('[offline] Re-fetch after reconnect failed:', e.message);
+
+    let db;
+    try { db = await _offlineDB.open(); } catch { db = null; }
+
+    // ── Schedule: compare versions, last-write wins ────────────────────────
+    try {
+      const res = await fetch('/api/schedule', { cache: 'no-store' });
+      if (res.ok) {
+        const serverData = await res.json();
+        const serverVersion = serverData._meta && serverData._meta.version ? serverData._meta.version : 0;
+        const clientVersion = (typeof schedule !== 'undefined' && schedule._meta && schedule._meta.version)
+          ? schedule._meta.version : 0;
+
+        // Clear stale schedule outbox items — version compare handles sync
+        if (db) await _clearOutboxByUrl(db, '/api/schedule');
+
+        if (clientVersion > serverVersion) {
+          // Client edited while offline and has newer data — push to server
+          console.log(`[offline] Client v${clientVersion} > server v${serverVersion} → pushing client data to server`);
+          if (typeof saveSchedule === 'function') {
+            await saveSchedule();
+          }
+        } else {
+          // Server is equal or newer — pull from server
+          console.log(`[offline] Server v${serverVersion} >= client v${clientVersion} → pulling server data`);
+          if (typeof schedule !== 'undefined' && typeof processTrainData === 'function') {
+            Object.assign(schedule, serverData);
+            if (typeof materializeFromStems === 'function') materializeFromStems();
+            if (typeof regenerateTrainsFromSchedule === 'function') regenerateTrainsFromSchedule();
+            processTrainData(schedule);
+            if (typeof renderTrains === 'function') renderTrains();
+          }
+        }
       }
+    } catch (e) {
+      console.warn('[offline] Schedule version sync failed:', e.message);
     }
+
+    // ── Journal / lovemeter / other: replay outbox as before ─────────────
+    await offlineOutboxFlush();
   }
 
   function _onBecameOffline() {
