@@ -104,6 +104,15 @@ self.addEventListener('activate', e => e.waitUntil(
   ])
 ));
 
+// Fetch with a timeout — falls back to cache if the network hangs (e.g. Tailscale up, server down)
+function _fetchWithTimeout(request, timeoutMs) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
+  return fetch(request, { signal: ctrl.signal })
+    .then(res  => { clearTimeout(tid); return res; })
+    .catch(err => { clearTimeout(tid); throw err; });
+}
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const { pathname } = url;
@@ -116,11 +125,11 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 2. App shell static assets (including /res/ icons) — network-first, cache fallback
+  // 2. App shell static assets (including /res/ icons) — network-first with 5s timeout, cache fallback
   // (During development this ensures you always get fresh code when online)
   if (SHELL_URLS.includes(pathname) || pathname === '/' || pathname.startsWith('/res/')) {
     e.respondWith(
-      fetch(e.request)
+      _fetchWithTimeout(e.request, 5000)
         .then(res => {
           if (res.ok) {
             const clone = res.clone();
@@ -138,7 +147,7 @@ self.addEventListener('fetch', e => {
   // 3. GET API calls (schedule, journal, lovemeter) — network-first, stale fallback
   if (e.request.method === 'GET' && STALE_API_PREFIXES.some(p => pathname.startsWith(p))) {
     e.respondWith(
-      fetch(e.request)
+      _fetchWithTimeout(e.request, 5000)
         .then(res => {
           if (res.ok) {
             const clone = res.clone();
