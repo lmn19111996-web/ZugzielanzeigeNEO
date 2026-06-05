@@ -1097,9 +1097,9 @@ html, body {
     }
 
     .fex-entry .cancel-notice-tag {
-      color: #003E8A;
-      border-bottom-color: #003E8A;
-      border-right-color: #003E8A;
+      color: var(--color-bg-primary);
+      border-bottom-color: var(--color-bg-primary);
+      border-right-color: var(--color-bg-primary);
     }
 
     .cancel-notice-tag {
