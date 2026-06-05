@@ -117,7 +117,15 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const { pathname } = url;
 
-  // 1. Push notification icons — cache-first
+  // 1a. index.html is a static redirect shell — always serve from cache instantly
+  if (pathname === '/' || pathname === '/index.html') {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || _fetchWithTimeout(e.request, 5000))
+    );
+    return;
+  }
+
+  // 1b. Push notification icons — cache-first
   if (ICON_URLS.includes(pathname)) {
     e.respondWith(
       caches.match(e.request).then(cached => cached || fetch(e.request))
@@ -127,7 +135,7 @@ self.addEventListener('fetch', e => {
 
   // 2. App shell static assets (including /res/ icons) — network-first with 5s timeout, cache fallback
   // (During development this ensures you always get fresh code when online)
-  if (SHELL_URLS.includes(pathname) || pathname === '/' || pathname.startsWith('/res/')) {
+  if (SHELL_URLS.includes(pathname) || pathname.startsWith('/res/')) {
     e.respondWith(
       _fetchWithTimeout(e.request, 5000)
         .then(res => {
