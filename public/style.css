@@ -1094,6 +1094,7 @@ html, body {
 
     @media (max-width: 768px) {
       .cancel-notice-tag { display: none; }
+      .zugziel-wrapper { display: none; }
     }
 
     .fex-entry .cancel-notice-tag {
