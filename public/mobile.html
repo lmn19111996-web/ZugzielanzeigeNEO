@@ -178,6 +178,11 @@
   </style>
 </head>
 <body>
+  <!-- Offline banner -->
+  <div id="offline-banner" role="status" aria-live="polite">
+    <span class="offline-banner-icon">✈</span>
+    <span class="offline-banner-text">Offline-Modus</span>
+  </div>
   <!-- Save Status Indicator -->
   <div id="save-status-indicator"></div>
   <!-- Debug notification button — only visible with ?debug=1 in the URL -->
@@ -897,6 +902,7 @@
 <script src="js/lovemeter-engine.js?v=1"></script>
 <script src="js/lovemeter-ui.js?v=1"></script>
 <script src="js/checkin.js"></script>
+<script src="js/offline.js"></script>
 <script src="js/init.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/shortcut-hints.js"></script>

@@ -419,6 +419,19 @@
       }
 
     } catch (e) {
+      // Queue offline if network is unavailable
+      if (window.offlineOutbox && typeof window.isAppOnline === 'function' && !window.isAppOnline()) {
+        const offlineUrl = _editEntry ? '/api/journal/' + _editEntry.id : '/api/journal';
+        const offlineMethod = _editEntry ? 'PUT' : 'POST';
+        const offlineBody = _editEntry
+          ? JSON.stringify({ rating: selectedRating, text: textarea.value.trim() })
+          : JSON.stringify({ rating: selectedRating, text: textarea.value.trim(), date: getLogicalDate() });
+        window.offlineOutbox.queue({ url: offlineUrl, method: offlineMethod, headers: { 'Content-Type': 'application/json' }, body: offlineBody });
+        console.log('📥 Journal save queued offline');
+        if (!silent) { submitBtn.textContent = '⏳ Offline gespeichert'; setTimeout(function() { closeDrawerNow(); }, 1200); }
+        else { closeDrawerNow(); }
+        return;
+      }
       if (!silent) {
         submitBtn.textContent = e.message;
         submitBtn.style.background = '#c0392b';

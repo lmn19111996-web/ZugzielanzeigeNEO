@@ -13,13 +13,13 @@
       };
       
       try {
-        // Always fetch local schedule
+        // Always attempt the fetch — the service worker will serve from cache when offline
         const fetchPromises = [
           fetch('/api/schedule').catch(() => null)
         ];
         
-        // Also fetch DB API if a real station is explicitly selected
-        if (isRealStation()) {
+        // Also fetch DB API if a real station is explicitly selected (skip when offline — no cache for live departures)
+        if (isRealStation() && (typeof window.isAppOnline !== 'function' || window.isAppOnline())) {
           fetchPromises.push(fetch(`/api/db-departures?eva=${currentEva}`).catch(() => null));
         }
         
@@ -300,7 +300,18 @@
 
       } catch (error) {
         console.error('Error saving schedule:', error);
-        alert('Fehler beim Speichern: ' + error.message);
+        // Queue for later if offline; otherwise alert
+        if (window.offlineOutbox && typeof window.isAppOnline === 'function' && !window.isAppOnline()) {
+          await window.offlineOutbox.queue({
+            url: '/api/schedule',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSave),
+          });
+          console.log('📥 Save queued offline — will replay when back online');
+        } else {
+          alert('Fehler beim Speichern: ' + error.message);
+        }
       } finally {
         saveInProgress = false;
         isDataOperationInProgress = false; // Release lock after save completes

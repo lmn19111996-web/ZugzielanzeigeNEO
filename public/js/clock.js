@@ -143,6 +143,12 @@
             return;
           }
 
+          // Skip all server calls when offline
+          if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) {
+            console.log('⏸️ Polling skipped — app is offline');
+            return;
+          }
+
           // Fetch schedule to check version
           const res = await fetch('/api/schedule');
           if (!res.ok) return;
@@ -241,6 +247,9 @@
     const eventSource = new EventSource('/events');
     
     eventSource.addEventListener('update', async (event) => {
+      // Ignore SSE events while offline (server probe will trigger re-fetch on reconnect)
+      if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) return;
+
       console.log('📡 SSE update received at', new Date().toISOString());
       
       // Parse event data
@@ -314,6 +323,8 @@
     });
     
     eventSource.addEventListener('error', (error) => {
+      // Suppress error logs while in offline mode — expected behaviour
+      if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) return;
       console.warn('SSE connection error:', error);
       // Connection will automatically reconnect
     });

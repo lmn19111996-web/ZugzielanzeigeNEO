@@ -33,9 +33,10 @@ const Templates = {
       trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
     }
     
-    // Extract cancellation reason from zwischenhalte entries formatted as "Stop [Reason]"
+    // Extract reason from zwischenhalte entries formatted as "Stop [Reason]"
+    // Works for both cancellation reason and delay reason.
     let cancelReason = '';
-    if (train.canceled && Array.isArray(train.zwischenhalte)) {
+    if (Array.isArray(train.zwischenhalte)) {
       for (const s of train.zwischenhalte) {
         const m = String(s).match(/\[([^\]]+)\]/);
         if (m) { cancelReason = m[1].trim(); break; }
@@ -197,7 +198,7 @@ const Templates = {
           <div class="symbol-slot">
             ${trainSymbolHTML}
           </div>
-          ${(cancelReason && window.innerWidth > 768)
+          ${cancelReason
             ? `<div class="zugziel-wrapper"><div class="cancel-notice-tag">${cancelReason}</div><div class="zugziel">${destinationHTML}</div></div>`
             : `<div class="zugziel">${destinationHTML}</div>`}
         </div>
