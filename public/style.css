@@ -39,7 +39,7 @@ html, body {
       margin: 0;
       padding: 0;
       /* DEBUG COLOR */
-      background: red;
+      background: var(--color-bg-primary);
       /* RELEASE COLOR */
       /*background: var(--color-bg-primary); */
       color: white;
