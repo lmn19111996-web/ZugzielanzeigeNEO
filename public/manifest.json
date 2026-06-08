@@ -1,6 +1,6 @@
 ﻿{
-  "name": "Train Board 11.0.8",
-  "short_name": "TrainBoard 11.0.8",
+  "name": "Train Board",
+  "short_name": "TrainBoard",
   "id": "/mobile.html",
   "start_url": "/mobile.html",
   "scope": "/",

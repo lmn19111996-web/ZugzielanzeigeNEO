@@ -1,5 +1,8 @@
 ﻿// Extracted inline scripts from mobile.html
 
+const APP_VERSION = '11.0.9';
+console.log(`App version ${APP_VERSION}`);
+
 // Global variables for station
     let stationsIndex = null;
     let currentEva = null;
