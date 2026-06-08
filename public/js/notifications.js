@@ -69,10 +69,25 @@
 
       try {
         const keyRes = await fetch('/api/push/vapid-public-key');
-        if (!keyRes.ok) return;
+        if (!keyRes.ok) {
+          console.warn('[Push] VAPID key request failed:', keyRes.status);
+          return;
+        }
         const { publicKey } = await keyRes.json();
+        if (!publicKey) {
+          console.warn('[Push] VAPID public key missing in server response');
+          return;
+        }
 
-        const reg = await navigator.serviceWorker.ready;
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+          reg = await navigator.serviceWorker.register('/service-worker.js');
+        }
+        if (!reg) {
+          console.warn('[Push] No service worker registration available');
+          return;
+        }
+
         let sub = await reg.pushManager.getSubscription();
         if (!sub) {
           sub = await reg.pushManager.subscribe({
