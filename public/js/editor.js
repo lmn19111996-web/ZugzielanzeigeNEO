@@ -1208,6 +1208,7 @@
               // Toggle canceled state
               train.canceled = !train.canceled;
               scheduleTrain.canceled = train.canceled;
+              console.log(`[CANCEL ACTION] Train ${trainId} canceled=${train.canceled}, projectId=${train.projectId}, duration=${train.dauer}m`);
               
               // OPTIMISTIC UI: Render immediately, then save in background
               // 1. Refresh UI with cancel state change

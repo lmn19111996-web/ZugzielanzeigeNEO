@@ -398,6 +398,9 @@
       if (isProjectDrawerOpen && currentProjectId) {
         const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
         if (updatedProject) {
+          const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === currentProjectId && t.type !== 'todo');
+          const cancelledCount = projectTasks.filter(t => t.canceled).length;
+          console.log(`[PROJECT DRAWER UPDATE] isOpen=${isProjectDrawerOpen}, projectId=${currentProjectId}, totalTasks=${projectTasks.length}, cancelled=${cancelledCount}`);
           renderProjectDrawer(updatedProject);
         }
       }
