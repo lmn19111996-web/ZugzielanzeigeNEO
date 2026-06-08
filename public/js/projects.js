@@ -346,6 +346,8 @@
         }
       });
       
+      console.log(`[STATS CALC] totalHours=${totalHours.toFixed(1)}, weekHours=${weekHours.toFixed(1)}, weekTasks=${weekTasks}, cancelled=${weekCancelledTasks}, trains=${trains.length}`);
+      
       // Calculate averages and rates
       const cancellationRate = weekTasks > 0 ? (weekCancelledTasks / weekTasks * 100).toFixed(1) : 0;
       const avgDelay = weekDelays.length > 0 
