@@ -153,6 +153,8 @@
     console.log('[offline] ✅ Server reachable — switching to online mode');
     _serverOnline = true;
     _hideBanner();
+    // Reopen SSE connection
+    if (typeof window._sseConnect === 'function') window._sseConnect();
 
     let db;
     try { db = await _offlineDB.open(); } catch { db = null; }
@@ -199,6 +201,8 @@
     console.log('[offline] ❌ Server unreachable — switching to offline mode');
     _serverOnline = false;
     _showBanner();
+    // Close SSE so the browser stops showing reconnect errors
+    if (typeof window._sseDisconnect === 'function') window._sseDisconnect();
   }
 
   async function _poll() {

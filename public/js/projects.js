@@ -304,8 +304,8 @@
       trains.forEach(train => {
         const duration = Number(train.dauer) || 0;
         
-        // Only count hours for tasks that have occurred up to today
-        if (train.date) {
+        // Only count hours for non-cancelled tasks that have occurred up to today
+        if (train.date && !train.canceled) {
           const taskDate = new Date(train.date);
           taskDate.setHours(0, 0, 0, 0);
           
@@ -319,7 +319,9 @@
           const taskDate = new Date(train.date);
           if (taskDate >= monday && taskDate <= sunday) {
             weekTasks++;
-            weekHours += duration / 60;
+            if (!train.canceled) {
+              weekHours += duration / 60;
+            }
             
             // Check for cancellation
             if (train.canceled) {

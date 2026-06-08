@@ -171,7 +171,22 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 4. Everything else (including POST/PUT mutations) — pass through
+  // 4. POST/PUT/DELETE to /api/ — add timeout so mutations don't hang;
+  //    return 503 on network failure so JS catch blocks get a clean HTTP error
+  //    instead of an unhandled 'Failed to fetch' rejection.
+  if ((e.request.method === 'POST' || e.request.method === 'PUT' || e.request.method === 'DELETE')
+      && pathname.startsWith('/api/')) {
+    e.respondWith(
+      _fetchWithTimeout(e.request, 8000)
+        .catch(() => new Response(JSON.stringify({ error: 'offline' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        }))
+    );
+    return;
+  }
+
+  // 5. Everything else — pass through
 });
 
 // Web Push: server sends { title, options } as JSON payload

@@ -243,93 +243,102 @@
     // Initial setup
     updateRefreshInterval();
 
-    // Set up Server-Sent Events for real-time updates
-    const eventSource = new EventSource('/events');
-    
-    eventSource.addEventListener('update', async (event) => {
-      // Ignore SSE events while offline (server probe will trigger re-fetch on reconnect)
-      if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) return;
+    // Set up Server-Sent Events for real-time updates.
+    // The connection is managed based on server reachability so the browser
+    // never shows reconnect errors in the console while offline.
+    let eventSource = null;
 
-      console.log('📡 SSE update received at', new Date().toISOString());
-      
-      // Parse event data
-      const eventData = JSON.parse(event.data);
-      const serverVersion = eventData.version;
+    function _connectSSE() {
+      if (eventSource && eventSource.readyState !== EventSource.CLOSED) return;
+      eventSource = new EventSource('/events');
 
-      // Lovemeter-only update — refresh lovemeter data without touching schedule
-      if (eventData.dataType === 'lovemeter') {
-        if (typeof window.lovemeterOnDataChanged === 'function') window.lovemeterOnDataChanged();
-        return;
-      }
+      eventSource.addEventListener('update', async (event) => {
+        if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) return;
+
+        console.log('📡 SSE update received at', new Date().toISOString());
       
-      // Complete save status indicator (if saving)
-      completeSaveStatus();
-      
-      // VERSION CHECK: Only fetch if server has NEWER version
-      // Use > instead of !== to handle out-of-order updates correctly
-      if (serverVersion && serverVersion > schedule._meta.version) {
-        if (isDataOperationInProgress || isEditingTrain || isEditingProject) {
-          console.log('⏸️ SSE refresh deferred - local edits in progress');
+        // Parse event data
+        const eventData = JSON.parse(event.data);
+        const serverVersion = eventData.version;
+
+        // Lovemeter-only update — refresh lovemeter data without touching schedule
+        if (eventData.dataType === 'lovemeter') {
+          if (typeof window.lovemeterOnDataChanged === 'function') window.lovemeterOnDataChanged();
           return;
         }
-
-        console.log(`🔄 Server ahead: local=${schedule._meta.version}, server=${serverVersion} - Fetching...`);
-        
-        // Fetch and update the GLOBAL schedule object
-        const freshSchedule = await fetchSchedule(true);
-        Object.assign(schedule, freshSchedule);
-        processTrainData(schedule);
-        
-        // Render current workspace view
-        renderCurrentWorkspaceView();
-        
-        // In projects mode, also refresh open project drawer if needed
-        if (currentWorkspaceMode === 'projects' && isProjectDrawerOpen && currentProjectId) {
-          const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
-          if (updatedProject) {
-            renderProjectDrawer(updatedProject);
+      
+        // Complete save status indicator (if saving)
+        completeSaveStatus();
+      
+        // VERSION CHECK: Only fetch if server has NEWER version
+        if (serverVersion && serverVersion > schedule._meta.version) {
+          if (isDataOperationInProgress || isEditingTrain || isEditingProject) {
+            console.log('⏸️ SSE refresh deferred - local edits in progress');
+            return;
           }
-        }
-        checkTrainArrivals(); // Check for trains arriving in 15 minutes
+
+          console.log(`🔄 Server ahead: local=${schedule._meta.version}, server=${serverVersion} - Fetching...`);
         
-        // Re-render the appropriate focused train based on which one is set
-        if (desktopFocusedTrainId) {
-          // Desktop mode - only re-render if desktop panel has content
-          const panel = document.getElementById('focus-panel');
-          if (panel && panel.innerHTML.trim() !== '') {
-            const updatedTrain = processedTrainData.allTrains.find(t => 
-              t._uniqueId === desktopFocusedTrainId
-            );
-            
-            if (updatedTrain) {
-              renderFocusMode(updatedTrain);
-            } else {
-              // Train was deleted, clear the panel
-              desktopFocusedTrainId = null;
-              panel.innerHTML = '';
-              closeEditorDrawer();
+          const freshSchedule = await fetchSchedule(true);
+          Object.assign(schedule, freshSchedule);
+          processTrainData(schedule);
+          renderCurrentWorkspaceView();
+        
+          if (currentWorkspaceMode === 'projects' && isProjectDrawerOpen && currentProjectId) {
+            const updatedProject = schedule.projects.find(p => p._uniqueId === currentProjectId);
+            if (updatedProject) renderProjectDrawer(updatedProject);
+          }
+          checkTrainArrivals();
+        
+          if (desktopFocusedTrainId) {
+            const panel = document.getElementById('focus-panel');
+            if (panel && panel.innerHTML.trim() !== '') {
+              const updatedTrain = processedTrainData.allTrains.find(t => t._uniqueId === desktopFocusedTrainId);
+              if (updatedTrain) {
+                renderFocusMode(updatedTrain);
+              } else {
+                desktopFocusedTrainId = null;
+                panel.innerHTML = '';
+                closeEditorDrawer();
+              }
             }
           }
+        } else if (serverVersion && serverVersion < schedule._meta.version) {
+          console.warn(`⚠️ Ignoring SSE with older version ${serverVersion} (current: ${schedule._meta.version})`);
+        } else if (serverVersion && serverVersion === schedule._meta.version) {
+          console.log(`✅ Version in sync: ${schedule._meta.version} - No fetch needed`);
+        } else if (!serverVersion) {
+          console.log('⚠️ SSE without version info - fetching anyway');
+          await refreshDataAndUI();
         }
-      } else if (serverVersion && serverVersion < schedule._meta.version) {
-        console.warn(`⚠️ Ignoring SSE with older version ${serverVersion} (current: ${schedule._meta.version})`);
-      } else if (serverVersion && serverVersion === schedule._meta.version) {
-        console.log(`✅ Version in sync: ${schedule._meta.version} - No fetch needed`);
-      } else if (!serverVersion) {
-        // Legacy SSE without version info - fallback to always fetch
-        console.log('⚠️ SSE without version info - fetching anyway');
-        await refreshDataAndUI();
+      });
+
+      eventSource.addEventListener('error', () => {
+        // Only log if we're supposed to be online — if offline.js already switched us
+        // to offline mode this is expected and should be silent.
+        if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) return;
+        console.warn('SSE connection error — will reconnect automatically');
+      });
+
+      console.log('✅ SSE connected');
+    }
+
+    function _disconnectSSE() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        console.log('[SSE] Disconnected (offline mode)');
       }
-    });
-    
-    eventSource.addEventListener('error', (error) => {
-      // Suppress error logs while in offline mode — expected behaviour
-      if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) return;
-      console.warn('SSE connection error:', error);
-      // Connection will automatically reconnect
-    });
-    
-    console.log('✅ Connected to server for real-time updates');
+    }
+
+    // Expose so offline.js can manage the connection lifecycle
+    window._sseConnect    = _connectSSE;
+    window._sseDisconnect = _disconnectSSE;
+
+    // Start connected if online
+    if (typeof window.isAppOnline !== 'function' || window.isAppOnline()) {
+      _connectSSE();
+    }
 
     // Station selection overlay functionality
     let stationOverlayBackHandler = null;
