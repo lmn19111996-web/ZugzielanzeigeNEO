@@ -1434,9 +1434,14 @@ app.post('/api/schedule', async (req, res) => {
     // Prune expired entries (past + no projectId) before persisting to disk
     const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous);
 
+    // Use the client's newVersion so client and server agree on the version number.
+    // If the client's SSE receives a version > its local version it triggers a refetch,
+    // so a server-generated timestamp (always slightly later) would always cause a spurious
+    // refetch that overwrites any change made between the POST and the SSE arriving.
+    const clientNewVersion = body._meta && body._meta.newVersion ? body._meta.newVersion : Date.now();
     const toSave = {
       _meta: {
-        version: Date.now(),
+        version: clientNewVersion,
         lastSaved: new Date().toISOString()
       },
       fixedSchedule: fixedArr,
@@ -1463,8 +1468,8 @@ app.post('/api/schedule', async (req, res) => {
     }
 
     // Notify listeners
-    try { broadcastUpdate('manual-save'); } catch {}
-    res.json({ ok: true, savedAt: toSave._meta.lastSaved, prunedCount: rawSpontaneous.length - prunedSpontaneous.length });
+    try { broadcastUpdate('manual-save', { version: toSave._meta.version }); } catch {}
+    res.json({ ok: true, version: toSave._meta.version, savedAt: toSave._meta.lastSaved, prunedCount: rawSpontaneous.length - prunedSpontaneous.length });
   } catch (e) {
     res.status(500).json({ error: e.message || 'Unexpected error' });
   }

@@ -5759,13 +5759,19 @@ console.log(`App version ${APP_VERSION}`);
         
         // Server confirms our version - we're already updated
         const result = await res.json();
-        
-        // Handle out-of-order responses: only update if response is for current/newer version
-        if (result.version >= schedule._meta.version) {
+
+        // Handle out-of-order responses: only update if response is for current/newer version.
+        // result.version should equal newVersion (server now echoes client's newVersion),
+        // so this also serves as a sanity-check that our optimistic update is authoritative.
+        if (result.version && result.version >= schedule._meta.version) {
+          schedule._meta.version = result.version; // confirm exact agreed version
           schedule._meta.lastSaved = result.savedAt;
           console.log(`✅ Save confirmed: version ${result.version}`);
-        } else {
+        } else if (result.version) {
           console.warn(`⚠️ Ignoring delayed response for older version ${result.version} (current: ${schedule._meta.version})`);
+        } else {
+          schedule._meta.lastSaved = result.savedAt;
+          console.log(`✅ Save confirmed (no version in response)`);
         }
         
         // NO fetch needed - we're already up to date!

@@ -232,6 +232,45 @@
   window.addEventListener('online',  () => { clearTimeout(_pollTimer); _poll(); });
   window.addEventListener('offline', () => { clearTimeout(_pollTimer); _onBecameOffline(); _pollTimer = setTimeout(_poll, RETRY_INTERVAL_MS); });
 
+  // On mobile, switching away and back doesn't fire online/offline events — the SSE
+  // may have silently dropped and the 30s poll hasn't fired yet. Do an immediate version
+  // check whenever the tab/app becomes visible again so stale data is never shown.
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!_serverOnline) {
+      // Might have come back online — let the normal poll cycle handle it
+      clearTimeout(_pollTimer);
+      _poll();
+      return;
+    }
+    // Already marked online: just check whether the server has moved ahead
+    try {
+      const res = await fetch('/api/schedule', { cache: 'no-store' });
+      if (!res.ok) return;
+      const serverData = await res.json();
+      const serverVersion = serverData._meta && serverData._meta.version ? serverData._meta.version : 0;
+      const clientVersion = (typeof schedule !== 'undefined' && schedule._meta && schedule._meta.version)
+        ? schedule._meta.version : 0;
+      if (serverVersion > clientVersion) {
+        console.log(`[offline] Visibility restored — server v${serverVersion} > local v${clientVersion}, pulling`);
+        if (typeof schedule !== 'undefined' && typeof processTrainData === 'function') {
+          Object.assign(schedule, serverData);
+          if (typeof materializeFromStems === 'function') materializeFromStems();
+          if (typeof regenerateTrainsFromSchedule === 'function') regenerateTrainsFromSchedule();
+          processTrainData(schedule);
+          if (typeof renderCurrentWorkspaceView === 'function') renderCurrentWorkspaceView();
+        }
+      } else {
+        console.log(`[offline] Visibility restored — already in sync (v${clientVersion})`);
+      }
+    } catch (e) {
+      console.warn('[offline] Visibility version check failed:', e.message);
+    }
+    // Reset the 30s poll timer so it doesn't fire immediately after we just checked
+    clearTimeout(_pollTimer);
+    _pollTimer = setTimeout(_poll, POLL_INTERVAL_MS);
+  });
+
   // ── Public API ──────────────────────────────────────────────────────────────
 
   // Use this everywhere instead of navigator.onLine
