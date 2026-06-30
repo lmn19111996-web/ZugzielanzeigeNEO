@@ -200,6 +200,15 @@ console.log(`App version ${APP_VERSION}`);
         's9': '#962d44',
         's17': '#478dbb',
         's21': '#00793B',
+        's91': '#03377a',
+        's92': '#7a0707',
+        's93': '#e4592b',
+        's94': '#41238d',
+        's95': '#207910',
+        's96': '#196489',
+        's97': '#074d70',
+        's98': '#ffd737',
+        's99': '#ff76c4',
         'fex': '#FF0000'
       };
       return lineColors[line.toLowerCase()] || '#7D66AD';
