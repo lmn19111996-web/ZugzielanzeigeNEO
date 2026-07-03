@@ -467,8 +467,13 @@
         const { pattern = 'weekdays', days = [] } = stem.recurrence || {};
         // For weekly: anchor DOW comes from startDate (local)
         const stemDow = startDateObj.getDay(); // 0=Sun … 6=Sat
+        const stemDom = startDateObj.getDate();        // day-of-month for monthly
+        const stemMonth = startDateObj.getMonth();     // month index for yearly
 
-        for (let i = 0; i < WINDOW_DAYS; i++) {
+        // Extend look-ahead window for infrequent patterns
+        const windowDays = (pattern === 'yearly') ? 366 : (pattern === 'monthly') ? 35 : WINDOW_DAYS;
+
+        for (let i = 0; i < windowDays; i++) {
           const d = localMidnight(todayMs, i);         // fresh Date each iteration
           if (d.getTime() < effectiveStartMs) continue;
 
@@ -477,6 +482,8 @@
           if      (pattern === 'daily')    matches = true;
           else if (pattern === 'weekdays') matches = dow >= 1 && dow <= 5;
           else if (pattern === 'weekly')   matches = dow === stemDow;
+          else if (pattern === 'monthly')  matches = d.getDate() === stemDom;
+          else if (pattern === 'yearly')   matches = d.getDate() === stemDom && d.getMonth() === stemMonth;
           else if (pattern === 'custom')   matches = Array.isArray(days) && days.includes(dow);
 
           if (!matches) continue;

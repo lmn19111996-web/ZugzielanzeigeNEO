@@ -319,7 +319,7 @@
           if (recFieldStem) {
             const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
             const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
-            const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich' };
+            const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich' };
             recFieldStem.setAttribute('data-value', curPattern);
             recFieldStem.setAttribute('data-input-type', 'recurrence-stem');
             recFieldStem.setAttribute('data-editable', 'true');
@@ -360,7 +360,7 @@
 
               const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
               const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
-              const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich' };
+              const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich' };
 
               // Configure the template recurrence field
               const recField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
@@ -731,7 +731,9 @@
                 { value: 'none',     label: 'Keine Wiederholung' },
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
-                { value: 'weekly',   label: 'W\u00f6chentlich' }
+                { value: 'weekly',   label: 'W\u00f6chentlich' },
+                { value: 'monthly',  label: 'Monatlich' },
+                { value: 'yearly',   label: 'J\u00e4hrlich' }
               ].forEach(({ value, label }) => {
                 const opt = document.createElement('option');
                 opt.value = value;
@@ -755,7 +757,9 @@
               [
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
-                { value: 'weekly',   label: 'W\u00f6chentlich' }
+                { value: 'weekly',   label: 'W\u00f6chentlich' },
+                { value: 'monthly',  label: 'Monatlich' },
+                { value: 'yearly',   label: 'J\u00e4hrlich' }
               ].forEach(({ value, label }) => {
                 const opt = document.createElement('option');
                 opt.value = value;
@@ -1009,7 +1013,7 @@
         // Check if panel is open and has content
         if (panel && panel.classList.contains('is-open') && panel.innerHTML.trim() !== '') {
           // Clicking another train should only replace drawer content, not close/reopen.
-          if (e.target.closest('.train-entry, .belegungsplan-train-block')) {
+          if (e.target.closest('.train-entry, .belegungsplan-train-block, .vorlage-row')) {
             return;
           }
 

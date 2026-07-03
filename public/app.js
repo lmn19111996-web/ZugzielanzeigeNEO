@@ -1178,6 +1178,134 @@ console.log(`App version ${APP_VERSION}`);
       document.addEventListener('click', projectDrawerClickOutHandler, true);
     }
 
+    function renderVorlagenPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+
+      const pageTemplate = document.getElementById('vorlagen-page-template');
+      if (!pageTemplate) return;
+
+      const pageClone = pageTemplate.content.cloneNode(true);
+      const list = pageClone.querySelector('[data-vorlagen="list"]');
+
+      const stems = schedule.fixedSchedule || [];
+      const patternLabels = {
+        weekdays: 'Werktage (Mo–Fr)',
+        daily: 'Täglich',
+        weekly: 'Wöchentlich',
+        monthly: 'Monatlich',
+        yearly: 'Jährlich'
+      };
+
+      const toLocalStr = d =>
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+      function nextOccurrence(stem) {
+        const { pattern = 'weekdays', days = [] } = stem.recurrence || {};
+        const startDate = stem.startDate ? new Date(stem.startDate + 'T00:00:00') : new Date();
+        startDate.setHours(0,0,0,0);
+        const stemDow = startDate.getDay();
+        const stemDom = startDate.getDate();
+        const stemMonth = startDate.getMonth();
+        const today = new Date(); today.setHours(0,0,0,0);
+        const maxDays = pattern === 'yearly' ? 366 : pattern === 'monthly' ? 35 : 14;
+        for (let i = 0; i <= maxDays; i++) {
+          const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+          if (d < startDate) continue;
+          const dow = d.getDay();
+          let matches = false;
+          if      (pattern === 'daily')    matches = true;
+          else if (pattern === 'weekdays') matches = dow >= 1 && dow <= 5;
+          else if (pattern === 'weekly')   matches = dow === stemDow;
+          else if (pattern === 'monthly')  matches = d.getDate() === stemDom;
+          else if (pattern === 'yearly')   matches = d.getDate() === stemDom && d.getMonth() === stemMonth;
+          else if (pattern === 'custom')   matches = Array.isArray(days) && days.includes(dow);
+          const dateStr = toLocalStr(d);
+          if (matches && !(stem.skippedDates || []).includes(dateStr)) return d;
+        }
+        return null;
+      }
+
+      const cardTemplate = document.getElementById('vorlage-card-template');
+
+      if (stems.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'vorlagen-empty';
+        empty.textContent = 'Keine Vorlagen vorhanden.';
+        list.appendChild(empty);
+      } else {
+        stems.forEach(stem => {
+          if (!cardTemplate) return;
+          const card = cardTemplate.content.cloneNode(true);
+          const cardEl = card.querySelector('.vorlage-card');
+          cardEl.dataset.stemId = stem._uniqueId;
+
+          const lineEl = cardEl.querySelector('[data-vorlagen="line"]');
+          lineEl.textContent = stem.linie || '?';
+          lineEl.className = `vorlage-card-line line-badge line-badge--pill line-${(stem.linie || 's1').toLowerCase()}`;
+
+          cardEl.querySelector('[data-vorlagen="ziel"]').textContent = stem.ziel || '(kein Ziel)';
+          cardEl.querySelector('[data-vorlagen="pattern"]').textContent = patternLabels[stem.recurrence?.pattern] || stem.recurrence?.pattern || '';
+          cardEl.querySelector('[data-vorlagen="time"]').textContent = stem.plan ? `ab ${stem.plan}` : '';
+
+          const next = nextOccurrence(stem);
+          const nextEl = cardEl.querySelector('[data-vorlagen="next"]');
+          if (next) {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diff = Math.round((next - today) / 86400000);
+            const label = diff === 0 ? 'Heute' : diff === 1 ? 'Morgen' : next.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+            nextEl.textContent = `Nächste: ${label}`;
+          } else {
+            nextEl.textContent = 'Kein nächster Termin';
+          }
+
+          // Click card body → open in stem editor
+          cardEl.addEventListener('click', e => {
+            if (e.target.closest('[data-vorlagen="delete"]')) return;
+            const syntheticChild = {
+              _uniqueId: stem._uniqueId + '_vorlage_preview',
+              _templateId: stem._uniqueId,
+              linie: stem.linie,
+              ziel: stem.ziel,
+              plan: stem.plan,
+              actual: stem.plan,
+              dauer: stem.dauer,
+              zwischenhalte: Array.isArray(stem.zwischenhalte) ? [...stem.zwischenhalte] : [],
+              projectId: stem.projectId,
+              date: stem.startDate || toLocalStr(new Date()),
+              source: 'local'
+            };
+            if (typeof renderFocusMode === 'function') {
+              renderFocusMode(syntheticChild, 'stem');
+            }
+          });
+
+          // Delete button
+          cardEl.querySelector('[data-vorlagen="delete"]').addEventListener('click', e => {
+            e.stopPropagation();
+            if (!confirm(`Vorlage "${stem.linie} → ${stem.ziel}" und alle zukünftigen Einträge löschen?`)) return;
+            schedule.fixedSchedule = (schedule.fixedSchedule || []).filter(s => s._uniqueId !== stem._uniqueId);
+            schedule.spontaneousEntries = (schedule.spontaneousEntries || []).filter(t => t._templateId !== stem._uniqueId);
+            saveSchedule();
+            renderVorlagenPage();
+          });
+
+          list.appendChild(card);
+        });
+      }
+
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
+
+      // Wire create button
+      const createBtn = trainListEl.querySelector('#create-vorlage-btn');
+      if (createBtn) {
+        createBtn.addEventListener('click', () => {
+          createNewRecurringEntry();
+        });
+      }
+    }
+
     function renderProjectsPage() {
       const trainListEl = document.getElementById('train-list');
       if (!trainListEl) return;
@@ -2705,6 +2833,16 @@ console.log(`App version ${APP_VERSION}`);
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
+        case 'vorlagen':
+          currentWorkspaceMode = 'vorlagen';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
         case 'meals':
           // Placeholder modes - not workspaces, don't change currentWorkspaceMode
           closeAnnouncementsDrawer();
@@ -2813,7 +2951,18 @@ console.log(`App version ${APP_VERSION}`);
             renderComprehensiveAnnouncementPanel();
           }
           break;
-          
+
+        case 'vorlagen':
+          // Recurring trains dashboard
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderVorlagenPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+
         default:
           // Should not happen - defensive fallback
           console.warn('Unknown workspace mode:', currentWorkspaceMode);
@@ -5106,7 +5255,9 @@ console.log(`App version ${APP_VERSION}`);
                 { value: 'none',     label: 'Keine Wiederholung' },
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
-                { value: 'weekly',   label: 'W\u00f6chentlich' }
+                { value: 'weekly',   label: 'W\u00f6chentlich' },
+                { value: 'monthly',  label: 'Monatlich' },
+                { value: 'yearly',   label: 'J\u00e4hrlich' }
               ].forEach(({ value, label }) => {
                 const opt = document.createElement('option');
                 opt.value = value;
@@ -5130,7 +5281,9 @@ console.log(`App version ${APP_VERSION}`);
               [
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
-                { value: 'weekly',   label: 'W\u00f6chentlich' }
+                { value: 'weekly',   label: 'W\u00f6chentlich' },
+                { value: 'monthly',  label: 'Monatlich' },
+                { value: 'yearly',   label: 'J\u00e4hrlich' }
               ].forEach(({ value, label }) => {
                 const opt = document.createElement('option');
                 opt.value = value;
@@ -5895,8 +6048,13 @@ console.log(`App version ${APP_VERSION}`);
         const { pattern = 'weekdays', days = [] } = stem.recurrence || {};
         // For weekly: anchor DOW comes from startDate (local)
         const stemDow = startDateObj.getDay(); // 0=Sun … 6=Sat
+        const stemDom = startDateObj.getDate();           // day-of-month for monthly
+        const stemMonth = startDateObj.getMonth();        // month for yearly
 
-        for (let i = 0; i < WINDOW_DAYS; i++) {
+        // Extend look-ahead window for infrequent patterns
+        const windowDays = (pattern === 'yearly') ? 366 : (pattern === 'monthly') ? 35 : WINDOW_DAYS;
+
+        for (let i = 0; i < windowDays; i++) {
           const d = localMidnight(todayMs, i);         // fresh Date each iteration
           if (d.getTime() < effectiveStartMs) continue;
 
@@ -5905,6 +6063,8 @@ console.log(`App version ${APP_VERSION}`);
           if      (pattern === 'daily')    matches = true;
           else if (pattern === 'weekdays') matches = dow >= 1 && dow <= 5;
           else if (pattern === 'weekly')   matches = dow === stemDow;
+          else if (pattern === 'monthly')  matches = d.getDate() === stemDom;
+          else if (pattern === 'yearly')   matches = d.getDate() === stemDom && d.getMonth() === stemMonth;
           else if (pattern === 'custom')   matches = Array.isArray(days) && days.includes(dow);
 
           if (!matches) continue;

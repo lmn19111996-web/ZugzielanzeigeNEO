@@ -420,7 +420,18 @@
             renderComprehensiveAnnouncementPanel();
           }
           break;
-          
+
+        case 'vorlagen':
+          // Recurring trains dashboard
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderVorlagenPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+
         default:
           // Should not happen - defensive fallback
           console.warn('Unknown workspace mode:', currentWorkspaceMode);

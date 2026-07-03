@@ -439,6 +439,37 @@
   </template>
   <!-- End of projects page template -->
 
+  <!-- Recurring trains (Vorlagen) dashboard template -->
+  <template id="vorlagen-page-template">
+    <div class="vorlagen-page">
+      <div class="vorlagen-header">
+        <h2 class="vorlagen-title">Vorlagen</h2>
+        <button class="vorlagen-create-btn" id="create-vorlage-btn">+ Neue Vorlage</button>
+      </div>
+      <div class="vorlagen-groups" data-vorlagen="groups">
+        <!-- Recurrence-type groups inserted here -->
+      </div>
+    </div>
+  </template>
+
+  <!-- Vorlage row template -->
+  <template id="vorlage-row-template">
+    <div class="vorlage-row" data-stem-id="">
+      <div class="vorlage-col vorlage-col--badge">
+        <img class="vorlage-row-svg" data-vorlagen="svg" src="" alt="">
+        <div class="vorlage-row-fallback line-badge line-badge--pill" data-vorlagen="fallback" style="display:none;"></div>
+      </div>
+      <div class="vorlage-col vorlage-col--ziel" data-vorlagen="ziel"></div>
+      <div class="vorlage-col vorlage-col--plan" data-vorlagen="plan"></div>
+      <div class="vorlage-col vorlage-col--dauer" data-vorlagen="dauer"></div>
+      <div class="vorlage-col vorlage-col--gueltig" data-vorlagen="gueltig"></div>
+      <div class="vorlage-col vorlage-col--projekt" data-vorlagen="projekt"></div>
+      <div class="vorlage-col vorlage-col--delete">
+        <button class="vorlage-row-delete" data-vorlagen="delete" title="Vorlage löschen">✕</button>
+      </div>
+    </div>
+  </template>
+
   <!-- Project card template -->
   <template id="project-card-template">
     <div class="project-card" data-project-id="" data-projects="card">
@@ -623,6 +654,11 @@
               <span class="task-icon-label">Projekte</span>
               <span class="taskbar-tooltip">Projekte</span>
             </button>
+            <button class="task-icon-button" data-mode="vorlagen">
+              <span class="task-icon-star" style="font-size:1.4em;">↻</span>
+              <span class="task-icon-label">Vorlagen</span>
+              <span class="taskbar-tooltip">Wiederkehrende Züge</span>
+            </button>
             <button class="task-icon-button" data-mode="log-viewer">
               <img src="res/list.png" alt="Log Viewer">
               <span class="task-icon-label">Logs</span>
@@ -782,6 +818,7 @@
     </div>
     <div class="mode-drawer-section">
       <button class="mode-drawer-item" data-mode="projects">Projekte</button>
+      <button class="mode-drawer-item" data-mode="vorlagen">Vorlagen</button>
       <button class="mode-drawer-item" data-mode="reviews">Rezensionen</button>
     </div>
   </div>

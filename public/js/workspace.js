@@ -112,6 +112,16 @@
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
+        case 'vorlagen':
+          currentWorkspaceMode = 'vorlagen';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
         default:
           break;
       }

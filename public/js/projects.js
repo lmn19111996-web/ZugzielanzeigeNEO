@@ -1369,5 +1369,158 @@
       renderFocusMode(train);
     }
 
+    // ==================== VORLAGEN (RECURRING TRAINS) DASHBOARD ====================
+
+    function renderVorlagenPage() {
+      const trainListEl = document.getElementById('train-list');
+      if (!trainListEl) return;
+
+      const pageTemplate = document.getElementById('vorlagen-page-template');
+      const rowTemplate = document.getElementById('vorlage-row-template');
+      if (!pageTemplate || !rowTemplate) return;
+
+      const pageClone = pageTemplate.content.cloneNode(true);
+      const groupsEl = pageClone.querySelector('[data-vorlagen="groups"]');
+
+      const stems = schedule.fixedSchedule || [];
+
+      const PATTERN_ORDER = ['weekdays', 'daily', 'weekly', 'monthly', 'yearly', 'custom'];
+      const patternLabels = {
+        weekdays: 'Werktags',
+        daily: 'Täglich',
+        weekly: 'Wöchentlich',
+        monthly: 'Monatlich',
+        yearly: 'Jährlich',
+        custom: 'Benutzerdefiniert'
+      };
+
+      const toLocalStr = d =>
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+      function addMinutes(timeStr, mins) {
+        if (!timeStr || !mins) return '';
+        const [h, m] = timeStr.split(':').map(Number);
+        const total = h * 60 + m + Number(mins);
+        return `${String(Math.floor(total / 60) % 24).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`;
+      }
+
+      function buildRow(stem) {
+        const row = rowTemplate.content.cloneNode(true);
+        const rowEl = row.querySelector('.vorlage-row');
+        rowEl.dataset.stemId = stem._uniqueId;
+
+        // Badge (SVG + fallback)
+        const lineLower = (stem.linie || 's1').toLowerCase();
+        const svg = rowEl.querySelector('[data-vorlagen="svg"]');
+        const fallback = rowEl.querySelector('[data-vorlagen="fallback"]');
+        svg.src = getTrainSVG(lineLower);
+        svg.alt = (stem.linie || '').toUpperCase();
+        fallback.textContent = (stem.linie || '?').toUpperCase();
+        svg.onerror = () => { svg.style.display = 'none'; fallback.style.display = 'flex'; };
+        svg.onload  = () => { svg.style.display = 'block'; fallback.style.display = 'none'; };
+
+        // Ziel
+        rowEl.querySelector('[data-vorlagen="ziel"]').textContent = stem.ziel || '–';
+
+        // Plan: departure → arrival
+        const dep = stem.plan || '';
+        const arr = dep && stem.dauer ? addMinutes(dep, stem.dauer) : '';
+        rowEl.querySelector('[data-vorlagen="plan"]').textContent = dep ? (arr ? `${dep} – ${arr}` : dep) : '–';
+
+        // Dauer
+        rowEl.querySelector('[data-vorlagen="dauer"]').textContent = stem.dauer ? `${stem.dauer} min` : '–';
+
+        // Gültig ab
+        const startStr = stem.startDate
+          ? new Date(stem.startDate + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+          : '–';
+        rowEl.querySelector('[data-vorlagen="gueltig"]').textContent = startStr;
+
+        // Projekt
+        const project = (schedule.projects || []).find(p => p._uniqueId === stem.projectId);
+        rowEl.querySelector('[data-vorlagen="projekt"]').textContent = project?.name || '–';
+
+        // Open stem editor on click
+        rowEl.addEventListener('click', e => {
+          if (e.target.closest('[data-vorlagen="delete"]')) return;
+          renderFocusMode({
+            _uniqueId:   stem._uniqueId + '_vorlage_preview',
+            _templateId: stem._uniqueId,
+            linie: stem.linie, ziel: stem.ziel,
+            plan: stem.plan, actual: stem.plan,
+            dauer: stem.dauer,
+            zwischenhalte: Array.isArray(stem.zwischenhalte) ? [...stem.zwischenhalte] : [],
+            projectId: stem.projectId,
+            date: stem.startDate || toLocalStr(new Date()),
+            source: 'local'
+          }, 'stem');
+        });
+
+        rowEl.querySelector('[data-vorlagen="delete"]').addEventListener('click', e => {
+          e.stopPropagation();
+          if (!confirm(`Vorlage "${stem.linie} → ${stem.ziel}" löschen?`)) return;
+          schedule.fixedSchedule = (schedule.fixedSchedule || []).filter(s => s._uniqueId !== stem._uniqueId);
+          schedule.spontaneousEntries = (schedule.spontaneousEntries || []).filter(t => t._templateId !== stem._uniqueId);
+          saveSchedule();
+          renderVorlagenPage();
+        });
+
+        return rowEl;
+      }
+
+      function buildHeader() {
+        const hdr = document.createElement('div');
+        hdr.className = 'vorlage-row vorlage-row--header';
+        hdr.innerHTML =
+          '<div class="vorlage-col vorlage-col--badge"></div>' +
+          '<div class="vorlage-col vorlage-col--ziel">Ziel</div>' +
+          '<div class="vorlage-col vorlage-col--plan">Abfahrt – Ankunft</div>' +
+          '<div class="vorlage-col vorlage-col--dauer">Dauer</div>' +
+          '<div class="vorlage-col vorlage-col--gueltig">Gültig ab</div>' +
+          '<div class="vorlage-col vorlage-col--projekt">Projekt</div>' +
+          '<div class="vorlage-col vorlage-col--delete"></div>';
+        return hdr;
+      }
+
+      if (stems.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'vorlagen-empty';
+        empty.textContent = 'Keine Vorlagen vorhanden.';
+        groupsEl.appendChild(empty);
+      } else {
+        const groups = new Map();
+        stems.forEach(stem => {
+          const p = stem.recurrence?.pattern || 'weekdays';
+          if (!groups.has(p)) groups.set(p, []);
+          groups.get(p).push(stem);
+        });
+
+        PATTERN_ORDER.forEach(pattern => {
+          if (!groups.has(pattern)) return;
+          const group = document.createElement('div');
+          group.className = 'vorlagen-group';
+
+          const heading = document.createElement('div');
+          heading.className = 'vorlagen-group-heading';
+          heading.textContent = patternLabels[pattern] || pattern;
+          group.appendChild(heading);
+
+          const list = document.createElement('div');
+          list.className = 'vorlagen-group-list';
+          list.appendChild(buildHeader());
+          groups.get(pattern).forEach(stem => list.appendChild(buildRow(stem)));
+          group.appendChild(list);
+
+          groupsEl.appendChild(group);
+        });
+      }
+
+      trainListEl.innerHTML = '';
+      trainListEl.appendChild(pageClone);
+
+      const createBtn = trainListEl.querySelector('#create-vorlage-btn');
+      if (createBtn) createBtn.addEventListener('click', () => createNewRecurringEntry());
+    }
+
     // ==================== END PROJECT MANAGEMENT FUNCTIONS ====================
 
