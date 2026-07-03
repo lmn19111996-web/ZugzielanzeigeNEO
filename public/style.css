@@ -4548,12 +4548,13 @@ html, body {
   flex-direction: column;
 }
 
-/* Shared grid for header and data rows — 7 columns */
+/* Shared grid — tag column hidden by default, shown for weekly */
 .vorlage-row {
   display: grid;
   grid-template-columns:
-    4.5vh          /* badge */
+    5.5vw          /* badge/linie */
     1fr            /* ziel */
+    0              /* tag — hidden unless weekly */
     12vw           /* plan */
     7vw            /* dauer */
     8vw            /* gültig ab */
@@ -4567,6 +4568,24 @@ html, body {
   transition: background 0.12s ease;
   border-radius: 0.3vh;
 }
+
+/* Tag column hidden by default */
+.vorlage-col--tag { display: none; overflow: hidden; }
+
+/* Weekly variant: reveal tag column */
+.vorlage-row--weekly {
+  grid-template-columns:
+    5.5vw          /* badge/linie */
+    1fr            /* ziel */
+    9vw            /* tag */
+    12vw           /* plan */
+    7vw            /* dauer */
+    8vw            /* gültig ab */
+    10vw           /* projekt */
+    3vw;           /* delete */
+}
+
+.vorlage-row--weekly .vorlage-col--tag { display: block; }
 
 .vorlage-row:hover { background: rgba(255, 255, 255, 0.06); }
 
@@ -4595,6 +4614,17 @@ html, body {
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* Sortable header cells */
+.vorlage-col--sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s ease;
+}
+
+.vorlage-col--sortable:hover { color: rgba(255, 255, 255, 0.75); }
+
+.vorlage-col--sorted { color: rgba(255, 255, 255, 0.85); }
+
 /* Badge column */
 .vorlage-col--badge {
   display: flex;
@@ -4610,7 +4640,7 @@ html, body {
 }
 
 .vorlage-row-fallback {
-  font-size: 1.4vh;
+  font-size: 1.4vh; 
 }
 
 /* Data columns */
@@ -4620,6 +4650,7 @@ html, body {
 }
 
 .vorlage-col--plan,
+.vorlage-col--tag,
 .vorlage-col--dauer,
 .vorlage-col--gueltig,
 .vorlage-col--projekt {

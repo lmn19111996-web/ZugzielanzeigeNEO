@@ -1371,6 +1371,9 @@
 
     // ==================== VORLAGEN (RECURRING TRAINS) DASHBOARD ====================
 
+    // Per-group sort state: { key, asc }
+    const _vorlagenSortState = {};
+
     function renderVorlagenPage() {
       const trainListEl = document.getElementById('train-list');
       if (!trainListEl) return;
@@ -1393,6 +1396,7 @@
         yearly: 'Jährlich',
         custom: 'Benutzerdefiniert'
       };
+      const WEEKDAYS_DE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
       const toLocalStr = d =>
         `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1404,12 +1408,43 @@
         return `${String(Math.floor(total / 60) % 24).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`;
       }
 
-      function buildRow(stem) {
+      // Sort key extractors — return comparable string/number
+      function sortValue(stem, key) {
+        switch (key) {
+          case 'ziel':    return (stem.ziel || '').toLowerCase();
+          case 'plan':    return stem.plan || '';
+          case 'dauer':   return Number(stem.dauer) || 0;
+          case 'gueltig': return stem.startDate || '';
+          case 'projekt': {
+            const p = (schedule.projects || []).find(p => p._uniqueId === stem.projectId);
+            return (p?.name || '').toLowerCase();
+          }
+          case 'tag': {
+            const d = stem.startDate ? new Date(stem.startDate + 'T00:00:00') : new Date();
+            return d.getDay(); // 0=Sun…6=Sat
+          }
+          case 'linie': return (stem.linie || '').toLowerCase();
+          default: return '';
+        }
+      }
+
+      function sortStems(list, pattern) {
+        const state = _vorlagenSortState[pattern];
+        if (!state) return list;
+        return [...list].sort((a, b) => {
+          const va = sortValue(a, state.key);
+          const vb = sortValue(b, state.key);
+          const cmp = typeof va === 'number' ? va - vb : va.localeCompare(vb);
+          return state.asc ? cmp : -cmp;
+        });
+      }
+
+      function buildRow(stem, pattern) {
         const row = rowTemplate.content.cloneNode(true);
         const rowEl = row.querySelector('.vorlage-row');
+        if (pattern === 'weekly') rowEl.classList.add('vorlage-row--weekly');
         rowEl.dataset.stemId = stem._uniqueId;
 
-        // Badge (SVG + fallback)
         const lineLower = (stem.linie || 's1').toLowerCase();
         const svg = rowEl.querySelector('[data-vorlagen="svg"]');
         const fallback = rowEl.querySelector('[data-vorlagen="fallback"]');
@@ -1419,28 +1454,31 @@
         svg.onerror = () => { svg.style.display = 'none'; fallback.style.display = 'flex'; };
         svg.onload  = () => { svg.style.display = 'block'; fallback.style.display = 'none'; };
 
-        // Ziel
         rowEl.querySelector('[data-vorlagen="ziel"]').textContent = stem.ziel || '–';
 
-        // Plan: departure → arrival
         const dep = stem.plan || '';
         const arr = dep && stem.dauer ? addMinutes(dep, stem.dauer) : '';
         rowEl.querySelector('[data-vorlagen="plan"]').textContent = dep ? (arr ? `${dep} – ${arr}` : dep) : '–';
 
-        // Dauer
         rowEl.querySelector('[data-vorlagen="dauer"]').textContent = stem.dauer ? `${stem.dauer} min` : '–';
 
-        // Gültig ab
         const startStr = stem.startDate
           ? new Date(stem.startDate + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
           : '–';
         rowEl.querySelector('[data-vorlagen="gueltig"]').textContent = startStr;
 
-        // Projekt
         const project = (schedule.projects || []).find(p => p._uniqueId === stem.projectId);
         rowEl.querySelector('[data-vorlagen="projekt"]').textContent = project?.name || '–';
 
-        // Open stem editor on click
+        // Weekly-only: weekday column
+        if (pattern === 'weekly') {
+          const tagEl = rowEl.querySelector('[data-vorlagen="tag"]');
+          if (tagEl) {
+            const d = stem.startDate ? new Date(stem.startDate + 'T00:00:00') : new Date();
+            tagEl.textContent = WEEKDAYS_DE[d.getDay()];
+          }
+        }
+
         rowEl.addEventListener('click', e => {
           if (e.target.closest('[data-vorlagen="delete"]')) return;
           renderFocusMode({
@@ -1468,17 +1506,54 @@
         return rowEl;
       }
 
-      function buildHeader() {
+      function buildHeader(pattern, listEl, groupStems) {
+        const state = _vorlagenSortState[pattern] || {};
+        const arrow = asc => asc ? ' ↑' : ' ↓';
+
+        const cols = [
+          { key: 'linie',   cls: 'vorlage-col--badge',   label: 'Linie' },
+          { key: 'ziel',    cls: 'vorlage-col--ziel',    label: 'Ziel' },
+          { key: 'plan',    cls: 'vorlage-col--plan',    label: 'Abfahrt – Ankunft' },
+          { key: 'dauer',   cls: 'vorlage-col--dauer',   label: 'Dauer' },
+          { key: 'gueltig', cls: 'vorlage-col--gueltig', label: 'Gültig ab' },
+          { key: 'projekt', cls: 'vorlage-col--projekt', label: 'Projekt' },
+          { key: null,      cls: 'vorlage-col--delete',  label: '' },
+        ];
+
+        // Insert Tag column for weekly after Ziel
+        if (pattern === 'weekly') {
+          cols.splice(2, 0, { key: 'tag', cls: 'vorlage-col--tag', label: 'Tag' });
+        }
+
         const hdr = document.createElement('div');
         hdr.className = 'vorlage-row vorlage-row--header';
-        hdr.innerHTML =
-          '<div class="vorlage-col vorlage-col--badge"></div>' +
-          '<div class="vorlage-col vorlage-col--ziel">Ziel</div>' +
-          '<div class="vorlage-col vorlage-col--plan">Abfahrt – Ankunft</div>' +
-          '<div class="vorlage-col vorlage-col--dauer">Dauer</div>' +
-          '<div class="vorlage-col vorlage-col--gueltig">Gültig ab</div>' +
-          '<div class="vorlage-col vorlage-col--projekt">Projekt</div>' +
-          '<div class="vorlage-col vorlage-col--delete"></div>';
+        if (pattern === 'weekly') hdr.classList.add('vorlage-row--weekly');
+
+        cols.forEach(({ key, cls, label }) => {
+          const cell = document.createElement('div');
+          cell.className = `vorlage-col ${cls}`;
+          if (key) {
+            const isActive = state.key === key;
+            cell.textContent = label + (isActive ? arrow(state.asc) : '');
+            cell.classList.add('vorlage-col--sortable');
+            if (isActive) cell.classList.add('vorlage-col--sorted');
+            cell.addEventListener('click', () => {
+              if (state.key === key) {
+                _vorlagenSortState[pattern] = { key, asc: !state.asc };
+              } else {
+                _vorlagenSortState[pattern] = { key, asc: true };
+              }
+              // Re-render just this group's list
+              listEl.innerHTML = '';
+              listEl.appendChild(buildHeader(pattern, listEl, groupStems));
+              sortStems(groupStems, pattern).forEach(s => listEl.appendChild(buildRow(s, pattern)));
+            });
+          } else {
+            cell.textContent = label;
+          }
+          hdr.appendChild(cell);
+        });
+
         return hdr;
       }
 
@@ -1507,8 +1582,9 @@
 
           const list = document.createElement('div');
           list.className = 'vorlagen-group-list';
-          list.appendChild(buildHeader());
-          groups.get(pattern).forEach(stem => list.appendChild(buildRow(stem)));
+          const groupStems = groups.get(pattern);
+          list.appendChild(buildHeader(pattern, list, groupStems));
+          sortStems(groupStems, pattern).forEach(s => list.appendChild(buildRow(s, pattern)));
           group.appendChild(list);
 
           groupsEl.appendChild(group);
