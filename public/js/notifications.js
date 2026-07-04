@@ -88,13 +88,19 @@
           return;
         }
 
+        // Always renew rather than reusing getSubscription(): if the server
+        // purged this endpoint after a 410/404 delivery failure, the browser
+        // still happily returns the same dead subscription object here, so
+        // reusing it would silently re-register something that can never
+        // deliver again.
         let sub = await reg.pushManager.getSubscription();
-        if (!sub) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: _urlBase64ToUint8Array(publicKey)
-          });
+        if (sub) {
+          await sub.unsubscribe();
         }
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: _urlBase64ToUint8Array(publicKey)
+        });
 
         const regRes = await fetch('/api/push/subscribe', {
           method: 'POST',
@@ -125,6 +131,10 @@
     //   chg-{id}-{key}   ? immediate, when train is already in window and status changed
     //   dep-{id}         ? at exact departure time ("Ihre Reise geht jetzt los")
     //   end-{id}         ? at occupation end (dauer / checkoutTime)
+    //   conn-arr-{id}    ? at previous train's arrival, when the connection gap is 0-120 min
+    //   conn-win-{id}    ? 20 min before this departure, same 0-120 min connection
+    //   win-{id}/dep-{id} are overridden (title+body replaced) instead of duplicated
+    //   when the connection gap is negative (next departure inside previous train's occupation)
     function buildPushEvents(days = 14) {
       if (!processedTrainData || !Array.isArray(processedTrainData.localTrains)) return [];
       const now = new Date();
@@ -132,6 +142,54 @@
       const windowEnd = new Date(now.getTime() + 20 * 60000);
       const cutoff = new Date(now.getTime() + days * 86400000);
       const events = [];
+
+      // Occupancy end matching the same-day connection chain (checkoutTime, else dauer).
+      function _occEndForConnection(train) {
+        if (!train || train.canceled) return null;
+        if (train.checkoutTime) return parseTime(train.checkoutTime, now, train.date);
+        const start = parseTime(train.actual || train.plan, now, train.date);
+        const dur = Number(train.dauer);
+        if (!start || !dur || isNaN(dur) || dur <= 0) return null;
+        return new Date(start.getTime() + dur * 60000);
+      }
+
+      // For every train, find the immediately preceding same-day train (by start
+      // time) and record the connection gap. Keyed by the LATER train's id since
+      // that's the one whose own win-/dep- events may need to be overridden.
+      // gapMinutes >= 0 && <= 120  -> "Zeit für Ihren Umstieg" (additive)
+      // gapMinutes < 0             -> "Verbindung nicht mehr fahrbar" (replaces win-/dep-)
+      const _connectionByNextId = new Map();
+      {
+        const byDate = new Map();
+        processedTrainData.localTrains.forEach(t => {
+          if (!t || !t.date || t.canceled) return;
+          const start = parseTime(t.actual || t.plan, now, t.date);
+          if (!start) return;
+          if (!byDate.has(t.date)) byDate.set(t.date, []);
+          byDate.get(t.date).push({ t, start });
+        });
+        byDate.forEach(list => {
+          list.sort((a, b) => a.start - b.start);
+          for (let i = 1; i < list.length; i++) {
+            const prevTrain = list[i - 1].t;
+            const nextTrain = list[i].t;
+            const prevOccEnd = _occEndForConnection(prevTrain);
+            if (!prevOccEnd) continue;
+            const nextStart = list[i].start;
+            const gapMinutes = (nextStart - prevOccEnd) / 60000;
+            if (gapMinutes > 120) continue; // not a connection at all
+            const nextId = nextTrain._uniqueId || getTrainNotifyId(nextTrain);
+            _connectionByNextId.set(nextId, { prevTrain, nextTrain, prevOccEnd, nextStart, gapMinutes });
+          }
+        });
+      }
+
+      // "Abfahrt pünktlich um 10:25" / "Abfahrt heute 5 Minuten später um 10:25"
+      function _abfahrtPhrase(delayMin, clock) {
+        if (delayMin > 0) return `Abfahrt heute ${delayMin} Minuten später um ${clock}`;
+        if (delayMin < 0) return `Abfahrt heute ${-delayMin} Minuten früher um ${clock}`;
+        return `Abfahrt pünktlich um ${clock}`;
+      }
 
       processedTrainData.localTrains.forEach(train => {
         if (!train.plan && !train.actual) return;
@@ -146,6 +204,9 @@
         const title = `${lineLabel} nach ${dest}`.trim();
         const appUrl = window.location.origin + '/';
         const trainId = train._uniqueId || getTrainNotifyId(train);
+        const connInfo = _connectionByNextId.get(trainId);
+        const brokenConnection = !!connInfo && connInfo.gapMinutes < 0;
+        const goodConnection = !!connInfo && connInfo.gapMinutes >= 0;
 
         // Compute a status key matching Path A so IDs are deterministic per status.
         const statusKey = train.canceled ? 'canceled'
@@ -210,8 +271,11 @@
         // -- Window-entry notification: 20 min before trainTime ----------
         const windowNotifyAt = new Date(trainTime.getTime() - 20 * 60000);
         if (windowNotifyAt > now) {
-          let windowBody;
-          if (train.canceled) {
+          let windowBody, windowTitle = title;
+          if (brokenConnection) {
+            windowTitle = 'Verbindung nicht mehr fahrbar';
+            windowBody = `${lineLabel} nach ${dest}, ${_abfahrtPhrase(delay, formatClock(trainTime))}. Dieser Anschluss wartet nicht. Bitte suchen Sie eine Alternative.`;
+          } else if (train.canceled) {
             windowBody = `Abfahrt ursprünglich ${planClock}${_cancelVon}. Fällt heute aus.${_cancelGrund} Wir bitten um Entschuldigung.`;
           } else if (delay > 0) {
             windowBody = `Abfahrt ursprünglich ${planClock}${zhSuffix}, heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
@@ -223,7 +287,7 @@
           events.push({
             id: `win-${trainId}`,
             notifyAt: windowNotifyAt.toISOString(),
-            title,
+            title: windowTitle,
             options: {
               body: windowBody,
               icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
@@ -235,8 +299,11 @@
 
         // -- Departure notification: at trainTime -------------------------
         if (trainTime > now && !train.canceled) {
-          let depBody;
-          if (delay > 0) {
+          let depBody, depTitle = title;
+          if (brokenConnection) {
+            depTitle = 'Verbindung nicht mehr fahrbar';
+            depBody = `${lineLabel} nach ${dest}, ${_abfahrtPhrase(delay, formatClock(trainTime))}. Dieser Anschluss wartet nicht. Bitte suchen Sie eine Alternative.`;
+          } else if (delay > 0) {
             depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${delay} Minuten später um ${formatClock(trainTime)}.`;
           } else if (delay < 0) {
             depBody = `Ihre Reise geht jetzt los. Abfahrt heute ${-delay} Minuten früher um ${formatClock(trainTime)}.`;
@@ -246,7 +313,7 @@
           events.push({
             id: `dep-${trainId}`,
             notifyAt: trainTime.toISOString(),
-            title,
+            title: depTitle,
             options: {
               body: depBody,
               icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
@@ -254,6 +321,35 @@
               data: { url: appUrl }
             }
           });
+        }
+
+        // -- Connection ("Umstieg") notifications: fires at the previous
+        // train's arrival, and again 20 min before this departure ----------
+        if (goodConnection) {
+          const connZh = zhSuffix; // this train's own zwischenhalte, same formatting as elsewhere
+          const connBody = `${connInfo.prevTrain.linie || ''} nach ${connInfo.prevTrain.ziel || ''}: Ankunft ${formatClock(connInfo.prevOccEnd)}. Weiter mit ${lineLabel} nach ${dest}, ${_abfahrtPhrase(delay, formatClock(trainTime))}${connZh}. Umsteigezeit: ${Math.round(connInfo.gapMinutes)} Minuten.`;
+          const connOptions = {
+            body: connBody,
+            icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+            vibrate: [200, 100, 200],
+            data: { url: appUrl }
+          };
+          if (connInfo.prevOccEnd > now && connInfo.prevOccEnd <= cutoff) {
+            events.push({
+              id: `conn-arr-${trainId}`,
+              notifyAt: connInfo.prevOccEnd.toISOString(),
+              title: 'Zeit für Ihren Umstieg',
+              options: connOptions
+            });
+          }
+          if (windowNotifyAt > now) {
+            events.push({
+              id: `conn-win-${trainId}`,
+              notifyAt: windowNotifyAt.toISOString(),
+              title: 'Zeit für Ihren Umstieg',
+              options: connOptions
+            });
+          }
         }
 
         // -- Occupation-end notification -----------------------------------
