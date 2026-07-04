@@ -713,6 +713,15 @@
         }
         // Store alert level on train object for badge use
         t._alertLvl = alertLvl;
+        // Also cache keyed by the STABLE _uniqueId (persisted server-side), since
+        // schedule.trains gets replaced with freshly-parsed objects on almost every
+        // reload/SSE update (see schedule.js assignId) — that would wipe t._alertLvl
+        // moments after it's set. The smart-advisory Auslastung rule (delay-reason.js)
+        // reads this cache so the suggestion survives those reloads.
+        if (t._uniqueId) {
+          window._auslastungTierCache = window._auslastungTierCache || {};
+          window._auslastungTierCache[t._uniqueId] = alertLvl;
+        }
       });
 
       // Energy curve
