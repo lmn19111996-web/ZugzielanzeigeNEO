@@ -5,7 +5,8 @@
   const SHORTCUTS = [
     { keys: 'Ctrl + A', label: 'Lovemeter' },
     { keys: 'Ctrl + S', label: 'Speichern' },
-    { keys: 'Ctrl + F', label: 'Station auswählen' },
+    { keys: 'Ctrl + D', label: 'Station auswählen' },
+    { keys: 'Ctrl + F', label: 'Suche' },
     { keys: 'Ctrl + G', label: 'Neuer Eintrag' },
     { keys: 'Ctrl + H', label: 'Neuer Dauereintrag' },
     { keys: 'Ctrl + L', label: 'Dashboard' },

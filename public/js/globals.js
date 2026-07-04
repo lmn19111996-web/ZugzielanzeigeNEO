@@ -152,6 +152,17 @@
           return ta - tb;
         });
 
+      // Smart advisory: recompute delay-reason auto-suggestions every cycle so they
+      // never go stale (schedule edits, overlaps, and Stressmeter tiers can all change
+      // between cycles). _hasDelay/_delayReasonAuto are transient (never persisted —
+      // stripped in editor.js before save).
+      processedTrainData.scheduledTrains.forEach(t => {
+        t._hasDelay = !!(t.actual && t.actual !== t.plan);
+        t._delayReasonAuto = (typeof computeSuggestedDelayReasons === 'function')
+          ? computeSuggestedDelayReasons(t, processedTrainData.scheduledTrains, now)
+          : [];
+      });
+
       // Get today's date for date-based visibility filtering
       const todayDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 

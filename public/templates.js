@@ -43,6 +43,13 @@ const Templates = {
       }
     }
 
+    // Combine the inline Zwischenhalt notice with the manual delayReason and any
+    // auto-suggested reasons (smart advisory) — everything applicable is shown
+    // together, joined by " +++ ", nothing here silently overrides another.
+    const noticeText = [cancelReason, train.delayReason, ...(train._delayReasonAuto || [])]
+      .filter(Boolean)
+      .join(' +++ ');
+
     // Determine destination HTML
     const expandedZiel = expandDestinationPrefix(train.ziel || '');
     let destinationHTML;
@@ -198,8 +205,8 @@ const Templates = {
           <div class="symbol-slot">
             ${trainSymbolHTML}
           </div>
-          ${cancelReason
-            ? `<div class="zugziel-wrapper"><div class="cancel-notice-tag">${cancelReason}</div><div class="zugziel">${destinationHTML}</div></div>`
+          ${noticeText
+            ? `<div class="zugziel-wrapper"><div class="cancel-notice-tag"><span class="cancel-notice-text" data-notice="${escapeHTML(noticeText)}">${escapeHTML(noticeText)}</span></div><div class="zugziel">${destinationHTML}</div></div>`
             : `<div class="zugziel">${destinationHTML}</div>`}
         </div>
         <div class="carriage-slot">

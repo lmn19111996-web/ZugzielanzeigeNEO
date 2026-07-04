@@ -1,4 +1,35 @@
 ﻿// === TRAIN LIST & BELEGUNGSPLAN RENDERING ===
+
+    // Marquee for long/combined notice tags (cancel + delayReason + auto-suggestions).
+    // Unlike dashboard.js's applyViaScrolling (which scrolls to the end, pauses, then
+    // resets), this scrolls infinitely: the text is duplicated back-to-back and the
+    // loop point lands exactly where the duplicate lines up with the original, so it
+    // never visibly "resets" — see startInfiniteMarquee (utils.js).
+    function applyCancelNoticeScrolling(root) {
+      (root || document).querySelectorAll('.cancel-notice-text').forEach(span => {
+        if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
+
+        const container = span.parentElement;
+        if (!container) return;
+        const originalText = span.dataset.notice || '';
+        if (!originalText) return;
+
+        span.style.transition = 'none';
+        span.style.transform = '';
+        span.textContent = originalText;
+
+        const scrollDist = span.scrollWidth - container.clientWidth;
+        if (scrollDist <= 0) return;
+
+        const segment = `${originalText}   +++   `;
+        span.textContent = segment;
+        const segmentWidth = span.scrollWidth;
+        span.textContent = segment + segment;
+
+        startInfiniteMarquee(span, segmentWidth);
+      });
+    }
+
     function renderHeadlineTrain() {
       const now = new Date();
       const firstTrainContainer = document.getElementById('first-train-container');
@@ -29,7 +60,8 @@
           const firstEntry = createTrainEntry(currentTrain, now, true);
           firstTrainContainer.innerHTML = '';
           firstTrainContainer.appendChild(firstEntry);
-          
+          requestAnimationFrame(() => applyCancelNoticeScrolling(firstTrainContainer));
+
           // Apply line color to top ribbon bottom border and update accent color
           if (topRibbon) {
             const lineColor = getLineColor(currentTrain.linie || 'S1');
@@ -756,6 +788,8 @@
         listRoot.removeEventListener('click', listRoot._jumpHandler);
         listRoot._jumpHandler = null;
       }
+
+      requestAnimationFrame(() => applyCancelNoticeScrolling(listRoot));
 
       // Wait for DOM to fully render, then restore scroll and show
       if (preserveScroll) {

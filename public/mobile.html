@@ -192,6 +192,7 @@
   <!-- Focus mode template -->
   <template id="focus-template">
     <div class="editor-container">
+    <div class="editor-fields-scroll">
       <div class="editor-field" data-field="linie" data-input-type="text" data-editable="true">
         <div class="editor-field-label">Linie</div>
         <div class="editor-field-value" data-focus="line"></div>
@@ -227,7 +228,12 @@
         <div class="editor-field-label">Tatsächliche Abfahrt - Ankunft</div>
         <div class="editor-field-value" data-focus="arrival-actual"></div>
       </div>
-      
+
+      <div class="editor-field" data-field="delayReason" data-input-type="delay-reason" data-editable="true" style="display:none;">
+        <div class="editor-field-label">Verspätungsgrund</div>
+        <div class="editor-field-value" data-focus="delay-reason"></div>
+      </div>
+
       <div class="editor-delay-buttons">
         <button class="editor-btn-delay" data-delay-action="minus5" tabindex="-1">-5</button>
         <button class="editor-btn-delay" data-delay-action="plus5" tabindex="-1">+5</button>
@@ -252,7 +258,8 @@
         </div>
         <div class="editor-field-value" data-focus="project"></div>
       </div>
-      
+    </div>
+
       <div class="editor-actions" data-focus="actions">
         <button class="editor-btn editor-btn-save" tabindex="-1">Speichern</button>
         <button class="editor-btn editor-btn-cancel" data-focus-action="cancel" tabindex="-1">Durchstreichen</button>
@@ -921,6 +928,7 @@
 <!-- JS modules — load order is critical (globals first, init last) -->
 <script src="js/globals.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/delay-reason.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/schedule.js"></script>
 <script src="js/announcements.js"></script>
@@ -1131,6 +1139,14 @@
       if (e.key === 'Escape') closeSearch();
     });
   }
+
+  // Ctrl+F to open search
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey && (e.key === 'f' || e.key === 'F')) {
+      e.preventDefault();
+      openSearch();
+    }
+  });
 }());
 </script>
 </body>

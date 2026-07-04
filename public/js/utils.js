@@ -157,6 +157,81 @@
       return div.innerHTML;
     }
 
+    // Shared JS-driven marquee (no CSS @keyframes): scrolls `span` left by
+    // `scrollDist` px, pausing at each end, looping until cancelled via
+    // span._marqueeCancel(). Originally lived in dashboard.js (via-stops ticker);
+    // extracted here so other tickers (e.g. cancel-notice-tag) can reuse it.
+    function startMarquee(span, scrollDist) {
+      const SPEED = 40; // px per second (slow scroll)
+      const PAUSE = 3000; // ms pause at start and end
+      const scrollDuration = Math.round((scrollDist / SPEED) * 1000);
+      let cancelled = false;
+      let timers = [];
+
+      span._marqueeCancel = function() {
+        cancelled = true;
+        timers.forEach(clearTimeout);
+        span.style.transition = 'none';
+        span.style.transform = '';
+      };
+
+      function cycle() {
+        if (cancelled || !span.isConnected) return;
+        span.style.transition = 'none';
+        span.style.transform = 'translateX(0)';
+        timers.push(setTimeout(() => {
+          if (cancelled || !span.isConnected) return;
+          span.style.transition = `transform ${scrollDuration}ms linear`;
+          span.style.transform = `translateX(-${scrollDist}px)`;
+          timers.push(setTimeout(() => {
+            if (cancelled || !span.isConnected) return;
+            timers.push(setTimeout(cycle, PAUSE));
+          }, scrollDuration));
+        }, PAUSE));
+      }
+
+      cycle();
+    }
+
+    // Seamless infinite ticker: `span` must already contain a repeating segment
+    // duplicated back-to-back (segment + segment), and `segmentWidth` is the pixel
+    // width of one segment. Scrolls continuously left by exactly `segmentWidth`
+    // then snaps back to translateX(0) with no visible seam, since the second
+    // copy is identical to the first and now sits exactly where it started —
+    // unlike startMarquee, there is no pause/reverse, it just keeps going.
+    function startInfiniteMarquee(span, segmentWidth) {
+      const SPEED = 40; // px per second, consistent with startMarquee
+      const duration = Math.round((segmentWidth / SPEED) * 1000);
+      let cancelled = false;
+
+      function onTransitionEnd(e) {
+        if (e.propertyName !== 'transform') return;
+        if (cancelled || !span.isConnected) return;
+        step();
+      }
+
+      span._marqueeCancel = function() {
+        cancelled = true;
+        span.removeEventListener('transitionend', onTransitionEnd);
+        span.style.transition = 'none';
+        span.style.transform = '';
+      };
+
+      function step() {
+        if (cancelled || !span.isConnected) return;
+        span.style.transition = 'none';
+        span.style.transform = 'translateX(0)';
+        // Force reflow so the browser registers the reset before the next
+        // transition starts (otherwise it can be coalesced away).
+        void span.offsetWidth;
+        span.style.transition = `transform ${duration}ms linear`;
+        span.style.transform = `translateX(-${segmentWidth}px)`;
+      }
+
+      span.addEventListener('transitionend', onTransitionEnd);
+      step();
+    }
+
     function isDurationOnlyTrain(train) {
       return !!train && train.type === 'duration-only';
     }

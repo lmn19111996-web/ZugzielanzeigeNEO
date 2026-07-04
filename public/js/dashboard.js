@@ -141,40 +141,8 @@
     });
   }
 
-  function startMarquee(span, scrollDist) {
-    const SPEED = 40; // px per second (slow scroll)
-    const PAUSE = 3000; // ms pause at start and end
-    const scrollDuration = Math.round((scrollDist / SPEED) * 1000);
-    let cancelled = false;
-    let timers = [];
-
-    span._marqueeCancel = function() {
-      cancelled = true;
-      timers.forEach(clearTimeout);
-      span.style.transition = 'none';
-      span.style.transform = '';
-    };
-
-    function cycle() {
-      if (cancelled || !span.isConnected) return;
-      // Step 1: jump to start (no transition), pause 1s
-      span.style.transition = 'none';
-      span.style.transform = 'translateX(0)';
-      timers.push(setTimeout(() => {
-        if (cancelled || !span.isConnected) return;
-        // Step 2: scroll to end
-        span.style.transition = `transform ${scrollDuration}ms linear`;
-        span.style.transform = `translateX(-${scrollDist}px)`;
-        timers.push(setTimeout(() => {
-          if (cancelled || !span.isConnected) return;
-          // Step 3: pause at end 1s, then restart
-          timers.push(setTimeout(cycle, PAUSE));
-        }, scrollDuration));
-      }, PAUSE));
-    }
-
-    cycle();
-  }
+  // startMarquee extracted to utils.js (window.startMarquee) so other tickers
+  // (e.g. the cancel-notice-tag in render-trains.js) can reuse it.
 
   function fetchAndRender(eva) {
     renderDashboard([]);

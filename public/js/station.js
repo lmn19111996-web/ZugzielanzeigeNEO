@@ -393,8 +393,8 @@
         renderComprehensiveAnnouncementPanel();
       }
       
-      // Ctrl+F to open station selection
-      if (e.ctrlKey && (e.key === 'F' || e.key === 'f')) {
+      // Ctrl+D to open station selection
+      if (e.ctrlKey && (e.key === 'D' || e.key === 'd')) {
         e.preventDefault();
         showStationOverlay();
       }

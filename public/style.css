@@ -907,7 +907,9 @@ html, body {
       margin-top: 2.5vh;
       background: var(--color-bg-panel);
       box-sizing: border-box;
-      overflow-y: auto;
+      /* Scrolling now happens inside .editor-fields-scroll only, so the action
+         buttons (a fixed sibling of that scroll area) never scroll away. */
+      overflow-y: hidden;
       overflow-x: hidden;
       transition: right 0.1s ease, box-shadow 0.1s ease, visibility 0.2s ease;
       z-index: 1050;
@@ -1110,11 +1112,18 @@ html, body {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 60%;
+      width: 60%;
       border-bottom: 1.5px solid rgba(255, 255, 255, 1);
       border-right: 1.5px solid rgba(255, 255, 255, 1);
       margin-left: 1.2vw;
       margin-bottom: 0.2vh;
+    }
+
+    /* Inner span scrolled by the shared JS marquee (utils.js startMarquee) when the
+       combined notice text overflows its container, instead of ellipsis-truncating. */
+    .cancel-notice-tag .cancel-notice-text {
+      display: inline-block;
+      white-space: nowrap;
     }
 
     /* Cancelled train destination toggle */
@@ -2945,20 +2954,38 @@ html, body {
       opacity: 0.8;
     }
 
+    /* Native <option> elements ignore most inline styles on the parent <select>
+       (and color-scheme isn't honored by every browser's popup renderer either) —
+       this is the pattern already proven to work elsewhere in the app
+       (.project-sort-selector option), applied to all editor dropdowns. */
+    .editor-select-dark option {
+      background: var(--color-bg-panel);
+      color: white;
+    }
+
     /* Editor drawer content styles - universal for both desktop and mobile */
     .editor-container {
       height: 100%;
       width: 100%;
       display: flex;
       flex-direction: column;
-      padding: 2vh 0;
+      padding: 2vh 0 0;
       box-sizing: border-box;
+    }
+
+    /* Scrollable field list: fills the remaining space above the pinned action
+       buttons. With the default field set this space is never fully used, so no
+       scrollbar appears; when a conditional field (e.g. delayReason) adds height
+       beyond that space, this area scrolls internally — the buttons never move. */
+    .editor-fields-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
 
-    .editor-container::-webkit-scrollbar {
+    .editor-fields-scroll::-webkit-scrollbar {
       display: none;
     }
 
@@ -3074,25 +3101,20 @@ html, body {
       min-height: 2.5vh;
     }
 
+    /* Auto-height (grows with content) instead of stretch-filling the drawer,
+       clamped to a minimum so short stop lists still get a comfortable target
+       area. Overall scrolling is handled by the outer .editor-fields-scroll. */
     .editor-field-multiline {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      min-height: 8vh;
     }
 
     .editor-field-multiline .editor-field-value {
       white-space: pre-wrap;
       word-wrap: break-word;
       line-height: 1.5;
-      flex: 1;
-      overflow-y: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    .editor-field-multiline .editor-field-value::-webkit-scrollbar {
-      display: none;
+      min-height: 8vh;
     }
 
     /* Hide scrollbar in textarea when in edit mode */
@@ -3112,7 +3134,7 @@ html, body {
     }
 
     .editor-actions {
-      margin-top: auto;
+      flex: 0 0 auto;
       padding: 2vh 2vw;
       display: flex;
       gap: 1vh;

@@ -170,7 +170,37 @@
         if (isEditable) {
           arrivalActualValue.parentElement.setAttribute('data-editable', 'true');
         }
-        
+
+        // Populate Verspätungsgrund (delayReason) — only shown when actual departure
+        // differs from scheduled (hasDelay). Manual selection always wins; if none is
+        // set, show any auto-suggestion(s) as a non-persisted "(Vorschlag)" hint.
+        const delayReasonValue = clone.querySelector('[data-focus="delay-reason"]');
+        if (delayReasonValue) {
+          const delayReasonField = delayReasonValue.parentElement;
+          delayReasonField.style.display = hasDelay ? '' : 'none';
+          const autoReasons = Array.isArray(train._delayReasonAuto) ? train._delayReasonAuto : [];
+          if (train.delayReason) {
+            delayReasonValue.textContent = train.delayReason;
+            delayReasonField.style.opacity = '';
+          } else if (autoReasons.length) {
+            // Space is tight in the drawer — show a compact "Auto" hint rather than
+            // the full (potentially multi-reason) suggestion text; the full text is
+            // still what actually renders on the notice tag in the train list.
+            delayReasonValue.textContent = 'Auto';
+            delayReasonValue.title = autoReasons.join(' +++ ');
+            delayReasonField.style.opacity = '0.6';
+          } else {
+            delayReasonValue.textContent = 'Kein Grund gewählt';
+            delayReasonField.style.opacity = '0.6';
+          }
+          // data-value stays the MANUAL value only — auto-suggestions must never be
+          // persisted as if chosen (saveAllFields' change-detection compares against this).
+          delayReasonField.setAttribute('data-value', train.delayReason || '');
+          if (isEditable && hasDelay) {
+            delayReasonField.setAttribute('data-editable', 'true');
+          }
+        }
+
         // Populate Duration
         const durationValue = clone.querySelector('[data-focus="duration"]');
         durationValue.textContent = train.dauer ? `${train.dauer} Min` : 'Keine Dauer';
@@ -305,7 +335,7 @@
           const dateLabel = panel.querySelector('.editor-field[data-field="date"] .editor-field-label');
           if (dateLabel) dateLabel.textContent = 'Gültig ab';
 
-          ['actual'].forEach(f => {
+          ['actual', 'delayReason'].forEach(f => {
             const el = panel.querySelector(`.editor-field[data-field="${f}"]`);
             if (el) el.style.display = 'none';
           });
@@ -499,6 +529,8 @@
                 train.zwischenhalte = newValue.split('\n');
               } else if (fieldName === 'actual') {
                 train.actual = newValue || undefined;
+              } else if (fieldName === 'delayReason') {
+                train.delayReason = newValue || undefined;
               } else if (fieldName === 'projectId') {
                 train.projectId = newValue || undefined;
               } else if (fieldName === 'recurrencePattern') {
@@ -636,7 +668,7 @@
           if (hasChanges) {
             console.log('✅ Changes detected, saving...');
             // Update the schedule train with all changes
-            const { _isPastTrain, ...persistableTrain } = train;
+            const { _isPastTrain, _delayReasonAuto, _hasDelay, ...persistableTrain } = train;
             Object.assign(scheduleTrain, persistableTrain);
             delete scheduleTrain._isPastTrain;
             
@@ -717,6 +749,7 @@
             if (inputType === 'recurrence') {
               // Recurrence pattern dropdown (for normal trains → promote to recurring)
               input = document.createElement('select');
+              input.classList.add('editor-select-dark');
               input.style.width = '100%';
               input.style.background = 'var(--color-bg-panel)';
               input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
@@ -727,6 +760,7 @@
               input.style.fontSize = '2vh';
               input.style.outline = 'none';
               input.style.cursor = 'pointer';
+              input.style.colorScheme = 'dark';
               [
                 { value: 'none',     label: 'Keine Wiederholung' },
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
@@ -744,6 +778,7 @@
             } else if (inputType === 'recurrence-stem') {
               // Recurrence pattern dropdown for stem editor (no “Keine” option)
               input = document.createElement('select');
+              input.classList.add('editor-select-dark');
               input.style.width = '100%';
               input.style.background = 'var(--color-bg-panel)';
               input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
@@ -754,6 +789,7 @@
               input.style.fontSize = '2vh';
               input.style.outline = 'none';
               input.style.cursor = 'pointer';
+              input.style.colorScheme = 'dark';
               [
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
@@ -769,6 +805,7 @@
               input.value = currentValue || 'weekdays';
             } else if (inputType === 'train-type') {
               input = document.createElement('select');
+              input.classList.add('editor-select-dark');
               input.style.width = '100%';
               input.style.background = 'var(--color-bg-panel)';
               input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
@@ -779,6 +816,7 @@
               input.style.fontSize = '2vh';
               input.style.outline = 'none';
               input.style.cursor = 'pointer';
+              input.style.colorScheme = 'dark';
               [
                 { value: 'train', label: 'Fahrt mit Zeit' },
                 { value: 'duration-only', label: 'Nur Dauer' }
@@ -789,9 +827,10 @@
                 input.appendChild(opt);
               });
               input.value = currentValue || 'train';
-            } else if (inputType === 'select') {
-              // Special handling for project dropdown
+            } else if (inputType === 'delay-reason') {
+              // Same formatting as the project dropdown ('select' branch below).
               input = document.createElement('select');
+              input.classList.add('editor-select-dark');
               input.style.width = '100%';
               input.style.background = 'var(--color-bg-panel)';
               input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
@@ -801,7 +840,36 @@
               input.style.fontFamily = 'inherit';
               input.style.fontSize = '2vh';
               input.style.outline = 'none';
-              
+              // Without this, the native options popup ignores the dark inline
+              // styles above (they only affect the closed control) and renders
+              // white-on-white, since it defaults to a light color scheme.
+              input.style.colorScheme = 'dark';
+              const noReasonOpt = document.createElement('option');
+              noReasonOpt.value = '';
+              noReasonOpt.textContent = 'Kein Grund';
+              input.appendChild(noReasonOpt);
+              (window.DelayReasons || []).forEach(reason => {
+                const opt = document.createElement('option');
+                opt.value = reason;
+                opt.textContent = reason;
+                input.appendChild(opt);
+              });
+              input.value = currentValue || '';
+            } else if (inputType === 'select') {
+              // Special handling for project dropdown
+              input = document.createElement('select');
+              input.classList.add('editor-select-dark');
+              input.style.width = '100%';
+              input.style.background = 'var(--color-bg-panel)';
+              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              input.style.borderRadius = '0';
+              input.style.padding = '0.5vh';
+              input.style.color = 'white';
+              input.style.fontFamily = 'inherit';
+              input.style.fontSize = '2vh';
+              input.style.outline = 'none';
+              input.style.colorScheme = 'dark';
+
               // Add "No Project" option
               const noneOption = document.createElement('option');
               noneOption.value = '';
@@ -825,11 +893,11 @@
               input.type = inputType;
             }
             
-            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'textarea') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'delay-reason' && inputType !== 'textarea') {
               input.type = inputType;
             }
-            
-            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type') {
+
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'delay-reason') {
               input.value = currentValue;
               input.placeholder = placeholder;
               input.style.width = '100%';
@@ -849,12 +917,20 @@
             }
             
             if (inputType === 'textarea') {
-              input.style.height = '100%';
+              // Auto-grow to fit content (clamped by the .editor-field-multiline
+              // min-height in CSS) instead of stretch-filling the drawer; overall
+              // scrolling is handled by the outer .editor-fields-scroll.
               input.style.minHeight = '8vh';
               input.style.resize = 'none';
-              input.style.overflowY = 'auto';
+              input.style.overflowY = 'hidden';
               input.style.scrollbarWidth = 'none';
               input.style.msOverflowStyle = 'none';
+              const autoGrow = () => {
+                input.style.height = 'auto';
+                input.style.height = `${input.scrollHeight}px`;
+              };
+              input.addEventListener('input', autoGrow);
+              requestAnimationFrame(autoGrow);
             }
             
             // Replace value element
