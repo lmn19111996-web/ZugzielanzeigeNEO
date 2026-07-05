@@ -85,6 +85,56 @@
       ].join('|')).join('~');
     }
 
+    // True if the clock time of `date` falls inside the [startHour, endHour) window,
+    // where the window may wrap past midnight (e.g. 18 -> 6). Equal bounds means
+    // no restriction at all (zero-length window).
+    function isTimeInCurfewWindow(date, startHour, endHour) {
+      if (!date || startHour === endHour) return false;
+      const hour = date.getHours();
+      if (startHour < endHour) return hour >= startHour && hour < endHour;
+      return hour >= startHour || hour < endHour;
+    }
+    window.isTimeInCurfewWindow = isTimeInCurfewWindow;
+
+    // Force-cancels trains on a curfewed line whose departure lands inside the
+    // configured curfew window. Runs every processTrainData cycle (see call site
+    // below) so it's a live rule, not a one-time/persisted edit. schedule.trains /
+    // localTrains aren't necessarily rebuilt on every cycle, so a train object can
+    // outlive a settings change — each pass first reverts its own previous
+    // cancellation (tracked via the transient _curfewCanceled flag) before
+    // re-evaluating, so disabling the rule or editing the line list self-heals
+    // instead of leaving trains stuck cancelled.
+    function applyCurfewRule(trains) {
+      const enabled = !!(window.AppSettings && window.AppSettings.get('curfewEnabled'));
+      const lines = enabled ? (window.AppSettings.get('curfewLines') || []).map(l => String(l).toUpperCase()) : [];
+      const startHour = window.AppSettings ? window.AppSettings.get('curfewStartHour') : 18;
+      const endHour = window.AppSettings ? window.AppSettings.get('curfewEndHour') : 6;
+      const now = new Date();
+
+      trains.forEach(t => {
+        if (!t) return;
+
+        if (t._curfewCanceled) {
+          t.canceled = false;
+          t.delayReason = '';
+          t._curfewCanceled = false;
+        }
+
+        if (!enabled || t.type === 'note' || !t.linie || !t.date) return;
+        if (!lines.includes(String(t.linie).toUpperCase())) return;
+        if (isDurationOnlyTrain(t) || !hasTrainTime(t)) return;
+
+        const depTime = parseTime(t.actual || t.plan, now, t.date);
+        if (!depTime) return;
+
+        if (isTimeInCurfewWindow(depTime, startHour, endHour)) {
+          t.canceled = true;
+          t.delayReason = `Für diese Linie ist keine Abfahrt ab ${startHour} Uhr möglich`;
+          t._curfewCanceled = true;
+        }
+      });
+    }
+
     function processTrainData(schedule) {
       const now = new Date();
 
@@ -132,7 +182,14 @@
           }
         }
       });
-      
+
+      // DATA MANIPULATION: Nachtsperre (curfew) enforcement
+      // Trains on a curfewed line whose departure falls inside the configured
+      // window are force-cancelled every cycle — this is a hard constraint, not
+      // a user-reversible edit, so it's re-applied live rather than persisted.
+      // Same "in-memory only" mutation as the S6 promotion above.
+      applyCurfewRule([...processedTrainData.allTrains, ...processedTrainData.localTrains]);
+
       // Separate notes (objects with type='note') from scheduled trains.
       // Notes can be in schedule.trains (legacy) or schedule.spontaneousEntries (new format).
       const notesFromTrains = processedTrainData.allTrains.filter(t => t.type === 'note');

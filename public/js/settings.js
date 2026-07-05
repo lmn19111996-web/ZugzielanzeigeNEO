@@ -22,7 +22,11 @@ const SETTINGS_DEFAULTS = {
   notificationLeadMin: 20,
   lookaheadWindowDays: 14,
   journalDayStartHour: 6,
-  defaultWorkspace: 'auto'
+  defaultWorkspace: 'auto',
+  curfewEnabled: false,
+  curfewLines: [],
+  curfewStartHour: 18,
+  curfewEndHour: 6
 };
 
 let _settingsCache = Object.assign({}, SETTINGS_DEFAULTS);
@@ -167,6 +171,70 @@ function _buildSelectRow(section, labelText, key, options) {
   section.appendChild(row);
 }
 
+// Generic editable list of text entries backed by _settingsDraft[key] (an array
+// of strings). Used for both the delay-reason list and the curfew line list.
+function _buildStringListEditor(section, key, addButtonLabel, newEntryText) {
+  const listWrap = document.createElement('div');
+  listWrap.className = 'settings-reasons-list';
+  section.appendChild(listWrap);
+
+  function renderRows() {
+    listWrap.innerHTML = '';
+    _settingsDraft[key].forEach(function (entry, idx) {
+      const row = document.createElement('div');
+      row.className = 'settings-reason-row';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'settings-input';
+      input.value = entry;
+      input.addEventListener('change', function () {
+        _settingsDraft[key][idx] = input.value.trim() || entry;
+      });
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'settings-reason-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', function () {
+        _settingsDraft[key].splice(idx, 1);
+        renderRows();
+      });
+      row.append(input, removeBtn);
+      listWrap.appendChild(row);
+    });
+  }
+  renderRows();
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'settings-add-reason';
+  addBtn.textContent = addButtonLabel;
+  addBtn.addEventListener('click', function () {
+    _settingsDraft[key].push(newEntryText);
+    renderRows();
+  });
+  section.appendChild(addBtn);
+}
+
+// Checkbox backed by _settingsDraft[key] (boolean). onToggle lets the caller
+// react immediately (e.g. show/hide dependent rows) without waiting for Apply.
+function _buildCheckboxRow(section, labelText, key, onToggle) {
+  const row = document.createElement('div');
+  row.className = 'settings-row';
+  const label = document.createElement('label');
+  label.className = 'settings-label';
+  label.textContent = labelText;
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = !!_settingsDraft[key];
+  input.addEventListener('change', function () {
+    _settingsDraft[key] = input.checked;
+    if (typeof onToggle === 'function') onToggle(input.checked);
+  });
+  row.append(label, input);
+  section.appendChild(row);
+  return input;
+}
+
 function _buildDelayReasonsSection() {
   const section = _buildSettingsSection(
     'Verspätungsgründe',
@@ -174,46 +242,29 @@ function _buildDelayReasonsSection() {
   );
 
   _buildNumberRow(section, 'Kurze-Wendezeit-Schwelle (Minuten)', 'turnaroundThresholdMin', { min: 0 });
+  _buildStringListEditor(section, 'delayReasons', '+ Grund hinzufügen', 'Neuer Grund');
 
-  const listWrap = document.createElement('div');
-  listWrap.className = 'settings-reasons-list';
-  section.appendChild(listWrap);
+  return section;
+}
 
-  function renderReasonRows() {
-    listWrap.innerHTML = '';
-    _settingsDraft.delayReasons.forEach(function (reason, idx) {
-      const row = document.createElement('div');
-      row.className = 'settings-reason-row';
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'settings-input';
-      input.value = reason;
-      input.addEventListener('change', function () {
-        _settingsDraft.delayReasons[idx] = input.value.trim() || reason;
-      });
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'settings-reason-remove';
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', function () {
-        _settingsDraft.delayReasons.splice(idx, 1);
-        renderReasonRows();
-      });
-      row.append(input, removeBtn);
-      listWrap.appendChild(row);
-    });
-  }
-  renderReasonRows();
+function _buildCurfewSection() {
+  const section = _buildSettingsSection(
+    'Nachtsperre',
+    'Für ausgewählte Linien ist innerhalb des Zeitfensters keine Abfahrt möglich. Betroffene Fahrten werden automatisch als "Zug fällt aus" markiert; Fahrten, die vor dem Fenster abfahren aber hineinlaufen, erhalten den Hinweis "Grenzüberstreitend".'
+  );
 
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'settings-add-reason';
-  addBtn.textContent = '+ Grund hinzufügen';
-  addBtn.addEventListener('click', function () {
-    _settingsDraft.delayReasons.push('Neuer Grund');
-    renderReasonRows();
+  const detailsWrap = document.createElement('div');
+
+  _buildCheckboxRow(section, 'Nachtsperre aktiv', 'curfewEnabled', function (checked) {
+    detailsWrap.style.display = checked ? '' : 'none';
   });
-  section.appendChild(addBtn);
+
+  section.appendChild(detailsWrap);
+  _buildNumberRow(detailsWrap, 'Sperre ab (Stunde, 0–23)', 'curfewStartHour', { min: 0, max: 23 });
+  _buildNumberRow(detailsWrap, 'Sperre bis (Stunde, 0–23)', 'curfewEndHour', { min: 0, max: 23 });
+  _buildStringListEditor(detailsWrap, 'curfewLines', '+ Linie hinzufügen', 'S1');
+
+  detailsWrap.style.display = _settingsDraft.curfewEnabled ? '' : 'none';
 
   return section;
 }
@@ -472,6 +523,7 @@ async function renderSettingsPage() {
   scroll.appendChild(_buildDefaultWorkspaceSection());
   scroll.appendChild(_buildJournalSection());
   scroll.appendChild(_buildLookaheadSection());
+  scroll.appendChild(_buildCurfewSection());
 
   page.appendChild(scroll);
   page.appendChild(_buildFooter());

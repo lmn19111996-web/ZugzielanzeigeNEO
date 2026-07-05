@@ -95,6 +95,29 @@ function getNextDayArrivalReason(train, now) {
   return `Ankunft am ${dd}.${mm}`;
 }
 
+// Rule: the train's line is under a curfew (Nachtsperre) and it departs
+// before the curfew window starts, but its occupancy runs long enough to
+// bleed into the window. Trains that depart INSIDE the window are handled
+// separately (force-cancelled in globals.js's applyCurfewRule), so this only
+// ever fires for trains that are still allowed to run.
+function crossesCurfewBoundary(train, now) {
+  if (train.canceled) return false;
+  if (!window.AppSettings || !window.AppSettings.get('curfewEnabled')) return false;
+  if (typeof window.isTimeInCurfewWindow !== 'function') return false;
+
+  const lines = (window.AppSettings.get('curfewLines') || []).map(l => String(l).toUpperCase());
+  if (!train.linie || !lines.includes(String(train.linie).toUpperCase())) return false;
+
+  const startHour = window.AppSettings.get('curfewStartHour');
+  const endHour = window.AppSettings.get('curfewEndHour');
+  const depTime = parseTime(train.actual || train.plan, now, train.date);
+  const occEnd = getOccupancyEnd(train, now);
+  if (!depTime || !occEnd) return false;
+
+  return !window.isTimeInCurfewWindow(depTime, startHour, endHour)
+    && window.isTimeInCurfewWindow(occEnd, startHour, endHour);
+}
+
 // Reads the tier the Stressmeter already computed for this train-as-task.
 // stressmeter-ui.js's renderGraph() sets this when the Stressmeter overlay has
 // been opened for that date; until then there's simply no Auslastung suggestion.
@@ -135,6 +158,8 @@ function computeSuggestedDelayReasons(train, allActiveTrains, now) {
 
   const nextDayReason = getNextDayArrivalReason(train, now);
   if (nextDayReason) reasons.push(nextDayReason);
+
+  if (crossesCurfewBoundary(train, now)) reasons.push('Grenzüberstreitend');
 
   return reasons;
 }
