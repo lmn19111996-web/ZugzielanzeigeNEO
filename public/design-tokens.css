@@ -18,6 +18,7 @@
 
   --color-bg-primary:           #161B75;  /* Main app background (body, page) */
   --color-bg-panel:             #0F1450;  /* Drawers, right-panel, announcement bg */
+  --color-bg-input:             #0a0e3c;  /* Input fields */
   --color-bg-taskbar:           #161743;  /* Taskbar / left nav rail */
   --color-bg-card:              #171d5e;  /* Floating cards, now-card */
   --color-bg-button:            #2e3273;  /* Task button default */

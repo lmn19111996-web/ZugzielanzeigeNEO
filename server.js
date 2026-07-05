@@ -1763,6 +1763,41 @@ app.put('/api/lovemeter-presets', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- App settings API (global across all devices, not per-browser) ---
+const APP_SETTINGS_FILE = path.join(__dirname, 'app_settings.json');
+
+async function readAppSettings() {
+  try {
+    const content = await fsPromises.readFile(APP_SETTINGS_FILE, 'utf8');
+    return JSON.parse(content);
+  } catch (e) {
+    if (e.code === 'ENOENT') return {};
+    throw e;
+  }
+}
+
+async function writeAppSettings(settings) {
+  await fsPromises.writeFile(APP_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+}
+
+// GET /api/settings
+app.get('/api/settings', async (req, res) => {
+  try { res.json(await readAppSettings()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/settings – replace entire settings object
+app.put('/api/settings', async (req, res) => {
+  try {
+    const settings = req.body;
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      return res.status(400).json({ error: 'expected object' });
+    }
+    await writeAppSettings(settings);
+    res.json({ ok: true, settings });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 
 let cachedData = { trains: [], metadata: null };
 let cachedEva = null; // EVA the cachedData belongs to

@@ -1,6 +1,16 @@
 ﻿// === JOURNAL ISLAND & REVIEW WRITE DRAWER ===
 //  Journal Island Widget
 // ══════════════════════════════════════════════════════════════
+
+// ── Logical day: journalDayStartHour – (journalDayStartHour - 1) next day ──
+// Shared by the journal island and the review-write drawer below.
+window.getLogicalDate = function() {
+  const startHour = window.AppSettings ? window.AppSettings.get('journalDayStartHour') : 6;
+  const d = new Date();
+  if (d.getHours() < startHour) d.setDate(d.getDate() - 1);
+  return d.toISOString().split('T')[0];
+};
+
 (function initJournalIsland() {
   const island   = document.getElementById('journal-island');
   const card     = document.getElementById('journal-card');
@@ -20,12 +30,7 @@
   let selectedRating = 0;
   let islandDone = false; // permanently hidden after today's submit
 
-  // ── Logical day: 06:00 – 05:59 next day ─────────────────────
-  function getLogicalDate() {
-    const d = new Date();
-    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
-  }
+  const getLogicalDate = window.getLogicalDate;
 
   // ── Accent color applied when card opens ─────────────────────
   function applyAccentToCard() {
@@ -71,8 +76,7 @@
     card.classList.add('is-open');
     card.setAttribute('aria-hidden', 'false');
     if (dateEl) {
-      const d = new Date();
-      if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+      const d = new Date(getLogicalDate() + 'T00:00:00');
       dateEl.textContent = d.toLocaleDateString('de-DE', {
         weekday: 'long', day: 'numeric', month: 'long'
       });
@@ -210,11 +214,7 @@
   let _escHandler = null;
   let _clickOutHandler = null;
 
-  function getLogicalDate() {
-    const d = new Date();
-    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
-  }
+  const getLogicalDate = window.getLogicalDate;
 
   function applyAccent() {
     const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
@@ -241,8 +241,7 @@
           weekday: 'long', day: 'numeric', month: 'long'
         });
       } else {
-        const d = new Date();
-        if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+        const d = new Date(getLogicalDate() + 'T00:00:00');
         dateEl.textContent = d.toLocaleDateString('de-DE', {
           weekday: 'long', day: 'numeric', month: 'long'
         });

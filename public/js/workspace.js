@@ -122,6 +122,20 @@
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
           break;
+        case 'settings':
+          if (currentWorkspaceMode !== 'settings') {
+            // Remember where we came from so Apply/Discard can return here
+            window._preSettingsWorkspaceMode = currentWorkspaceMode;
+          }
+          currentWorkspaceMode = 'settings';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
         default:
           break;
       }

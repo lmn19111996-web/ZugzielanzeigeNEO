@@ -171,13 +171,15 @@
           arrivalActualValue.parentElement.setAttribute('data-editable', 'true');
         }
 
-        // Populate Verspätungsgrund (delayReason) — only shown when actual departure
-        // differs from scheduled (hasDelay). Manual selection always wins; if none is
-        // set, show any auto-suggestion(s) as a non-persisted "(Vorschlag)" hint.
+        // Populate Verspätungsgrund (delayReason) — shown when actual departure
+        // differs from scheduled (hasDelay) OR the train is cancelled. Manual
+        // selection always wins; if none is set, show any auto-suggestion(s) as a
+        // non-persisted "(Vorschlag)" hint.
+        const showDelayReason = hasDelay || !!train.canceled;
         const delayReasonValue = clone.querySelector('[data-focus="delay-reason"]');
         if (delayReasonValue) {
           const delayReasonField = delayReasonValue.parentElement;
-          delayReasonField.style.display = hasDelay ? '' : 'none';
+          delayReasonField.style.display = showDelayReason ? '' : 'none';
           const autoReasons = Array.isArray(train._delayReasonAuto) ? train._delayReasonAuto : [];
           if (train.delayReason) {
             delayReasonValue.textContent = train.delayReason;
@@ -196,7 +198,7 @@
           // data-value stays the MANUAL value only — auto-suggestions must never be
           // persisted as if chosen (saveAllFields' change-detection compares against this).
           delayReasonField.setAttribute('data-value', train.delayReason || '');
-          if (isEditable && hasDelay) {
+          if (isEditable && showDelayReason) {
             delayReasonField.setAttribute('data-editable', 'true');
           }
         }

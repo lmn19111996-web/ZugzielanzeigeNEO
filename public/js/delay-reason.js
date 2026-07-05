@@ -4,16 +4,19 @@
 // already computed and stored on t._alertLvl (stressmeter-ui.js renderGraph), rather
 // than re-simulating independently here.
 
-const DelayReasons = Object.freeze([
-  'Fahrzeugmangel',
-  'Verspätete Bereitstellung des Zuges',
-  'Kurzfristiger Personalausfall',
-  'Vorfahrt eines anderen Zuges',
-  'Technische Defekt am Zug',
-  'Streckensperrung',
-  'Feiertag',
-  'Ereignis'
-]);
+function getDelayReasons() {
+  if (window.AppSettings) return window.AppSettings.get('delayReasons');
+  return [
+    'Fahrzeugmangel',
+    'Verspätete Bereitstellung des Zuges',
+    'Kurzfristiger Personalausfall',
+    'Vorfahrt eines anderen Zuges',
+    'Technische Defekt am Zug',
+    'Streckensperrung',
+    'Feiertag',
+    'Ereignis'
+  ];
+}
 
 function wasPreviousTrainDelayed(train, allActiveTrains, now) {
   const myStart = parseTime(train.actual || train.plan, now, train.date);
@@ -70,7 +73,8 @@ function hasShortTurnaround(train, allActiveTrains, now) {
   if (!prev || !prev.end) return false;
 
   const gapMinutes = (myStart - prev.end) / 60000;
-  return gapMinutes >= 0 && gapMinutes < 15;
+  const threshold = window.AppSettings ? window.AppSettings.get('turnaroundThresholdMin') : 15;
+  return gapMinutes >= 0 && gapMinutes < threshold;
 }
 
 // Rule: the train's arrival (occupancy end) falls on a later calendar day than
@@ -135,5 +139,5 @@ function computeSuggestedDelayReasons(train, allActiveTrains, now) {
   return reasons;
 }
 
-window.DelayReasons = DelayReasons;
+Object.defineProperty(window, 'DelayReasons', { get: getDelayReasons, configurable: true });
 window.computeSuggestedDelayReasons = computeSuggestedDelayReasons;

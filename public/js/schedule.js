@@ -263,7 +263,8 @@
         
         // Attach push events so server can fire them when app is closed
         if (typeof buildPushEvents === 'function') {
-          try { dataToSave.pushEvents = buildPushEvents(14); } catch (e) {
+          const lookaheadDays = window.AppSettings ? window.AppSettings.get('lookaheadWindowDays') : 14;
+          try { dataToSave.pushEvents = buildPushEvents(lookaheadDays); } catch (e) {
             console.warn('buildPushEvents failed:', e);
           }
         }
@@ -438,7 +439,7 @@
       const todayMidnight = new Date();
       todayMidnight.setHours(0, 0, 0, 0);
       const todayMs = todayMidnight.getTime();
-      const WINDOW_DAYS = 14;
+      const WINDOW_DAYS = window.AppSettings ? window.AppSettings.get('lookaheadWindowDays') : 14;
 
       // Normalise any legacy UTC-suffixed UIDs so they don't block new entries.
       // Legacy UIDs look like stemId_YYYY-MM-DD where the date is the UTC date

@@ -464,6 +464,17 @@
           }
           break;
 
+        case 'settings':
+          // Settings workspace
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderSettingsPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+
         default:
           // Should not happen - defensive fallback
           console.warn('Unknown workspace mode:', currentWorkspaceMode);

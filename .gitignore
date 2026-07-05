@@ -7,4 +7,5 @@ push_events.json
 push_subscriptions.json
 lovemeter_data.json
 lovemeter_presets.json
+app_settings.json
 node_modules/

@@ -30,7 +30,11 @@
       renderComprehensiveAnnouncementPanel(); // Debug: render to upper right panel
       updateClock();
 
-      const defaultMode = currentViewMode === 'belegungsplan' ? 'occupancy' : 'list';
+      if (window.AppSettings && window.AppSettings.ready) await window.AppSettings.ready;
+      const savedDefaultWorkspace = window.AppSettings ? window.AppSettings.get('defaultWorkspace') : 'auto';
+      const defaultMode = (savedDefaultWorkspace && savedDefaultWorkspace !== 'auto')
+        ? savedDefaultWorkspace
+        : (currentViewMode === 'belegungsplan' ? 'occupancy' : 'list');
       setWorkspaceMode(defaultMode);
 
       // Open dashboard on startup (desktop only)

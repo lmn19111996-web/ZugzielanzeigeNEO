@@ -139,7 +139,8 @@
       if (!processedTrainData || !Array.isArray(processedTrainData.localTrains)) return [];
       const now = new Date();
       const windowStart = now;
-      const windowEnd = new Date(now.getTime() + 20 * 60000);
+      const leadMin = window.AppSettings ? window.AppSettings.get('notificationLeadMin') : 20;
+      const windowEnd = new Date(now.getTime() + leadMin * 60000);
       const cutoff = new Date(now.getTime() + days * 86400000);
       const events = [];
 
@@ -268,8 +269,8 @@
           _lastPushedStatusByTrain.delete(trainId);
         }
 
-        // -- Window-entry notification: 20 min before trainTime ----------
-        const windowNotifyAt = new Date(trainTime.getTime() - 20 * 60000);
+        // -- Window-entry notification: leadMin before trainTime ----------
+        const windowNotifyAt = new Date(trainTime.getTime() - leadMin * 60000);
         if (windowNotifyAt > now) {
           let windowBody, windowTitle = title;
           if (brokenConnection) {

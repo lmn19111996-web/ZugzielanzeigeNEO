@@ -6209,6 +6209,212 @@ font-weight: 500;
   flex-shrink: 0;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   SETTINGS PAGE — mirrors .reviews-page layout
+   ══════════════════════════════════════════════════════════════ */
+.settings-page {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 3vh 2vw;
+  box-sizing: border-box;
+}
+
+.settings-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1vw;
+  padding: 2vh 2vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-panel);
+}
+
+.settings-footer-btn {
+  padding: 1vh 2vw;
+  border: none;
+  border-radius: 0;
+  font-size: 1.8vh;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-footer-btn--discard {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.settings-footer-btn--apply {
+  background: #3f51b5;
+  color: #fff;
+}
+
+.settings-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  margin-bottom: 3vh;
+  padding-bottom: 2vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.settings-page-title {
+  font-size: 4vh;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.settings-section {
+  margin-bottom: 3vh;
+  padding-bottom: 2.5vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+}
+
+.settings-section-title {
+  font-size: 2.2vh;
+  font-weight: 600;
+  margin: 0 0 0.5vh 0;
+}
+
+.settings-section-desc {
+  font-size: 1.5vh;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 1.5vh 0;
+  line-height: 1.4;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  margin-bottom: 1.2vh;
+}
+
+.settings-label {
+  font-size: 1.8vh;
+  flex: 1;
+}
+
+.settings-input {
+  font-size: 1.8vh;
+  padding: 0.6vh 1vw;
+  border-radius: 0;
+  border: none;
+  background: var(--color-bg-input);
+  color: inherit;
+  min-width: 6em;
+}
+
+/* Native <option> elements ignore most inline styles on the parent <select>
+   (and color-scheme isn't honored by every browser's popup renderer either) —
+   same pattern as .editor-select-dark option. */
+select.settings-input option {
+  background: var(--color-bg-panel);
+  color: white;
+}
+
+.settings-reasons-list {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1vh;
+}
+
+.settings-reason-row {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-reason-row .settings-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-reason-remove {
+  background: var(--color-bg-input);
+  border:none;
+  color: inherit;
+  border-radius: 0;
+  padding: 0.4vh 0.9vw;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-add-reason {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: inherit;
+  border-radius: 0;
+  padding: 0.6vh 1.2vw;
+  cursor: pointer;
+  font-size: 1.6vh;
+}
+
+.settings-push-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75vw;
+  font-size: 1.6vh;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 0.8vh;
+}
+
+.settings-push-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #455a9e;
+}
+.settings-push-dot.ok   { background: #4caf7d; }
+.settings-push-dot.warn { background: #ffc107; }
+.settings-push-dot.err  { background: #ef5350; }
+
+.settings-push-buttons {
+  display: flex;
+  gap: 1vw;
+  margin-top: 1vh;
+  flex-wrap: wrap;
+}
+
+.settings-push-buttons button {
+  padding: 0.8vh 1.4vw;
+  border: none;
+  border-radius: 0;
+  font-size: 1.6vh;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+}
+
+.settings-push-buttons button:disabled { opacity: 0.4; cursor: default; }
+.settings-push-buttons .settings-btn-subscribe   { background: #3f51b5; }
+.settings-push-buttons .settings-btn-unsubscribe { background: #37474f; color: #cfd8dc; }
+.settings-push-buttons .settings-btn-test        { background: #1e3a5f; color: #90caf9; border: 1px solid #2a5a9e; }
+
 .reviews-avg-card {
   background: rgba(255, 255, 255, 0.07);
   border-radius: 0.8vh;
@@ -6877,6 +7083,14 @@ body.review-write-drawer-open .left-column {
   filter: none;
   color: #a78bfa;
   stroke: #a78bfa;
+}
+.badge-rotator-menu-item--settings {
+  border-left-color: #34d399;
+}
+.badge-rotator-menu-item--settings .badge-rotator-menu-icon {
+  filter: none;
+  color: #34d399;
+  stroke: #34d399;
 }
 
 /* ── Train search bar (replaces headline train slot in top ribbon) ─────────── */
