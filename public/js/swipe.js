@@ -262,14 +262,23 @@
       const prevCanceled = !!train.canceled;
       const prevActual = train.actual;
 
+      const prevCurfewOverride = !!train.curfewOverride;
+
       train.canceled = !train.canceled;
       scheduleTrain.canceled = train.canceled;
+      // See editor.js's 'cancel' action: a manual toggle must stick, or the
+      // automated curfew rule (globals.js applyCurfewRule) would re-cancel it
+      // on the next render cycle.
+      train.curfewOverride = true;
+      scheduleTrain.curfewOverride = true;
       refreshUIOnly();
       saveSchedule();
 
       showSwipeToast(() => {
         train.canceled = prevCanceled;
         scheduleTrain.canceled = prevCanceled;
+        train.curfewOverride = prevCurfewOverride;
+        scheduleTrain.curfewOverride = prevCurfewOverride;
         train.actual = prevActual;
         scheduleTrain.actual = prevActual;
         refreshUIOnly();

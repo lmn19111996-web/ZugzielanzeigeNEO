@@ -1290,6 +1290,12 @@
               // Toggle canceled state
               train.canceled = !train.canceled;
               scheduleTrain.canceled = train.canceled;
+              // A manual toggle always wins over the automated curfew rule from
+              // here on for this specific instance (see applyCurfewRule in
+              // globals.js) — otherwise a curfew-cancelled train could never be
+              // reactivated since the rule re-cancels it every render cycle.
+              train.curfewOverride = true;
+              scheduleTrain.curfewOverride = true;
               
               // OPTIMISTIC UI: Render immediately, then save in background
               // 1. Refresh UI with cancel state change

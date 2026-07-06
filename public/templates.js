@@ -210,7 +210,7 @@ const Templates = {
             : `<div class="zugziel">${destinationHTML}</div>`}
         </div>
         <div class="carriage-slot">
-          <img class="carriage-img" src="${getCarriageSVG(train.dauer, train.linie === 'FEX', train.linie)}" alt="">
+          ${train.canceled ? '' : `<img class="carriage-img" src="${getCarriageSVG(train.dauer, train.linie === 'FEX', train.linie)}" alt="">`}
         </div>
         <div class="right-block">
           ${durationSlotHTML}

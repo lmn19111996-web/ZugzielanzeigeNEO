@@ -104,6 +104,9 @@
     // cancellation (tracked via the transient _curfewCanceled flag) before
     // re-evaluating, so disabling the rule or editing the line list self-heals
     // instead of leaving trains stuck cancelled.
+    // A train with curfewOverride=true (set when the user manually toggles
+    // cancel/reactivate on it — see editor.js/swipe.js) is skipped entirely so a
+    // manual decision always wins and can't be immediately re-cancelled by the rule.
     function applyCurfewRule(trains) {
       const enabled = !!(window.AppSettings && window.AppSettings.get('curfewEnabled'));
       const lines = enabled ? (window.AppSettings.get('curfewLines') || []).map(l => String(l).toUpperCase()) : [];
@@ -120,6 +123,7 @@
           t._curfewCanceled = false;
         }
 
+        if (t.curfewOverride) return;
         if (!enabled || t.type === 'note' || !t.linie || !t.date) return;
         if (!lines.includes(String(t.linie).toUpperCase())) return;
         if (isDurationOnlyTrain(t) || !hasTrainTime(t)) return;
