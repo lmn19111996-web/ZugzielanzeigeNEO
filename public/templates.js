@@ -99,6 +99,7 @@ const Templates = {
     const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut && tTime > now;
     const isPastTrainDetected = !isDurationOnly && !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
     const isOngoingDeparture = isPastTrainDetected && !!train.checkinTime && !train.checkoutTime && !(Number(train.dauer) > 0);
+    if (isOngoingDeparture) entryClasses.push('ongoing-train');
     
     if (isFirstTrain) {
       tempDiv.appendChild(formatCountdown(train, now));

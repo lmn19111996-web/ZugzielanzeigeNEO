@@ -1334,6 +1334,13 @@ html, body {
       color: rgba(255, 255, 255, 1);
     }
 
+    /* Ongoing (checked in, no duration yet): destination keeps the normal,
+       full-opacity, thin-weight look instead of the faded past-train style. */
+    .train-entry.past-train.ongoing-train .zugziel {
+      opacity: 1;
+      font-weight: 300;
+    }
+
     /* FEX past train: restore dark text on white background */
     .train-entry.past-train.fex-entry .zugziel {
       color: var(--color-bg-primary);
