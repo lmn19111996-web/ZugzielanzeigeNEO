@@ -217,10 +217,16 @@
       // never go stale (schedule edits, overlaps, and Stressmeter tiers can all change
       // between cycles). _hasDelay/_delayReasonAuto are transient (never persisted —
       // stripped in editor.js before save).
+      // Build the previous-train/overlap context once (O(n log n)) rather than
+      // letting computeSuggestedDelayReasons re-derive it per train (O(n) each,
+      // O(n^2) total) — see delay-reason.js buildAdvisoryContext.
+      const advisoryContext = typeof buildAdvisoryContext === 'function'
+        ? buildAdvisoryContext(processedTrainData.scheduledTrains, now)
+        : null;
       processedTrainData.scheduledTrains.forEach(t => {
         t._hasDelay = !!(t.actual && t.actual !== t.plan);
         t._delayReasonAuto = (typeof computeSuggestedDelayReasons === 'function')
-          ? computeSuggestedDelayReasons(t, processedTrainData.scheduledTrains, now)
+          ? computeSuggestedDelayReasons(t, advisoryContext || processedTrainData.scheduledTrains, now)
           : [];
       });
 
@@ -235,7 +241,25 @@
           return 0;
         });
 
-      
+      // Resolve each duration-only template's active clone (if any) once per
+      // cycle here, instead of re-scanning schedule.* per FÜSQ row on every
+      // render (that per-row rescan was expensive enough to noticeably delay
+      // UI updates on every full re-render).
+      if (processedTrainData.durationOnlyTrains.length) {
+        const activeCloneByTemplateUid = new Map();
+        [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []].forEach(list => {
+          list.forEach(t => {
+            if (t && t._templateUid && t.checkinTime && !t.checkoutTime && !activeCloneByTemplateUid.has(t._templateUid)) {
+              activeCloneByTemplateUid.set(t._templateUid, t);
+            }
+          });
+        });
+        processedTrainData.durationOnlyTrains.forEach(t => {
+          t._activeClone = activeCloneByTemplateUid.get(t._uniqueId) || null;
+        });
+      }
+
+
       // Filter for future and currently occupying trains
       processedTrainData.futureTrains = processedTrainData.scheduledTrains.filter(t => {
         const tTime = parseTime(t.actual || t.plan, now, t.date);
@@ -258,9 +282,12 @@
         const occEnd = getOccupancyEnd(t, now);
         if (occEnd) return occEnd <= now;
 
-        // No duration recorded (yet) — still show it once its departure time
-        // has passed, so the user can check out afterwards instead of it
-        // silently disappearing from the list.
+        // No duration recorded yet: only keep it around once its departure
+        // time has passed *and* it has an open check-in session, so the user
+        // can still check out. Plain undurationed past trains with no active
+        // session stay hidden as before (avoids permanently bloating the
+        // list/animations with routine trains that were never checked in).
+        if (!t.checkinTime || t.checkoutTime) return false;
         const tTime = parseTime(t.actual || t.plan, now, t.date);
         return !!tTime && tTime <= now;
       });

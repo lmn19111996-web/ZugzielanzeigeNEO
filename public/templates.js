@@ -131,9 +131,9 @@ const Templates = {
     // checkin.js `_ciCommitCheckinClone`), not the template's own (unchanging)
     // state.
     if (isDurationOnly) {
-      const activeClone = typeof findActiveCloneForTemplate === 'function'
-        ? findActiveCloneForTemplate(train._uniqueId)
-        : null;
+      // Precomputed once per processTrainData() cycle (see globals.js) rather
+      // than scanned here per row, per render.
+      const activeClone = train._activeClone || null;
       isCheckedIn = !!activeClone;
       isCheckedOutForWidget = false;
       uid = activeClone ? activeClone._uniqueId : uid;

@@ -18,61 +18,87 @@ function getDelayReasons() {
   ];
 }
 
-function wasPreviousTrainDelayed(train, allActiveTrains, now) {
-  const myStart = parseTime(train.actual || train.plan, now, train.date);
-  if (!myStart) return false;
+// Precomputes, once per render cycle, the per-train "previous same-day train"
+// and "is this the later half of an overlapping pair" facts that
+// wasPreviousTrainDelayed/hasShortTurnaround/isLaterOfOverlappingPair need.
+// Previously each of those three rules independently filtered + sorted the
+// *entire* active-train list for *every* train (O(n) work × n trains, done
+// three times over) — this does one O(n log n) pass instead.
+function buildAdvisoryContext(allActiveTrains, now) {
+  const byDate = new Map();
+  (allActiveTrains || []).forEach(t => {
+    if (!t) return;
+    const start = parseTime(t.actual || t.plan, now, t.date);
+    if (!start) return;
+    const end = getOccupancyEnd(t, now);
+    const key = t.date || '';
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key).push({ t, start, end });
+  });
 
-  const sameDay = allActiveTrains
-    .filter(t => t && t.date === train.date && t._uniqueId !== train._uniqueId)
-    .map(t => ({ t, start: parseTime(t.actual || t.plan, now, t.date) }))
-    .filter(x => x.start)
-    .sort((a, b) => a.start - b.start);
+  const info = new Map(); // _uniqueId -> { prev, prevEnd, isLaterOfOverlap }
 
-  let prev = null;
-  for (const x of sameDay) {
-    if (x.start < myStart) prev = x.t;
-    else break;
-  }
+  byDate.forEach(list => {
+    list.sort((a, b) => a.start - b.start);
+
+    // Sliding window of trains that could still overlap the current one
+    // (occupancy end still ahead of the current train's start).
+    const active = [];
+    for (let i = 0; i < list.length; i++) {
+      const cur = list[i];
+
+      for (let j = active.length - 1; j >= 0; j--) {
+        if (active[j].end && active[j].end <= cur.start) active.splice(j, 1);
+      }
+
+      let isLaterOfOverlap = false;
+      if (cur.end) {
+        for (const other of active) {
+          if (other.end && cur.start < other.end && cur.end > other.start) {
+            isLaterOfOverlap = true;
+            break;
+          }
+        }
+      }
+
+      const prev = i > 0 ? list[i - 1] : null;
+      info.set(cur.t._uniqueId, {
+        prev: prev ? prev.t : null,
+        prevEnd: prev ? prev.end : null,
+        isLaterOfOverlap
+      });
+
+      active.push(cur);
+    }
+  });
+
+  return info;
+}
+
+function wasPreviousTrainDelayed(train, context) {
+  const entry = context.get(train._uniqueId);
+  const prev = entry && entry.prev;
   return !!(prev && prev.actual && prev.actual !== prev.plan);
 }
 
-function isLaterOfOverlappingPair(train, allActiveTrains, now) {
-  const start1 = parseTime(train.actual || train.plan, now, train.date);
-  const end1 = getOccupancyEnd(train, now);
-  if (!start1 || !end1) return false;
-
-  return allActiveTrains.some(other => {
-    if (!other || other._uniqueId === train._uniqueId) return false;
-    const start2 = parseTime(other.actual || other.plan, now, other.date);
-    const end2 = getOccupancyEnd(other, now);
-    if (!start2 || !end2) return false;
-    const overlap = start1 < end2 && end1 > start2;
-    return overlap && start1 > start2; // train is the later one
-  });
+function isLaterOfOverlappingPair(train, context) {
+  const entry = context.get(train._uniqueId);
+  return !!(entry && entry.isLaterOfOverlap);
 }
 
 // Rule: the gap between this train's start and the immediately preceding
 // same-day train's end (occupancy end) is short (0-15 min) — a tight turnaround.
 // Negative gaps (actual overlap) are excluded here since that's covered by
 // isLaterOfOverlappingPair instead.
-function hasShortTurnaround(train, allActiveTrains, now) {
+function hasShortTurnaround(train, context, now) {
   const myStart = parseTime(train.actual || train.plan, now, train.date);
   if (!myStart) return false;
 
-  const sameDay = allActiveTrains
-    .filter(t => t && t.date === train.date && t._uniqueId !== train._uniqueId)
-    .map(t => ({ start: parseTime(t.actual || t.plan, now, t.date), end: getOccupancyEnd(t, now) }))
-    .filter(x => x.start)
-    .sort((a, b) => a.start - b.start);
+  const entry = context.get(train._uniqueId);
+  const prevEnd = entry && entry.prevEnd;
+  if (!prevEnd) return false;
 
-  let prev = null;
-  for (const x of sameDay) {
-    if (x.start < myStart) prev = x;
-    else break;
-  }
-  if (!prev || !prev.end) return false;
-
-  const gapMinutes = (myStart - prev.end) / 60000;
+  const gapMinutes = (myStart - prevEnd) / 60000;
   const threshold = window.AppSettings ? window.AppSettings.get('turnaroundThresholdMin') : 15;
   return gapMinutes >= 0 && gapMinutes < threshold;
 }
@@ -137,18 +163,26 @@ function getAuslastungTier(train) {
 
 // Returns an array of every auto-reason currently applicable to this train (0-3
 // entries). All matching rules are surfaced together — none suppresses another.
-function computeSuggestedDelayReasons(train, allActiveTrains, now) {
+// `allActiveTrainsOrContext` may be either the raw train array (a fresh
+// buildAdvisoryContext() is built internally — convenient for one-off calls)
+// or an already-built context from buildAdvisoryContext (preferred when
+// calling this for every train in a list — see globals.js).
+function computeSuggestedDelayReasons(train, allActiveTrainsOrContext, now) {
+  const context = allActiveTrainsOrContext instanceof Map
+    ? allActiveTrainsOrContext
+    : buildAdvisoryContext(allActiveTrainsOrContext, now);
+
   const reasons = [];
 
-  if (train._hasDelay && wasPreviousTrainDelayed(train, allActiveTrains, now)) {
+  if (train._hasDelay && wasPreviousTrainDelayed(train, context)) {
     reasons.push('Verspätung aus vorheriger Fahrt');
   }
 
-  if (isLaterOfOverlappingPair(train, allActiveTrains, now)) {
+  if (isLaterOfOverlappingPair(train, context)) {
     reasons.push('Vorfahrt eines anderen Zuges');
   }
 
-  if (hasShortTurnaround(train, allActiveTrains, now)) {
+  if (hasShortTurnaround(train, context, now)) {
     reasons.push('Kurze Wendezeit');
   }
 
@@ -166,3 +200,4 @@ function computeSuggestedDelayReasons(train, allActiveTrains, now) {
 
 Object.defineProperty(window, 'DelayReasons', { get: getDelayReasons, configurable: true });
 window.computeSuggestedDelayReasons = computeSuggestedDelayReasons;
+window.buildAdvisoryContext = buildAdvisoryContext;
