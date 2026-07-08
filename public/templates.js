@@ -98,6 +98,7 @@ const Templates = {
     const hasOpenCheckinSession = !!train.checkinTime;
     const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut && tTime > now;
     const isPastTrainDetected = !isDurationOnly && !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
+    const isOngoingDeparture = isPastTrainDetected && !!train.checkinTime && !train.checkoutTime && !(Number(train.dauer) > 0);
     
     if (isFirstTrain) {
       tempDiv.appendChild(formatCountdown(train, now));
@@ -229,8 +230,8 @@ const Templates = {
         <div class="right-block">
           ${durationSlotHTML}
           <div class="departure-slot">
-            <div class="departure" 
-                 data-departure="1" 
+            <div class="departure${isOngoingDeparture ? ' ongoing-departure' : ''}"
+                 data-departure="1"
                  data-plan="${train.plan || ''}" 
                  data-actual="${train.actual || ''}" 
                  data-dauer="${train.dauer != null ? String(train.dauer) : ''}" 

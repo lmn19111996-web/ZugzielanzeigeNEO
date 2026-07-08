@@ -1352,6 +1352,23 @@ html, body {
       text-overflow: clip;
     }
 
+    /* Ongoing (checked in, no duration yet): use the exact plain departure
+       look (full opacity, normal weight/size) instead of the faded/bold
+       past-train style. */
+    .train-entry.past-train .departure.ongoing-departure {
+      opacity: 1;
+    }
+
+    .departure.ongoing-departure .past-train-actual-time,
+    .departure.ongoing-departure .past-status-text {
+      font-size: 3vh;
+      font-weight: normal;
+    }
+
+    .departure.ongoing-departure .past-status-text {
+      color: var(--energy-yellow, #eab308);
+    }
+
     /* Past train time toggle container */
     .past-train-time-toggle {
       position: relative;

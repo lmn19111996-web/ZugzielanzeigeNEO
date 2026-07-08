@@ -410,35 +410,35 @@
         timeDisplay.className = 'past-train-time-display active';
         
         const hasDelay = planHHMM !== actualHHMM;
+        const isOngoing = isCheckedIn && !(actualTime && dauer);
 
         // Planned time (strikethrough) is shown only when actual differs from plan.
-        if (hasDelay) {
+        if (hasDelay && !isOngoing) {
           const plannedSpan = document.createElement('span');
           plannedSpan.className = 'past-train-planned-time';
           plannedSpan.textContent = planHHMM;
           timeDisplay.appendChild(plannedSpan);
         }
 
-        // Show interval only when a valid duration exists.
+        // Show interval only when a valid duration exists; while still
+        // ongoing (checked in, no duration yet) show "von HH:MM" instead.
         const actualSpan = document.createElement('span');
         actualSpan.className = 'past-train-actual-time';
-        actualSpan.textContent = departureHHMM !== '--:--'
-          ? `${actualHHMM} - ${departureHHMM}`
-          : actualHHMM;
+        actualSpan.textContent = isOngoing
+          ? `von ${actualHHMM}`
+          : (departureHHMM !== '--:--' ? `${actualHHMM} - ${departureHHMM}` : actualHHMM);
         timeDisplay.appendChild(actualSpan);
-        
+
         animContainer.appendChild(timeDisplay);
-        
+
         // Departure status display (hidden initially)
         // Always show only "abgefahren"; icon/color indicate check-in status.
         const statusDisplay = document.createElement('div');
         statusDisplay.className = 'past-train-departed-display';
 
-        const isOngoing = isCheckedIn && !(actualTime && dauer);
-
         const statusText = document.createElement('span');
         statusText.className = 'past-status-text';
-        statusText.textContent = isOngoing ? 'Fahrt läuft noch' : 'abgefahren';
+        statusText.textContent = isOngoing ? 'laufend' : 'abgefahren';
         statusDisplay.appendChild(statusText);
 
         if (isCheckedIn) {
