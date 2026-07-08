@@ -65,6 +65,36 @@ function _ciApplyCheckoutState(uid, timeStr, dur) {
 
 // ── Data operations ────────────────────────────────────────────────────────
 
+function _ciCommitCheckinClone(template, timeStr) {
+  var clone = {
+    linie: template.linie || '',
+    ziel: template.ziel || '',
+    plan: timeStr,
+    actual: timeStr,
+    dauer: 0,
+    zwischenhalte: Array.isArray(template.zwischenhalte) ? template.zwischenhalte.slice() : [],
+    canceled: false,
+    date: _ciTodayStr(),
+    plannedDate: _ciTodayStr(),
+    source: 'local',
+    _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+    _templateUid: template._uniqueId,
+    checkinTime: timeStr,
+    _checkinEpochMs: Date.now()
+  };
+  if (template.projectId) clone.projectId = template.projectId;
+
+  (schedule.spontaneousEntries = schedule.spontaneousEntries || []).push(clone);
+
+  if (typeof refreshUIOnly === 'function') {
+    refreshUIOnly();
+  } else {
+    processTrainData(schedule);
+    renderCurrentWorkspaceView();
+  }
+  saveSchedule();
+}
+
 function _ciCommitCheckin(uid, timeStr) {
   var train = _ciFindTrain(uid);
   if (!train || train.checkinTime) return; // Idempotent guard
@@ -109,8 +139,15 @@ document.addEventListener('click', function _ciClickCapture(e) {
     var uid   = ciBtn.dataset.ciUid;
     var train = _ciFindTrain(uid);
 
-    // Guard: must be today's non-cancelled train, not yet checked in
-    if (!train || train.checkinTime || train.date !== _ciTodayStr() || train.canceled) return;
+    // Guard: must be today's non-cancelled train, not yet checked in.
+    // Duration-only templates never carry their own checkinTime — instead
+    // check whether an active clone session already exists for it.
+    if (!train || train.date !== _ciTodayStr() || train.canceled) return;
+    if (isDurationOnlyTrain(train)) {
+      if (findActiveCloneForTemplate(train._uniqueId)) return;
+    } else if (train.checkinTime) {
+      return;
+    }
 
     e.stopPropagation();
     e.preventDefault();
@@ -139,7 +176,11 @@ document.addEventListener('click', function _ciClickCapture(e) {
       shell.classList.add('fade-accent');
       wrap.classList.add('show-checkout');
       setTimeout(function () {
-        _ciCommitCheckin(uid, checkinTime);
+        if (isDurationOnlyTrain(train)) {
+          _ciCommitCheckinClone(train, checkinTime);
+        } else {
+          _ciCommitCheckin(uid, checkinTime);
+        }
       }, 450);
     }, 1000);
 

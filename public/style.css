@@ -2963,6 +2963,29 @@ html, body {
       color: white;
     }
 
+    /* Inline note editor workspace (renders in the main content panel, not a drawer) */
+    .note-editor-header {
+      display: flex;
+      align-items: center;
+      gap: 1vw;
+      padding: 1vh 1vw;
+      background: var(--color-bg-panel);
+    }
+
+    .note-editor-back {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1.8vh;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s ease;
+    }
+
+    .note-editor-back:hover {
+      color: rgba(255, 255, 255, 1);
+    }
+
     /* Editor drawer content styles - universal for both desktop and mobile */
     .editor-container {
       height: 100%;

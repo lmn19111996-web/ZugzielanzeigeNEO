@@ -96,7 +96,7 @@ const Templates = {
     const isToday = train.date === todayDate;
     const isCheckedOut = !!train.checkoutTime;
     const hasOpenCheckinSession = !!train.checkinTime;
-    const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut;
+    const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut && tTime > now;
     const isPastTrainDetected = !isDurationOnly && !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
     
     if (isFirstTrain) {
@@ -120,14 +120,28 @@ const Templates = {
 
     // ── Check-in / Check-out widget ──────────────────────────────────────────
     // Only rendered for today's non-cancelled trains (not the headline first-train).
-    const isCheckedIn   = hasOpenCheckinSession;
-    const uid           = train._uniqueId || '';
+    let isCheckedIn = hasOpenCheckinSession;
+    let uid         = train._uniqueId || '';
+    let isCheckedOutForWidget = isCheckedOut;
+
+    // Duration-only entries are templates: their check-in/check-out widget
+    // must reflect the state of the active clone spawned on check-in (see
+    // checkin.js `_ciCommitCheckinClone`), not the template's own (unchanging)
+    // state.
+    if (isDurationOnly) {
+      const activeClone = typeof findActiveCloneForTemplate === 'function'
+        ? findActiveCloneForTemplate(train._uniqueId)
+        : null;
+      isCheckedIn = !!activeClone;
+      isCheckedOutForWidget = false;
+      uid = activeClone ? activeClone._uniqueId : uid;
+    }
 
     let checkinWidgetHTML = '';
     if (!train._readOnly && isToday && !train.canceled && !isFirstTrain) {
       // Show widget for all today's non-canceled tasks (including past tasks)
       // until they are checked out.
-      if (isCheckedOut && !isDurationOnly) {
+      if (isCheckedOutForWidget && !isDurationOnly) {
         // Completed: hide check-in/check-out widget entirely
         checkinWidgetHTML = '';
       } else if (isCheckedIn) {

@@ -1,6 +1,9 @@
 ﻿// === WORKSPACE MODE MANAGEMENT ===
     let currentWorkspaceMode = 'list';
     let _reviewsFilterRating = 0; // 0 = all, 1-5 = specific star filter
+    // Guards against closeNoteEditorWorkspace() recursing back into setWorkspaceMode()
+    // when setWorkspaceMode() itself is what triggered the note editor to close.
+    let settingWorkspaceMode = false;
 
     // Toggle between Belegungsplan and legacy list view
     function toggleViewMode() {
@@ -43,12 +46,17 @@
         return;
       }
 
+      settingWorkspaceMode = true;
+      try {
       switch (mode) {
         case 'list':
           currentViewMode = 'list';
           currentWorkspaceMode = 'list';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          // The inline note editor occupies the same panel as the train list, so
+          // (unlike the right-side train editor drawer) it must close when switching here.
+          if (editingNoteInline) closeEditorDrawer();
           if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
@@ -58,6 +66,7 @@
           currentWorkspaceMode = 'occupancy';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
+          if (editingNoteInline) closeEditorDrawer();
           if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
           hideWorkspacePlaceholder();
           renderCurrentWorkspaceView();
@@ -138,6 +147,9 @@
           break;
         default:
           break;
+      }
+      } finally {
+        settingWorkspaceMode = false;
       }
 
       // Sync island visibility whenever workspace mode changes

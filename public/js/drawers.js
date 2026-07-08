@@ -105,12 +105,17 @@
       // ESC key handler
       noteDrawerEscHandler = function(e) {
         if (e.key === 'Escape' && document.body.contains(drawer)) {
-          // Check if editor drawer is open - if so, let it handle ESC first
+          // Check if the (drawer-based) train editor is open - if so, let it handle ESC first
           const editorDrawer = document.getElementById('focus-panel');
           if (editorDrawer && editorDrawer.classList.contains('is-open')) {
             return; // Let editor drawer handle ESC
           }
-          
+          // The inline note editor lives in the main panel, not the drawer - never
+          // close the notes drawer out from under an in-progress edit.
+          if (editingNoteInline) {
+            return;
+          }
+
           // Check if we're in edit mode
           const hasInputs = drawer.querySelector('[data-editable="true"] input, [data-editable="true"] textarea');
           if (!hasInputs) {
@@ -136,10 +141,18 @@
           if (e.target.closest('button')) {
             return;
           }
-          // Don't close if clicking inside the editor drawer
+          // Don't close if clicking inside the (drawer-based) train editor
           const editorDrawer = document.getElementById('focus-panel');
           if (editorDrawer && editorDrawer.contains(e.target)) {
             return;
+          }
+          // Don't close if clicking inside the inline note editor (it lives in the
+          // main panel, e.g. #train-list, so it's "outside" the drawer by definition)
+          if (editingNoteInline) {
+            const trainListEl = document.getElementById('train-list');
+            if (trainListEl && trainListEl.contains(e.target)) {
+              return;
+            }
           }
           e.stopPropagation();
           closeNoteDrawer();
@@ -192,7 +205,17 @@
       document.addEventListener('click', announcementDrawerClickOutHandler, true);
     }
 
+    // Tracks whether the currently-open editor is the inline note workspace
+    // (main content panel) rather than the right-side train editor drawer.
+    let editingNoteInline = false;
+    let workspaceModeBeforeNoteEditor = null;
+
     function openEditorDrawer(train = null) {
+      if (train && train.type === 'note') {
+        openNoteEditorWorkspace();
+        return;
+      }
+
       const panel = document.getElementById('focus-panel');
       if (panel) {
         const wasOpen = panel.classList.contains('is-open');
@@ -220,24 +243,64 @@
         }
       }
       closeAnnouncementsDrawer();
-      // Only close note drawer if we're not editing a note
-      if (!train || train.type !== 'note') {
-        closeNoteDrawer();
-      }
+      closeNoteDrawer();
     }
 
     function closeEditorDrawer() {
+      if (editingNoteInline) {
+        closeNoteEditorWorkspace();
+        return;
+      }
+
       const panel = document.getElementById('focus-panel');
       if (panel) {
         panel.classList.remove('is-open');
       }
       document.body.classList.remove('editor-drawer-open');
-      
+
       // Clean up back button handler
       if (editorDrawerBackHandler) {
         window.removeEventListener('popstate', editorDrawerBackHandler, true);
         editorDrawerBackHandler = null;
       }
+    }
+
+    // Opens the note editor as an inline workspace, exactly like switching to the
+    // 'projects'/'reviews'/'vorlagen' workspaces: it takes over #train-list directly
+    // (renderFocusMode clears and repopulates it) rather than using a separate panel.
+    function openNoteEditorWorkspace() {
+      closeAnnouncementsDrawer();
+      // Keep the notes drawer open so it stays visible as a list to pick from
+      // while a note is being edited in the main panel.
+      hideWorkspacePlaceholder();
+
+      if (!editingNoteInline) {
+        workspaceModeBeforeNoteEditor = currentWorkspaceMode;
+      }
+      editingNoteInline = true;
+      currentWorkspaceMode = 'note-editor';
+    }
+
+    function closeNoteEditorWorkspace() {
+      desktopFocusedTrainId = null;
+      editingNoteInline = false;
+
+      // Undo the fixed-height column layout applied to #train-list while the note
+      // editor was active, so other workspaces get their normal scroll behavior back.
+      const trainListEl = document.getElementById('train-list');
+      if (trainListEl) {
+        trainListEl.style.display = '';
+        trainListEl.style.flexDirection = '';
+        trainListEl.style.overflowY = '';
+      }
+
+      // If we're already inside a setWorkspaceMode() call (it called us to close
+      // this workspace before switching), let it finish driving the transition
+      // instead of recursing back into it.
+      if (!settingWorkspaceMode) {
+        setWorkspaceMode(workspaceModeBeforeNoteEditor || 'list');
+      }
+      workspaceModeBeforeNoteEditor = null;
     }
 
     // ==================== PROJECT MANAGEMENT FUNCTIONS ====================

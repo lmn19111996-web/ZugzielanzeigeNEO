@@ -475,6 +475,11 @@
           }
           break;
 
+        case 'note-editor':
+          // Inline note editor owns #train-list directly (via renderFocusMode) while
+          // active - re-rendering here would clobber it, so this is intentionally a no-op.
+          break;
+
         default:
           // Should not happen - defensive fallback
           console.warn('Unknown workspace mode:', currentWorkspaceMode);

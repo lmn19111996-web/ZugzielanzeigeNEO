@@ -24,17 +24,28 @@
       // Use the editor drawer for both mobile and desktop
       // It will be styled as fullscreen on mobile via CSS
       desktopFocusedTrainId = train._uniqueId; // Track focused train
-      const panel = document.getElementById('focus-panel');
+      // Notes render inline in the main content panel (like the projects/reviews/
+      // vorlagen workspaces do) instead of the right-side editor drawer.
+      const isNoteEdit = train.type === 'note';
+      const panel = document.getElementById(isNoteEdit ? 'train-list' : 'focus-panel');
       const template = document.getElementById('focus-template');
-      
+
       if (!panel || !template) {
         console.error('Missing panel or template!');
         return;
       }
-      
+
       openEditorDrawer(train);
       hideWorkspacePlaceholder();
-      
+
+      if (isNoteEdit) {
+        panel.style.borderLeft = '';
+        panel.style.borderImage = '';
+        panel.style.borderImageSlice = '';
+        panel.style.borderTopLeftRadius = '';
+        panel.style.borderBottomLeftRadius = '';
+        delete panel.dataset.vipLine;
+      } else {
       // Apply line color / VIP gradient to editor drawer border
       const lineColor = getLineColor(train.linie || 'S1');
       const vip = typeof getVipConfig === 'function' ? getVipConfig(train.linie) : null;
@@ -51,7 +62,8 @@
       }
       panel.style.borderTopLeftRadius = '8px';
       panel.style.borderBottomLeftRadius = '8px';
-      
+      }
+
       try {
         // Detect recurring train type
         const isRecurring = !!train._templateId;
@@ -292,6 +304,31 @@
             delayButtons.style.display = 'none';
             delayButtons.querySelectorAll('button').forEach(btn => btn.setAttribute('tabindex', '-1'));
           }
+
+          // Inline workspace header (back button) - the note editor has no
+          // surrounding drawer chrome to click outside of, so give it an explicit way back.
+          // The panel is pinned to a fixed-height column here (header + action buttons
+          // fixed, only the fields in between scroll) so the Speichern/Löschen buttons
+          // never end up pushed below the viewport.
+          panel.style.display = 'flex';
+          panel.style.flexDirection = 'column';
+          panel.style.overflowY = 'hidden';
+          const editorContainerEl = panel.querySelector('.editor-container');
+          if (editorContainerEl) {
+            editorContainerEl.style.flex = '1 1 auto';
+            editorContainerEl.style.minHeight = '0';
+          }
+
+          const noteHeader = document.createElement('div');
+          noteHeader.className = 'note-editor-header';
+          noteHeader.innerHTML = `
+            <button class="note-editor-back" type="button" aria-label="Zurück zu den Notizen">← Zurück zu den Notizen</button>
+          `;
+          panel.insertBefore(noteHeader, panel.firstChild);
+          noteHeader.querySelector('.note-editor-back').addEventListener('click', () => {
+            closeEditorDrawer();
+            openNoteDrawer();
+          });
         } else if (isTodo) {
           // For todos: show only Ziel, Datum, and Zwischenhalte
           const hideFields = ['linie', 'type', 'plan', 'actual', 'dauer', 'projectId'];
@@ -1366,11 +1403,13 @@
                   
                   // 2. Clear focus panel
                   desktopFocusedTrainId = null;
-                  panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
-                  closeEditorDrawer();
-                  
-                  // 3. Refresh note panel if this was a note
                   const isNote = train.type === 'note';
+                  panel.innerHTML = isNote
+                    ? '<div style="color: white; padding: 2vh; text-align: center;">Notiz gelöscht</div>'
+                    : '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
+                  closeEditorDrawer();
+
+                  // 3. Refresh note panel if this was a note
                   const noteDrawer = document.getElementById('note-drawer');
                   if (isNote && noteDrawer && noteDrawer.classList.contains('is-open')) {
                     renderNotePanel();

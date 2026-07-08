@@ -52,11 +52,14 @@
           dateEl.style.display = 'none';
         }
 
-        // Populate content (zwischenhalte) - use line breaks instead of dots
+        // Populate content (zwischenhalte) - preview only, truncated to a fixed
+        // number of lines so the list stays scannable; full text opens in the editor.
         const content = clone.querySelector('[data-note=\"content\"]');
+        const NOTE_PREVIEW_LINES = 3;
         if (note.zwischenhalte && note.zwischenhalte.length > 0) {
-          // Join with line breaks and use innerHTML to preserve them
-          content.innerHTML = note.zwischenhalte.map(stop => stop.replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>');
+          const truncated = note.zwischenhalte.length > NOTE_PREVIEW_LINES;
+          const previewLines = note.zwischenhalte.slice(0, NOTE_PREVIEW_LINES);
+          content.innerHTML = previewLines.map(stop => stop.replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>') + (truncated ? '<br>…' : '');
         } else {
           content.textContent = '';
           content.style.display = 'none';

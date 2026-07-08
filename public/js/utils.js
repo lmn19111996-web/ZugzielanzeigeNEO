@@ -236,6 +236,18 @@
       return !!train && train.type === 'duration-only';
     }
 
+    // A duration-only entry acts as a template: checking it in spawns a normal
+    // timed clone (see checkin.js `_ciCommitCheckinClone`) rather than mutating
+    // the template. This finds that clone's open session, if any.
+    function findActiveCloneForTemplate(templateUid) {
+      const lists = [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []];
+      for (const list of lists) {
+        const found = list.find(t => t && t._templateUid === templateUid && t.checkinTime && !t.checkoutTime);
+        if (found) return found;
+      }
+      return null;
+    }
+
     function hasTrainTime(train) {
       return !!(train && typeof train.plan === 'string' && train.plan.trim() !== '');
     }
@@ -422,9 +434,11 @@
         const statusDisplay = document.createElement('div');
         statusDisplay.className = 'past-train-departed-display';
 
+        const isOngoing = isCheckedIn && !(actualTime && dauer);
+
         const statusText = document.createElement('span');
         statusText.className = 'past-status-text';
-        statusText.textContent = 'abgefahren';
+        statusText.textContent = isOngoing ? 'Fahrt läuft noch' : 'abgefahren';
         statusDisplay.appendChild(statusText);
 
         if (isCheckedIn) {

@@ -253,13 +253,16 @@
       const pastTrainsFromToday = processedTrainData.scheduledTrains.filter(t => {
         // Only include trains from today
         if (t.date !== todayDate) return false;
-        
+
         // Get the train's end time
         const occEnd = getOccupancyEnd(t, now);
-        if (!occEnd) return false;
-        
-        // Include only trains that have already ended
-        return occEnd <= now;
+        if (occEnd) return occEnd <= now;
+
+        // No duration recorded (yet) — still show it once its departure time
+        // has passed, so the user can check out afterwards instead of it
+        // silently disappearing from the list.
+        const tTime = parseTime(t.actual || t.plan, now, t.date);
+        return !!tTime && tTime <= now;
       });
       
       // Mark past trains with a flag for template rendering
