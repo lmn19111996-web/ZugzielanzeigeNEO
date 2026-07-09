@@ -107,8 +107,10 @@ const Templates = {
       tempDiv.appendChild(document.createTextNode(formatDurationOnlyText(train.dauer)));
     } else if (isPastTrainDetected) {
       // For past trains, use special time formatting
-      // Pass check-in status to determine animation display
-      tempDiv.appendChild(formatPastTrainTime(train.plan, train.actual, train.dauer, train.date, now, !!train.checkinTime));
+      // Pass check-in status to determine animation display; cancelled
+      // trains get "Zug fällt aus" instead of "abgefahren" in the toggle
+      // since they never actually departed.
+      tempDiv.appendChild(formatPastTrainTime(train.plan, train.actual, train.dauer, train.date, now, !!train.checkinTime, !!train.canceled));
     } else {
       tempDiv.appendChild(formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date));
     }

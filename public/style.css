@@ -1458,6 +1458,21 @@ html, body {
       line-height: 1;
     }
 
+    /* The time/status toggle's inner layers are flex containers, which break
+       the ordinary propagation of an ancestor's text-decoration into them —
+       so the strikethrough on cancelled trains needs to be set explicitly on
+       the time text rather than relying on that propagation. */
+    .departure[data-canceled="true"] .past-train-actual-time,
+    .departure[data-canceled="true"] .past-train-planned-time {
+      text-decoration: line-through;
+    }
+
+    .past-status-text--canceled {
+      color: var(--energy-red-bright, #ea0808);
+      text-decoration: none;
+      opacity: 1;
+    }
+
     .past-status-icon {
       width: 2.6vh;
       height: 2.6vh;

@@ -380,7 +380,7 @@
     }
 
     // Format time display for past trains (departed)
-    function formatPastTrainTime(plan, actual, dauer, trainDate, now, isCheckedIn = false) {
+    function formatPastTrainTime(plan, actual, dauer, trainDate, now, isCheckedIn = false, canceled = false) {
       try {
         // Parse times to get HH:MM format
         const planTime = parseTime(plan, now, trainDate);
@@ -438,10 +438,11 @@
 
         const statusText = document.createElement('span');
         statusText.className = 'past-status-text';
-        statusText.textContent = isOngoing ? 'laufend' : 'abgefahren';
+        statusText.textContent = canceled ? 'Zug fällt aus' : (isOngoing ? 'laufend' : 'abgefahren');
+        if (canceled) statusText.classList.add('past-status-text--canceled');
         statusDisplay.appendChild(statusText);
 
-        if (isCheckedIn) {
+        if (isCheckedIn && !canceled) {
           statusDisplay.classList.add('is-checked');
           const icon = document.createElement('img');
           icon.className = 'past-status-icon';

@@ -74,6 +74,11 @@
   --energy-orange: #f97316;  /* High drain    / warning    */
   --energy-red:    #b91c1c;  /* Critical      / overloaded */
 
+  /* Same HSL lightness/saturation as --energy-yellow (hue rotated to red) —
+     for text/labels that need to read as "equally bright, but red" rather
+     than the darker, lower-contrast --energy-red above. */
+  --energy-red-bright: #ea0808;
+
   /* Trend arrow tint filters — applied to white SVG icons via CSS filter */
   --trend-up-filter:   invert(58%) sepia(72%) saturate(450%) hue-rotate(70deg)  brightness(1.05);
   --trend-down-filter: invert(22%) sepia(90%) saturate(700%) hue-rotate(345deg) brightness(0.95);
