@@ -1,5 +1,25 @@
 ﻿// === PROJECT MANAGEMENT ===
-    function buildProjectCard(project, cardTemplate) {
+    // Single O(n) pass over spontaneousEntries building per-project task/
+    // completed counts, instead of every project card (and the 'tasks' sort
+    // comparator) each re-filtering the entire array from scratch — same
+    // precompute-once pattern used for the FÜSQ clone lookup and the delay
+    // advisory context.
+    function buildProjectTaskStatsMap(today) {
+      const stats = new Map(); // projectId -> { taskCount, completedTasks }
+      (schedule.spontaneousEntries || []).forEach(t => {
+        if (!t || !t.projectId) return;
+        let entry = stats.get(t.projectId);
+        if (!entry) {
+          entry = { taskCount: 0, completedTasks: 0 };
+          stats.set(t.projectId, entry);
+        }
+        entry.taskCount++;
+        if (t.date && t.date <= today) entry.completedTasks++;
+      });
+      return stats;
+    }
+
+    function buildProjectCard(project, cardTemplate, taskStatsMap) {
       const lineColor = getLineColor(project.linie || 's1');
       const deadlineDate = project.deadline ? new Date(project.deadline) : null;
       const deadlineStr = deadlineDate ? deadlineDate.toLocaleDateString('de-DE', {
@@ -8,12 +28,17 @@
         month: 'long',
         year: 'numeric'
       }) : 'Open-Ended';
-      
-      const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
-      const today = new Date().toISOString().split('T')[0];
-      const taskCount = projectTasks.length;
-      const completedTasks = projectTasks.filter(t => t.date && t.date <= today).length;
-      
+
+      const stats = taskStatsMap
+        ? (taskStatsMap.get(project._uniqueId) || { taskCount: 0, completedTasks: 0 })
+        : (() => {
+            const today = new Date().toISOString().split('T')[0];
+            const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
+            return { taskCount: projectTasks.length, completedTasks: projectTasks.filter(t => t.date && t.date <= today).length };
+          })();
+      const taskCount = stats.taskCount;
+      const completedTasks = stats.completedTasks;
+
       const cardClone = cardTemplate.content.cloneNode(true);
       const card = cardClone.querySelector('[data-projects="card"]');
       card.setAttribute('data-project-id', project._uniqueId);
@@ -129,31 +154,37 @@
       // Apply sorting based on currentProjectSortMode
       const activeProjects = projects.filter(p => !p.archived);
       const archivedProjects = projects.filter(p => p.archived);
-      
+
+      // Built once per render: avoids every card (and the 'tasks' sort
+      // comparator, called O(p log p) times) each re-filtering the entire
+      // spontaneousEntries array from scratch.
+      const today = new Date().toISOString().split('T')[0];
+      const taskStatsMap = buildProjectTaskStatsMap(today);
+
       const sortedProjects = [...activeProjects].sort((a, b) => {
         switch (currentProjectSortMode) {
           case 'name':
             const nameA = (a.name || 'Unbenanntes Projekt').toLowerCase();
             const nameB = (b.name || 'Unbenanntes Projekt').toLowerCase();
             return nameA.localeCompare(nameB);
-          
+
           case 'line':
             const lineA = (a.linie || 's1').toLowerCase();
             const lineB = (b.linie || 's1').toLowerCase();
             return lineA.localeCompare(lineB);
-          
+
           case 'deadline':
             // Projects without deadline go to end
             if (!a.deadline && !b.deadline) return 0;
             if (!a.deadline) return 1;
             if (!b.deadline) return -1;
             return new Date(a.deadline) - new Date(b.deadline);
-          
+
           case 'tasks':
-            const tasksA = schedule.spontaneousEntries.filter(t => t.projectId === a._uniqueId).length;
-            const tasksB = schedule.spontaneousEntries.filter(t => t.projectId === b._uniqueId).length;
+            const tasksA = taskStatsMap.get(a._uniqueId)?.taskCount || 0;
+            const tasksB = taskStatsMap.get(b._uniqueId)?.taskCount || 0;
             return tasksB - tasksA; // Descending order (more tasks first)
-          
+
           case 'creation':
           default:
             // Sort by creation date (oldest first, which is write order)
@@ -162,7 +193,7 @@
             return dateA - dateB;
         }
       });
-      
+
       if (sortedProjects.length === 0) {
         // Show empty state
         const emptyTemplate = document.getElementById('projects-empty-template');
@@ -173,12 +204,12 @@
         // Add project cards
         const cardTemplate = document.getElementById('project-card-template');
         if (!cardTemplate) return;
-        
+
         sortedProjects.forEach(project => {
-          projectsList.appendChild(buildProjectCard(project, cardTemplate));
+          projectsList.appendChild(buildProjectCard(project, cardTemplate, taskStatsMap));
         });
       }
-      
+
       // Add archived section if there are archived projects
       if (archivedProjects.length > 0) {
         const cardTemplate = document.getElementById('project-card-template');
@@ -195,7 +226,7 @@
         const archivedList = archivedSection.querySelector('.projects-archived-list');
         if (cardTemplate) {
           archivedProjects.forEach(project => {
-            const card = buildProjectCard(project, cardTemplate);
+            const card = buildProjectCard(project, cardTemplate, taskStatsMap);
             card.classList.add('project-card--archived');
             archivedList.appendChild(card);
           });

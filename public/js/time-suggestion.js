@@ -651,25 +651,24 @@
         return { train, pos };
       }).filter(item => item.pos && item.pos.top + item.pos.height >= 0);
 
-      // Detect overlaps and assign indent levels (same as main function)
-      trainData.forEach((item, index) => {
-        let overlapLevel = 0;
-        
-        // Check against all previous trains to find overlaps
-        for (let i = 0; i < index; i++) {
-          const other = trainData[i];
-          
-          // Check if time ranges overlap
-          if (item.pos.start < other.pos.end && item.pos.end > other.pos.start) {
-            // This train overlaps with the other, check the other's level
-            const otherLevel = other.overlapLevel || 0;
-            if (otherLevel >= overlapLevel) {
-              overlapLevel = otherLevel + 1;
-            }
-          }
+      // Detect overlaps and assign indent levels (same O(n) sliding-window
+      // approach as renderBelegungsplan() in render-trains.js — trainData is
+      // already sorted by start time, so only the still-"active" set needs
+      // checking instead of every earlier block).
+      const activeOverlapBlocks = []; // { end, level }
+      trainData.forEach((item) => {
+        for (let i = activeOverlapBlocks.length - 1; i >= 0; i--) {
+          if (activeOverlapBlocks[i].end <= item.pos.start) activeOverlapBlocks.splice(i, 1);
         }
-        
-        item.overlapLevel = Math.min(overlapLevel, 3); // Max 4 levels (0-3)
+
+        let maxActiveLevel = -1;
+        for (const b of activeOverlapBlocks) {
+          if (b.level > maxActiveLevel) maxActiveLevel = b.level;
+        }
+
+        const overlapLevel = Math.min(maxActiveLevel + 1, 3); // Max 4 levels (0-3)
+        item.overlapLevel = overlapLevel;
+        activeOverlapBlocks.push({ end: item.pos.end, level: overlapLevel });
       });
 
       // Render train blocks (same as main function)

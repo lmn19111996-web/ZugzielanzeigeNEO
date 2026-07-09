@@ -255,6 +255,23 @@
           })
         };
         
+        // Smart advisory: auto-suggested delay/cancel reasons (train._delayReasonAuto)
+        // are intentionally ephemeral and never written onto the persisted train
+        // objects — but the log should still capture them alongside manual ones.
+        // schedule.spontaneousEntries entries are separate object instances from
+        // processedTrainData.allTrains/localTrains (regenerateTrainsFromSchedule
+        // spread-copies them), so _delayReasonAuto must be looked up by _uniqueId
+        // here rather than read directly off the entries being saved.
+        const delayReasonAuto = {};
+        [...(processedTrainData.allTrains || []), ...(processedTrainData.localTrains || [])].forEach(t => {
+          if (t && t._uniqueId && Array.isArray(t._delayReasonAuto) && t._delayReasonAuto.length) {
+            delayReasonAuto[t._uniqueId] = t._delayReasonAuto;
+          }
+        });
+        if (Object.keys(delayReasonAuto).length) {
+          dataToSave.delayReasonAuto = delayReasonAuto;
+        }
+
         console.log('💾 Saving schedule:', `${oldVersion} → ${newVersion}`, {
           fixedSchedule: dataToSave.fixedSchedule.length,
           spontaneousEntries: dataToSave.spontaneousEntries.length,

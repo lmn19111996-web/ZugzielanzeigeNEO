@@ -144,6 +144,25 @@ function crossesCurfewBoundary(train, now) {
     && window.isTimeInCurfewWindow(occEnd, startHour, endHour);
 }
 
+// Rule: a recurring instance's duration was edited away from its stem's
+// (template) duration. Longer duration over the same trip implies a slower
+// running speed; shorter implies faster. Only recurring instances have a
+// baseline to compare against — standalone trains have no "original" duration
+// on record, so this yields no suggestion for them.
+function getSpeedChangeReason(train) {
+  if (!train._templateId) return null;
+  const stem = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
+  if (!stem) return null;
+
+  const baseline = Number(stem.dauer);
+  const current = Number(train.dauer);
+  if (!Number.isFinite(baseline) || baseline <= 0 || !Number.isFinite(current) || current <= 0) return null;
+
+  if (current > baseline) return 'Zug fährt mit verminderter Geschwindigkeit';
+  if (current < baseline) return 'Zug fährt mit erhöhter Geschwindigkeit';
+  return null;
+}
+
 // Reads the tier the Stressmeter already computed for this train-as-task.
 // stressmeter-ui.js's renderGraph() sets this when the Stressmeter overlay has
 // been opened for that date; until then there's simply no Auslastung suggestion.
@@ -194,6 +213,9 @@ function computeSuggestedDelayReasons(train, allActiveTrainsOrContext, now) {
   if (nextDayReason) reasons.push(nextDayReason);
 
   if (crossesCurfewBoundary(train, now)) reasons.push('Grenzüberstreitend');
+
+  const speedReason = getSpeedChangeReason(train);
+  if (speedReason) reasons.push(speedReason);
 
   return reasons;
 }

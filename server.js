@@ -322,6 +322,16 @@ function buildCanonicalRecordId(train, sourceType, serviceDate, serviceTime) {
   return `${sourceType}|sig|${linie}|${ziel}|${time}|${date}|${type}|${project}`;
 }
 
+// Extracts the "Stop [Reason]" bracketed notice, mirroring the client-side regex
+// in templates.js — used only for the log's combined `notice` field.
+function extractCancelReason(zwischenhalte) {
+  for (const s of (zwischenhalte || [])) {
+    const m = String(s).match(/\[([^\]]+)\]/);
+    if (m) return m[1].trim();
+  }
+  return '';
+}
+
 function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
   const serviceDate = resolveLogServiceDate(train, sourceType);
   if (!serviceDate) return null;
@@ -331,9 +341,22 @@ function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
   const projectNameById = additionalInfo && typeof additionalInfo.projectNameById === 'object'
     ? additionalInfo.projectNameById
     : null;
+  const delayReasonAutoById = additionalInfo && typeof additionalInfo.delayReasonAutoById === 'object'
+    ? additionalInfo.delayReasonAutoById
+    : null;
   const zwischenhalte = normalizeStops(train && (train.zwischenhalte != null ? train.zwischenhalte : train.stops));
   const source = normalizeSourceType(sourceType);
   const recordId = buildCanonicalRecordId(train, source, serviceDate, serviceTime);
+
+  // All notices for this train, human- and auto-generated alike — same
+  // combination/order used client-side for the notice tag (see templates.js).
+  const uid = normalizeText(train && train._uniqueId);
+  const cancelReason = extractCancelReason(zwischenhalte);
+  const delayReason = normalizeText(train && train.delayReason);
+  const autoDelayReasons = (uid && delayReasonAutoById && Array.isArray(delayReasonAutoById[uid]))
+    ? delayReasonAutoById[uid]
+    : [];
+  const notice = [cancelReason, delayReason, ...autoDelayReasons].filter(Boolean).join(' +++ ');
 
   return {
     schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
@@ -358,6 +381,9 @@ function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
     date: serviceDate,
     plannedDate: serviceDate,
     canceled: Boolean(train && train.canceled),
+    delayReason: delayReason || null,
+    autoDelayReasons,
+    notice: notice || null,
     checkinTime: (train && train.checkinTime) || null,
     checkoutTime: (train && train.checkoutTime) || null,
     recurrence: (train && train.recurrence) || null,
@@ -1419,7 +1445,10 @@ app.post('/api/schedule', async (req, res) => {
         .filter(p => p && p._uniqueId)
         .map(p => [String(p._uniqueId), typeof p.name === 'string' ? p.name : ''])
     );
-    const logContext = { projectNameById };
+    const delayReasonAutoById = (body.delayReasonAuto && typeof body.delayReasonAuto === 'object')
+      ? body.delayReasonAuto
+      : {};
+    const logContext = { projectNameById, delayReasonAutoById };
 
     // Log history BEFORE pruning so all entries are archived
     const fixedArr  = Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [];

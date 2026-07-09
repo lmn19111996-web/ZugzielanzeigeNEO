@@ -282,12 +282,9 @@
         const occEnd = getOccupancyEnd(t, now);
         if (occEnd) return occEnd <= now;
 
-        // No duration recorded yet: only keep it around once its departure
-        // time has passed *and* it has an open check-in session, so the user
-        // can still check out. Plain undurationed past trains with no active
-        // session stay hidden as before (avoids permanently bloating the
-        // list/animations with routine trains that were never checked in).
-        if (!t.checkinTime || t.checkoutTime) return false;
+        // No duration recorded (yet) — still show it once its departure time
+        // has passed, so the user can check out afterwards instead of it
+        // silently disappearing from the list.
         const tTime = parseTime(t.actual || t.plan, now, t.date);
         return !!tTime && tTime <= now;
       });
