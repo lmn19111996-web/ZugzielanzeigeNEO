@@ -159,6 +159,49 @@ html, body {
       color: rgba(255, 255, 255, 0.695);
     }
 
+    /* "laufend" ⇄ elapsed-time toggle (checked in, no duration yet). Both
+       layers occupy the same grid cell and cross-fade via the same 10s
+       cycle used by the train list's past-train-time-toggle.
+       min-width pins the box to a stable size (room for "00:00:00") so it
+       doesn't grow/shrink by a pixel or two as the digits change each
+       second — this container sits in a `justify-content: flex-end` row,
+       so any width fluctuation would visibly shift it left/right. */
+    .countdown-laufend-toggle {
+      display: inline-grid;
+      vertical-align: baseline;
+      justify-items: end;
+      min-width: 9ch;
+    }
+
+    .countdown-laufend-label-layer,
+    .countdown-laufend-elapsed-layer {
+      grid-row: 1;
+      grid-column: 1;
+    }
+
+    /* Fixed-width digits so "00:00:09" → "00:00:10" doesn't itself change
+       text width in a proportional font. */
+    .countdown-elapsed-time {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .countdown-laufend-label-layer {
+      opacity: 1;
+      animation: pastTrainTimeToggle 10s infinite;
+    }
+
+    .countdown-laufend-elapsed-layer {
+      opacity: 0;
+      animation: pastTrainStatusToggle 10s infinite;
+    }
+
+    /* Sized to match the other ribbon labels ("Abfahrt in" / "Ankunft in") —
+       scoped to outrank the plain #first-train-container .countdown-label
+       gray-tint rule below, which would otherwise win by specificity. */
+    #first-train-container .countdown-laufend-label {
+      color: var(--energy-yellow, #eab308);
+    }
+
     /* FEX desktop ribbon: dark label to stay readable on white background */
     #first-train-container .train-entry.fex-entry .countdown-label {
       color: rgba(0,0,50,0.5);
@@ -3524,6 +3567,15 @@ html, body {
       /* Hide "Abfahrt in" / "Ankunft in" labels — show only "in HH:MM:SS" prefix */
       #first-train-container .countdown-label {
         display: none;
+      }
+
+      /* "laufend" carries .countdown-label so it'd otherwise be hidden by
+         the rule above — it's the only state indicator on mobile (there's
+         no bare-number fallback like the arriving/departing states have),
+         so keep it visible and sized like the rest of the ribbon text. */
+      #first-train-container .countdown-laufend-label {
+        display: inline;
+        font-size: 2.8vh;
       }
 
       /* "in " prefix — shown only on mobile ribbon for arriving state */

@@ -236,6 +236,19 @@
       return !!train && train.type === 'duration-only';
     }
 
+    // A train with an open check-in session and no recorded duration yet
+    // ("laufend") is effectively occupying right now even though
+    // getOccupancyEnd() can't compute an end time for it (dauer is 0/unset).
+    // Used so these trains count as "currently occupying" for headline/list
+    // purposes until they're checked out (at which point dauer becomes real)
+    // or superseded by a later-starting train.
+    function isOpenCheckinOccupying(train, now) {
+      if (!train || !train.checkinTime || train.checkoutTime) return false;
+      if (Number(train.dauer) > 0) return false;
+      const tTime = parseTime(train.actual || train.plan, now, train.date);
+      return !!tTime && tTime <= now;
+    }
+
     // A duration-only entry acts as a template: checking it in spawns a normal
     // timed clone (see checkin.js `_ciCommitCheckinClone`) rather than mutating
     // the template. This finds that clone's open session, if any.
@@ -495,6 +508,41 @@
           frag.appendChild(time);
           return frag;
         }
+      }
+
+      // Checked in, no duration recorded yet ("laufend") — there's no known
+      // end time to count down to, so alternate between a "laufend" label
+      // and a count-UP of elapsed time instead, sized like the other ribbon
+      // labels ("Abfahrt in" / "Ankunft in").
+      if (isOpenCheckinOccupying(train, now)) {
+        const frag = document.createDocumentFragment();
+
+        const toggle = document.createElement('span');
+        toggle.className = 'countdown-laufend-toggle';
+
+        const labelLayer = document.createElement('span');
+        labelLayer.className = 'countdown-laufend-label-layer';
+        const label = document.createElement('span');
+        label.className = 'countdown-label countdown-laufend-label';
+        label.textContent = 'laufend';
+        labelLayer.appendChild(label);
+
+        const elapsedLayer = document.createElement('span');
+        elapsedLayer.className = 'countdown-laufend-elapsed-layer';
+        const elapsedTime = document.createElement('span');
+        elapsedTime.className = 'countdown-time departing countdown-elapsed-time';
+        const elapsedSec = Math.max(0, Math.round((now - actualTime) / 1000));
+        elapsedTime.textContent = hms(elapsedSec);
+        elapsedLayer.appendChild(elapsedTime);
+
+        toggle.appendChild(labelLayer);
+        toggle.appendChild(elapsedLayer);
+        frag.appendChild(toggle);
+
+        // No day-boundary superscript needed: the elapsed counter isn't
+        // capped at 24h, so hours just keep climbing (e.g. "27:42:10") to
+        // represent multi-day sessions on its own.
+        return frag;
       }
 
       // Countdown to arrival (pre-departure) — gray

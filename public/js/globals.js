@@ -305,22 +305,27 @@
       
       const localFutureTrains = localScheduledTrains.filter(t => {
         const tTime = parseTime(t.actual || t.plan, now, t.date);
-        
+
         if (t.canceled) {
           return tTime > now;
         }
-        
+
+        // Checked in, no duration yet ("laufend") — occupying indefinitely
+        // until checked out or superseded by a later-starting train.
+        if (isOpenCheckinOccupying(t, now)) return true;
+
         const occEnd = getOccupancyEnd(t, now);
         if (t.actual && occEnd && parseTime(t.actual, now, t.date) <= now && occEnd > now) return true;
         return tTime > now;
       });
-      
+
       // Set current train from local schedule only
       // If there are overlaps, choose the train that starts LATEST
       if (localFutureTrains.length > 0) {
         // Find all trains that are currently occupying (overlapping with now)
         const currentlyOccupying = localFutureTrains.filter(t => {
           const tTime = parseTime(t.actual || t.plan, now, t.date);
+          if (isOpenCheckinOccupying(t, now)) return true;
           const occEnd = getOccupancyEnd(t, now);
           return tTime <= now && occEnd > now;
         });

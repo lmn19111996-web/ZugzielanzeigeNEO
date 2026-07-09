@@ -514,12 +514,14 @@
         return;
       }
 
-      // Find time range: start from the earlier of (current hour OR current train's hour)
-      const currentHour = new Date(now);
-      currentHour.setMinutes(0, 0, 0);
-      
-      let startHour = currentHour;
-      
+      // Find time range: show the whole day (from midnight), or earlier still
+      // if a currently-occupying train started before that (e.g. an overnight
+      // service that began yesterday).
+      const dayStart = new Date(now);
+      dayStart.setHours(0, 0, 0, 0);
+
+      let startHour = dayStart;
+
       // Check if there's a current train
       const currentTrain = processedTrainData.currentTrain;
       if (currentTrain) {
@@ -588,11 +590,13 @@
       const currentTimeOffsetHours = currentTimeOffsetMs / (60 * 60 * 1000);
       const currentTimeY = currentTimeOffsetHours * 7;
       
+      let currentTimeLineEl = null;
       if (currentTimeY >= 0 && currentTimeY <= totalHeight) {
         const currentTimeLineHTML = Templates.belegungsplanCurrentTimeLine(currentTimeY);
         const template = document.createElement('template');
         template.innerHTML = currentTimeLineHTML.trim();
-        belegungsplan.appendChild(template.content.firstChild);
+        currentTimeLineEl = template.content.firstChild;
+        belegungsplan.appendChild(currentTimeLineEl);
       }
 
       // Helper to calculate position and height
@@ -667,9 +671,14 @@
       // Wait for DOM to fully render, then restore scroll and show
       requestAnimationFrame(() => {
         setTimeout(() => {
-          // Set scroll position
+          // Restore previous scroll position; otherwise (first render of the
+          // day) the plan now spans midnight-to-midnight, so default to
+          // centering the view on "now" instead of showing 00:00 at the top.
           if (savedScrollPosition > 0) {
             trainListEl.scrollTop = savedScrollPosition;
+          } else if (currentTimeLineEl) {
+            const viewportHeight = trainListEl.clientHeight;
+            trainListEl.scrollTop = Math.max(0, currentTimeLineEl.offsetTop - viewportHeight / 3);
           }
         }, 50);
       });

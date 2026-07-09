@@ -33,12 +33,14 @@
           const newerOccupyingTrain = processedTrainData.localTrains.find(train => {
             if (!train.plan || train.plan.trim() === '') return false;
             const trainStart = parseTime(train.actual || train.plan, now, train.date);
+            if (!trainStart || trainStart <= currentTrainStart) return false;
+
+            // Checked in, no duration yet ("laufend") — occupying indefinitely.
+            if (isOpenCheckinOccupying(train, now)) return true;
+
             const trainOccEnd = getOccupancyEnd(train, now);
-            
             // Is this train currently occupying AND started after current train?
-            return trainStart && trainOccEnd && 
-                   trainStart <= now && trainOccEnd > now &&
-                   trainStart > currentTrainStart;
+            return !!trainOccEnd && trainStart <= now && trainOccEnd > now;
           });
           
           if (newerOccupyingTrain) {
@@ -77,18 +79,38 @@
           const dauer = departure.dataset.dauer ? Number(departure.dataset.dauer) : 0;
           const trainDate = departure.dataset.date || null;
           const canceled = departure.dataset.canceled === 'true';
-          
+          const checkinTime = departure.dataset.checkinTime || undefined;
+          const checkoutTime = departure.dataset.checkoutTime || undefined;
+
           // Reconstruct train object for formatCountdown
           const train = {
             plan: plan,
             actual: actual,
             dauer: dauer,
             date: trainDate,
-            canceled: canceled
+            canceled: canceled,
+            checkinTime: checkinTime,
+            checkoutTime: checkoutTime
           };
-          
-          departure.innerHTML = '';
-          departure.appendChild(formatCountdown(train, now));
+
+          const elapsedEl = departure.querySelector('.countdown-elapsed-time');
+          if (elapsedEl && isOpenCheckinOccupying(train, now)) {
+            // Already showing the laufend/elapsed-time toggle — update the
+            // elapsed digits in place instead of rebuilding the DOM, so the
+            // CSS cross-fade animation keeps running instead of restarting
+            // every second.
+            const actualTime = parseTime(actual, now, trainDate);
+            if (actualTime) {
+              const sec = Math.max(0, Math.round((now - actualTime) / 1000));
+              const h = Math.floor(sec / 3600);
+              const m = Math.floor((sec % 3600) / 60);
+              const s = sec % 60;
+              elapsedEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+          } else {
+            departure.innerHTML = '';
+            departure.appendChild(formatCountdown(train, now));
+          }
         }
       }
 

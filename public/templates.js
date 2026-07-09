@@ -235,11 +235,13 @@ const Templates = {
           <div class="departure-slot">
             <div class="departure${isOngoingDeparture ? ' ongoing-departure' : ''}"
                  data-departure="1"
-                 data-plan="${train.plan || ''}" 
-                 data-actual="${train.actual || ''}" 
-                 data-dauer="${train.dauer != null ? String(train.dauer) : ''}" 
-                 data-date="${train.date || ''}" 
-                 data-canceled="${train.canceled ? 'true' : 'false'}" 
+                 data-plan="${train.plan || ''}"
+                 data-actual="${train.actual || ''}"
+                 data-dauer="${train.dauer != null ? String(train.dauer) : ''}"
+                 data-date="${train.date || ''}"
+                 data-canceled="${train.canceled ? 'true' : 'false'}"
+                 data-checkin-time="${train.checkinTime || ''}"
+                 data-checkout-time="${train.checkoutTime || ''}"
                  ${isFirstTrain ? 'data-is-headline="true"' : ''}>
               ${departureHTML}
             </div>
