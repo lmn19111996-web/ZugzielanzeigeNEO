@@ -171,6 +171,14 @@
         projectName: (entry && entry.projectName) || null,
         zwischenhalte: stopsArr,
         canceled: !!(entry && entry.canceled),
+        // Carry the persisted manual reason and the save-time auto-suggestion
+        // snapshot through to Templates.trainEntry, which already combines them
+        // (+ any inline "[...]" Zwischenhalt notice) into the notice tag —
+        // no template changes needed, just feeding it the right field names
+        // (the log record calls the auto list `autoDelayReasons`, the live train
+        // object calls it `_delayReasonAuto`).
+        delayReason: (entry && entry.delayReason) || '',
+        _delayReasonAuto: (entry && Array.isArray(entry.autoDelayReasons)) ? entry.autoDelayReasons : [],
         _readOnly: true,
         _showDurationColumn: true,
         _isPastTrain: isPast,
