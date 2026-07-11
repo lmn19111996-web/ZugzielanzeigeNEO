@@ -27,8 +27,8 @@ const Templates = {
     
     // Determine train symbol HTML
     let trainSymbolHTML = '';
-    if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
-      trainSymbolHTML = `<img class="train-symbol" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${train.linie || ''}</div>'">`;  
+    if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
+      trainSymbolHTML = `<img class="train-symbol" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${train.linie || ''}</div>'">`;
     } else {
       trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
     }
@@ -83,6 +83,7 @@ const Templates = {
     const entryClasses = ['train-entry'];
     if (isFirstTrain) entryClasses.push('first-train');
     if (train.linie === 'FEX') entryClasses.push('fex-entry');
+    if (train.linie === 'SEV') entryClasses.push('sev-entry');
     if (train._isPreview) entryClasses.push('preview-train');
     if (train._isPastTrain) entryClasses.push('past-train');
     
@@ -314,6 +315,7 @@ const Templates = {
     const blockClasses = ['belegungsplan-train-block', `overlap-${overlapLevel}`];
     const normalizedLine = typeof train.linie === 'string' ? train.linie.trim() : '';
     const isFexLine = /^fex$/i.test(normalizedLine);
+    const isSevLine = /^sev$/i.test(normalizedLine);
     const lineColor = getLineColor(normalizedLine || 's1');
 
     let lineBgColor = lineColor;
@@ -326,9 +328,11 @@ const Templates = {
       lineBgColor = `rgba(${r}, ${g}, ${b}, 0.6)`;
     }
     
-    // Add FEX class
+    // Add FEX/SEV class
     if (isFexLine) {
       blockClasses.push('fex-entry');
+    } else if (isSevLine) {
+      blockClasses.push('sev-entry');
     } else if (/^S\d+/i.test(normalizedLine)) {
       // Add S-Bahn color class
       const lineClass = `s-bahn-${normalizedLine.toLowerCase()}`;
@@ -336,7 +340,7 @@ const Templates = {
     }
 
     const blockStyleParts = [`top: ${pos.top}vh`, `height: ${pos.height}vh`];
-    if (!isFexLine) {
+    if (!isFexLine && !isSevLine) {
       blockStyleParts.push(`background: ${lineBgColor}`);
       blockStyleParts.push(`border-color: ${lineColor}`);
     }
@@ -359,7 +363,7 @@ const Templates = {
     
     if (duration >= 30) {
       let lineIconHTML = '';
-      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
         lineIconHTML = `<img class="belegungsplan-line-icon" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill belegungsplan-line-badge\\'>${train.linie || ''}</div>'">`;  
       } else {
         lineIconHTML = `<div class="line-badge belegungsplan-line-badge">${train.linie || ''}</div>`;
@@ -470,7 +474,7 @@ const Templates = {
    * Create line icon element (img or badge)
    */
   lineIcon(linie, className = 'train-symbol', fontSize = 'inherit') {
-    if (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || /^\d+$/.test(linie))) {
+    if (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || linie === 'SEV' || /^\d+$/.test(linie))) {
       return `<img class="${className}" src="${getTrainSVG(linie)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\' style=\\'font-size: ${fontSize}\\'>${linie || ''}</div>'">`;  
     } else {
       return `<div class="line-badge" style="font-size: ${fontSize}">${linie || ''}</div>`;
@@ -653,7 +657,7 @@ const Templates = {
    * Create line picker option button (mobile)
    */
   linePickerOption(linie, beschreibung) {
-    const iconHTML = (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || /^\d+$/.test(linie)))
+    const iconHTML = (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || linie === 'SEV' || /^\d+$/.test(linie)))
       ? `<img src="${getTrainSVG(linie)}" alt="${linie}" style="height: 2vh; width: auto;" onerror="this.outerHTML='<div style=\\'padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;\\'>${linie}</div>'">`
       : `<div style="padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;">${linie}</div>`;
     
@@ -697,7 +701,8 @@ const Templates = {
       { linie: 'S7', beschreibung: 'Selbststudium' },
       { linie: 'S8', beschreibung: 'Reise' },
       { linie: 'S85', beschreibung: 'Reise' },
-      { linie: 'FEX', beschreibung: 'Wichtig ' }
+      { linie: 'FEX', beschreibung: 'Wichtig ' },
+      { linie: 'SEV', beschreibung: 'Ersatzverkehr' }
     ];
 
     const optionsHTML = lineOptions.map(opt => this.linePickerOption(opt.linie, opt.beschreibung)).join('');

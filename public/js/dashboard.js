@@ -18,7 +18,7 @@
 
   function isSBahnLike(linie) {
     if (typeof linie !== 'string') return false;
-    return /^S\d+/i.test(linie) || linie.toUpperCase() === 'FEX' || /^\d+$/.test(linie);
+    return /^S\d+/i.test(linie) || linie.toUpperCase() === 'FEX' || linie.toUpperCase() === 'SEV' || /^\d+$/.test(linie);
   }
 
   function getViaText(train) {

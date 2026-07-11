@@ -705,6 +705,35 @@ html, body {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     }
 
+    .belegungsplan-train-block.sev-entry {
+      background: rgba(151, 35, 93, 0.822);
+      border-color: #97235d;
+      color: white;
+      position: relative;
+      padding-left: 1vh;
+    }
+
+    .belegungsplan-train-block.sev-entry::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0.6vh;
+      background: repeating-linear-gradient(
+        45deg,
+        #f5c400 0,
+        #f5c400 0.4vh,
+        #1a1a1a 0.4vh,
+        #1a1a1a 0.8vh
+      );
+    }
+
+    .belegungsplan-train-block.sev-entry:hover {
+      background: rgba(151, 35, 93, 0.95);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
 
     .belegungsplan-train-block.selected {
       background: rgba(255, 255, 255, 0.3);
@@ -1937,6 +1966,37 @@ html, body {
     .fex-entry .delayed {
       background: var(--color-bg-primary);
       color: white;
+    }
+
+    /* SEV (Schienenersatzverkehr) train highlighting: magenta background with a
+       yellow/black diagonal construction stripe on the leftmost edge */
+    .sev-entry {
+      background: #97235d;
+      color: white;
+      position: relative;
+    }
+
+    .sev-entry::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 1vh;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        45deg,
+        #f5c400 0,
+        #f5c400 0.6vh,
+        #1a1a1a 0.6vh,
+        #1a1a1a 1.2vh
+      );
+    }
+
+    /* SEV: actual/delay badge inverted (magenta text on white pill) */
+    .sev-entry .delayed {
+      background: white;
+      color: #97235d;
     }
 
     /* Train entry hover effect */

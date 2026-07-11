@@ -327,7 +327,7 @@
 
           // Main train icon
           const mainIcon = clone.querySelector('[data-konflikt="main-icon"]');
-          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
             mainIcon.src = getTrainSVG(train.linie);
             mainIcon.alt = train.linie;
             mainIcon.onerror = () => {
@@ -349,7 +349,7 @@
 
           // Conflict train icon
           const conflictIcon = clone.querySelector('[data-konflikt="conflict-icon"]');
-          if (typeof conflictTrain.linie === 'string' && (/^S\d+/i.test(conflictTrain.linie) || conflictTrain.linie === 'FEX' || /^\d+$/.test(conflictTrain.linie))) {
+          if (typeof conflictTrain.linie === 'string' && (/^S\d+/i.test(conflictTrain.linie) || conflictTrain.linie === 'FEX' || conflictTrain.linie === 'SEV' || /^\d+$/.test(conflictTrain.linie))) {
             conflictIcon.src = getTrainSVG(conflictTrain.linie);
             conflictIcon.alt = conflictTrain.linie;
             conflictIcon.onerror = () => {
@@ -585,7 +585,7 @@
           lineIconTypeGroup.style.display = 'none';
         } else {
           const lineIcon = clone.querySelector('[data-announcement="line-icon"]');
-          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || /^\d+$/.test(train.linie))) {
+          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
             lineIcon.src = getTrainSVG(train.linie);
             lineIcon.alt = train.linie;
             lineIcon.onerror = () => {
