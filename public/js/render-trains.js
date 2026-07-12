@@ -983,19 +983,37 @@
         const bodyEl = document.createElement('div');
         bodyEl.className = 'week-day-body';
 
+        // A train's occupancy segment for *this* column is whatever portion of
+        // [start, end) falls within this calendar day - trains crossing midnight
+        // are clipped and continue as their own segment in the next day's column,
+        // rather than only ever appearing (and overflowing) in their start day.
+        const dayStart = new Date(dateObj);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+
         const dayTrains = allScheduledTrains
           .map(train => {
             const start = parseTime(train.actual || train.plan, now, train.date);
             if (!start) return null;
-            if (start.toLocaleDateString('sv-SE') !== dateStr) return null;
             const duration = Number(train.dauer) || 0;
             if (duration <= 0) return null;
-            const dayStart = new Date(dateObj);
-            dayStart.setHours(0, 0, 0, 0);
-            const offsetHours = (start - dayStart) / (60 * 60 * 1000);
+            const end = new Date(start.getTime() + duration * 60000);
+            if (end <= dayStart || start >= dayEnd) return null; // no overlap with this day
+
+            const segStart = start < dayStart ? dayStart : start;
+            const segEnd = end > dayEnd ? dayEnd : end;
+            const offsetHours = (segStart - dayStart) / (60 * 60 * 1000);
+            const durHours = (segEnd - segStart) / (60 * 60 * 1000);
             const top = (offsetHours / 24) * 100;
-            const height = (duration / 60 / 24) * 100;
-            return { train, pos: { top, height, start, end: new Date(start.getTime() + duration * 60000) } };
+            const height = (durHours / 24) * 100;
+            return {
+              train,
+              pos: {
+                top, height, start: segStart, end: segEnd,
+                continuesFromPrevDay: segStart > start,
+                continuesToNextDay: segEnd < end,
+              },
+            };
           })
           .filter(Boolean)
           .sort((a, b) => a.pos.start - b.pos.start);
@@ -1020,6 +1038,76 @@
 
       gridWrapper.appendChild(dayColumns);
       contentEl.appendChild(gridWrapper);
+    }
+
+    // Custom tooltip for train tiles too short/narrow to show their destination
+    // text (mainly the compact week view). Anchored above/below the tile rather
+    // than at the cursor, so the mouse never sits on top of it.
+    let belegungsplanTooltipWired = false;
+
+    function ensureBelegungsplanTooltipEl() {
+      let tooltip = document.getElementById('belegungsplan-tooltip');
+      if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'belegungsplan-tooltip';
+        tooltip.className = 'belegungsplan-tooltip';
+        document.body.appendChild(tooltip);
+      }
+      return tooltip;
+    }
+
+    // Only tiles that can't show their own destination text in full need the
+    // tooltip: either the header wasn't rendered at all (tile too short), or
+    // the destination label is there but ellipsis-truncated (tile too narrow).
+    function belegungsplanTileTextIsHidden(tileEl) {
+      const destEl = tileEl.querySelector('.belegungsplan-destination');
+      if (!destEl) return true;
+      return destEl.scrollWidth > destEl.clientWidth + 1;
+    }
+
+    function showBelegungsplanTooltip(tileEl) {
+      if (!belegungsplanTileTextIsHidden(tileEl)) return;
+      const text = tileEl.getAttribute('data-tooltip');
+      if (!text) return;
+      const tooltip = ensureBelegungsplanTooltipEl();
+      tooltip.textContent = text;
+      tooltip.style.display = 'block';
+
+      const rect = tileEl.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const gap = 8;
+
+      // Prefer above the tile; fall back to below if there's no room, so the
+      // tooltip is always fully clear of both the tile and the cursor on it.
+      let top = rect.top - tooltipRect.height - gap;
+      if (top < 4) top = rect.bottom + gap;
+
+      let left = rect.left;
+      const maxLeft = window.innerWidth - tooltipRect.width - 4;
+      if (left > maxLeft) left = maxLeft;
+      if (left < 4) left = 4;
+
+      tooltip.style.top = `${top}px`;
+      tooltip.style.left = `${left}px`;
+    }
+
+    function hideBelegungsplanTooltip() {
+      const tooltip = document.getElementById('belegungsplan-tooltip');
+      if (tooltip) tooltip.style.display = 'none';
+    }
+
+    function wireBelegungsplanTooltip(trainListEl) {
+      if (belegungsplanTooltipWired) return;
+      belegungsplanTooltipWired = true;
+      trainListEl.addEventListener('mouseover', (e) => {
+        const tile = e.target.closest('.belegungsplan-train-block');
+        if (tile) showBelegungsplanTooltip(tile);
+      });
+      trainListEl.addEventListener('mouseout', (e) => {
+        const tile = e.target.closest('.belegungsplan-train-block');
+        if (tile && !tile.contains(e.relatedTarget)) hideBelegungsplanTooltip();
+      });
+      trainListEl.addEventListener('scroll', hideBelegungsplanTooltip);
     }
 
     // The date range actually covered by the day view's continuous timeline (see
@@ -1056,6 +1144,8 @@
       const now = new Date();
       const trainListEl = document.getElementById('train-list');
       trainListEl.classList.remove('log-viewer-mode');
+      wireBelegungsplanTooltip(trainListEl);
+      hideBelegungsplanTooltip();
 
       const savedScrollPosition = trainListEl.scrollTop;
       trainListEl.innerHTML = '';

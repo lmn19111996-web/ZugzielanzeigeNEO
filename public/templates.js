@@ -358,6 +358,11 @@ const Templates = {
     if (train._isPreview) {
       blockClasses.push('preview-train');
     }
+
+    // Week view: mark segments of a midnight-crossing train that were clipped to
+    // this day's column, so CSS can flatten the clipped edge and hint continuation.
+    if (pos.continuesFromPrevDay) blockClasses.push('continues-from-prev-day');
+    if (pos.continuesToNextDay) blockClasses.push('continues-to-next-day');
     
     // Only show header content for blocks 30 minutes or longer
     const duration = Number(train.dauer) || 0;
@@ -379,12 +384,19 @@ const Templates = {
       `;
     }
     
+    // Tooltip fallback for tiles too short/narrow to show the destination text
+    // (common in the compact week view) - data-tooltip is read by the custom
+    // tooltip in render-trains.js (deliberately not the native `title` tooltip,
+    // which follows the cursor and would sit right under it).
+    const tooltipText = `${train.linie || ''} ${train.ziel || ''}`.trim().replace(/"/g, '&quot;');
+
     return `
-      <div class="${blockClasses.join(' ')}" 
-           style="${blockStyleParts.join('; ')};" 
-           data-unique-id="${train._uniqueId || ''}" 
-           data-linie="${train.linie || ''}" 
-           data-plan="${train.plan || ''}">
+      <div class="${blockClasses.join(' ')}"
+           style="${blockStyleParts.join('; ')};"
+           data-unique-id="${train._uniqueId || ''}"
+           data-linie="${train.linie || ''}"
+           data-plan="${train.plan || ''}"
+           data-tooltip="${tooltipText}">
         ${headerHTML}
       </div>
     `;

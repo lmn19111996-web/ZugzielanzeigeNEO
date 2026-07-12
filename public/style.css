@@ -1097,6 +1097,38 @@ html, body {
     .week-day-body .belegungsplan-train-block.overlap-2 { width: calc(100% - 25%); left: 22%; }
     .week-day-body .belegungsplan-train-block.overlap-3 { width: calc(100% - 35%); left: 32%; }
 
+    /* Midnight-crossing trains, split across day columns: flatten the clipped
+       edge and dash its border so it visibly continues into/from the next day. */
+    .belegungsplan-train-block.continues-from-prev-day {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-top-style: dashed;
+    }
+
+    .belegungsplan-train-block.continues-to-next-day {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom-style: dashed;
+    }
+
+    /* Custom tooltip for train tiles (see render-trains.js) - anchored above/below
+       the tile rather than at the cursor, so the mouse never covers it. */
+    .belegungsplan-tooltip {
+      display: none;
+      position: fixed;
+      z-index: 5000;
+      background: var(--color-bg-panel);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 4px;
+      padding: 0.6vh 1vw;
+      font-size: 1.5vh;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+
     .week-day-body .belegungsplan-line-icon {
       /* Source SVGs are 16:8 (2:1) - match that aspect so the icon isn't squashed. */
       width: 2.6vh;
