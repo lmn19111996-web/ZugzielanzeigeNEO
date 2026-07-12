@@ -119,6 +119,7 @@
       from: '',
       to: '',
       rows: [],
+      rawEntries: [],
       loading: false,
       loadedOnce: false,
       error: '',
@@ -147,6 +148,37 @@
           normalizeUmlautsForSearch(stops).includes(q)
         );
       });
+    }
+
+    function filterLogViewerRawEntries(entries, query) {
+      const q = normalizeUmlautsForSearch((query || '').trim());
+      if (!q) return entries;
+      return entries.filter(e => {
+        if (!e) return false;
+        const rawStops = e.zwischenhalte != null ? e.zwischenhalte : e.stops;
+        const stops = Array.isArray(rawStops) ? rawStops.join(' ') : String(rawStops || '');
+        return (
+          normalizeUmlautsForSearch(e.linie || '').includes(q) ||
+          normalizeUmlautsForSearch(e.ziel || '').includes(q) ||
+          normalizeUmlautsForSearch(e.delayReason || '').includes(q) ||
+          normalizeUmlautsForSearch(stops).includes(q)
+        );
+      });
+    }
+
+    // Exports the currently loaded date range as a single merged JSON file,
+    // instead of the per-week .log files the server stores history in.
+    function exportLogViewerRange() {
+      const entries = filterLogViewerRawEntries(logViewerState.rawEntries, logViewerState.query);
+      const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `train_history_${logViewerState.from}_bis_${logViewerState.to}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     }
 
     // Ctrl+F inside the log viewer toggles this local search instead of the
@@ -271,10 +303,12 @@
         }
         const payload = await res.json();
         const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        logViewerState.rawEntries = entries;
         logViewerState.rows = entries.map(normalizeLogEntryToTrain).filter(t => t.plan || t.actual);
         logViewerState.loadedOnce = true;
       } catch (err) {
         console.error('Failed to load log viewer range:', err);
+        logViewerState.rawEntries = [];
         logViewerState.rows = [];
         logViewerState.error = err && err.message ? err.message : 'Unbekannter Fehler';
         logViewerState.loadedOnce = true;
@@ -315,6 +349,7 @@
           <label class="log-viewer-label" for="log-viewer-to">Bis</label>
           <input id="log-viewer-to" class="log-viewer-input" type="date" value="${logViewerState.to}">
           <button id="log-viewer-load" class="log-viewer-load-btn" type="button">Laden</button>
+          <button id="log-viewer-export" class="log-viewer-export-btn" type="button" ${logViewerState.loadedOnce ? '' : 'disabled'}>Exportieren</button>
         </div>
       `;
       page.appendChild(actions);
@@ -357,6 +392,7 @@
       const fromInput = actions.querySelector('#log-viewer-from');
       const toInput = actions.querySelector('#log-viewer-to');
       const loadBtn = actions.querySelector('#log-viewer-load');
+      const exportBtn = actions.querySelector('#log-viewer-export');
       const presetButtons = presets.querySelectorAll('.log-viewer-preset-btn');
       if (fromInput) {
         fromInput.addEventListener('change', () => {
@@ -383,6 +419,12 @@
           if (fromInput && fromInput.value) logViewerState.from = fromInput.value;
           if (toInput && toInput.value) logViewerState.to = toInput.value;
           fetchLogViewerRange();
+        });
+      }
+      if (exportBtn) {
+        exportBtn.disabled = logViewerState.loading || !logViewerState.loadedOnce;
+        exportBtn.addEventListener('click', () => {
+          exportLogViewerRange();
         });
       }
 

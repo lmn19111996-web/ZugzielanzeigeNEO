@@ -567,6 +567,23 @@ html, body {
       cursor: default;
     }
 
+    .log-viewer-export-btn {
+      min-height: 3.8vh;
+      padding: 0.4vh 0.9vw;
+      border: 0.5px solid rgba(255, 255, 255, 0.34);
+      border-radius: 0.6vh;
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      font-size: clamp(14px, 2vh, 18px);
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .log-viewer-export-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
     .log-viewer-search-wrap {
       display: inline-flex;
       align-items: center;
