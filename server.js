@@ -1551,7 +1551,9 @@ app.post('/api/schedule', async (req, res) => {
     // Log history BEFORE pruning so all entries are archived. fixedSchedule
     // holds recurring-train templates only (no real time/duration), never
     // concrete occurrences, so it is intentionally not logged - see
-    // isRecurringStem().
+    // isRecurringStem(). It's still persisted below though - it's the source
+    // of truth for recurring trains, just not history.
+    const fixedArr  = Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [];
     const trainsArr = Array.isArray(body.trains) ? body.trains : [];
     if (rawSpontaneous.length > 0) logTrainHistory(rawSpontaneous, 'spontaneous', logContext);
     // `trains` is a legacy container from older schema versions.
