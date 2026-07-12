@@ -4399,9 +4399,14 @@ console.log(`App version ${APP_VERSION}`);
           const dateObj = new Date(train.date);
           const newWeekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateObj.getDay()];
           train.weekday = newWeekday;
+          // First time a date is entered for this entry, that's the intended (planned)
+          // service date. Any later change to `date` is a rescheduling and must NOT
+          // retroactively move plannedDate.
+          if (!train.plannedDate) train.plannedDate = value;
           if (scheduleTrain) {
             scheduleTrain.date = value;
             scheduleTrain.weekday = newWeekday;
+            if (!scheduleTrain.plannedDate) scheduleTrain.plannedDate = value;
           }
         } else if (field === 'dauer') {
           train.dauer = Number(value) || 0;

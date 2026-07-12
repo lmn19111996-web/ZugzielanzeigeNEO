@@ -289,8 +289,15 @@ function normalizeKeyPart(value) {
   return normalizeText(value).toLowerCase() || 'unknown';
 }
 
+// True for template trains, which must never reach the log: they carry no
+// real start time or duration ("trash"). Two kinds exist:
+//  - every entry in the 'fixed' source (recurring-train stems)
+//  - duration-only entries (type: 'duration-only') living in spontaneousEntries
+// Both spawn a real clone when activated (recurring stem materializes an
+// instance; duration-only train is "brought to life" via check-in/check-out
+// in checkin.js's _ciCommitCheckinClone) that gets logged in their place.
 function isRecurringStem(train, sourceType) {
-  return sourceType === 'fixed' && !!(train && train.recurrence);
+  return sourceType === 'fixed' || (train && train.type === 'duration-only');
 }
 
 function resolveLogServiceDate(train, sourceType) {
@@ -1401,6 +1408,90 @@ app.get('/api/train-history/range', async (req, res) => {
   }
 });
 
+// A record's serviceDate deterministically maps to one weekly log file
+// (the same formula used when the record was first written), so an edit or
+// delete only ever needs to touch that one file.
+function resolveWeeklyLogFileForDate(dateStr) {
+  const d = new Date(`${dateStr}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return getWeeklyLogFile(d);
+}
+
+// Correct a mis-recorded log entry's actual outcome (start time, duration,
+// cancellation) in place. Intentionally narrow: the log is meant to be an
+// immutable record of what happened, so only these three fields - plus the
+// deletion endpoint below for spam/bad entries - are mutable from the UI.
+app.patch('/api/train-history/entry', async (req, res) => {
+  try {
+    const { recordId, date, actual, dauer, canceled } = req.body || {};
+    if (!recordId || typeof recordId !== 'string') {
+      return res.status(400).json({ error: 'Missing recordId' });
+    }
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: 'Missing date' });
+    }
+
+    const logFile = resolveWeeklyLogFileForDate(date);
+    if (!logFile) {
+      return res.status(400).json({ error: 'Invalid date' });
+    }
+
+    const stateMap = await readLogAsStateMap(logFile);
+    const record = stateMap.get(recordId);
+    if (!record) {
+      return res.status(404).json({ error: 'Log entry not found' });
+    }
+
+    if (actual !== undefined) {
+      record.actual = normalizeText(actual);
+      record.serviceTime = record.actual || record.plan;
+    }
+    if (dauer !== undefined) {
+      record.dauer = Number(dauer) || 0;
+    }
+    if (canceled !== undefined) {
+      record.canceled = Boolean(canceled);
+    }
+
+    stateMap.set(recordId, record);
+    await rewriteLogFile(stateMap, logFile);
+
+    res.json({ success: true, entry: record });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update log entry', details: e.message });
+  }
+});
+
+// Remove a bad/spam log entry entirely.
+app.delete('/api/train-history/entry', async (req, res) => {
+  try {
+    const { recordId, date } = req.body || {};
+    if (!recordId || typeof recordId !== 'string') {
+      return res.status(400).json({ error: 'Missing recordId' });
+    }
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: 'Missing date' });
+    }
+
+    const logFile = resolveWeeklyLogFileForDate(date);
+    if (!logFile) {
+      return res.status(400).json({ error: 'Invalid date' });
+    }
+
+    const stateMap = await readLogAsStateMap(logFile);
+    if (!stateMap.has(recordId)) {
+      return res.status(404).json({ error: 'Log entry not found' });
+    }
+
+    stateMap.delete(recordId);
+    await rewriteLogFile(stateMap, logFile);
+
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete log entry', details: e.message });
+  }
+});
+
 // Fallback schedule (static file) - cached in memory
 app.get('/api/schedule', async (req, res) => {
   try {
@@ -1450,10 +1541,11 @@ app.post('/api/schedule', async (req, res) => {
       : {};
     const logContext = { projectNameById, delayReasonAutoById };
 
-    // Log history BEFORE pruning so all entries are archived
-    const fixedArr  = Array.isArray(body.fixedSchedule) ? body.fixedSchedule : [];
+    // Log history BEFORE pruning so all entries are archived. fixedSchedule
+    // holds recurring-train templates only (no real time/duration), never
+    // concrete occurrences, so it is intentionally not logged - see
+    // isRecurringStem().
     const trainsArr = Array.isArray(body.trains) ? body.trains : [];
-    if (fixedArr.length > 0)      logTrainHistory(fixedArr, 'fixed', logContext);
     if (rawSpontaneous.length > 0) logTrainHistory(rawSpontaneous, 'spontaneous', logContext);
     // `trains` is a legacy container from older schema versions.
     // Keep ingesting it for compatibility, but write under spontaneous

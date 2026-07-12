@@ -88,6 +88,13 @@
 
         // Only allow editing for local schedule trains
         const isEditable = train.source === 'local';
+        // Log entries are historical records, not live schedule trains: the
+        // drawer shows every field for context but only lets you correct what
+        // actually happened (actual time, duration, cancellation) or delete a
+        // bad entry - see the isLogEdit branches below and in the save/action
+        // handlers, which redirect to /api/train-history/entry instead of
+        // schedule.spontaneousEntries + saveSchedule().
+        const isLogEdit = train.source === 'log';
 
         // Clear panel and clone template
         panel.innerHTML = '';
@@ -179,7 +186,7 @@
         }
         arrivalActualValue.parentElement.setAttribute('data-value', train.actual || '');
         arrivalActualValue.parentElement.setAttribute('data-placeholder', '14:05');
-        if (isEditable) {
+        if (isEditable || isLogEdit) {
           arrivalActualValue.parentElement.setAttribute('data-editable', 'true');
         }
 
@@ -220,7 +227,7 @@
         durationValue.textContent = train.dauer ? `${train.dauer} Min` : 'Keine Dauer';
         durationValue.parentElement.setAttribute('data-value', train.dauer || '0');
         durationValue.parentElement.setAttribute('data-placeholder', '90');
-        if (isEditable) {
+        if (isEditable || isLogEdit) {
           durationValue.parentElement.setAttribute('data-editable', 'true');
         }
 
@@ -480,7 +487,7 @@
         panel.dataset.isEditable = isEditable;
         
         // Only add editing functionality for local trains
-        if (!isEditable) {
+        if (!isEditable && !isLogEdit) {
           // Make all fields non-editable
           panel.querySelectorAll('.editor-field').forEach(field => {
             field.removeAttribute('data-editable');
@@ -491,6 +498,28 @@
           const actions = panel.querySelector('.editor-actions');
           if (actions) actions.style.display = 'none';
           return;
+        }
+
+        if (isLogEdit) {
+          // All fields stay visible for context, but only actual/dauer are
+          // inputs — everything else about a past event (line, destination,
+          // stops, ...) is left alone. Most fields carry a hardcoded
+          // data-editable="true" straight from #focus-template, so it must be
+          // explicitly stripped here, not just left alone when already false.
+          panel.querySelectorAll('.editor-field').forEach(field => {
+            const fieldName = field.getAttribute('data-field');
+            if (fieldName === 'actual' || fieldName === 'dauer') return;
+            field.removeAttribute('data-editable');
+            field.style.cursor = 'default';
+            field.style.opacity = '0.6';
+          });
+          // Quick delay-adjust buttons operate on a live schedule train and
+          // don't apply here.
+          const delayButtons = panel.querySelector('.editor-delay-buttons');
+          if (delayButtons) delayButtons.style.display = 'none';
+          if (cancelBtn) cancelBtn.textContent = train.canceled ? 'Reaktivieren' : 'Ausfall melden';
+          // Fall through: editableFields + actionsContainer listeners below are
+          // still wired up so actual/dauer edits and cancel/delete work.
         }
 
         const findOrRestoreScheduleTrain = (trainId, fallbackTrain) => {
@@ -580,6 +609,20 @@
             }
           });
           
+          // ---- LOG ENTRY SAVE PATH ----
+          // train.actual / train.dauer were already updated above by the
+          // generic field loop; persist those to the one relevant weekly log
+          // file instead of schedule.spontaneousEntries + saveSchedule().
+          if (isLogEdit) {
+            if (hasChanges) {
+              await saveLogEntryEdit(train); // re-renders the panel itself once saved
+            } else {
+              renderFocusMode(train); // no-op edit: still exit edit mode
+            }
+            return;
+          }
+          // ---- END LOG ENTRY SAVE PATH ----
+
           // Find the train in schedule
           const trainId = panel.dataset.trainId;
           console.log('  Looking for train with ID:', trainId);
@@ -706,10 +749,19 @@
           // If changes were made, update schedule and save
           if (hasChanges) {
             console.log('✅ Changes detected, saving...');
+            // On the first real save of a freshly-created entry, plannedDate was only a
+            // today-placeholder (so the entry would render before the user picked a date).
+            // Lock it to whatever date the user actually confirmed, once, here - any later
+            // save (train._isNewEntry no longer set) leaves plannedDate untouched so
+            // rescheduling only moves `date`/`actual`, not the original plan.
+            if (train._isNewEntry) {
+              train.plannedDate = train.date;
+            }
             // Update the schedule train with all changes
-            const { _isPastTrain, _delayReasonAuto, _hasDelay, ...persistableTrain } = train;
+            const { _isPastTrain, _delayReasonAuto, _hasDelay, _isNewEntry, ...persistableTrain } = train;
             Object.assign(scheduleTrain, persistableTrain);
             delete scheduleTrain._isPastTrain;
+            delete scheduleTrain._isNewEntry;
             
             // OPTIMISTIC UI: Render immediately, then save in background
             refreshUIOnly();
@@ -1312,7 +1364,22 @@
           
           const action = button.dataset.focusAction;
           const trainId = panel.dataset.trainId;
-          
+
+          // ---- LOG ENTRY ACTIONS ----
+          // No live scheduleTrain exists for a historical entry - handle
+          // cancel/delete directly against the log file and stop here.
+          if (isLogEdit) {
+            if (action === 'cancel') {
+              await toggleLogEntryCanceled(train);
+            } else if (action === 'delete') {
+              if (confirm(`Log-Eintrag ${train.linie} nach ${train.ziel} am ${train.date} endgültig löschen?`)) {
+                await deleteLogEntry(train, panel);
+              }
+            }
+            return;
+          }
+          // ---- END LOG ENTRY ACTIONS ----
+
           // Find train in schedule
           let scheduleTrain = findOrRestoreScheduleTrain(trainId, train);
           let sourceArray = schedule.spontaneousEntries;

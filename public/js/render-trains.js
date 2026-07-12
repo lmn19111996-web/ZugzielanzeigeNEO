@@ -166,10 +166,37 @@
       });
     }
 
+    // Strips a raw log record down to what actually happened, for manual export
+    // only (server-side diagnostic logs keep the full record). Drops id fields,
+    // recurrence/template bookkeeping, the source week file, and the separate
+    // delayReason/autoDelayReasons in favor of the single combined `notice`.
+    function cleanLogEntryForExport(e) {
+      return {
+        date: e.date || e.serviceDate || e.plannedDate || '',
+        linie: e.linie || '',
+        ziel: e.ziel || '',
+        plan: e.plan || '',
+        actual: e.actual || '',
+        dauer: Number(e.dauer) || 0,
+        zwischenhalte: Array.isArray(e.zwischenhalte) ? e.zwischenhalte : [],
+        canceled: Boolean(e.canceled),
+        notice: e.notice || null,
+        checkinTime: e.checkinTime || null,
+        checkoutTime: e.checkoutTime || null,
+        projectName: e.projectName || null
+      };
+    }
+
     // Exports the currently loaded date range as a single merged JSON file,
-    // instead of the per-week .log files the server stores history in.
+    // instead of the per-week .log files the server stores history in. Only
+    // entries for what actually happened are kept - recurring-train stems,
+    // duration-only templates, and note entries are template/meta data, not
+    // occurrences, so they're excluded.
     function exportLogViewerRange() {
-      const entries = filterLogViewerRawEntries(logViewerState.rawEntries, logViewerState.query);
+      const filtered = filterLogViewerRawEntries(logViewerState.rawEntries, logViewerState.query);
+      const entries = filtered
+        .filter(e => e && e.scheduleType !== 'fixed' && e.type !== 'duration-only' && e.type !== 'note')
+        .map(cleanLogEntryForExport);
       const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -179,6 +206,120 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+    }
+
+    // Log entries are historical records, not live schedule trains. The focus
+    // panel (editor.js renderFocusMode) shows the same drawer as any other
+    // train but only lets actual/dauer/canceled be edited (isLogEdit branches
+    // there); these three functions are what it calls to persist those
+    // changes and deletions to /api/train-history/entry - touching only the
+    // one relevant weekly log file, never data.json.
+
+    // Reflect a change in the already-loaded log viewer state so the list
+    // behind the drawer is correct without a refetch.
+    function applyLogEntryEditLocally(recordId, { actual, dauer, canceled }) {
+      const raw = logViewerState.rawEntries.find(e => e && e.recordId === recordId);
+      if (raw) {
+        raw.actual = actual;
+        raw.dauer = dauer;
+        raw.canceled = canceled;
+      }
+      const row = logViewerState.rows.find(t => t && t._logRecordId === recordId);
+      if (row) {
+        row.actual = actual || row.plan;
+        row.dauer = dauer;
+        row.canceled = canceled;
+      }
+      if (currentWorkspaceMode === 'log-viewer') renderLogViewerWorkspace();
+    }
+
+    function removeLogEntryLocally(recordId) {
+      logViewerState.rawEntries = logViewerState.rawEntries.filter(e => !e || e.recordId !== recordId);
+      logViewerState.rows = logViewerState.rows.filter(t => !t || t._logRecordId !== recordId);
+      if (currentWorkspaceMode === 'log-viewer') renderLogViewerWorkspace();
+    }
+
+    async function saveLogEntryEdit(train) {
+      if (!train._logRecordId) {
+        console.warn('Log entry has no recordId, cannot save:', train);
+        return;
+      }
+      try {
+        const res = await fetch('/api/train-history/entry', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recordId: train._logRecordId,
+            date: train.date,
+            actual: train.actual || '',
+            dauer: Number(train.dauer) || 0,
+            canceled: !!train.canceled
+          })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${res.status}`);
+        }
+        applyLogEntryEditLocally(train._logRecordId, {
+          actual: train.actual || '',
+          dauer: Number(train.dauer) || 0,
+          canceled: !!train.canceled
+        });
+      } catch (err) {
+        console.error('Failed to save log entry:', err);
+        alert('Fehler beim Speichern: ' + (err.message || 'Unbekannter Fehler'));
+      } finally {
+        renderFocusMode(train);
+      }
+    }
+
+    async function toggleLogEntryCanceled(train) {
+      if (!train._logRecordId) return;
+      const nextCanceled = !train.canceled;
+      try {
+        const res = await fetch('/api/train-history/entry', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recordId: train._logRecordId, date: train.date, canceled: nextCanceled })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${res.status}`);
+        }
+        train.canceled = nextCanceled;
+        applyLogEntryEditLocally(train._logRecordId, {
+          actual: train.actual || '',
+          dauer: Number(train.dauer) || 0,
+          canceled: nextCanceled
+        });
+      } catch (err) {
+        console.error('Failed to toggle log entry cancellation:', err);
+        alert('Fehler beim Speichern: ' + (err.message || 'Unbekannter Fehler'));
+      } finally {
+        renderFocusMode(train);
+      }
+    }
+
+    async function deleteLogEntry(train, panel) {
+      if (!train._logRecordId) return;
+      try {
+        const res = await fetch('/api/train-history/entry', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recordId: train._logRecordId, date: train.date })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${res.status}`);
+        }
+        removeLogEntryLocally(train._logRecordId);
+        desktopFocusedTrainId = null;
+        if (panel) panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Log-Eintrag gelöscht</div>';
+        closeEditorDrawer();
+      } catch (err) {
+        console.error('Failed to delete log entry:', err);
+        alert('Fehler beim Löschen: ' + (err.message || 'Unbekannter Fehler'));
+      }
     }
 
     // Ctrl+F inside the log viewer toggles this local search instead of the
@@ -258,6 +399,7 @@
         _isPastTrain: isPast,
         checkinTime: entry && entry.checkinTime ? entry.checkinTime : null,
         checkoutTime: entry && entry.checkoutTime ? entry.checkoutTime : null,
+        _logRecordId: (entry && entry.recordId) || null,
         source: 'log'
       };
     }
@@ -1121,12 +1263,6 @@
       } else {
         // On desktop: tap opens editor drawer
         entry.addEventListener('click', () => {
-          if (isReadOnly) {
-            renderFocusMode(train);
-            document.querySelectorAll('.train-entry').forEach(e => e.classList.remove('selected'));
-            entry.classList.add('selected');
-            return;
-          }
           renderFocusMode(train);
           document.querySelectorAll('.train-entry').forEach(e => e.classList.remove('selected'));
           entry.classList.add('selected');

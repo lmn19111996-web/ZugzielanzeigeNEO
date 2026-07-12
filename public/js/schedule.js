@@ -646,9 +646,10 @@
         zwischenhalte: [],
         canceled: false,
         date: today,       // Default to today so the entry is immediately visible
-        plannedDate: today, // Matches date; will update with user edits
+        plannedDate: today, // Placeholder; locked to the real date on first save (see _isNewEntry)
         weekday: weekday,
         source: 'local',
+        _isNewEntry: true, // Not yet confirmed by the user - plannedDate may still be re-derived on first save
         _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
         ...(options.projectId && { projectId: options.projectId })
       };
