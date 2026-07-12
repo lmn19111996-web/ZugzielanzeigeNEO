@@ -876,6 +876,250 @@ html, body {
       margin-left: 0.5vw;
     }
 
+    /* Belegungsplan - unified page: header (day/week toggle + date picker + nav) + content */
+    .belegungsplan-page {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      /* min-height (not height): lets the day view's much-taller content push
+         this box past one viewport height so the sticky header keeps sticking
+         for the full scroll range, while the week view (whose content never
+         exceeds one viewport) still fills exactly 100%. */
+      min-height: 100%;
+    }
+
+    .belegungsplan-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1vw;
+      padding: 0.6vh 0;
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      /* Darker than the surrounding content panel to visually separate the
+         header/controls from the timeline/grid below it. */
+      background: var(--color-bg-panel);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    /* Match the settings panel's footer buttons (.settings-footer-btn): flat,
+       square corners, no border. */
+    .belegungsplan-nav-btn,
+    .belegungsplan-today-btn,
+    .belegungsplan-toggle-btn {
+      background: var(--color-bg-button);
+      border: none;
+      border-radius: 0;
+      color: inherit;
+      padding: 0.6vh 1.2vw;
+      font-size: 1.5vh;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .belegungsplan-nav-btn:hover,
+    .belegungsplan-today-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    /* Bigger, easier-to-hit prev/next arrows */
+    .belegungsplan-nav-btn {
+      font-size: 2.2vh;
+      line-height: 1;
+      padding: 0.3vh 1.2vw;
+    }
+
+    /* Toggle is the primary action here, styled like .settings-footer-btn--apply */
+    .belegungsplan-toggle-btn {
+      background: #122171;
+      color: #fff;
+    }
+
+    .belegungsplan-toggle-btn:hover {
+      background: #2c3a89;
+    }
+
+    .belegungsplan-date-label {
+      position: relative;
+      font-size: 2.6vh;
+      font-weight: 600;
+      min-width: 20vw;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .belegungsplan-date-label:hover {
+      text-decoration: underline;
+    }
+
+    /* Native date input is functionally present (for showPicker()/fallback click)
+       but visually collapsed - the formatted label above is the visible control.
+       color-scheme: dark makes Chromium/Firefox render the native date-picker
+       popup (and any visible native chrome) in dark mode to match the app. */
+    .belegungsplan-date-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      cursor: pointer;
+      color-scheme: dark;
+    }
+
+    .belegungsplan-content {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Belegungsplan week view - 7 day columns, Monday-Sunday.
+       Fills the full available height: the day-header row has a fixed height
+       (--week-header-h, shared by the axis spacer so gridlines line up), and
+       everything below it is sized in % of the remaining space - never a fixed
+       vh-per-hour - so the grid always exactly fits the screen. */
+    .week-grid-wrapper {
+      --week-header-h: 5vh;
+      display: flex;
+      width: 100%;
+      /* Sized explicitly in px by JS (render-trains.js) once mounted, rather than
+         via flex-grow - percentage heights resolved through several nested
+         flex:1/min-height:0 layers are unreliable across browsers, and a
+         flex-grow item can still be shrunk by its container even after an
+         explicit height is set. flex: 0 0 auto locks it to that measured size. */
+      flex: 0 0 auto;
+      position: relative;
+    }
+
+    .week-hour-axis {
+      position: relative;
+      width: 4vw;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .week-hour-axis-spacer {
+      flex-shrink: 0;
+      height: var(--week-header-h);
+    }
+
+    .week-hour-axis-labels {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .week-hour-label {
+      position: absolute;
+      left: 0;
+      right: 0.5vw;
+      transform: translateY(-50%);
+      font-size: 1.2vh;
+      color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .week-day-columns {
+      display: flex;
+      flex: 1;
+      gap: 2px;
+    }
+
+    .week-day-column {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .week-day-column.is-today {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .week-day-header {
+      flex-shrink: 0;
+      height: var(--week-header-h);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-primary);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .week-day-header.is-today {
+      color: var(--color-accent, #ffffff);
+      font-weight: 700;
+    }
+
+    .week-day-weekday {
+      font-size: 1.4vh;
+      text-transform: uppercase;
+    }
+
+    .week-day-date {
+      font-size: 1.6vh;
+    }
+
+    .week-day-body {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.08) 0,
+        rgba(255, 255, 255, 0.08) 1px,
+        transparent 1px,
+        transparent calc(100% / 24)
+      );
+      background-repeat: repeat-y;
+    }
+
+    /* Compact train blocks inside the narrow week-view day columns */
+    .week-day-body .belegungsplan-train-block {
+      left: 1px;
+      padding: 0.1vh 0.3vw;
+      border-radius: 3px;
+    }
+
+    .week-day-body .belegungsplan-train-block.overlap-0 { width: calc(100% - 2px); left: 1px; }
+    .week-day-body .belegungsplan-train-block.overlap-1 { width: calc(100% - 15%); left: 12%; }
+    .week-day-body .belegungsplan-train-block.overlap-2 { width: calc(100% - 25%); left: 22%; }
+    .week-day-body .belegungsplan-train-block.overlap-3 { width: calc(100% - 35%); left: 32%; }
+
+    .week-day-body .belegungsplan-line-icon {
+      /* Source SVGs are 16:8 (2:1) - match that aspect so the icon isn't squashed. */
+      width: 2.6vh;
+      height: 1.3vh;
+    }
+
+    .week-day-body .belegungsplan-line-badge {
+      height: 1.2vh;
+      min-width: 2vh;
+      font-size: 0.9vh;
+      padding: 0 0.2vh;
+    }
+
+    .week-day-body .belegungsplan-destination {
+      font-size: 1.1vh;
+    }
+
+    .week-day-body .belegungsplan-current-time-line {
+      left: 0;
+      right: 0;
+      z-index: 3;
+    }
+
     /* S-Bahn line colors - exact colors from SVG files with transparency */
     .belegungsplan-train-block.s-bahn-s1 { background: rgba(125, 102, 173, 0.6); border-color: #7D66AD; }
     .belegungsplan-train-block.s-bahn-s2 { background: rgba(0, 121, 59, 0.6); border-color: #00793B; }

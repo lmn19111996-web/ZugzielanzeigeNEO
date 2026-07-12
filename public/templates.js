@@ -339,7 +339,9 @@ const Templates = {
       blockClasses.push(lineClass);
     }
 
-    const blockStyleParts = [`top: ${pos.top}vh`, `height: ${pos.height}vh`];
+    // pos.top / pos.height are already complete CSS length values (e.g. "12.5vh" or
+    // "34.2%") - the day view uses vh, the week view uses % of its day column.
+    const blockStyleParts = [`top: ${pos.top}`, `height: ${pos.height}`];
     if (!isFexLine && !isSevLine) {
       blockStyleParts.push(`background: ${lineBgColor}`);
       blockStyleParts.push(`border-color: ${lineColor}`);
@@ -419,8 +421,43 @@ const Templates = {
   /**
    * Create current time indicator line for Belegungsplan
    */
-  belegungsplanCurrentTimeLine(currentTimeY) {
-    return `<div class="belegungsplan-current-time-line" style="top: ${currentTimeY}vh;"></div>`;
+  belegungsplanCurrentTimeLine(currentTimeTop) {
+    return `<div class="belegungsplan-current-time-line" style="top: ${currentTimeTop};"></div>`;
+  },
+
+  /**
+   * Unified header for the Belegungsplan (day/week toggle + date picker + nav)
+   */
+  belegungsplanHeader(label, mode, dateInputValue, minDateStr, maxDateStr) {
+    const toggleLabel = mode === 'week' ? 'Tag' : 'Woche';
+    const minAttr = minDateStr ? ` min="${minDateStr}"` : '';
+    const maxAttr = maxDateStr ? ` max="${maxDateStr}"` : '';
+    return `
+      <div class="belegungsplan-page-header">
+        <button class="belegungsplan-nav-btn" id="belegungsplan-prev-btn" aria-label="Zur&uuml;ck">&#8249;</button>
+        <div class="belegungsplan-date-label" id="belegungsplan-date-label">
+          <span>${label}</span>
+          <input type="date" id="belegungsplan-date-input" class="belegungsplan-date-input" value="${dateInputValue}"${minAttr}${maxAttr}>
+        </div>
+        <button class="belegungsplan-nav-btn" id="belegungsplan-next-btn" aria-label="Weiter">&#8250;</button>
+        <button class="belegungsplan-today-btn" id="belegungsplan-today-btn">Heute</button>
+        <button class="belegungsplan-toggle-btn" id="belegungsplan-toggle-btn">${toggleLabel}</button>
+      </div>
+    `;
+  },
+
+  /**
+   * Day column header (weekday name + date) for the Belegungsplan week view
+   */
+  belegungsplanWeekDayHeader(dateObj, isToday) {
+    const weekdayText = dateObj.toLocaleDateString('de-DE', { weekday: 'short' });
+    const dateText = dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    return `
+      <div class="week-day-header${isToday ? ' is-today' : ''}">
+        <span class="week-day-weekday">${weekdayText}</span>
+        <span class="week-day-date">${dateText}</span>
+      </div>
+    `;
   },
 
   /**

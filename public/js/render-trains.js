@@ -766,198 +766,427 @@
       }
     }
 
-    // Render Belegungsplan (Occupancy Plan) - vertical timeline view
-    function renderBelegungsplan() {
-      const now = new Date();
-      const trainListEl = document.getElementById('train-list');
-      trainListEl.classList.remove('log-viewer-mode');
-      
-      // Save scroll position BEFORE any DOM manipulation
-      const savedScrollPosition = trainListEl.scrollTop;
-      const oldScrollHeight = trainListEl.scrollHeight;
-      
-      trainListEl.innerHTML = '';
+    // Belegungsplan (Occupancy Plan) - unified day/week view.
+    // A shared header (toggle button + date label opening a date picker + prev/next)
+    // sits above the content area, which renders either a single-day timeline
+    // or a Monday-Sunday week grid depending on belegungsplanDisplayMode.
+    const DAY_HOUR_HEIGHT_VH = 7;   // day view: 1 hour = 7vh (content scrolls, so a fixed scale is fine)
 
-      // Update headline train
-      renderHeadlineTrain();
+    let belegungsplanDisplayMode = 'day'; // 'day' | 'week'
+    let belegungsplanSelectedDate = new Date(); // any date within the viewed day/week
 
-      // Create belegungsplan container
+    function getIsoWeekNumber(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    }
+
+    function getMondayOf(date) {
+      const day = date.getDay() || 7; // Sunday -> 7
+      const monday = new Date(date);
+      monday.setHours(0, 0, 0, 0);
+      monday.setDate(monday.getDate() - (day - 1));
+      return monday;
+    }
+
+    // Renders overlap-detected train blocks into a container. dayTrains items carry
+    // pos.top/pos.height as plain numbers (in `unit`s); shared by both the day and
+    // week content builders, which use 'vh' and '%' respectively.
+    function renderOverlappingTrainBlocks(containerEl, dayTrains, now, unit = 'vh') {
+      const activeOverlapBlocks = []; // { end, level }
+      dayTrains.forEach((item) => {
+        for (let i = activeOverlapBlocks.length - 1; i >= 0; i--) {
+          if (activeOverlapBlocks[i].end <= item.pos.start) activeOverlapBlocks.splice(i, 1);
+        }
+        let maxActiveLevel = -1;
+        for (const b of activeOverlapBlocks) {
+          if (b.level > maxActiveLevel) maxActiveLevel = b.level;
+        }
+        const overlapLevel = Math.min(maxActiveLevel + 1, 3); // Max 4 levels (0-3)
+        item.overlapLevel = overlapLevel;
+        activeOverlapBlocks.push({ end: item.pos.end, level: overlapLevel });
+      });
+
+      dayTrains.forEach(({ train, pos, overlapLevel }) => {
+        const cssPos = { top: `${pos.top}${unit}`, height: `${pos.height}${unit}` };
+        const htmlString = Templates.belegungsplanBlock(train, cssPos, overlapLevel, now);
+        const template = document.createElement('template');
+        template.innerHTML = htmlString.trim();
+        const block = template.content.firstChild;
+        block.addEventListener('click', () => {
+          renderFocusMode(train);
+          document.querySelectorAll('.belegungsplan-train-block').forEach(b => b.classList.remove('selected'));
+          block.classList.add('selected');
+        });
+        containerEl.appendChild(block);
+      });
+    }
+
+    // Builds the day view: one continuous hour-by-hour timeline (unchanged from the
+    // original Belegungsplan - spans from today onward, or further back/forward if the
+    // selected date falls outside that range). The header's date navigation doesn't
+    // change *what's* rendered - it only scrolls this continuous list to that day's
+    // position. Returns { currentTimeLineEl, selectedDayMarkerEl } so the caller can
+    // decide where to scroll.
+    function buildBelegungsplanDayContent(contentEl, selectedDate, now) {
       const belegungsplan = document.createElement('div');
       belegungsplan.className = 'belegungsplan';
 
-      // Get all scheduled trains and FILTER OUT CANCELLED TRAINS
       const allScheduledTrains = processedTrainData.scheduledTrains.filter(t => !t.canceled);
-      
-      if (allScheduledTrains.length === 0) {
-        trainListEl.appendChild(belegungsplan);
-        return;
-      }
 
-      // Find time range: show the whole day (from midnight), or earlier still
-      // if a currently-occupying train started before that (e.g. an overnight
-      // service that began yesterday).
-      const dayStart = new Date(now);
-      dayStart.setHours(0, 0, 0, 0);
+      const todayMidnight = new Date(now);
+      todayMidnight.setHours(0, 0, 0, 0);
 
-      let startHour = dayStart;
+      // Start at today's midnight, or earlier still if a currently-occupying train
+      // started before that (e.g. an overnight service that began yesterday).
+      // The rendered range is driven purely by actual data - it never stretches
+      // to reach an out-of-range selected date (there'd just be empty space to
+      // scroll through); see the scroll-target guard in renderBelegungsplan.
+      let startHour = todayMidnight;
 
-      // Check if there's a current train
       const currentTrain = processedTrainData.currentTrain;
       if (currentTrain) {
         const currentTrainTime = parseTime(currentTrain.actual || currentTrain.plan, now, currentTrain.date);
         if (currentTrainTime) {
           const currentTrainHour = new Date(currentTrainTime);
           currentTrainHour.setMinutes(0, 0, 0);
-          // Use whichever is earlier
-          if (currentTrainHour < startHour) {
-            startHour = currentTrainHour;
-          }
+          if (currentTrainHour < startHour) startHour = currentTrainHour;
         }
       }
-      
-      // Find the latest train end time
-      let latestTime = startHour;
+
+      // Always show at least a full 24h day, plus a 2h buffer past the latest
+      // scheduled train end.
+      let latestTime = new Date(todayMidnight.getTime() + 24 * 60 * 60 * 1000);
       allScheduledTrains.forEach(train => {
-        const trainStart = parseTime(train.actual || train.plan, now, train.date);
         const trainEnd = getOccupancyEnd(train, now);
-        if (trainEnd && trainEnd > latestTime) {
-          latestTime = trainEnd;
-        }
+        if (trainEnd && trainEnd > latestTime) latestTime = trainEnd;
       });
-      
-      // Add 2 hours buffer
       const endTime = new Date(latestTime.getTime() + 2 * 60 * 60 * 1000);
-      
-      // Calculate total hours and height (1 hour = 7vh)
+
       const totalHours = Math.ceil((endTime - startHour) / (60 * 60 * 1000));
-      const totalHeight = totalHours * 7; // vh units
+      const totalHeight = totalHours * DAY_HOUR_HEIGHT_VH;
       belegungsplan.style.minHeight = `${totalHeight}vh`;
 
-      // Track dates for separators
       let lastDate = null;
-
-      // Add hour markers, lines, and date separators
+      let selectedDayMarkerEl = null;
+      const selectedDateStr = selectedDate.toLocaleDateString('sv-SE');
       for (let i = 0; i <= totalHours; i++) {
         const markerTime = new Date(startHour.getTime() + i * 60 * 60 * 1000);
-        const markerY = i * 7; // vh
-        
-        // Check if this is midnight (00:00) for a new day
+        const markerY = i * DAY_HOUR_HEIGHT_VH;
         const isNewDay = markerTime.getHours() === 0;
         const currentDate = markerTime.toLocaleDateString('sv-SE');
-        
+
         if (isNewDay && currentDate !== lastDate) {
-          // Use template for date separator
           const dateSeparatorHTML = Templates.belegungsplanDateSeparator(markerTime, markerY);
           const template = document.createElement('template');
           template.innerHTML = dateSeparatorHTML.trim();
-          belegungsplan.appendChild(template.content.firstChild);
+          const separatorEl = template.content.firstChild;
+          belegungsplan.appendChild(separatorEl);
           lastDate = currentDate;
+          if (currentDate === selectedDateStr) selectedDayMarkerEl = separatorEl;
         }
-        
-        // Use template for hour line and marker
+
         const hourLineHTML = Templates.belegungsplanHourLine(markerTime, markerY, isNewDay);
         const template = document.createElement('template');
         template.innerHTML = hourLineHTML.trim();
-        // Append all children (both line and marker)
         while (template.content.firstChild) {
           belegungsplan.appendChild(template.content.firstChild);
         }
       }
 
-      // Add current time indicator line
-      const currentTimeOffsetMs = now - startHour;
-      const currentTimeOffsetHours = currentTimeOffsetMs / (60 * 60 * 1000);
-      const currentTimeY = currentTimeOffsetHours * 7;
-      
       let currentTimeLineEl = null;
+      const currentTimeOffsetHours = (now - startHour) / (60 * 60 * 1000);
+      const currentTimeY = currentTimeOffsetHours * DAY_HOUR_HEIGHT_VH;
       if (currentTimeY >= 0 && currentTimeY <= totalHeight) {
-        const currentTimeLineHTML = Templates.belegungsplanCurrentTimeLine(currentTimeY);
+        const currentTimeLineHTML = Templates.belegungsplanCurrentTimeLine(`${currentTimeY}vh`);
         const template = document.createElement('template');
         template.innerHTML = currentTimeLineHTML.trim();
         currentTimeLineEl = template.content.firstChild;
         belegungsplan.appendChild(currentTimeLineEl);
       }
 
-      // Helper to calculate position and height
       const getBlockPosition = (train) => {
         const trainStart = parseTime(train.actual || train.plan, now, train.date);
         if (!trainStart) return null;
-        
         const duration = Number(train.dauer) || 0;
         if (duration <= 0) return null;
-        
-        // Calculate offset from start in hours
-        const offsetMs = trainStart - startHour;
-        const offsetHours = offsetMs / (60 * 60 * 1000);
-        const topVh = offsetHours * 7; // 1 hour = 7vh
-        
-        // Calculate height
-        const durationHours = duration / 60;
-        const heightVh = durationHours * 7;
-        
+        const offsetHours = (trainStart - startHour) / (60 * 60 * 1000);
+        const topVh = offsetHours * DAY_HOUR_HEIGHT_VH;
+        const heightVh = (duration / 60) * DAY_HOUR_HEIGHT_VH;
         return { top: topVh, height: heightVh, start: trainStart, end: new Date(trainStart.getTime() + duration * 60000) };
       };
 
-      // Calculate positions for all trains
-      const trainData = allScheduledTrains.map(train => {
-        const pos = getBlockPosition(train);
-        return { train, pos };
-      }).filter(item => item.pos && item.pos.top + item.pos.height >= 0);
+      const trainData = allScheduledTrains
+        .map(train => ({ train, pos: getBlockPosition(train) }))
+        .filter(item => item.pos && item.pos.top + item.pos.height >= 0)
+        .sort((a, b) => a.pos.start - b.pos.start);
 
-      // Detect overlaps and assign indent levels.
-      // trainData is already sorted by start time (inherited from
-      // processedTrainData.scheduledTrains), so a block can only overlap
-      // trains still "active" (end > this block's start) — maintain that
-      // small active set instead of rescanning every earlier block, turning
-      // this from O(n^2) into O(n) amortized (each block enters/leaves the
-      // active set exactly once).
-      const activeOverlapBlocks = []; // { end, level }
-      trainData.forEach((item) => {
-        for (let i = activeOverlapBlocks.length - 1; i >= 0; i--) {
-          if (activeOverlapBlocks[i].end <= item.pos.start) activeOverlapBlocks.splice(i, 1);
-        }
+      renderOverlappingTrainBlocks(belegungsplan, trainData, now);
 
-        let maxActiveLevel = -1;
-        for (const b of activeOverlapBlocks) {
-          if (b.level > maxActiveLevel) maxActiveLevel = b.level;
-        }
+      contentEl.appendChild(belegungsplan);
+      return { currentTimeLineEl, selectedDayMarkerEl };
+    }
 
-        const overlapLevel = Math.min(maxActiveLevel + 1, 3); // Max 4 levels (0-3)
-        item.overlapLevel = overlapLevel;
-        activeOverlapBlocks.push({ end: item.pos.end, level: overlapLevel });
+    // Builds the 7-column Monday-Sunday week grid into contentEl. Fills the full
+    // available height (contentEl is a flex child sized by its container) - hour
+    // positions are expressed as % of a 24h day so the grid always exactly fits,
+    // rather than a fixed vh-per-hour that could fall short of or overflow the screen.
+    function buildBelegungsplanWeekContent(contentEl, selectedDate, now) {
+      const gridWrapper = document.createElement('div');
+      gridWrapper.className = 'week-grid-wrapper';
+
+      const monday = getMondayOf(selectedDate);
+      const weekDates = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(monday);
+        d.setDate(d.getDate() + i);
+        return d;
       });
 
-      // Render train blocks
-      trainData.forEach(({ train, pos, overlapLevel }) => {
-        // Use template to create HTML
-        const htmlString = Templates.belegungsplanBlock(train, pos, overlapLevel, now);
-        const template = document.createElement('template');
-        template.innerHTML = htmlString.trim();
-        const block = template.content.firstChild;
-        
-        // Add click handler
-        block.addEventListener('click', () => {
-          renderFocusMode(train);
-          document.querySelectorAll('.belegungsplan-train-block').forEach(b => b.classList.remove('selected'));
-          block.classList.add('selected');
+      // Axis: a spacer matching the day-column header height, then hour labels
+      // positioned by % so they line up exactly with each day column's gridlines.
+      const hourAxis = document.createElement('div');
+      hourAxis.className = 'week-hour-axis';
+
+      const axisSpacer = document.createElement('div');
+      axisSpacer.className = 'week-hour-axis-spacer';
+      hourAxis.appendChild(axisSpacer);
+
+      const axisLabels = document.createElement('div');
+      axisLabels.className = 'week-hour-axis-labels';
+      for (let h = 0; h < 24; h++) {
+        const topPct = (h / 24) * 100;
+        const label = document.createElement('div');
+        label.className = 'week-hour-label';
+        label.style.top = `${topPct}%`;
+        label.textContent = `${String(h).padStart(2, '0')}:00`;
+        axisLabels.appendChild(label);
+      }
+      hourAxis.appendChild(axisLabels);
+      gridWrapper.appendChild(hourAxis);
+
+      const dayColumns = document.createElement('div');
+      dayColumns.className = 'week-day-columns';
+
+      const todayStr = now.toLocaleDateString('sv-SE');
+      const allScheduledTrains = processedTrainData.scheduledTrains.filter(t => !t.canceled);
+
+      weekDates.forEach(dateObj => {
+        const dateStr = dateObj.toLocaleDateString('sv-SE');
+        const isToday = dateStr === todayStr;
+
+        const columnEl = document.createElement('div');
+        columnEl.className = 'week-day-column' + (isToday ? ' is-today' : '');
+        columnEl.innerHTML = Templates.belegungsplanWeekDayHeader(dateObj, isToday);
+
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'week-day-body';
+
+        const dayTrains = allScheduledTrains
+          .map(train => {
+            const start = parseTime(train.actual || train.plan, now, train.date);
+            if (!start) return null;
+            if (start.toLocaleDateString('sv-SE') !== dateStr) return null;
+            const duration = Number(train.dauer) || 0;
+            if (duration <= 0) return null;
+            const dayStart = new Date(dateObj);
+            dayStart.setHours(0, 0, 0, 0);
+            const offsetHours = (start - dayStart) / (60 * 60 * 1000);
+            const top = (offsetHours / 24) * 100;
+            const height = (duration / 60 / 24) * 100;
+            return { train, pos: { top, height, start, end: new Date(start.getTime() + duration * 60000) } };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.pos.start - b.pos.start);
+
+        renderOverlappingTrainBlocks(bodyEl, dayTrains, now, '%');
+
+        if (isToday) {
+          const dayStart = new Date(dateObj);
+          dayStart.setHours(0, 0, 0, 0);
+          const nowOffsetHours = (now - dayStart) / (60 * 60 * 1000);
+          if (nowOffsetHours >= 0 && nowOffsetHours <= 24) {
+            const currentTimeLineHTML = Templates.belegungsplanCurrentTimeLine(`${(nowOffsetHours / 24) * 100}%`);
+            const template = document.createElement('template');
+            template.innerHTML = currentTimeLineHTML.trim();
+            bodyEl.appendChild(template.content.firstChild);
+          }
+        }
+
+        columnEl.appendChild(bodyEl);
+        dayColumns.appendChild(columnEl);
+      });
+
+      gridWrapper.appendChild(dayColumns);
+      contentEl.appendChild(gridWrapper);
+    }
+
+    // The date range actually covered by the day view's continuous timeline (see
+    // buildBelegungsplanDayContent) - used to bound the date picker so users can't
+    // pick a day so far out of range that navigating to it would never scroll.
+    function getBelegungsplanDataDateBounds(now) {
+      const todayMidnight = new Date(now);
+      todayMidnight.setHours(0, 0, 0, 0);
+
+      let startHour = todayMidnight;
+      const currentTrain = processedTrainData.currentTrain;
+      if (currentTrain) {
+        const currentTrainTime = parseTime(currentTrain.actual || currentTrain.plan, now, currentTrain.date);
+        if (currentTrainTime) {
+          const currentTrainHour = new Date(currentTrainTime);
+          currentTrainHour.setMinutes(0, 0, 0);
+          if (currentTrainHour < startHour) startHour = currentTrainHour;
+        }
+      }
+
+      let latestTime = new Date(todayMidnight.getTime() + 24 * 60 * 60 * 1000);
+      processedTrainData.scheduledTrains.filter(t => !t.canceled).forEach(train => {
+        const trainEnd = getOccupancyEnd(train, now);
+        if (trainEnd && trainEnd > latestTime) latestTime = trainEnd;
+      });
+
+      return { minDateStr: startHour.toLocaleDateString('sv-SE'), maxDateStr: latestTime.toLocaleDateString('sv-SE') };
+    }
+
+    // Render Belegungsplan (Occupancy Plan) - header (toggle + date picker + nav)
+    // plus either a single-day timeline or a week grid, per belegungsplanDisplayMode.
+    function renderBelegungsplan(options = {}) {
+      const { jumpToSelectedDate = false } = options;
+      const now = new Date();
+      const trainListEl = document.getElementById('train-list');
+      trainListEl.classList.remove('log-viewer-mode');
+
+      const savedScrollPosition = trainListEl.scrollTop;
+      trainListEl.innerHTML = '';
+
+      renderHeadlineTrain();
+
+      const selectedDate = new Date(belegungsplanSelectedDate);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      const pageEl = document.createElement('div');
+      pageEl.className = 'belegungsplan-page';
+
+      let headerLabel;
+      if (belegungsplanDisplayMode === 'week') {
+        const monday = getMondayOf(selectedDate);
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        headerLabel = `KW ${getIsoWeekNumber(monday)} · ${monday.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}–${sunday.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+      } else {
+        headerLabel = selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+      const dateInputValue = selectedDate.toLocaleDateString('sv-SE');
+      const { minDateStr, maxDateStr } = getBelegungsplanDataDateBounds(now);
+      pageEl.innerHTML = Templates.belegungsplanHeader(headerLabel, belegungsplanDisplayMode, dateInputValue, minDateStr, maxDateStr);
+
+      const contentEl = document.createElement('div');
+      contentEl.className = 'belegungsplan-content';
+
+      let dayCurrentTimeLineEl = null;
+      let daySelectedMarkerEl = null;
+      if (belegungsplanDisplayMode === 'week') {
+        buildBelegungsplanWeekContent(contentEl, selectedDate, now);
+      } else {
+        const dayResult = buildBelegungsplanDayContent(contentEl, selectedDate, now);
+        dayCurrentTimeLineEl = dayResult.currentTimeLineEl;
+        daySelectedMarkerEl = dayResult.selectedDayMarkerEl;
+      }
+
+      pageEl.appendChild(contentEl);
+      trainListEl.appendChild(pageEl);
+
+      // The week grid's hour axis/gridlines are positioned in % of the grid
+      // wrapper's height. Percentage heights resolved through several nested
+      // flex layers (page -> content -> grid-wrapper) are unreliable across
+      // browsers, so pin the wrapper to an explicit pixel height once its
+      // header siblings are actually laid out, rather than relying on that
+      // chain to resolve correctly.
+      if (belegungsplanDisplayMode === 'week') {
+        const pageHeaderEl = pageEl.querySelector('.belegungsplan-page-header');
+        const gridWrapperEl = contentEl.querySelector('.week-grid-wrapper');
+        if (pageHeaderEl && gridWrapperEl) {
+          const availablePx = trainListEl.clientHeight - pageHeaderEl.offsetHeight;
+          gridWrapperEl.style.height = `${Math.max(0, availablePx)}px`;
+        }
+      }
+
+      // Wire header controls
+      const toggleBtn = pageEl.querySelector('#belegungsplan-toggle-btn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          belegungsplanDisplayMode = belegungsplanDisplayMode === 'day' ? 'week' : 'day';
+          renderBelegungsplan({ jumpToSelectedDate: true });
         });
-        
-        belegungsplan.appendChild(block);
-      });
+      }
 
-      trainListEl.appendChild(belegungsplan);
-      
-      // Wait for DOM to fully render, then restore scroll and show
+      const dateInput = pageEl.querySelector('#belegungsplan-date-input');
+      const dateLabel = pageEl.querySelector('#belegungsplan-date-label');
+      if (dateLabel && dateInput) {
+        dateLabel.addEventListener('click', () => {
+          if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+          } else {
+            dateInput.focus();
+            dateInput.click();
+          }
+        });
+        dateInput.addEventListener('change', () => {
+          if (dateInput.value) {
+            const [y, m, d] = dateInput.value.split('-').map(Number);
+            belegungsplanSelectedDate = new Date(y, m - 1, d);
+            renderBelegungsplan({ jumpToSelectedDate: true });
+          }
+        });
+      }
+
+      const todayBtn = pageEl.querySelector('#belegungsplan-today-btn');
+      if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+          belegungsplanSelectedDate = new Date();
+          renderBelegungsplan({ jumpToSelectedDate: true });
+        });
+      }
+
+      const stepDays = belegungsplanDisplayMode === 'week' ? 7 : 1;
+      const prevBtn = pageEl.querySelector('#belegungsplan-prev-btn');
+      const nextBtn = pageEl.querySelector('#belegungsplan-next-btn');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          const d = new Date(belegungsplanSelectedDate);
+          d.setDate(d.getDate() - stepDays);
+          belegungsplanSelectedDate = d;
+          renderBelegungsplan({ jumpToSelectedDate: true });
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          const d = new Date(belegungsplanSelectedDate);
+          d.setDate(d.getDate() + stepDays);
+          belegungsplanSelectedDate = d;
+          renderBelegungsplan({ jumpToSelectedDate: true });
+        });
+      }
+
+      // Wait for DOM to fully render, then restore/set scroll position
       requestAnimationFrame(() => {
         setTimeout(() => {
-          // Restore previous scroll position; otherwise (first render of the
-          // day) the plan now spans midnight-to-midnight, so default to
-          // centering the view on "now" instead of showing 00:00 at the top.
-          if (savedScrollPosition > 0) {
-            trainListEl.scrollTop = savedScrollPosition;
-          } else if (currentTimeLineEl) {
+          if (!jumpToSelectedDate) {
+            if (savedScrollPosition > 0) trainListEl.scrollTop = savedScrollPosition;
+            return;
+          }
+          // Explicit date navigation (prev/next/date-picker): scroll smoothly to
+          // the selected day's marker (or, if it's today, to "now"). If that day
+          // isn't actually present in the rendered range, leave the scroll
+          // position alone rather than jumping somewhere unrelated.
+          const isSelectedToday = selectedDate.toLocaleDateString('sv-SE') === now.toLocaleDateString('sv-SE');
+          const targetEl = isSelectedToday
+            ? (dayCurrentTimeLineEl || contentEl.querySelector('.belegungsplan-current-time-line'))
+            : daySelectedMarkerEl;
+          if (targetEl) {
             const viewportHeight = trainListEl.clientHeight;
-            trainListEl.scrollTop = Math.max(0, currentTimeLineEl.offsetTop - viewportHeight / 3);
+            trainListEl.scrollTo({ top: Math.max(0, targetEl.offsetTop - viewportHeight / 3), behavior: 'smooth' });
           }
         }, 50);
       });
