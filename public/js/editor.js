@@ -501,14 +501,15 @@
         }
 
         if (isLogEdit) {
-          // All fields stay visible for context, but only actual/dauer are
-          // inputs — everything else about a past event (line, destination,
+          // All fields stay visible for context, but only actual/dauer/project
+          // are inputs — everything else about a past event (line, destination,
           // stops, ...) is left alone. Most fields carry a hardcoded
           // data-editable="true" straight from #focus-template, so it must be
           // explicitly stripped here, not just left alone when already false.
+          const LOG_EDITABLE_FIELDS = new Set(['actual', 'dauer', 'projectId']);
           panel.querySelectorAll('.editor-field').forEach(field => {
             const fieldName = field.getAttribute('data-field');
-            if (fieldName === 'actual' || fieldName === 'dauer') return;
+            if (LOG_EDITABLE_FIELDS.has(fieldName)) return;
             field.removeAttribute('data-editable');
             field.style.cursor = 'default';
             field.style.opacity = '0.6';

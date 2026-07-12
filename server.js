@@ -1418,12 +1418,13 @@ function resolveWeeklyLogFileForDate(dateStr) {
 }
 
 // Correct a mis-recorded log entry's actual outcome (start time, duration,
-// cancellation) in place. Intentionally narrow: the log is meant to be an
-// immutable record of what happened, so only these three fields - plus the
-// deletion endpoint below for spam/bad entries - are mutable from the UI.
+// cancellation, project assignment) in place. Intentionally narrow: the log
+// is meant to be an immutable record of what happened, so only these fields -
+// plus the deletion endpoint below for spam/bad entries - are mutable from
+// the UI.
 app.patch('/api/train-history/entry', async (req, res) => {
   try {
-    const { recordId, date, actual, dauer, canceled } = req.body || {};
+    const { recordId, date, actual, dauer, canceled, projectId, projectName } = req.body || {};
     if (!recordId || typeof recordId !== 'string') {
       return res.status(400).json({ error: 'Missing recordId' });
     }
@@ -1451,6 +1452,12 @@ app.patch('/api/train-history/entry', async (req, res) => {
     }
     if (canceled !== undefined) {
       record.canceled = Boolean(canceled);
+    }
+    if (projectId !== undefined) {
+      record.projectId = normalizeText(projectId) || null;
+    }
+    if (projectName !== undefined) {
+      record.projectName = normalizeText(projectName) || null;
     }
 
     stateMap.set(recordId, record);

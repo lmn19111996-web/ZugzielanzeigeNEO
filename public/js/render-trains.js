@@ -217,18 +217,22 @@
 
     // Reflect a change in the already-loaded log viewer state so the list
     // behind the drawer is correct without a refetch.
-    function applyLogEntryEditLocally(recordId, { actual, dauer, canceled }) {
+    function applyLogEntryEditLocally(recordId, { actual, dauer, canceled, projectId, projectName }) {
       const raw = logViewerState.rawEntries.find(e => e && e.recordId === recordId);
       if (raw) {
         raw.actual = actual;
         raw.dauer = dauer;
         raw.canceled = canceled;
+        if (projectId !== undefined) raw.projectId = projectId;
+        if (projectName !== undefined) raw.projectName = projectName;
       }
       const row = logViewerState.rows.find(t => t && t._logRecordId === recordId);
       if (row) {
         row.actual = actual || row.plan;
         row.dauer = dauer;
         row.canceled = canceled;
+        if (projectId !== undefined) row.projectId = projectId;
+        if (projectName !== undefined) row.projectName = projectName;
       }
       if (currentWorkspaceMode === 'log-viewer') renderLogViewerWorkspace();
     }
@@ -244,6 +248,8 @@
         console.warn('Log entry has no recordId, cannot save:', train);
         return;
       }
+      const project = train.projectId ? (schedule.projects || []).find(p => p._uniqueId === train.projectId) : null;
+      const projectName = project ? (project.name || null) : null;
       try {
         const res = await fetch('/api/train-history/entry', {
           method: 'PATCH',
@@ -253,17 +259,22 @@
             date: train.date,
             actual: train.actual || '',
             dauer: Number(train.dauer) || 0,
-            canceled: !!train.canceled
+            canceled: !!train.canceled,
+            projectId: train.projectId || null,
+            projectName
           })
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `HTTP ${res.status}`);
         }
+        train.projectName = projectName;
         applyLogEntryEditLocally(train._logRecordId, {
           actual: train.actual || '',
           dauer: Number(train.dauer) || 0,
-          canceled: !!train.canceled
+          canceled: !!train.canceled,
+          projectId: train.projectId || null,
+          projectName
         });
       } catch (err) {
         console.error('Failed to save log entry:', err);
