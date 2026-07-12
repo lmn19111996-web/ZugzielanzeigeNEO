@@ -626,6 +626,25 @@
     }
 
 
+    // Smart project assignment: returns the projectId to auto-assign for a
+    // given destination text, based on user-configured rules (Settings ->
+    // Automatische Projektzuordnung), or undefined if nothing matches. Rules
+    // are {match, projectId} pairs; the first substring match (case-insensitive)
+    // whose project still exists wins. Callers must not overwrite an already
+    // manually-assigned projectId with this — see editor.js saveAllFields.
+    function resolveAutoProjectId(zielText) {
+      if (!zielText) return undefined;
+      const rules = (window.AppSettings ? window.AppSettings.get('projectRules') : []) || [];
+      const ziel = String(zielText).toLowerCase();
+      for (const rule of rules) {
+        if (!rule || !rule.match || !rule.projectId) continue;
+        if (!ziel.includes(String(rule.match).toLowerCase())) continue;
+        const projectExists = (schedule.projects || []).some(p => p._uniqueId === rule.projectId);
+        if (projectExists) return rule.projectId;
+      }
+      return undefined;
+    }
+
     // Function to create a new blank train entry
     // Show line picker dropdown for selecting S-Bahn lines
 

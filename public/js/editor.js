@@ -609,7 +609,18 @@
               }
             }
           });
-          
+
+          // Smart project assignment: only fills in an EMPTY projectId, never
+          // overwrites a manual choice — same "manual always wins" convention
+          // as the delayReason auto-suggestions.
+          if (!train.projectId && typeof resolveAutoProjectId === 'function') {
+            const autoProjectId = resolveAutoProjectId(train.ziel);
+            if (autoProjectId) {
+              train.projectId = autoProjectId;
+              hasChanges = true;
+            }
+          }
+
           // ---- LOG ENTRY SAVE PATH ----
           // train.actual / train.dauer were already updated above by the
           // generic field loop; persist those to the one relevant weekly log
@@ -649,6 +660,13 @@
                 else if (fieldName === 'projectId')         stem.projectId   = val || undefined;
                 else if (fieldName === 'recurrencePattern') stem.recurrence  = { ...stem.recurrence, pattern: val };
               });
+
+              // Smart project assignment (see instance path above) — applies to
+              // the stem too, so materialized recurring instances inherit it.
+              if (!stem.projectId && typeof resolveAutoProjectId === 'function') {
+                const autoProjectId = resolveAutoProjectId(stem.ziel);
+                if (autoProjectId) stem.projectId = autoProjectId;
+              }
 
               if (stem.type === 'duration-only') {
                 stem.plan = '';

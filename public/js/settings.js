@@ -26,7 +26,12 @@ const SETTINGS_DEFAULTS = {
   curfewEnabled: false,
   curfewLines: [],
   curfewStartHour: 18,
-  curfewEndHour: 6
+  curfewEndHour: 6,
+  // Smart project assignment: array of { match, projectId }. When a train's
+  // ziel contains `match` (case-insensitive) and no project is already set,
+  // it's auto-assigned `projectId`. Projects are user-created, so this can't
+  // be hardcoded — see _buildProjectRulesEditor below.
+  projectRules: []
 };
 
 let _settingsCache = Object.assign({}, SETTINGS_DEFAULTS);
@@ -266,6 +271,93 @@ function _buildCurfewSection() {
 
   detailsWrap.style.display = _settingsDraft.curfewEnabled ? '' : 'none';
 
+  return section;
+}
+
+// Editable list of "ziel contains X -> assign project Y" rules, backed by
+// _settingsDraft.projectRules (array of {match, projectId}). Modeled on
+// _buildStringListEditor but with a second column (a project picker) per row.
+function _buildProjectRulesEditor(section, projects) {
+  const listWrap = document.createElement('div');
+  listWrap.className = 'settings-reasons-list';
+  section.appendChild(listWrap);
+
+  function renderRows() {
+    listWrap.innerHTML = '';
+    (_settingsDraft.projectRules || []).forEach(function (rule, idx) {
+      const row = document.createElement('div');
+      row.className = 'settings-reason-row';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'settings-input';
+      input.placeholder = 'Text im Ziel, z. B. "HM"';
+      input.value = rule.match || '';
+      input.addEventListener('change', function () {
+        rule.match = input.value.trim();
+      });
+
+      const select = document.createElement('select');
+      select.className = 'settings-input';
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = 'Projekt wählen…';
+      select.appendChild(noneOpt);
+      projects.forEach(function (p) {
+        const o = document.createElement('option');
+        o.value = p._uniqueId;
+        o.textContent = p.name || 'Unbenanntes Projekt';
+        if (p._uniqueId === rule.projectId) o.selected = true;
+        select.appendChild(o);
+      });
+      select.addEventListener('change', function () {
+        rule.projectId = select.value || undefined;
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'settings-reason-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', function () {
+        _settingsDraft.projectRules.splice(idx, 1);
+        renderRows();
+      });
+
+      row.append(input, select, removeBtn);
+      listWrap.appendChild(row);
+    });
+  }
+  renderRows();
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'settings-add-reason';
+  addBtn.textContent = '+ Regel hinzufügen';
+  if (projects.length === 0) {
+    addBtn.disabled = true;
+    addBtn.title = 'Zuerst ein Projekt anlegen';
+  }
+  addBtn.addEventListener('click', function () {
+    _settingsDraft.projectRules = _settingsDraft.projectRules || [];
+    _settingsDraft.projectRules.push({ match: '', projectId: projects[0]._uniqueId });
+    renderRows();
+  });
+  section.appendChild(addBtn);
+}
+
+function _buildProjectAssignmentSection() {
+  const section = _buildSettingsSection(
+    'Automatische Projektzuordnung',
+    'Wenn das Ziel einer Fahrt den angegebenen Text enthält, wird automatisch das gewählte Projekt zugewiesen — aber nur, solange noch kein Projekt manuell gesetzt wurde.'
+  );
+  const projects = (typeof schedule !== 'undefined' && (schedule.projects || [])) || [];
+  if (projects.length === 0) {
+    const hint = document.createElement('p');
+    hint.className = 'settings-section-desc';
+    hint.textContent = 'Noch keine Projekte vorhanden. Lege zuerst ein Projekt an, um Regeln zu definieren.';
+    section.appendChild(hint);
+  }
+  _buildProjectRulesEditor(section, projects);
   return section;
 }
 
@@ -519,6 +611,7 @@ async function renderSettingsPage() {
   scroll.appendChild(header);
 
   scroll.appendChild(_buildDelayReasonsSection());
+  scroll.appendChild(_buildProjectAssignmentSection());
   scroll.appendChild(_buildNotificationsSection());
   scroll.appendChild(_buildDefaultWorkspaceSection());
   scroll.appendChild(_buildJournalSection());
