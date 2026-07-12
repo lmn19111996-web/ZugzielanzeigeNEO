@@ -567,6 +567,40 @@ html, body {
       cursor: default;
     }
 
+    .log-viewer-search-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5vw;
+      margin-left: auto;
+      min-height: 3.6vh;
+      padding: 0.3vh 0.9vw;
+      border: 0.5px solid rgba(255, 255, 255, 0.28);
+      border-radius: 0.6vh;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .log-viewer-search-icon {
+      width: 1.8vh;
+      height: 1.8vh;
+      flex-shrink: 0;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .log-viewer-search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      color: white;
+      font-family: inherit;
+      font-size: clamp(13px, 1.9vh, 18px);
+      width: 16vw;
+      min-width: 140px;
+    }
+
+    .log-viewer-search-input::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
     .log-viewer-status {
       margin-bottom: 3vh;
       font-size: 2vh;
@@ -611,6 +645,15 @@ html, body {
 
       .log-viewer-filter-bar {
         gap: 1vh 1.5vw;
+      }
+
+      .log-viewer-search-wrap {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      .log-viewer-search-input {
+        width: 100%;
       }
 
     }

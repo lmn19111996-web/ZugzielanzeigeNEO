@@ -1158,10 +1158,17 @@
     });
   }
 
-  // Ctrl+F to open search
+  // Ctrl+F to open search. Inside the log viewer this toggles a local search
+  // over the loaded log entries instead of the global train search, since the
+  // global search would replace the log viewer page with unrelated results.
   document.addEventListener('keydown', function (e) {
     if (e.ctrlKey && (e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
+      if (typeof currentWorkspaceMode !== 'undefined' && currentWorkspaceMode === 'log-viewer'
+          && typeof toggleLogViewerSearch === 'function') {
+        toggleLogViewerSearch();
+        return;
+      }
       openSearch();
     }
   });

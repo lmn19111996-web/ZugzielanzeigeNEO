@@ -122,8 +122,50 @@
       loading: false,
       loadedOnce: false,
       error: '',
-      preset: ''
+      preset: '',
+      query: '',
+      searchOpen: false
     };
+
+    function normalizeUmlautsForSearch(s) {
+      return (s || '')
+        .toLowerCase()
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue')
+        .replace(/ß/g, 'ss');
+    }
+
+    function filterLogViewerRows(rows, query) {
+      const q = normalizeUmlautsForSearch((query || '').trim());
+      if (!q) return rows;
+      return rows.filter(t => {
+        if (!t) return false;
+        const stops = Array.isArray(t.zwischenhalte) ? t.zwischenhalte.join(' ') : '';
+        return (
+          normalizeUmlautsForSearch(t.linie || '').includes(q) ||
+          normalizeUmlautsForSearch(t.ziel || '').includes(q) ||
+          normalizeUmlautsForSearch(t.delayReason || '').includes(q) ||
+          normalizeUmlautsForSearch(stops).includes(q)
+        );
+      });
+    }
+
+    // Ctrl+F inside the log viewer toggles this local search instead of the
+    // global train search (openSearch() in mobile.html), which would otherwise
+    // replace the log viewer page with unrelated results from the live schedule.
+    function toggleLogViewerSearch() {
+      const input = document.getElementById('log-viewer-search-input');
+      if (!input) return;
+      if (document.activeElement === input) {
+        input.value = '';
+        logViewerState.query = '';
+        input.blur();
+        renderLogViewerWorkspace();
+      } else {
+        logViewerState.searchOpen = true;
+        input.focus();
+        input.select();
+      }
+    }
     let durationOnlyExpandedByDate = {};
 
     function toDateInputValue(date) {
@@ -286,6 +328,10 @@
         <button class="log-viewer-preset-btn${logViewerState.preset === 'month' ? ' active' : ''}" data-preset="month" type="button">Letzter Monat</button>
         <button class="log-viewer-preset-btn${logViewerState.preset === 'year' ? ' active' : ''}" data-preset="year" type="button">Letztes Jahr</button>
         <button class="log-viewer-preset-btn${logViewerState.preset === 'all' ? ' active' : ''}" data-preset="all" type="button">Alles</button>
+        <div class="log-viewer-search-wrap">
+          <svg class="log-viewer-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+          <input type="text" id="log-viewer-search-input" class="log-viewer-search-input" placeholder="Linie, Ziel, Zwischenhalt …" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${logViewerState.query.replace(/"/g, '&quot;')}">
+        </div>
       `;
       page.appendChild(presets);
 
@@ -370,20 +416,50 @@
         toInput.addEventListener('keydown', handleDateTabOrder);
       }
 
-      if (!logViewerState.loading && logViewerState.rows.length > 0) {
-        renderTrainListWithEntries(logViewerState.rows, {
-          showHeadline: false,
-          preserveScroll: false,
-          enableSwipe: false,
-          enableDateJump: false,
-          append: false,
-          targetEl: results
+      function renderLogViewerResults() {
+        results.innerHTML = '';
+        const filteredRows = filterLogViewerRows(logViewerState.rows, logViewerState.query);
+        if (!logViewerState.loading && filteredRows.length > 0) {
+          renderTrainListWithEntries(filteredRows, {
+            showHeadline: false,
+            preserveScroll: false,
+            enableSwipe: false,
+            enableDateJump: false,
+            append: false,
+            targetEl: results
+          });
+        } else if (!logViewerState.loading && logViewerState.loadedOnce && !logViewerState.error) {
+          const empty = document.createElement('div');
+          empty.className = 'log-viewer-empty';
+          empty.textContent = logViewerState.query
+            ? 'Keine Einträge für diese Suche.'
+            : 'Keine Einträge im gewählten Zeitraum.';
+          results.appendChild(empty);
+        }
+      }
+      renderLogViewerResults();
+
+      const searchInput = presets.querySelector('#log-viewer-search-input');
+      if (searchInput) {
+        if (logViewerState.searchOpen) {
+          searchInput.focus();
+          const v = searchInput.value;
+          searchInput.value = '';
+          searchInput.value = v;
+          logViewerState.searchOpen = false;
+        }
+        searchInput.addEventListener('input', () => {
+          logViewerState.query = searchInput.value;
+          renderLogViewerResults();
         });
-      } else if (!logViewerState.loading && logViewerState.loadedOnce && !logViewerState.error) {
-        const empty = document.createElement('div');
-        empty.className = 'log-viewer-empty';
-        empty.textContent = 'Keine Einträge im gewählten Zeitraum.';
-        results.appendChild(empty);
+        searchInput.addEventListener('keydown', (evt) => {
+          if (evt.key === 'Escape') {
+            searchInput.value = '';
+            logViewerState.query = '';
+            searchInput.blur();
+            renderLogViewerResults();
+          }
+        });
       }
 
       if (!logViewerState.loadedOnce && !logViewerState.loading) {
