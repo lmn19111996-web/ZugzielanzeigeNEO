@@ -130,9 +130,99 @@ function _ciSaveCheckout(uid, timeStr, dur, alreadyApplied) {
   saveSchedule();
 }
 
+function _ciAddMinutesToTime(timeStr, minutes) {
+  var parts = String(timeStr || '00:00').split(':');
+  var h = parseInt(parts[0], 10) || 0;
+  var m = parseInt(parts[1], 10) || 0;
+  var total = (h * 60 + m + (Number(minutes) || 0) + 1440) % 1440;
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
+
+function _ciCommitApprove(uid) {
+  var train = _ciFindTrain(uid) || (schedule.trains || []).find(function (t) { return t._uniqueId === uid; })
+    || (schedule.localTrains || []).find(function (t) { return t._uniqueId === uid; });
+  if (!train || train.checkinTime || train.checkoutTime || isDurationOnlyTrain(train)) return;
+
+  var planTime = train.plan || _ciNowHHMM();
+  var dur = Number(train.dauer) || 0;
+
+  train.actual = planTime;
+  train.checkinTime = planTime;
+  train.checkoutTime = _ciAddMinutesToTime(planTime, dur);
+  train.dauer = dur;
+
+  if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
+
+  if (typeof refreshUIOnly === 'function') {
+    refreshUIOnly();
+  } else {
+    processTrainData(schedule);
+    renderCurrentWorkspaceView();
+  }
+  saveSchedule();
+}
+
+// Collapses any open approve overlay (tapping elsewhere or Escape dismisses it).
+function _ciCollapseApprove(except) {
+  document.querySelectorAll('.departure.approve-eligible.show-approve').forEach(function (el) {
+    if (el !== except) el.classList.remove('show-approve');
+  });
+}
+
+document.addEventListener('keydown', function _ciApproveEscape(e) {
+  if (e.key === 'Escape' || e.key === 'Esc') _ciCollapseApprove(null);
+});
+
 // ── Unified click handler (document-level capture) ─────────────────────────
 
 document.addEventListener('click', function _ciClickCapture(e) {
+  // ── Approve (planned-time reveal + confirm) ─────────────────────────────
+  var approveCommitBtn = e.target.closest('[data-approve-commit-uid]');
+  if (approveCommitBtn) {
+    e.stopPropagation();
+    e.preventDefault();
+    var approveShell = approveCommitBtn.closest('.approve-shell');
+    if (!approveShell || approveShell.classList.contains('approve-confirmed')) return;
+    var uid = approveCommitBtn.dataset.approveCommitUid;
+
+    // Phase 0 (150 ms): crossfade the icon/text out, swap their content,
+    // then crossfade back in — before the shell turns green.
+    approveShell.classList.add('approve-swapping');
+    setTimeout(function () {
+      var icon = approveCommitBtn.querySelector('.ap-icon');
+      if (icon) icon.src = 'res/eingecheckt.svg';
+      var text = approveCommitBtn.querySelector('.approve-text');
+      if (text) text.textContent = 'Erfolgreich bestätigt';
+
+      // Phase 1 (immediate): pill turns green, swapped content fades back
+      // in, border draws clockwise — mirrors the real check-in animation.
+      approveShell.classList.remove('approve-swapping');
+      approveShell.classList.add('approve-confirmed');
+
+      // Phase 2 (1000 ms): border fades. Data commit + collapse deferred a
+      // further 450 ms so the fade can play fully before the row re-renders.
+      setTimeout(function () {
+        approveShell.classList.add('fade-accent');
+        setTimeout(function () {
+          _ciCommitApprove(uid);
+        }, 450);
+      }, 1000);
+    }, 150);
+    return;
+  }
+
+  var approveField = e.target.closest('.departure.approve-eligible[data-approve-uid]');
+  if (approveField) {
+    e.stopPropagation();
+    e.preventDefault();
+    var alreadyOpen = approveField.classList.contains('show-approve');
+    _ciCollapseApprove(approveField);
+    approveField.classList.toggle('show-approve', !alreadyOpen);
+    return;
+  }
+
+  // Any other click dismisses an open approve overlay.
+  _ciCollapseApprove(null);
   // ── Check-in ────────────────────────────────────────────────────────────
   var ciBtn = e.target.closest('[data-ci-uid]');
   if (ciBtn) {

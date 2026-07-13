@@ -118,6 +118,8 @@
   --checkin-stable-bg:        rgba(255, 255, 255, 0.05); /* Faded bg after animation completes */
   --checkin-border-stroke:    #40a11d;                   /* Clockwise-drawing border stroke */
   --checkin-text-color:       rgb(99, 166, 21); /* "Erfolgreich eingecheckt" label */
+  --checkin-pending-bg:       rgba(234, 179, 8, 0.18); /* "bestätigen?" approve pill (yellow) */
+  --checkin-pending-text-color: #eab308;       /* "bestätigen?" approve pill text */
 
 
   /* ============================================================

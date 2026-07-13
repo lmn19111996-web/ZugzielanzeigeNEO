@@ -142,6 +142,13 @@ const Templates = {
       uid = activeClone ? activeClone._uniqueId : uid;
     }
 
+    // Approve affordance: only for today's non-cancelled, non-duration-only
+    // trains whose planned time has already arrived (past or ongoing) and
+    // that haven't been checked in or out yet.
+    const approveEligible = !train._readOnly && !isDurationOnly && isToday && !train.canceled
+      && !isFirstTrain && !hasOpenCheckinSession && !isCheckedOut && tTime <= now
+      && Number(train.dauer) > 0;
+
     let checkinWidgetHTML = '';
     if (!train._readOnly && isToday && !train.canceled && !isFirstTrain) {
       // Show widget for all today's non-canceled tasks (including past tasks)
@@ -234,7 +241,7 @@ const Templates = {
         <div class="right-block">
           ${durationSlotHTML}
           <div class="departure-slot">
-            <div class="departure${isOngoingDeparture ? ' ongoing-departure' : ''}"
+            <div class="departure${isOngoingDeparture ? ' ongoing-departure' : ''}${approveEligible ? ' approve-eligible' : ''}"
                  data-departure="1"
                  data-plan="${train.plan || ''}"
                  data-actual="${train.actual || ''}"
@@ -243,8 +250,22 @@ const Templates = {
                  data-canceled="${train.canceled ? 'true' : 'false'}"
                  data-checkin-time="${train.checkinTime || ''}"
                  data-checkout-time="${train.checkoutTime || ''}"
+                 ${approveEligible ? `data-approve-uid="${uid}"` : ''}
                  ${isFirstTrain ? 'data-is-headline="true"' : ''}>
-              ${departureHTML}
+              <span class="departure-text">${departureHTML}</span>
+              ${approveEligible ? `<div class="approve-shell" aria-hidden="true">
+                <div class="approve-border" aria-hidden="true">
+                  <svg viewBox="0 0 226 44" preserveAspectRatio="none">
+                    <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
+                  </svg>
+                </div>
+                <button class="approve-box" type="button" data-approve-commit-uid="${uid}" aria-label="Geplante Zeit bestätigen">
+                  <span class="approve-content">
+                    <img class="ap-icon" src="res/checkin.svg" alt="">
+                    <span class="approve-text">bestätigen?</span>
+                  </span>
+                </button>
+              </div>` : ''}
             </div>
           </div>
         </div>

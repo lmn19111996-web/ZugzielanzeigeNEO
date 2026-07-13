@@ -1717,12 +1717,154 @@ html, body {
     }
 
     .departure {
+      font-size: 3vh;
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+    }
+
+    .departure-text {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 3vh;
-      color: inherit;
       display: inline-block;
+      max-width: 100%;
+    }
+
+    /* Approve affordance: tapping a past/ongoing, not-yet-checked-in time
+       field replaces it with a "bestätigen?" pill (mirrors the check-in
+       widget's shell/box/border structure); tapping that pill plays the
+       same green confirm + clockwise border-sweep animation as a real
+       check-in, then commits the planned time as verified data. */
+    .departure.approve-eligible {
+      cursor: pointer;
+    }
+
+    /* The pill replaces the time text entirely rather than overlaying it,
+       so it must escape the past-train dimming applied to .departure. */
+    .train-entry.past-train .departure.approve-eligible.show-approve {
+      opacity: 1;
+    }
+
+    .departure.approve-eligible.show-approve .departure-text {
+      display: none;
+    }
+
+    .approve-shell {
+      display: none;
+      position: relative;
+      height: 4vh;
+      border-radius: 1vh;
+    }
+
+    .departure.approve-eligible.show-approve .approve-shell {
+      display: inline-flex;
+      animation: approvePillIn 0.2s ease both;
+    }
+
+    @keyframes approvePillIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .approve-box {
+      position: relative;
+      z-index: 1;
+      width: auto;
+      height: 100%;
+      border: none;
+      border-radius: 1vh;
+      cursor: pointer;
+      padding: 0 1vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: nowrap;
+      font-family: inherit;
+      background: var(--checkin-pending-bg, rgba(234, 179, 8, 0.18));
+      transition: background-color 0.4s ease;
+    }
+
+    .approve-box:hover {
+      opacity: 0.85;
+    }
+
+    .approve-shell.approve-confirmed .approve-box {
+      background: var(--checkin-success-bg, rgba(34, 197, 94, 0.14));
+      cursor: default;
+    }
+
+    .approve-content {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8vh;
+      transition: opacity 0.15s ease;
+    }
+
+    /* Brief crossfade while the icon/text swap from "bestätigen?" to
+       "Erfolgreich bestätigt" — toggled in checkin.js just before the swap. */
+    .approve-shell.approve-swapping .approve-content {
+      opacity: 0;
+    }
+
+    .ap-icon {
+      width: 2.6vh;
+      height: 2.6vh;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .approve-text {
+      font-size: 2vh;
+      font-weight: 400;
+      font-family: inherit;
+      color: var(--checkin-pending-text-color);
+      white-space: nowrap;
+      transition: color 0.3s ease;
+    }
+
+    .approve-shell.approve-confirmed .approve-text {
+      color: var(--checkin-text-color, rgb(99, 166, 21));
+    }
+
+    /* Border overlay — hidden by default ("without border"); only drawn
+       during the confirm animation, exactly like .checkin-border. */
+    .approve-border {
+      position: absolute;
+      inset: -1px;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .approve-border svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .approve-border rect {
+      fill: none;
+      stroke: var(--checkin-border-stroke, #40a11d);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      --ci-border-len: 530;
+      stroke-dasharray: var(--ci-border-len);
+      stroke-dashoffset: var(--ci-border-len);
+    }
+
+    .approve-shell.approve-confirmed:not(.fade-accent) .approve-border {
+      opacity: 1;
+    }
+
+    .approve-shell.approve-confirmed:not(.fade-accent) .approve-border rect {
+      animation: ciDrawBorder 0.4s linear 0s forwards;
     }
 
     .delayed {
