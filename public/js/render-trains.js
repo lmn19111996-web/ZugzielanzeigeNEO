@@ -101,7 +101,19 @@
           // Apply line color to top ribbon bottom border and update accent color
           if (topRibbon) {
             const lineColor = getLineColor(currentTrain.linie || 'S1');
-            topRibbon.style.borderBottom = `0.4vh solid ${lineColor}`;
+            if (hasSpecialLineGradient(currentTrain.linie)) {
+              // border-image ignores border-radius, so use the background-clip
+              // double-gradient trick instead to keep the now-card's rounded corners.
+              topRibbon.style.borderBottom = '0.4vh solid transparent';
+              topRibbon.style.borderImage = '';
+              topRibbon.style.borderImageSlice = '';
+              topRibbon.style.background = getLineStripeBackground(currentTrain.linie, { edge: 'bottom', thickness: '0.4vh', panelBgVar: '--color-bg-card' });
+            } else {
+              topRibbon.style.borderBottom = `0.4vh solid ${lineColor}`;
+              topRibbon.style.borderImage = '';
+              topRibbon.style.borderImageSlice = '';
+              topRibbon.style.background = '';
+            }
             currentAccentColor = lineColor; // Update global accent color for note headers
             
             // Update add button border color on mobile
@@ -116,6 +128,9 @@
         firstTrainContainer.innerHTML = '';
         // Reset to default border color when no train
         if (topRibbon) {
+          topRibbon.style.borderImage = '';
+          topRibbon.style.borderImageSlice = '';
+          topRibbon.style.background = '';
           topRibbon.style.borderBottom = '0.3vh solid var(--color-divider)';
           currentAccentColor = 'var(--color-divider)'; // Reset accent color
           

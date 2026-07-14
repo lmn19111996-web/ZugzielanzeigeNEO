@@ -43,6 +43,7 @@
         's45': '#cc9d5a',
         's46': '#cc9d5a',
         's47': '#39bb78',
+        's49': '#750787',
         's5': '#F08600',
         's51': '#F08600',
         's57': '#ebb400',
@@ -83,6 +84,68 @@
 
       };
       return lineColors[line.toLowerCase()] || '#8c8c8c';
+    }
+
+    function adjustHexColor(hex, amount) {
+      const match = String(hex || '').trim().match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+      if (!match) return hex;
+      let h = match[1];
+      if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      const target = amount >= 0 ? 255 : 0;
+      const mix = (v) => Math.round(v + (target - v) * Math.abs(amount));
+      const toHex = (v) => mix(v).toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    // A multi-step "shine" gradient built from a line's own base color:
+    // muted -> dark -> base -> light -> dark, never touching pure black/white.
+    function shineGradientStops(base) {
+      return [
+        adjustHexColor(base, -0.2),
+        adjustHexColor(base, -0.4),
+        base,
+        adjustHexColor(base, 0.35),
+        adjustHexColor(base, -0.3)
+      ];
+    }
+
+    // Special multi-stop border gradients per line, keyed by lowercase line id.
+    // Colors for s91-s99 are taken from their pill SVGs (./res/<line>.svg).
+    const SPECIAL_LINE_GRADIENTS = {
+      s49: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], // pride flag
+      s91: shineGradientStops('#03377a'),
+      s92: shineGradientStops('#7a0707'),
+      s93: shineGradientStops('#e4592b'),
+      s94: shineGradientStops('#41238d'),
+      s95: shineGradientStops('#e4592b'),
+      s96: shineGradientStops('#196489'),
+      s97: shineGradientStops('#074d70'),
+      s98: shineGradientStops('#ffd737'), // gold text accent, dark pill
+      s99: shineGradientStops('#ff76c4')  // pink text accent, dark pill
+    };
+
+    function hasSpecialLineGradient(line) {
+      return Object.prototype.hasOwnProperty.call(SPECIAL_LINE_GRADIENTS, String(line || '').toLowerCase());
+    }
+
+    function getLineGradient(line, direction = 'to right') {
+      const stops = SPECIAL_LINE_GRADIENTS[String(line || '').toLowerCase()] || SPECIAL_LINE_GRADIENTS.s49;
+      return `linear-gradient(${direction}, ${stops.join(', ')})`;
+    }
+
+    // Builds a `background` shorthand that paints the special-line gradient only
+    // as a thin stripe on one edge (border-box), leaving the rest of the box's
+    // background as the normal panel color. This keeps any existing translucent
+    // border on the other edges from picking up a tint from the gradient behind it,
+    // while still respecting border-radius (unlike border-image).
+    function getLineStripeBackground(line, { edge = 'bottom', thickness = '4px', panelBgVar = '--color-bg-panel' } = {}) {
+      const direction = (edge === 'left' || edge === 'right') ? 'to bottom' : 'to right';
+      const size = (edge === 'left' || edge === 'right') ? `${thickness} 100%` : `100% ${thickness}`;
+      const gradient = getLineGradient(line, direction);
+      return `${gradient} ${edge} / ${size} no-repeat border-box, linear-gradient(var(${panelBgVar}), var(${panelBgVar})) padding-box`;
     }
 
     function getCarriageSVG(dauer, isFEX = false, line = '') {

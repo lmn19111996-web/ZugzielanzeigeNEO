@@ -42,6 +42,7 @@
         panel.style.borderLeft = '';
         panel.style.borderImage = '';
         panel.style.borderImageSlice = '';
+        panel.style.background = '';
         panel.style.borderTopLeftRadius = '';
         panel.style.borderBottomLeftRadius = '';
         delete panel.dataset.vipLine;
@@ -53,11 +54,21 @@
         panel.style.borderLeft = '4px solid transparent';
         panel.style.borderImage = `linear-gradient(to bottom, ${vip.c3}, ${vip.c2}, ${vip.c1}) 1`;
         panel.style.borderImageSlice = '1';
+        panel.style.background = '';
         panel.dataset.vipLine = (train.linie || '').toLowerCase();
+      } else if (hasSpecialLineGradient(train.linie)) {
+        // border-image ignores border-radius, so use the background-clip
+        // double-gradient trick instead to keep the rounded corners.
+        panel.style.borderLeft = '4px solid transparent';
+        panel.style.borderImage = '';
+        panel.style.borderImageSlice = '';
+        panel.style.background = getLineStripeBackground(train.linie, { edge: 'left', thickness: '4px', panelBgVar: '--color-bg-panel' });
+        delete panel.dataset.vipLine;
       } else {
         panel.style.borderLeft = `4px solid ${lineColor}`;
         panel.style.borderImage = '';
         panel.style.borderImageSlice = '';
+        panel.style.background = '';
         delete panel.dataset.vipLine;
       }
       panel.style.borderTopLeftRadius = '8px';
