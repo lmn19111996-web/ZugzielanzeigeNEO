@@ -1717,19 +1717,12 @@ html, body {
     }
 
     .departure {
-      font-size: 3vh;
-      color: inherit;
-      display: inline-flex;
-      align-items: center;
-      max-width: 100%;
-    }
-
-    .departure-text {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 3vh;
+      color: inherit;
       display: inline-block;
-      max-width: 100%;
     }
 
     /* Approve affordance: tapping a past/ongoing, not-yet-checked-in time
