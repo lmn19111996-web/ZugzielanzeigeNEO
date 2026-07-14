@@ -30,6 +30,39 @@
       });
     }
 
+    // Marquee for train destinations (list + headline, incl. the strikethrough
+    // original destination on cancelled entries) that overflow their container
+    // width (bounce scroll, like dashboard.js's applyViaScrolling) instead of
+    // wrapping/clipping.
+    function applyZugzielScrolling(root) {
+      (root || document).querySelectorAll('.zugziel-text').forEach(span => {
+        if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
+
+        const container = span.parentElement;
+        if (!container) return;
+        const originalText = span.dataset.zielText || '';
+        if (!originalText) return;
+
+        span.style.transition = 'none';
+        span.style.transform = '';
+        span.textContent = originalText;
+
+        // The span sits inside the container's padding box (its left edge is
+        // offset by paddingLeft), so the actually-visible width is clientWidth
+        // minus the container's own padding — using clientWidth directly would
+        // let the marquee scroll the text into (and past) that padding.
+        const containerStyle = getComputedStyle(container);
+        const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
+        const paddingRight = parseFloat(containerStyle.paddingRight) || 0;
+        const availableWidth = container.clientWidth - paddingLeft - paddingRight;
+
+        const scrollDist = span.scrollWidth - availableWidth;
+        if (scrollDist <= 0) return;
+
+        startMarquee(span, scrollDist);
+      });
+    }
+
     function renderHeadlineTrain() {
       const now = new Date();
       const firstTrainContainer = document.getElementById('first-train-container');
@@ -60,7 +93,10 @@
           const firstEntry = createTrainEntry(currentTrain, now, true);
           firstTrainContainer.innerHTML = '';
           firstTrainContainer.appendChild(firstEntry);
-          requestAnimationFrame(() => applyCancelNoticeScrolling(firstTrainContainer));
+          requestAnimationFrame(() => {
+            applyCancelNoticeScrolling(firstTrainContainer);
+            applyZugzielScrolling(firstTrainContainer);
+          });
 
           // Apply line color to top ribbon bottom border and update accent color
           if (topRibbon) {
@@ -1414,7 +1450,10 @@
         listRoot._jumpHandler = null;
       }
 
-      requestAnimationFrame(() => applyCancelNoticeScrolling(listRoot));
+      requestAnimationFrame(() => {
+        applyCancelNoticeScrolling(listRoot);
+        applyZugzielScrolling(listRoot);
+      });
 
       // Wait for DOM to fully render, then restore scroll and show
       if (preserveScroll) {

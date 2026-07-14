@@ -1555,11 +1555,16 @@ html, body {
     .canceled-ziel-original {
       position: absolute;
       left: 0;
+      right: 0;
       top: 0;
       bottom: 0;
       display: flex;
       align-items: center;
       white-space: nowrap;
+      /* Bounded to the toggle's width (via left/right:0 above) and clipped —
+         without this, these absolutely-positioned, nowrap divs shrink-to-fit
+         their content and can render past the .zugziel container's edge. */
+      overflow: hidden;
       /* inherit font-size from .zugziel so ribbon (4.2vh) and list (3.4vh) both match */
       font-size: inherit;
       font-weight: inherit;
@@ -1647,9 +1652,35 @@ html, body {
       align-items: center;
       font-size: 3.4vh;
       flex: 1;
+      /* Flex items default to min-width:auto, which lets long content grow
+         the container instead of being clipped by overflow:hidden above. */
+      min-width: 0;
       padding-left: 1.2vw;
       align-self: stretch;
       line-height: 1.2;
+    }
+
+    /* Destinations that overflow their container scroll (marquee) instead of
+       wrapping/clipping — see applyZugzielScrolling in render-trains.js.
+       Cancelled entries keep the wrap/toggle layout (.canceled-ziel-toggle)
+       and are excluded below. */
+    .zugziel:not(:has(.canceled-ziel-toggle)) {
+      white-space: nowrap;
+    }
+
+    /* Padding-less clipping box for the marquee: unlike .zugziel (which owns
+       padding-left), this has no padding of its own, so its clientWidth is
+       exactly the visible width available to the text — mirrors
+       .canceled-ziel-original, which the marquee already clips correctly. */
+    .zugziel-scroll {
+      overflow: hidden;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .zugziel-text {
+      display: inline-block;
+      white-space: nowrap;
     }
 
     /* Right block - departure only */

@@ -66,6 +66,8 @@ const Templates = {
       const _zielDiv = document.createElement('div');
       _zielDiv.className = 'canceled-ziel-original';
       const _zielSpan = document.createElement('span');
+      _zielSpan.className = 'zugziel-text';
+      _zielSpan.dataset.zielText = expandedZiel;
       _zielSpan.style.textDecoration = 'line-through';
       _zielSpan.textContent = expandedZiel;
       _zielDiv.appendChild(_zielSpan);
@@ -76,7 +78,7 @@ const Templates = {
       _zielTemp.appendChild(_zielToggle);
       destinationHTML = _zielTemp.innerHTML;
     } else {
-      destinationHTML = expandedZiel;
+      destinationHTML = `<div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="${escapeHTML(expandedZiel)}">${expandedZiel}</span></div>`;
     }
     
     // Entry classes
