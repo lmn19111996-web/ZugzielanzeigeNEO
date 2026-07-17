@@ -271,6 +271,11 @@
       // on the next render cycle.
       train.curfewOverride = true;
       scheduleTrain.curfewOverride = true;
+      // Clear any stale auto-cancel flag right away — otherwise it can survive
+      // until the next processTrainData cycle and force this toggle's result
+      // back to its old value (see applyCurfewRule in globals.js).
+      train._curfewCanceled = false;
+      scheduleTrain._curfewCanceled = false;
       refreshUIOnly();
       saveSchedule();
 

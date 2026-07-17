@@ -89,18 +89,24 @@ async function sendPushToAll(title, options) {
     return;
   }
   const subs = loadPushSubscriptions();
+  console.log(`[Push] Sending "${title}" to ${subs.length} subscription(s)`);
+  if (subs.length === 0) return;
   const dead = [];
+  let okCount = 0;
   await Promise.all(subs.map(async sub => {
     try {
       await webPush.sendNotification(sub, JSON.stringify({ title, options }));
+      okCount++;
     } catch (err) {
       if (err.statusCode === 410 || err.statusCode === 404) {
         dead.push(sub.endpoint);
+        console.warn(`[Push] Endpoint gone (${err.statusCode}), removing: ${sub.endpoint.slice(0, 60)}...`);
       } else {
-        console.warn(`[Push] Delivery failed (${err.statusCode}): ${err.message}`);
+        console.warn(`[Push] Delivery failed (statusCode=${err.statusCode}, code=${err.code}): ${err.message}`);
       }
     }
   }));
+  console.log(`[Push] Delivered to ${okCount}/${subs.length}, ${dead.length} pruned`);
   if (dead.length) {
     const cleaned = subs.filter(s => !dead.includes(s.endpoint));
     savePushSubscriptions(cleaned);
@@ -113,17 +119,21 @@ function schedulePushEvents(events) {
   pendingPushTimeouts.clear();
 
   const now = Date.now();
+  let scheduled = 0, skippedPast = 0;
   (events || []).forEach(ev => {
     const fireAt = new Date(ev.notifyAt).getTime();
     const delay = fireAt - now;
-    if (delay < -60000) return; // already more than 1 min past — skip
+    if (delay < -60000) { skippedPast++; return; } // already more than 1 min past — skip
     const clampedDelay = Math.max(0, delay);
     const handle = setTimeout(async () => {
+      console.log(`[Push] Firing scheduled event ${ev.id} ("${ev.title}")`);
       await sendPushToAll(ev.title, ev.options);
       pendingPushTimeouts.delete(ev.id);
     }, clampedDelay);
     pendingPushTimeouts.set(ev.id, { handle, event: ev });
+    scheduled++;
   });
+  console.log(`[Push] schedulePushEvents: ${scheduled} scheduled, ${skippedPast} skipped (already past)`);
 }
 
 // Restore push events that survived a server restart
@@ -391,8 +401,6 @@ function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
     delayReason: delayReason || null,
     autoDelayReasons,
     notice: notice || null,
-    checkinTime: (train && train.checkinTime) || null,
-    checkoutTime: (train && train.checkoutTime) || null,
     recurrence: (train && train.recurrence) || null,
     startDate: (train && train.startDate) || null,
     skippedDates: Array.isArray(train && train.skippedDates) ? train.skippedDates.slice() : []
@@ -696,8 +704,6 @@ function normalizeLogRecordFromAny(entry) {
     date: serviceDate,
     plannedDate: serviceDate,
     canceled: Boolean(entry.canceled),
-    checkinTime: entry.checkinTime || null,
-    checkoutTime: entry.checkoutTime || null,
     recurrence: entry.recurrence || null,
     startDate: entry.startDate || null,
     skippedDates: Array.isArray(entry.skippedDates) ? entry.skippedDates.slice() : []

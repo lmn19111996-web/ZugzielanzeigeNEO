@@ -471,16 +471,10 @@ function _buildNotificationsSection() {
   btnSubscribe.addEventListener('click', async function () {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') { await refreshPushStatus(); return; }
-    try {
-      const kr = await fetch('/api/push/vapid-public-key');
-      if (!kr.ok) { await refreshPushStatus(); return; }
-      const { publicKey } = await kr.json();
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _urlBase64ToUint8Array(publicKey) });
-      await fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub.toJSON()) });
-    } catch (e) {
-      console.error('Push subscribe failed:', e);
-    }
+    // Delegate to the shared subscribeToPush() (js/notifications.js) instead of
+    // duplicating the subscribe logic here — it also reconciles the tracked
+    // endpoint so this device doesn't get double-counted server-side.
+    await subscribeToPush();
     await refreshPushStatus();
   });
 
@@ -491,6 +485,7 @@ function _buildNotificationsSection() {
       if (!sub) { await refreshPushStatus(); return; }
       await sub.unsubscribe();
       await fetch('/api/push/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+      localStorage.removeItem('pushEndpoint');
     } catch (e) {
       console.error('Push unsubscribe failed:', e);
     }

@@ -117,13 +117,24 @@
       trains.forEach(t => {
         if (!t) return;
 
+        // A manually-overridden train is completely hands-off from here on —
+        // checked FIRST, before the stale-flag revert below, so it also skips
+        // that cleanup. Without this ordering, a leftover _curfewCanceled=true
+        // from BEFORE the override was set (never cleared by the override
+        // itself — see editor.js/swipe.js 'cancel' action) could still force
+        // canceled back to false on the next cycle, silently undoing a manual
+        // re-cancellation the user made right after reactivating.
+        if (t.curfewOverride) {
+          t._curfewCanceled = false;
+          return;
+        }
+
         if (t._curfewCanceled) {
           t.canceled = false;
           t.delayReason = '';
           t._curfewCanceled = false;
         }
 
-        if (t.curfewOverride) return;
         if (!enabled || t.type === 'note' || !t.linie || !t.date) return;
         if (!lines.includes(String(t.linie).toUpperCase())) return;
         if (isDurationOnlyTrain(t) || !hasTrainTime(t)) return;
@@ -249,7 +260,7 @@
         const activeCloneByTemplateUid = new Map();
         [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []].forEach(list => {
           list.forEach(t => {
-            if (t && t._templateUid && t.checkinTime && !t.checkoutTime && !activeCloneByTemplateUid.has(t._templateUid)) {
+            if (t && t._templateUid && t.checkedIn && !t.checkedOut && !activeCloneByTemplateUid.has(t._templateUid)) {
               activeCloneByTemplateUid.set(t._templateUid, t);
             }
           });

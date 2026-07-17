@@ -79,8 +79,8 @@
           const dauer = departure.dataset.dauer ? Number(departure.dataset.dauer) : 0;
           const trainDate = departure.dataset.date || null;
           const canceled = departure.dataset.canceled === 'true';
-          const checkinTime = departure.dataset.checkinTime || undefined;
-          const checkoutTime = departure.dataset.checkoutTime || undefined;
+          const checkedIn = departure.dataset.checkedIn === 'true';
+          const checkedOut = departure.dataset.checkedOut === 'true';
 
           // Reconstruct train object for formatCountdown
           const train = {
@@ -89,8 +89,8 @@
             dauer: dauer,
             date: trainDate,
             canceled: canceled,
-            checkinTime: checkinTime,
-            checkoutTime: checkoutTime
+            checkedIn: checkedIn,
+            checkedOut: checkedOut
           };
 
           const elapsedEl = departure.querySelector('.countdown-elapsed-time');

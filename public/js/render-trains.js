@@ -217,23 +217,39 @@
       });
     }
 
+    // Adds `minutes` to a "HH:MM" string, wrapping across midnight.
+    function _addMinutesToTimeStr(timeStr, minutes) {
+      var parts = String(timeStr || '00:00').split(':');
+      var h = parseInt(parts[0], 10) || 0;
+      var m = parseInt(parts[1], 10) || 0;
+      var total = (h * 60 + m + (Number(minutes) || 0) + 1440) % 1440;
+      return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+    }
+
     // Strips a raw log record down to what actually happened, for manual export
     // only (server-side diagnostic logs keep the full record). Drops id fields,
     // recurrence/template bookkeeping, the source week file, and the separate
     // delayReason/autoDelayReasons in favor of the single combined `notice`.
+    // checkinTime/checkoutTime aren't stored fields — they're derived here from
+    // actual/dauer purely for export readability (checkinTime = actual,
+    // checkoutTime = actual + dauer), so they always match the displayed data
+    // even if actual/dauer were corrected after the fact.
     function cleanLogEntryForExport(e) {
+      const actual = e.actual || '';
+      const dauer = Number(e.dauer) || 0;
+      const hasSession = !!actual && dauer > 0;
       return {
         date: e.date || e.serviceDate || e.plannedDate || '',
         linie: e.linie || '',
         ziel: e.ziel || '',
         plan: e.plan || '',
-        actual: e.actual || '',
-        dauer: Number(e.dauer) || 0,
+        actual: actual,
+        dauer: dauer,
         zwischenhalte: Array.isArray(e.zwischenhalte) ? e.zwischenhalte : [],
         canceled: Boolean(e.canceled),
         notice: e.notice || null,
-        checkinTime: e.checkinTime || null,
-        checkoutTime: e.checkoutTime || null,
+        checkinTime: hasSession ? actual : null,
+        checkoutTime: hasSession ? _addMinutesToTimeStr(actual, dauer) : null,
         projectName: e.projectName || null
       };
     }
@@ -459,8 +475,6 @@
         _readOnly: true,
         _showDurationColumn: true,
         _isPastTrain: isPast,
-        checkinTime: entry && entry.checkinTime ? entry.checkinTime : null,
-        checkoutTime: entry && entry.checkoutTime ? entry.checkoutTime : null,
         _logRecordId: (entry && entry.recordId) || null,
         source: 'log'
       };

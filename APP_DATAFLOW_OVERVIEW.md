@@ -34,9 +34,8 @@ Common fields:
 - `date`: explicit calendar date for local/spontaneous entries.
 - `weekday`: weekday-based recurrence field used by fixed schedule items.
 - `canceled`: marks a canceled trip.
-- `checkinTime`: time a local task was checked in.
-- `checkoutTime`: time a local task was checked out.
-- `_checkinEpochMs`: client-side timestamp used to calculate checkout duration precisely.
+- `checkedIn` / `checkedOut`: booleans marking check-in/check-out UI state. `dauer` is always computed as `checkoutTime - actual` at the moment of check-out, where `actual` is user-editable in between — these flags carry no time value themselves and aren't exported to logs.
+- `_checkinEpochMs`: client-side timestamp used as the duration-only-task session start (task types without a fixed `actual` departure time).
 - `projectId`: optional link to a project.
 - `type`: special mode, commonly `note` or `duration-only`.
 - `source`: origin such as local schedule or DB API data.

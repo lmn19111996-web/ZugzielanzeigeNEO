@@ -15,12 +15,7 @@
 
     function renderFocusMode(train, editMode = 'instance') {
       const now = new Date();
-      
-      // If suggestion panel is active for this train, don't re-render
-      if (timeSuggestionState.activeTrain && timeSuggestionState.activeTrain._uniqueId === train._uniqueId) {
-        return;
-      }
-      
+
       // Use the editor drawer for both mobile and desktop
       // It will be styled as fullscreen on mobile via CSS
       desktopFocusedTrainId = train._uniqueId; // Track focused train
@@ -1430,7 +1425,12 @@
               // reactivated since the rule re-cancels it every render cycle.
               train.curfewOverride = true;
               scheduleTrain.curfewOverride = true;
-              
+              // Clear any stale auto-cancel flag right away — otherwise it can
+              // survive until the next processTrainData cycle and force this
+              // toggle's result back to its old value (see applyCurfewRule).
+              train._curfewCanceled = false;
+              scheduleTrain._curfewCanceled = false;
+
               // OPTIMISTIC UI: Render immediately, then save in background
               // 1. Refresh UI with cancel state change
               refreshUIOnly();

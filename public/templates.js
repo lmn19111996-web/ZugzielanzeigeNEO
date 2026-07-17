@@ -86,7 +86,6 @@ const Templates = {
     if (isFirstTrain) entryClasses.push('first-train');
     if (train.linie === 'FEX') entryClasses.push('fex-entry');
     if (train.linie === 'SEV') entryClasses.push('sev-entry');
-    if (train._isPreview) entryClasses.push('preview-train');
     if (train._isPastTrain) entryClasses.push('past-train');
     
     // Create a temporary container for departure HTML
@@ -97,11 +96,11 @@ const Templates = {
     const _d = now;
     const todayDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
     const isToday = train.date === todayDate;
-    const isCheckedOut = !!train.checkoutTime;
-    const hasOpenCheckinSession = !!train.checkinTime;
-    const hasPendingCheckout = isToday && !!train.checkinTime && !isCheckedOut && tTime > now;
+    const isCheckedOut = !!train.checkedOut;
+    const hasOpenCheckinSession = !!train.checkedIn;
+    const hasPendingCheckout = isToday && !!train.checkedIn && !isCheckedOut && tTime > now;
     const isPastTrainDetected = !isDurationOnly && !hasPendingCheckout && (train._isPastTrain || (isToday && isCheckedOut));
-    const isOngoingDeparture = isPastTrainDetected && !!train.checkinTime && !train.checkoutTime && !(Number(train.dauer) > 0);
+    const isOngoingDeparture = isPastTrainDetected && !!train.checkedIn && !train.checkedOut && !(Number(train.dauer) > 0);
     if (isOngoingDeparture) entryClasses.push('ongoing-train');
     
     if (isFirstTrain) {
@@ -113,7 +112,7 @@ const Templates = {
       // Pass check-in status to determine animation display; cancelled
       // trains get "Zug fällt aus" instead of "abgefahren" in the toggle
       // since they never actually departed.
-      tempDiv.appendChild(formatPastTrainTime(train.plan, train.actual, train.dauer, train.date, now, !!train.checkinTime, !!train.canceled));
+      tempDiv.appendChild(formatPastTrainTime(train.plan, train.actual, train.dauer, train.date, now, !!train.checkedIn, !!train.canceled));
     } else {
       tempDiv.appendChild(formatDeparture(train.plan, train.actual, now, delay, train.dauer, train.date));
     }
@@ -250,8 +249,8 @@ const Templates = {
                  data-dauer="${train.dauer != null ? String(train.dauer) : ''}"
                  data-date="${train.date || ''}"
                  data-canceled="${train.canceled ? 'true' : 'false'}"
-                 data-checkin-time="${train.checkinTime || ''}"
-                 data-checkout-time="${train.checkoutTime || ''}"
+                 data-checked-in="${train.checkedIn ? 'true' : 'false'}"
+                 data-checked-out="${train.checkedOut ? 'true' : 'false'}"
                  ${approveEligible ? `data-approve-uid="${uid}"` : ''}
                  ${isFirstTrain ? 'data-is-headline="true"' : ''}>
               <span class="departure-text">${departureHTML}</span>
@@ -377,11 +376,6 @@ const Templates = {
       blockClasses.push('current');
     }
     
-    // Add preview class
-    if (train._isPreview) {
-      blockClasses.push('preview-train');
-    }
-
     // Week view: mark segments of a midnight-crossing train that were clipped to
     // this day's column, so CSS can flatten the clipped edge and hint continuation.
     if (pos.continuesFromPrevDay) blockClasses.push('continues-from-prev-day');

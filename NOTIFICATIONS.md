@@ -63,7 +63,7 @@ Triggered when a train's departure time (actual or planned) is between now and 2
 If a train is already within the 20-minute window and its delay, cancellation, or time changes, a new notification fires immediately reflecting the updated status.
 
 ### 3. Occupation end (departure from train)
-Fires when `now >= trainTime + dauer` (computed) or when `train.checkoutTime` is set (explicit checkout). Fires regardless of the 20-minute window.
+Fires when `now >= trainTime + dauer` (computed from `actual`/`plan` + `dauer`, both editable). Fires regardless of the 20-minute window.
 
 **Messages:**
 

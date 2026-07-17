@@ -1,7 +1,12 @@
 // === CHECK-IN / CHECK-OUT SYSTEM ===
 // Handles check-in/check-out for today's tasks.
-// Check-in  → sets train.actual = now, train.checkinTime = now
-// Check-out → sets train.dauer  = (checkout - checkin) minutes, train.checkoutTime = now
+// Check-in  → sets train.actual = now, train.checkedIn = true
+// Check-out → sets train.dauer  = (checkout - train.actual) minutes, train.checkedOut = true
+// train.actual is editable via the editor between check-in and check-out (e.g.
+// correcting a late check-in to the real departure time) — checkedIn/checkedOut
+// are plain state flags only, never a source of time data; no real-world
+// check-in/check-out timestamps are recorded anywhere (log export uses only
+// plan/actual/dauer).
 //
 // DATA MUTATION IS INTENTIONALLY DEFERRED UNTIL AFTER ANIMATION COMPLETES.
 // Reason: clock.js ticks every second and checks processedTrainData.localTrains by
@@ -42,7 +47,7 @@ function _ciComputeDurationFromMs(startMs, endMs) {
   return Math.max(0, Math.round((safeEnd - safeStart) / 60000));
 }
 
-function _ciApplyCheckoutState(uid, timeStr, dur) {
+function _ciApplyCheckoutState(uid, dur) {
   var lists = [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []];
   var seen = new Set();
   lists.forEach(function (list) {
@@ -52,13 +57,13 @@ function _ciApplyCheckoutState(uid, timeStr, dur) {
       seen.add(t);
       if (isDurationOnlyTrain(t)) {
         t.dauer = (Number(t.dauer) || 0) + dur;
-        t.checkinTime = undefined;
+        t.checkedIn = false;
         t.actual = undefined;
         t._checkinEpochMs = undefined;
       } else {
         t.dauer = dur;
       }
-      t.checkoutTime = timeStr;
+      t.checkedOut = true;
     });
   });
 }
@@ -79,7 +84,7 @@ function _ciCommitCheckinClone(template, timeStr) {
     source: 'local',
     _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
     _templateUid: template._uniqueId,
-    checkinTime: timeStr,
+    checkedIn: true,
     _checkinEpochMs: Date.now()
   };
   if (template.projectId) clone.projectId = template.projectId;
@@ -97,11 +102,11 @@ function _ciCommitCheckinClone(template, timeStr) {
 
 function _ciCommitCheckin(uid, timeStr) {
   var train = _ciFindTrain(uid);
-  if (!train || train.checkinTime) return; // Idempotent guard
+  if (!train || train.checkedIn) return; // Idempotent guard
   if (!isDurationOnlyTrain(train)) {
     train.actual = timeStr;
   }
-  train.checkinTime = timeStr;
+  train.checkedIn = true;
   train._checkinEpochMs = Date.now();
   // Animation is finished at this point, so use the same full local refresh path
   // as editor actions before saving in the background.
@@ -114,9 +119,9 @@ function _ciCommitCheckin(uid, timeStr) {
   saveSchedule();
 }
 
-function _ciSaveCheckout(uid, timeStr, dur, alreadyApplied) {
+function _ciSaveCheckout(uid, dur, alreadyApplied) {
   if (!alreadyApplied) {
-    _ciApplyCheckoutState(uid, timeStr, dur);
+    _ciApplyCheckoutState(uid, dur);
   }
 
   if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
@@ -130,25 +135,17 @@ function _ciSaveCheckout(uid, timeStr, dur, alreadyApplied) {
   saveSchedule();
 }
 
-function _ciAddMinutesToTime(timeStr, minutes) {
-  var parts = String(timeStr || '00:00').split(':');
-  var h = parseInt(parts[0], 10) || 0;
-  var m = parseInt(parts[1], 10) || 0;
-  var total = (h * 60 + m + (Number(minutes) || 0) + 1440) % 1440;
-  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
-}
-
 function _ciCommitApprove(uid) {
   var train = _ciFindTrain(uid) || (schedule.trains || []).find(function (t) { return t._uniqueId === uid; })
     || (schedule.localTrains || []).find(function (t) { return t._uniqueId === uid; });
-  if (!train || train.checkinTime || train.checkoutTime || isDurationOnlyTrain(train)) return;
+  if (!train || train.checkedIn || train.checkedOut || isDurationOnlyTrain(train)) return;
 
   var planTime = train.plan || _ciNowHHMM();
   var dur = Number(train.dauer) || 0;
 
   train.actual = planTime;
-  train.checkinTime = planTime;
-  train.checkoutTime = _ciAddMinutesToTime(planTime, dur);
+  train.checkedIn = true;
+  train.checkedOut = true;
   train.dauer = dur;
 
   if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
@@ -230,12 +227,12 @@ document.addEventListener('click', function _ciClickCapture(e) {
     var train = _ciFindTrain(uid);
 
     // Guard: must be today's non-cancelled train, not yet checked in.
-    // Duration-only templates never carry their own checkinTime — instead
+    // Duration-only templates never carry their own checkedIn flag — instead
     // check whether an active clone session already exists for it.
     if (!train || train.date !== _ciTodayStr() || train.canceled) return;
     if (isDurationOnlyTrain(train)) {
       if (findActiveCloneForTemplate(train._uniqueId)) return;
-    } else if (train.checkinTime) {
+    } else if (train.checkedIn) {
       return;
     }
 
@@ -285,8 +282,8 @@ document.addEventListener('click', function _ciClickCapture(e) {
     if (!train) return;
 
     if (isDurationOnlyTrain(train)) {
-      if (!train.checkinTime) return;
-    } else if (train.checkoutTime) {
+      if (!train.checkedIn) return;
+    } else if (train.checkedOut) {
       return;
     }
 
@@ -302,9 +299,9 @@ document.addEventListener('click', function _ciClickCapture(e) {
     if (isDurationOnlyTrain(train)) {
       var checkoutMs = Date.now();
       var startMs = train._checkinEpochMs;
-      if (!Number.isFinite(Number(startMs)) && train.checkinTime) {
+      if (!Number.isFinite(Number(startMs)) && train.actual) {
         var now = new Date();
-        var parts = train.checkinTime.split(':');
+        var parts = train.actual.split(':');
         if (parts.length === 2) {
           var hh = parseInt(parts[0], 10);
           var mm = parseInt(parts[1], 10);
@@ -316,13 +313,17 @@ document.addEventListener('click', function _ciClickCapture(e) {
       }
       checkoutDuration = _ciComputeDurationFromMs(startMs, checkoutMs);
     } else {
-      var baseTime = train.checkinTime || train.actual || '00:00';
+      // Duration is measured against the (editable) actual departure time,
+      // not the moment check-in was tapped — so correcting `actual` after
+      // checking in (e.g. "I forgot to check in on time, it really left at
+      // 10:00") changes the computed duration on checkout.
+      var baseTime = train.actual || train.plan || '00:00';
       checkoutDuration = _ciComputeDuration(baseTime, checkoutTime);
     }
 
     // Apply checked-out data immediately to avoid transient re-renders showing
     // the old checked-in widget during the animation window.
-    _ciApplyCheckoutState(uid, checkoutTime, checkoutDuration);
+    _ciApplyCheckoutState(uid, checkoutDuration);
 
     // Stage 1 (0-1.5s): run checkout box expansion + border/background animation.
     wrap.classList.remove('show-checkout', 'fade-accent', 'checkout-fade');
@@ -332,10 +333,9 @@ document.addEventListener('click', function _ciClickCapture(e) {
     setTimeout(function () {
       wrap.classList.add('fade-accent', 'checkout-fade');
       setTimeout(function () {
-        _ciSaveCheckout(uid, checkoutTime, checkoutDuration, true);
+        _ciSaveCheckout(uid, checkoutDuration, true);
       }, 300);
     }, 1500);
     return;
   }
 }, true /* capture phase — fires before bubbling entry-click listeners */);
-

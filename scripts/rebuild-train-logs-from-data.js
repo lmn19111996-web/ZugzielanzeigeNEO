@@ -161,8 +161,6 @@ function toRecord(train, sourceType, projectNameById, nowIso) {
     date: serviceDate,
     plannedDate: serviceDate,
     canceled: Boolean(train && train.canceled),
-    checkinTime: (train && train.checkinTime) || null,
-    checkoutTime: (train && train.checkoutTime) || null,
     recurrence: (train && train.recurrence) || null,
     startDate: (train && train.startDate) || null,
     skippedDates: Array.isArray(train && train.skippedDates) ? train.skippedDates.slice() : []

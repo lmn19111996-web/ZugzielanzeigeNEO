@@ -309,7 +309,7 @@
     // purposes until they're checked out (at which point dauer becomes real)
     // or superseded by a later-starting train.
     function isOpenCheckinOccupying(train, now) {
-      if (!train || !train.checkinTime || train.checkoutTime) return false;
+      if (!train || !train.checkedIn || train.checkedOut) return false;
       if (Number(train.dauer) > 0) return false;
       const tTime = parseTime(train.actual || train.plan, now, train.date);
       return !!tTime && tTime <= now;
@@ -321,7 +321,7 @@
     function findActiveCloneForTemplate(templateUid) {
       const lists = [schedule.spontaneousEntries || [], schedule.trains || [], schedule.localTrains || []];
       for (const list of lists) {
-        const found = list.find(t => t && t._templateUid === templateUid && t.checkinTime && !t.checkoutTime);
+        const found = list.find(t => t && t._templateUid === templateUid && t.checkedIn && !t.checkedOut);
         if (found) return found;
       }
       return null;

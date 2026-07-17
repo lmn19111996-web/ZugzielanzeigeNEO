@@ -88,19 +88,17 @@
           return;
         }
 
-        // Always renew rather than reusing getSubscription(): if the server
-        // purged this endpoint after a 410/404 delivery failure, the browser
-        // still happily returns the same dead subscription object here, so
-        // reusing it would silently re-register something that can never
-        // deliver again.
+        // Reuse the existing subscription when the browser still has one —
+        // unsubscribing/resubscribing mints a brand-new endpoint every time,
+        // which the server can't dedupe against the old one and registers
+        // as a distinct device. Only subscribe fresh when there truly is none.
         let sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          await sub.unsubscribe();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: _urlBase64ToUint8Array(publicKey)
+          });
         }
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: _urlBase64ToUint8Array(publicKey)
-        });
 
         const regRes = await fetch('/api/push/subscribe', {
           method: 'POST',
@@ -110,6 +108,22 @@
         if (!regRes.ok) {
           console.warn('[Push] Server rejected subscription:', regRes.status);
         }
+
+        // A subscription can be invalidated outside the app's own unsubscribe
+        // button (OS/browser permission toggle, cleared site data, PWA
+        // reinstall) — the endpoint we just registered may then differ from
+        // the one we registered last time, orphaning the old server-side
+        // entry forever since nothing ever tells the server to drop it.
+        // Track our own last-known endpoint so we can clean it up ourselves.
+        const lastEndpoint = localStorage.getItem('pushEndpoint');
+        if (lastEndpoint && lastEndpoint !== sub.endpoint) {
+          fetch('/api/push/unsubscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: lastEndpoint })
+          }).catch(() => {});
+        }
+        localStorage.setItem('pushEndpoint', sub.endpoint);
       } catch (e) {
         console.error('[Push] subscribeToPush error:', e);
       }
@@ -130,7 +144,7 @@
     //   win-{id}         ? 20 min before departure (window entry)
     //   chg-{id}-{key}   ? immediate, when train is already in window and status changed
     //   dep-{id}         ? at exact departure time ("Ihre Reise geht jetzt los")
-    //   end-{id}         ? at occupation end (dauer / checkoutTime)
+    //   end-{id}         ? at occupation end (actual + dauer)
     //   conn-arr-{id}    ? at previous train's arrival, when the connection gap is 0-120 min
     //   conn-win-{id}    ? 20 min before this departure, same 0-120 min connection
     //   win-{id}/dep-{id} are overridden (title+body replaced) instead of duplicated
@@ -144,10 +158,9 @@
       const cutoff = new Date(now.getTime() + days * 86400000);
       const events = [];
 
-      // Occupancy end matching the same-day connection chain (checkoutTime, else dauer).
+      // Occupancy end matching the same-day connection chain.
       function _occEndForConnection(train) {
         if (!train || train.canceled) return null;
-        if (train.checkoutTime) return parseTime(train.checkoutTime, now, train.date);
         const start = parseTime(train.actual || train.plan, now, train.date);
         const dur = Number(train.dauer);
         if (!start || !dur || isNaN(dur) || dur <= 0) return null;
@@ -354,9 +367,9 @@
         }
 
         // -- Occupation-end notification -----------------------------------
-        const occupationEnd = train.checkoutTime
-          ? parseTime(train.checkoutTime, now, train.date)
-          : (train.dauer && train.dauer > 0 ? new Date(trainTime.getTime() + train.dauer * 60000) : null);
+        const occupationEnd = train.dauer && train.dauer > 0
+          ? new Date(trainTime.getTime() + train.dauer * 60000)
+          : null;
 
         if (!train.canceled && occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
           const depClock = formatClock(occupationEnd);
