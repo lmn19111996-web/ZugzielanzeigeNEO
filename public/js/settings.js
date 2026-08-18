@@ -542,6 +542,162 @@ function _buildLookaheadSection() {
   return section;
 }
 
+// Generic export/import backup section: export downloads the JSON returned by
+// `exportUrl` (GET), import reads a chosen file, confirms the overwrite, then
+// sends it to `importUrl` via `importMethod` (a full replace, not a merge).
+// `validate` gets the parsed JSON and returns an error string, or null if ok.
+function _buildBackupSection(opts) {
+  const section = _buildSettingsSection(opts.title, opts.desc);
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'settings-push-buttons';
+
+  const exportBtn = document.createElement('button');
+  exportBtn.type = 'button';
+  exportBtn.className = 'settings-btn-subscribe';
+  exportBtn.textContent = 'Exportieren';
+  exportBtn.addEventListener('click', async function () {
+    try {
+      const res = await fetch(opts.exportUrl, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Fehler beim Laden der Daten');
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `${opts.filenamePrefix}_${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Export fehlgeschlagen: ' + e.message);
+    }
+  });
+
+  const importBtn = document.createElement('button');
+  importBtn.type = 'button';
+  importBtn.className = 'settings-btn-unsubscribe';
+  importBtn.textContent = 'Importieren…';
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'application/json';
+  fileInput.style.display = 'none';
+
+  importBtn.addEventListener('click', function () {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', function () {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function () {
+      let parsed;
+      try {
+        parsed = JSON.parse(reader.result);
+      } catch (e) {
+        alert('Die Datei ist kein gültiges JSON.');
+        return;
+      }
+      const validationError = opts.validate ? opts.validate(parsed) : null;
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+
+      const confirmed = confirm(opts.confirmText);
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(opts.importUrl, {
+          method: opts.importMethod || 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsed)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(function () { return {}; });
+          throw new Error(err.error || 'Import fehlgeschlagen');
+        }
+        alert('Import erfolgreich. Die Seite wird neu geladen.');
+        window.location.reload();
+      } catch (e) {
+        alert('Import fehlgeschlagen: ' + e.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  btnRow.append(exportBtn, importBtn, fileInput);
+  section.appendChild(btnRow);
+
+  return section;
+}
+
+// Full data.json backup/restore - not to be confused with the log viewer's
+// "Exportieren" (that exports a date range of history logs for analysis).
+// This exports/imports the entire schedule file (fixedSchedule,
+// spontaneousEntries, trains, projects) as-is.
+function _buildDataBackupSection() {
+  return _buildBackupSection({
+    title: 'Daten (Backup)',
+    desc: 'Sichere die gesamte Datendatei (data.json) oder stelle sie aus einer Sicherung wieder her. Das Wiederherstellen überschreibt alle aktuellen Daten unwiderruflich.',
+    exportUrl: '/api/schedule',
+    importUrl: '/api/data-import',
+    importMethod: 'POST',
+    filenamePrefix: 'data_backup',
+    validate: function (parsed) {
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return 'Die Datei enthält keine gültige Datensicherung.';
+      }
+      return null;
+    },
+    confirmText: 'Achtung: Dies überschreibt ALLE aktuellen Daten (Fahrten, Projekte, Vorlagen) unwiderruflich mit dem Inhalt der ausgewählten Datei.\n\nFortfahren?'
+  });
+}
+
+// Journal/review backup/restore (the "Rezensionen" workspace).
+function _buildJournalBackupSection() {
+  return _buildBackupSection({
+    title: 'Journal / Rezensionen (Backup)',
+    desc: 'Sichere alle Journal-Einträge (Rezensionen) oder stelle sie aus einer Sicherung wieder her. Das Wiederherstellen überschreibt alle aktuellen Einträge unwiderruflich.',
+    exportUrl: '/api/journal',
+    importUrl: '/api/journal',
+    importMethod: 'PUT',
+    filenamePrefix: 'journal_backup',
+    validate: function (parsed) {
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.reviews)) {
+        return 'Die Datei enthält keine gültige Journal-Sicherung.';
+      }
+      return null;
+    },
+    confirmText: 'Achtung: Dies überschreibt ALLE aktuellen Journal-Einträge (Rezensionen) unwiderruflich mit dem Inhalt der ausgewählten Datei.\n\nFortfahren?'
+  });
+}
+
+// App-settings backup/restore (this settings page's own values).
+function _buildSettingsBackupSection() {
+  return _buildBackupSection({
+    title: 'Einstellungen (Backup)',
+    desc: 'Sichere die App-Einstellungen (dieses Menü) oder stelle sie aus einer Sicherung wieder her. Das Wiederherstellen überschreibt alle aktuellen Einstellungen und lädt die Seite neu.',
+    exportUrl: '/api/settings',
+    importUrl: '/api/settings',
+    importMethod: 'PUT',
+    filenamePrefix: 'settings_backup',
+    validate: function (parsed) {
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return 'Die Datei enthält keine gültige Einstellungs-Sicherung.';
+      }
+      return null;
+    },
+    confirmText: 'Achtung: Dies überschreibt ALLE aktuellen Einstellungen unwiderruflich mit dem Inhalt der ausgewählten Datei.\n\nFortfahren?'
+  });
+}
+
 function _returnToPreviousWorkspace() {
   const target = window._preSettingsWorkspaceMode || 'list';
   if (typeof window.setWorkspaceMode === 'function') window.setWorkspaceMode(target);
@@ -612,6 +768,9 @@ async function renderSettingsPage() {
   scroll.appendChild(_buildJournalSection());
   scroll.appendChild(_buildLookaheadSection());
   scroll.appendChild(_buildCurfewSection());
+  scroll.appendChild(_buildDataBackupSection());
+  scroll.appendChild(_buildJournalBackupSection());
+  scroll.appendChild(_buildSettingsBackupSection());
 
   page.appendChild(scroll);
   page.appendChild(_buildFooter());

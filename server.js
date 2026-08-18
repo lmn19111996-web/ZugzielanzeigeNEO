@@ -1649,6 +1649,37 @@ app.post('/api/prune', async (req, res) => {
   }
 });
 
+// Full data.json backup import: overwrites the on-disk schedule wholesale with
+// a previously exported file. Unlike POST /api/schedule this does not re-log
+// train history or prune expired entries - it's a raw restore, not a save.
+app.post('/api/data-import', async (req, res) => {
+  try {
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+
+    const toSave = {
+      ...body,
+      _meta: {
+        version: Date.now(),
+        lastSaved: new Date().toISOString()
+      }
+    };
+
+    const filePath = path.join(PUBLIC_DIR, 'data.json');
+    await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
+
+    scheduleCache = toSave;
+    scheduleCacheTime = Date.now();
+
+    try { broadcastUpdate('data-import', { version: toSave._meta.version }); } catch {}
+    res.json({ ok: true, version: toSave._meta.version, importedAt: toSave._meta.lastSaved });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'Unexpected error' });
+  }
+});
+
 // === WEB PUSH ENDPOINTS ===
 
 // Return VAPID public key so the client can subscribe
@@ -1779,6 +1810,20 @@ app.delete('/api/journal/:id', async (req, res) => {
     if (data.reviews.length === before) return res.status(404).json({ error: 'Entry not found' });
     await writeJournal(data);
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT /api/journal - replace entire journal data (backup restore)
+app.put('/api/journal', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.reviews)) {
+      return res.status(400).json({ error: 'expected { reviews: [...] }' });
+    }
+    await writeJournal(data);
+    res.json({ ok: true, count: data.reviews.length });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

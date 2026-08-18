@@ -145,10 +145,12 @@
     //   chg-{id}-{key}   ? immediate, when train is already in window and status changed
     //   dep-{id}         ? at exact departure time ("Ihre Reise geht jetzt los")
     //   end-{id}         ? at occupation end (actual + dauer)
-    //   conn-arr-{id}    ? at previous train's arrival, when the connection gap is 0-120 min
-    //   conn-win-{id}    ? 20 min before this departure, same 0-120 min connection
+    //   conn-arr-{id}    ? once, at previous train's arrival, when the connection gap is 0-120 min
     //   win-{id}/dep-{id} are overridden (title+body replaced) instead of duplicated
     //   when the connection gap is negative (next departure inside previous train's occupation)
+    //   win-{id} is scrapped entirely when the connection gap is < 20 min (conn-arr- covers the
+    //   lead-time warning); dep-{id} still fires normally at T-0 regardless of connection gap
+    //   end-{id} is scrapped entirely when this train's arrival triggers a conn-arr- for the next train
     function buildPushEvents(days = 14) {
       if (!processedTrainData || !Array.isArray(processedTrainData.localTrains)) return [];
       const now = new Date();
@@ -197,6 +199,16 @@
           }
         });
       }
+
+      // Trains whose arrival ("end-") notification is superseded by an
+      // outgoing connection notification firing at the same moment.
+      const _arrivalReplacedByConnection = new Set();
+      _connectionByNextId.forEach(info => {
+        if (info.gapMinutes >= 0) {
+          const prevId = info.prevTrain._uniqueId || getTrainNotifyId(info.prevTrain);
+          _arrivalReplacedByConnection.add(prevId);
+        }
+      });
 
       // "Abfahrt pünktlich um 10:25" / "Abfahrt heute 5 Minuten später um 10:25"
       function _abfahrtPhrase(delayMin, clock) {
@@ -283,8 +295,13 @@
         }
 
         // -- Window-entry notification: leadMin before trainTime ----------
+        // Scrapped when this departure is a tight (<20 min) connection — the
+        // "Zeit für Ihren Umstieg" notification (fired at the previous
+        // arrival) already covers this lead time. The T-0 departure
+        // notification below is unaffected and still fires normally.
         const windowNotifyAt = new Date(trainTime.getTime() - leadMin * 60000);
-        if (windowNotifyAt > now) {
+        const scrapWindow = goodConnection && connInfo.gapMinutes < 20;
+        if (windowNotifyAt > now && !scrapWindow) {
           let windowBody, windowTitle = title;
           if (brokenConnection) {
             windowTitle = 'Verbindung nicht mehr fahrbar';
@@ -337,41 +354,32 @@
           });
         }
 
-        // -- Connection ("Umstieg") notifications: fires at the previous
-        // train's arrival, and again 20 min before this departure ----------
-        if (goodConnection) {
+        // -- Connection ("Umstieg") notification: fires once, at the
+        // previous train's arrival ------------------------------------------
+        if (goodConnection && connInfo.prevOccEnd > now && connInfo.prevOccEnd <= cutoff) {
           const connZh = zhSuffix; // this train's own zwischenhalte, same formatting as elsewhere
           const connBody = `${connInfo.prevTrain.linie || ''} nach ${connInfo.prevTrain.ziel || ''}: Ankunft ${formatClock(connInfo.prevOccEnd)}. Weiter mit ${lineLabel} nach ${dest}, ${_abfahrtPhrase(delay, formatClock(trainTime))}${connZh}. Umsteigezeit: ${Math.round(connInfo.gapMinutes)} Minuten.`;
-          const connOptions = {
-            body: connBody,
-            icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
-            vibrate: [200, 100, 200],
-            data: { url: appUrl }
-          };
-          if (connInfo.prevOccEnd > now && connInfo.prevOccEnd <= cutoff) {
-            events.push({
-              id: `conn-arr-${trainId}`,
-              notifyAt: connInfo.prevOccEnd.toISOString(),
-              title: 'Zeit für Ihren Umstieg',
-              options: connOptions
-            });
-          }
-          if (windowNotifyAt > now) {
-            events.push({
-              id: `conn-win-${trainId}`,
-              notifyAt: windowNotifyAt.toISOString(),
-              title: 'Zeit für Ihren Umstieg',
-              options: connOptions
-            });
-          }
+          events.push({
+            id: `conn-arr-${trainId}`,
+            notifyAt: connInfo.prevOccEnd.toISOString(),
+            title: 'Zeit für Ihren Umstieg',
+            options: {
+              body: connBody,
+              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              vibrate: [200, 100, 200],
+              data: { url: appUrl }
+            }
+          });
         }
 
         // -- Occupation-end notification -----------------------------------
+        // Skipped when a connection notification fires at this same arrival
+        // moment (conn-arr- above already covers it, with more detail).
         const occupationEnd = train.dauer && train.dauer > 0
           ? new Date(trainTime.getTime() + train.dauer * 60000)
           : null;
 
-        if (!train.canceled && occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
+        if (!train.canceled && !_arrivalReplacedByConnection.has(trainId) && occupationEnd && occupationEnd > now && occupationEnd <= cutoff) {
           const depClock = formatClock(occupationEnd);
           const endBody = delay <= 0
             ? `Ankunft pünktlich um ${depClock}. Vielen Dank und auf Wiedersehen.`
