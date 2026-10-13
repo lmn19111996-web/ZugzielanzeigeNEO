@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kiosk</title>
+  <meta name="theme-color" content="#000000">
+  <!-- Only the design tokens are shared with the main app. style.css is not
+       loaded: its max-width media queries swap the rows to the mobile grid,
+       and the kiosk has exactly one layout. The row rules the kiosk needs are
+       copied below, already sized for 45vh rows. -->
+  <link rel="stylesheet" href="design-tokens.css">
+  <style>
+    /* ========================================
+       KIOSK LAYOUT (11" 2:1 display)
+       ========================================
+       [ header 10vh: clock · "Nächste Abfahrten" ]
+       [ row 1   45vh                            ]
+       [ row 2   45vh                            ]
+       Rows use the main app's .train-entry markup (Templates.trainEntry).
+       Sizes are in vh throughout so proportions hold on any 2:1 panel. */
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--color-bg-primary);
+      color: white;
+      font-family: "Bahnschrift Condensed", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
+      font-stretch: condensed;
+      overflow: hidden;
+      cursor: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      /* Header content size, shared by both screens' black top bar */
+      --kiosk-head-size: 8.5vh;
+      --kiosk-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #kiosk {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .kiosk-header {
+      position: relative;
+      height: 10vh;
+      flex-shrink: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      gap: 6vh; /* clock ↔ title */
+      padding: 0 4vh;
+      box-sizing: border-box;
+      overflow: hidden;
+      line-height: 1;
+    }
+    .kiosk-header > :not(.kiosk-header-progress) {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Countdown bar for an ongoing task with a duration: line-coloured fill
+       for the remaining share, anchored left so it shrinks right → left and
+       the elapsed part shows the black header again. */
+    .kiosk-header-progress {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      opacity: 0;
+      z-index: 0;
+      transition: width 1s linear, opacity 0.8s ease;
+    }
+    .kiosk-header.has-progress {
+      text-shadow: 0 0.2vh 1vh rgba(0, 0, 0, 0.55);
+    }
+    .kiosk-header.has-progress .aclock {
+      box-shadow: 0 0 1vh rgba(0, 0, 0, 0.35);
+    }
+
+    .clockSlot {
+      display: flex;
+      align-items: center;
+      gap: 1.5vh;
+      flex-shrink: 0;
+    }
+
+    .aclock {
+      position: relative;
+      width: var(--kiosk-head-size);
+      height: var(--kiosk-head-size);
+      border: 0.7vh solid white;
+      border-radius: 50%;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .center {
+      position: absolute;
+      width: 0.9vh;
+      height: 0.9vh;
+      background: white;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      transform: translateX(-50%);
+      background: white;
+    }
+    .hour   { width: 0.65vh; height: 2.3vh; z-index: 3; }
+    .minute { width: 0.65vh; height: 3vh; z-index: 2; }
+
+    .clock {
+      font-size: var(--kiosk-head-size);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kiosk-title {
+      font-size: var(--kiosk-head-size);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    /* ── Rows ── */
+    #kiosk-rows {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      position: relative; /* anchor for rows sliding out (reorderRows) */
+      overflow: hidden; /* incoming row slides in from below the edge */
+      pointer-events: none; /* display only */
+    }
+
+    .train-entry {
+      --indicator-color: white;
+      height: 45vh;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4vh;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* Row wrapper: the compact main-app row (45vh) and the focus layout,
+       stacked. In focus (task within the lead time, or ongoing) the first
+       wrapper grows to the full 90vh, pushing the second row out below,
+       while the compact row fades out and the focus layout fades in. */
+    .kiosk-row {
+      position: relative;
+      height: 45vh;
+      flex-shrink: 0;
+      overflow: hidden;
+      transition: height 0.9s var(--kiosk-ease);
+    }
+    .kiosk-row.is-expanded { height: 90vh; }
+    .kiosk-row + .kiosk-row {
+      border-top: 0.2vh solid rgba(255, 255, 255, 0.35);
+    }
+    .kiosk-row.fex-row {
+      background: white;
+      color: var(--color-bg-primary);
+    }
+    .kiosk-row.sev-row { background: #97235d; }
+
+    .kiosk-row > .train-entry {
+      transition: opacity 0.45s ease 0.3s;
+    }
+    .kiosk-row.is-expanded > .train-entry {
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    /* ── Focus layout (same build as a live departure-board row) ──
+       [ notice tag (right under the header)        ]
+       [ line icon ················· departure time ]
+       [ destination                                ]
+       [ stops                                      ] */
+    .kiosk-focus {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 90vh;
+      box-sizing: border-box;
+      padding: 6vh 6vh 5vh;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5vh;
+      opacity: 0;
+      transform: translateY(4vh);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .kiosk-row.is-expanded .kiosk-focus {
+      opacity: 1;
+      transform: none;
+      transition: opacity 0.6s ease 0.35s, transform 0.8s var(--kiosk-ease) 0.35s;
+    }
+
+    .kiosk-focus-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4vh;
+    }
+    .kiosk-focus .train-symbol { width: auto; height: 15vh; }
+    .kiosk-focus .line-badge {
+      height: 15vh;
+      min-width: 30vh;
+      font-size: 11vh;
+      border-radius: 1.8vh;
+    }
+
+    .kiosk-focus-time {
+      font-size: 15vh;
+      white-space: nowrap;
+    }
+    /* Ongoing: the main app's "Abfahrt in HH:MM:SS" (formatCountdown) */
+    .kiosk-focus-time .countdown-label { font-size: 0.8em; opacity: 0.75; }
+    .kiosk-focus-time .countdown-time { font-variant-numeric: tabular-nums;  }
+
+    /* Hangs right under the header (cancels the panel's top padding), the
+       line icon follows below it */
+    .kiosk-focus .cancel-notice-tag {
+      align-self: flex-start;
+      margin-top: -6vh;
+    }
+    .fex-row .kiosk-focus .cancel-notice-tag {
+      color: var(--color-bg-primary);
+      border-color: var(--color-bg-primary);
+    }
+
+    /* ── Cycling screens (FEX, Buffet): one trip in the focus layout,
+       coloured like its line (FEX white, SEV magenta, else blue) ── */
+    /* Announcement: first line of the message bold, the rest normal, both at
+       the Zwischenhalte size, left-aligned. Line breaks are kept. */
+    .announcement-body {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      box-sizing: border-box;
+      padding: 6vh 6vh 5vh;
+      font-size: calc(var(--kiosk-head-size) * 1.15);
+      line-height: 1.25;
+      text-align: left;
+      white-space: pre-line;
+      overflow-wrap: break-word;
+    }
+    .announcement-heading {
+      font-weight: 700;
+      margin-bottom: 2.5vh;
+    }
+    .announcement-text { font-weight: 300; }
+    .announcement-body > * { transition: opacity 0.7s ease; } /* = CYCLE_FADE_MS */
+    .announcement-body.is-fading > * { opacity: 0; }
+
+    .fex-screen-body {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .fex-screen-body.fex-row {
+      background: white;
+      color: var(--color-bg-primary);
+    }
+    .fex-screen-body.sev-row { background: #97235d; }
+
+    /* Header title: word + line icon */
+    .kiosk-title:has(.kiosk-title-icon, .line-badge) {
+      display: flex;
+      align-items: center;
+      gap: 2vh;
+    }
+    /* Icon as tall as the capital letters next to it (Bahnschrift's cap
+       height is ~0.72 of the font size), not the whole font box */
+    .kiosk-title .kiosk-title-icon {
+      height: calc(var(--kiosk-head-size) * 0.72);
+      width: auto;
+      display: block;
+    }
+    .kiosk-title .line-badge {
+      height: calc(var(--kiosk-head-size) * 0.72);
+      min-width: 0;
+      padding: 0 2vh;
+      font-size: 0.55em !important;
+      border-radius: 1vh;
+    }
+    .kiosk-title-part {
+      display: inline-flex;
+      align-items: center;
+    }
+    .kiosk-focus.is-static {
+      position: relative;
+      height: 100%;
+      opacity: 1;
+      transform: none;
+    }
+    /* Cross-fade when cycling to the next trip (renderCycleScreen) */
+    .fex-screen-body > * { transition: opacity 0.7s ease; } /* = CYCLE_FADE_MS */
+    .fex-screen-body.is-fading > * { opacity: 0; }
+
+    /* Second row: destination left (scrolls if long), time right-aligned
+       under the day countdown */
+    .kiosk-focus-destrow {
+      display: flex;
+      align-items: baseline;
+      gap: 4vh;
+    }
+    .kiosk-focus-destrow .kiosk-focus-dest {
+      flex: 1;
+      min-width: 0;
+    }
+    .kiosk-focus-destrow .kiosk-focus-time { flex-shrink: 0; }
+
+    .fex-empty {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9vh;
+      font-weight: 300;
+      opacity: 0.8;
+    }
+
+    .kiosk-focus-dest {
+      font-size: 18vh;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* A bit bigger than the header text; two lines fit under the destination */
+    .kiosk-focus-stops {
+      font-size: calc(var(--kiosk-head-size) * 1.15);
+      font-weight: 300;
+      line-height: 1.25;
+      opacity: 0.85;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Header title cross-fade ("Nächste Abfahrten" ⇄ "Aktuelle Fahrt") */
+    .kiosk-title { transition: opacity 0.35s ease; }
+    .kiosk-title.is-swapping,
+    .kiosk-title-part.is-swapping { opacity: 0; }
+
+    .mobile-info-btn,
+    .carriage-slot {
+      display: none;
+    }
+
+    /* FEX: white card, dark text */
+    .train-entry.fex-entry {
+      --indicator-color: var(--color-fex-text);
+      background: white;
+      color: var(--color-bg-primary);
+    }
+    .fex-entry .delayed,
+    .fex-row .delayed {
+      background: var(--color-bg-primary);
+      color: white;
+    }
+    .fex-entry .cancel-notice-tag {
+      color: var(--color-bg-primary);
+      border-bottom-color: var(--color-bg-primary);
+      border-right-color: var(--color-bg-primary);
+    }
+
+    /* SEV: magenta with a construction stripe on the left edge */
+    .train-entry.sev-entry {
+      background: #97235d;
+      color: white;
+    }
+    .sev-entry::before,
+    .board-row.sev-row::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2vh;
+      pointer-events: none;
+      background: repeating-linear-gradient(45deg, #f5c400 0, #f5c400 2vh, #1a1a1a 2vh, #1a1a1a 4vh);
+      background-attachment: fixed;
+    }
+    .sev-entry .delayed {
+      background: white;
+      color: #97235d;
+    }
+
+    .train-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      align-self: stretch;
+    }
+
+    /* Indicator column: now-dot, cancel cross, connector bracket */
+    .indicator-dot {
+      width: 3vh;
+      height: 3vh;
+      margin-right: 5vh;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10vh;
+      font-weight: bold;
+      box-sizing: border-box;
+    }
+    .indicator-dot.current {
+      border-radius: 50%;
+      background: var(--indicator-color);
+    }
+    .indicator-dot.cancelled::before {
+      content: '✕';
+      color: var(--indicator-color);
+    }
+
+    /* Bracket joining rows that leave close together (see assignConnectorFlags
+       in render-trains.js); anchored to .train-entry, centred on the dot */
+    .indicator-dot.connector::before {
+      content: '';
+      position: absolute;
+      left: calc(4vh + 1.5vh - 0.4vh);
+      width: 4vh;
+      border-left: 0.8vh solid var(--indicator-color);
+      box-sizing: border-box;
+    }
+    .indicator-dot.connector--first::before {
+      top: calc(50% - 0.4vh);
+      bottom: 0;
+      border-top: 0.8vh solid var(--indicator-color);
+    }
+    .indicator-dot.connector--middle::before {
+      top: 0;
+      bottom: 0;
+    }
+    .indicator-dot.connector--last::before {
+      top: 0;
+      bottom: calc(50% - 0.4vh);
+      border-bottom: 0.8vh solid var(--indicator-color);
+    }
+
+    /* Line symbol (S-Bahn SVGs are 2:1) */
+    .symbol-slot {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .train-symbol {
+      width: 28vh;
+      height: 14vh;
+    }
+
+    .line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 14vh;
+      min-width: 28vh;
+      padding: 0 3vh;
+      box-sizing: border-box;
+      border-radius: 1.8vh;
+      font-family: 'Bahnschrift', sans-serif;
+      font-weight: 600;
+      font-size: 11vh;
+      font-stretch: condensed;
+      color: white;
+      background: rgba(110, 110, 120, 0.9);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .line-badge--pill { border-radius: 7vh; }
+
+    /* Destination */
+    .zugziel {
+      font-size: 16vh;
+      font-weight: 300;
+      font-stretch: condensed;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      padding-left: 5vh;
+      align-self: stretch;
+    }
+
+    /* Marquee clipping box (applyZugzielScrolling, render-trains.js) */
+    .zugziel-scroll {
+      overflow: hidden;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .zugziel-text {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    /* Notice tag above the destination (cancel/delay reasons) */
+    .zugziel-wrapper {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      flex: 1;
+      min-width: 0;
+      align-self: stretch;
+    }
+    .zugziel-wrapper .zugziel {
+      flex: 1;
+      align-self: auto;
+    }
+
+    /* Notice tag (delay/cancel reasons, as in the main app): above the
+       destination on the compact rows, under the header in the focus layout */
+    .cancel-notice-tag {
+      font-size: var(--kiosk-head-size); /* as big as the header text */
+      font-weight: 400;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 80%;
+      border-bottom: 0.5vh solid white;
+      border-right: 0.5vh solid white;
+      box-sizing: border-box;
+    }
+    .train-entry .cancel-notice-tag {
+      margin-left: 5vh; /* lines up with the destination's padding */
+      margin-bottom: 1vh;
+    }
+    /* Placeholder keeping the tag's space when there is no notice */
+    .cancel-notice-tag.is-empty { visibility: hidden; }
+    .cancel-notice-text {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    /* Cancelled destination: "Zug fällt aus" ⇄ struck-through original */
+    .zugziel:has(.canceled-ziel-toggle) {
+      overflow: visible;
+    }
+    .canceled-ziel-toggle {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 1em;
+      line-height: 1em;
+    }
+    .canceled-ziel-ausfall,
+    .canceled-ziel-original {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .canceled-ziel-ausfall  { animation: pastTrainTimeToggle 10s infinite; }
+    .canceled-ziel-original { opacity: 0; animation: pastTrainStatusToggle 10s infinite; }
+
+    @keyframes pastTrainTimeToggle {
+      0% { opacity: 0; }
+      7% { opacity: 1; }
+      43% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    @keyframes pastTrainStatusToggle {
+      0% { opacity: 0; }
+      50% { opacity: 0; }
+      57% { opacity: 1; }
+      93% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Departure */
+    .right-block {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-left: 4vh;
+    }
+
+    .departure {
+      font-size: 13vh;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    /* Countdown minutes, same proportion as the board (.board-time-num) */
+    .departure-num {
+      font-size: 17vh;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .departure[data-canceled="true"] {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .delayed {
+      background: white;
+      color: var(--color-bg-primary);
+      font-weight: bold;
+      padding: 0.4vh 1.5vh;
+      border-radius: 0.6vh;
+    }
+
+    /* Empty state */
+    .kiosk-empty .zugziel {
+      font-size: 9vh;
+      padding-left: 0;
+      opacity: 0.8;
+    }
+
+    /* ========================================
+       SCREENS
+       ========================================
+       Which one is visible is decided by the kiosk config (set on
+       kiosk-control.html): fixed, alternating, or by weekly time windows. */
+    /* Screens are stacked; a switch fades the outgoing one out, then the
+       incoming one in (same 0.7s each way as the FEX/Buffet trip change). */
+    #kiosk { position: relative; }
+    .kiosk-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      background: var(--color-bg-primary);
+    }
+    .kiosk-screen[hidden] { display: none; }
+    .kiosk-screen.is-faded { opacity: 0; }
+
+    /* ========================================
+       DEPARTURE BOARD (two stations side by side)
+       ========================================
+       [ ← Gehzeit · logo + station  |  clock  |  station + logo · Gehzeit → ]  10vh
+       [ departure 45vh               ‖  departure 45vh                       ]
+       [ departure 45vh               ‖  departure 45vh                       ]
+       The divider only runs between the departure columns, not the bar. */
+    #screen-board {
+      flex-direction: column;
+    }
+
+    /* Small panel: bar content fills nearly the whole 10vh. The clock sits
+       exactly in the middle (equal 1fr tracks either side). */
+    .board-top {
+      --board-head-size: var(--kiosk-head-size);
+      height: 10vh;
+      flex-shrink: 0;
+      background: #000;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      font-size: var(--board-head-size);
+      line-height: 1;
+    }
+
+    .board-clock {
+      gap: 1.5vh;
+      padding: 0 3vh;
+    }
+    .board-clock .aclock {
+      width: var(--board-head-size);
+      height: var(--board-head-size);
+      border-width: 0.7vh;
+    }
+    .board-clock .center { width: 0.9vh; height: 0.9vh; }
+    .board-clock .hour   { width: 0.65vh; height: 2.3vh; }
+    .board-clock .minute { width: 0.65vh; height: 3vh; }
+    .board-clock .clock  { font-size: var(--board-head-size); }
+
+    /* Per station: arrow + Gehzeit hug the outer edge; logo + name are
+       centred in the remaining width of that side. */
+    .board-header {
+      height: 100%;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 2vh;
+      padding: 0 2vh;
+      box-sizing: border-box;
+    }
+    .board-header--right { flex-direction: row-reverse; }
+
+    .board-body {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    .board-arrow {
+      width: var(--board-head-size);
+      height: var(--board-head-size);
+      flex-shrink: 0;
+      fill: none;
+      stroke: white;
+      stroke-width: 3.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .board-header--right .board-arrow { transform: scaleX(-1); }
+
+    /* Edge group: [← Gehzeit] on the left half, [Gehzeit →] on the right */
+    .board-edge {
+      display: flex;
+      align-items: center;
+      gap: 1.5vh;
+      flex-shrink: 0;
+    }
+    .board-header--right .board-edge { flex-direction: row-reverse; }
+
+    .board-walk {
+      display: flex;
+      align-items: center;
+      gap: 0.4vh;
+      white-space: nowrap;
+    }
+    .board-walk svg {
+      width: var(--board-head-size);
+      height: var(--board-head-size);
+      fill: white;
+    }
+
+    .board-station {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2vh;
+      min-width: 0;
+    }
+    .board-station-icon {
+      height: var(--board-head-size);
+      width: auto;
+      flex-shrink: 0;
+    }
+    .board-station-name {
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .board-rows {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative; /* anchor for rows sliding out (reorderRows) */
+      overflow: hidden; /* incoming row slides in from below the edge */
+    }
+    .board-rows + .board-rows {
+      border-left: 0.3vh solid rgba(255, 255, 255, 0.5);
+    }
+
+    .board-row {
+      height: 45vh;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.5vh;
+      padding: 0 4vh;
+      box-sizing: border-box;
+    }
+    .board-row + .board-row {
+      border-top: 0.2vh solid rgba(255, 255, 255, 0.35);
+    }
+    /* Ersatzverkehr: magenta with the construction stripe (.sev-entry::before) */
+    .board-row.sev-row {
+      position: relative;
+      background: #97235d;
+    }
+
+    .board-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3vh;
+    }
+
+    .kiosk-line-icon { height: 10vh; width: auto; display: block; }
+    .kiosk-line-icon--square { height: 11vh; }
+    .kiosk-line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 10vh;
+      min-width: 18vh;
+      padding: 0 2.5vh;
+      box-sizing: border-box;
+      border-radius: 1vh;
+      font-family: 'Bahnschrift', sans-serif;
+      font-weight: 600;
+      font-size: 7vh;
+      background: rgba(110, 110, 120, 0.9);
+      white-space: nowrap;
+    }
+
+    .board-time {
+      font-size: 9vh;
+      white-space: nowrap;
+    }
+
+    /* Live time text changing form (setLiveText): fade out, swap, fade in.
+       Duration is set from LIVE_TEXT_FADE_MS in the script. */
+    .is-text-swapping { opacity: 0; }
+    .board-time--countdown {
+      font-size: 9vh;
+    }
+    .board-time-num {
+      font-size: 12vh;
+      line-height: 1;
+    }
+
+    /* Destination marquee: same JS as the list rows (applyZugzielScrolling) */
+    .board-dest {
+      font-size: 11vh;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* Colours match the main app's check-in widget */
+    .board-status {
+      display: flex;
+      align-items: center;
+      gap: 1.5vh;
+      font-size: 7vh;
+      font-weight: 400;
+      transition: opacity 0.7s ease;
+    }
+    /* An hour or more away without live data: no prognosis yet. The line
+       keeps its space and fades in once the countdown starts or live data
+       arrives. */
+    .board-status.is-far { opacity: 0; }
+    .board-deviation { color: rgb(99, 166, 21); } /* checked-in green */
+    .board-deviation.is-late { color: var(--energy-red-bright); } /* +5 and more */
+    .board-status--reachable  { color: rgb(99, 166, 21); }  /* checked-in green */
+    .board-status--unreachable { color: #eab308; }           /* check-in yellow */
+    .board-status svg {
+      width: 0.9em;
+      height: 0.9em;
+      flex-shrink: 0;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .board-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 6vh;
+      font-size: 6vh;
+      font-weight: 300;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div id="kiosk">
+    <section class="kiosk-screen" id="screen-abfahrten">
+      <header class="kiosk-header">
+        <div class="kiosk-header-progress" aria-hidden="true"></div>
+        <div class="clockSlot">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="hour"></div>
+            <div class="hand minute" id="minute"></div>
+          </div>
+          <div class="clock" id="clock">--:--</div>
+        </div>
+        <div class="kiosk-title" id="kiosk-title" data-target="Nächste Abfahrten">Nächste Abfahrten</div>
+      </header>
+      <main id="kiosk-rows"></main>
+    </section>
+
+    <section class="kiosk-screen" id="screen-fex" hidden>
+      <header class="kiosk-header">
+        <div class="clockSlot">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="fex-hour"></div>
+            <div class="hand minute" id="fex-minute"></div>
+          </div>
+          <div class="clock" id="fex-clock">--:--</div>
+        </div>
+        <div class="kiosk-title" id="fex-title">Nächster FEX</div>
+      </header>
+      <main id="fex-body" class="fex-screen-body fex-row"></main>
+    </section>
+
+    <section class="kiosk-screen" id="screen-buffet" hidden>
+      <header class="kiosk-header">
+        <div class="clockSlot">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="buffet-hour"></div>
+            <div class="hand minute" id="buffet-minute"></div>
+          </div>
+          <div class="clock" id="buffet-clock">--:--</div>
+        </div>
+        <div class="kiosk-title" id="buffet-title">Buffet</div>
+      </header>
+      <main id="buffet-body" class="fex-screen-body"></main>
+    </section>
+
+    <section class="kiosk-screen" id="screen-announcement" hidden>
+      <header class="kiosk-header">
+        <div class="clockSlot">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="announcement-hour"></div>
+            <div class="hand minute" id="announcement-minute"></div>
+          </div>
+          <div class="clock" id="announcement-clock">--:--</div>
+        </div>
+      </header>
+      <main id="announcement-body" class="announcement-body"></main>
+    </section>
+
+    <section class="kiosk-screen" id="screen-board" hidden>
+      <header class="board-top">
+        <div class="board-header" data-head="0"></div>
+        <div class="clockSlot board-clock">
+          <div class="aclock">
+            <div class="center"></div>
+            <div class="hand hour" id="board-hour"></div>
+            <div class="hand minute" id="board-minute"></div>
+          </div>
+          <div class="clock" id="board-clock">--:--</div>
+        </div>
+        <div class="board-header board-header--right" data-head="1"></div>
+      </header>
+      <div class="board-body">
+        <div class="board-rows" data-side="0"></div>
+        <div class="board-rows" data-side="1"></div>
+      </div>
+    </section>
+  </div>
+
+<!-- Shared with the main app: data pipeline + row template, no UI wiring -->
+<script src="templates.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/globals.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/delay-reason.js"></script>
+<script src="js/schedule.js"></script>
+<script src="js/render-trains.js"></script>
+<script src="js/kiosk-shared.js"></script>
+<script>
+  // === KIOSK: two next departures, full screen ===
+
+  const KIOSK_ROW_COUNT = 2;
+  const KIOSK_POLL_MS = 5 * 60 * 1000;   // fallback refresh (also re-materializes recurring trains after midnight)
+  const KIOSK_REPROCESS_MS = 15 * 1000;  // roll trains over as they depart
+
+  // processTrainData (globals.js) syncs pinned trains from announcements.js,
+  // which the kiosk doesn't load.
+  function syncPinnedTrains() {}
+
+  // Marquee speed scaled to the text size (utils.js startMarquee /
+  // startInfiniteMarquee): the app's fixed 40 px/s crawls with kiosk-size
+  // text. 2.5 font-heights per second ≈ 5–6 characters per second.
+  const MARQUEE_EM_PER_SECOND = 1.5;
+  window.marqueeSpeedFor = (span) =>
+    (parseFloat(getComputedStyle(span).fontSize) || 16) * MARQUEE_EM_PER_SECOND;
+
+  // Next departures = what the main list shows from "now" on: currently
+  // occupying + future trains (cancelled ones included, as in the main app).
+  function getKioskTrains() {
+    return (processedTrainData.futureTrains || []).slice(0, KIOSK_ROW_COUNT);
+  }
+
+  // processTrainData runs every 15 s; a shown entry that has started without
+  // a running occupancy (no duration, or cancelled), or whose occupancy has
+  // ended, must leave right away — so the 1 s tick asks for a reprocess then.
+  function kioskTrainsStale(now) {
+    return getKioskTrains().some(t => {
+      const start = parseTime(t.actual || t.plan, now, t.date);
+      if (!start || start > now) return false;
+      const end = getOccupancyEnd(t, now);
+      const running = end ? now < end : isOpenCheckinOccupying(t, now);
+      return !running;
+    });
+  }
+
+  // Countdown "in 5 Min" (formatDeparture, utils.js): wraps the minutes so
+  // they can be shown bigger than the words. Other formats pass unchanged.
+  function emphasizeCountdown(html, numClass) {
+    return html.replace(/^in (\d+) Min/, `in <span class="${numClass}">$1</span> Min`);
+  }
+
+  // formatDeparture always says "Zug fährt ab"; name the actual vehicle
+  function vehicleNoun(train) {
+    const type = kioskTransportType(train);
+    if (type === 'stadtbahn') return 'Stadtbahn';
+    if (type === 'bus' || (typeof isBusLine === 'function' && isBusLine(train))) return 'Bus';
+    return 'Zug';
+  }
+
+  // Time text as shown on the kiosk: vehicle wording + emphasized minutes
+  function kioskTimeHTML(html, train, numClass) {
+    return emphasizeCountdown(html.replace(/^Zug fährt ab/, `${vehicleNoun(train)} fährt ab`), numClass);
+  }
+
+  // Upcoming departure text, to the second (formatDeparture works in whole
+  // minutes, rounded, so "Zug fährt ab" would show from 30 s before):
+  //   ≤ 10 s left → "Zug fährt ab"
+  //   < 60 min    → "in X Min", rounded up (the last minute reads "in 1 Min")
+  //   later       → clock time, with the delayed time and "+1" day marker
+  //                 like the main app
+  const DEPARTING_LEAD_MS = 10 * 1000;
+
+  function preciseDepartureHTML(train, at, now) {
+    const msLeft = at - now;
+    if (msLeft <= DEPARTING_LEAD_MS) return 'Zug fährt ab';
+    const minutes = Math.ceil(msLeft / 60000);
+    if (minutes < 60) return `in ${minutes} Min`;
+
+    const dayDiff = calendarDaysUntil(at, now);
+    return clockTimeHTML(train, at)
+      + (dayDiff > 0 ? `<sup style="font-size: 0.6em;">+${dayDiff}</sup>` : '');
+  }
+
+  // Live board (VVS/DB): the countdown needs a live time. Without one
+  // (`actual` only comes with a real-time estimate) it shows the planned
+  // clock time; an hour or more away with a live time, the planned clock
+  // time plus the deviation, green below +5, red from +5 ("14:05+3").
+  function boardDepartureHTML(train, at, now) {
+    if (at - now <= DEPARTING_LEAD_MS) return 'Zug fährt ab';
+    const hasLive = !!train.actual;
+    if (hasLive && Math.ceil((at - now) / 60000) < 60) return preciseDepartureHTML(train, at, now);
+
+    const dayDiff = calendarDaysUntil(at, now);
+    const plan = kioskEscape(train.plan || formatClock(at));
+    let deviation = '';
+    if (hasLive && train.plan) {
+      const toMin = hhmm => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+      const diff = ((toMin(train.actual) - toMin(train.plan) + 1440 + 720) % 1440) - 720;
+      deviation = `<span class="board-deviation${diff >= 5 ? ' is-late' : ''}">${diff < 0 ? '−' : '+'}${Math.abs(diff)}</span>`;
+    }
+    return plan + deviation
+      + (dayDiff > 0 ? `<sup style="font-size: 0.6em;">+${dayDiff}</sup>` : '');
+  }
+
+  // Planned clock time, plus the delayed time as a badge (as in the main app)
+  function clockTimeHTML(train, at) {
+    const plan = kioskEscape(train.plan || formatClock(at));
+    const actual = train.actual && train.actual !== train.plan ? kioskEscape(train.actual) : '';
+    return actual ? `<span>${plan}</span> <span class="delayed">${actual}</span>` : plan;
+  }
+
+  // Calendar days from today to `at` (0 = today, 1 = tomorrow, …)
+  function calendarDaysUntil(at, now) {
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const atDay = new Date(at.getFullYear(), at.getMonth(), at.getDate());
+    return Math.round((atDay - today) / 86400000);
+  }
+
+  // === LIVE TEXT UPDATES ===
+  // Time fields update in place every tick. A change of form ("in 1 Min" →
+  // "Stadtbahn fährt ab", clock time → countdown, "… fährt ab" → "bis …")
+  // fades out, swaps and fades back in; plain ticks ("in 5 Min" → "in 4 Min",
+  // the seconds countdown) swap instantly.
+  const LIVE_TEXT_FADE_MS = 300;
+  const liveTextShape = (html) => String(html).replace(/\d+/g, '#');
+
+  function setLiveText(el, html) {
+    const target = el._pendingHTML != null ? el._pendingHTML : el.innerHTML;
+    if (target === html) return;
+    if (el._pendingHTML != null) { el._pendingHTML = html; return; } // fade already running
+    if (liveTextShape(el.innerHTML) === liveTextShape(html) || document.hidden) {
+      el.innerHTML = html;
+      return;
+    }
+    el._pendingHTML = html;
+    // Same duration both ways. The reflow commits the visible state first —
+    // without it a just-inserted element (row rebuild) would skip the
+    // fade-out and only fade in.
+    el.style.transition = `opacity ${LIVE_TEXT_FADE_MS}ms ease`;
+    void el.offsetWidth;
+    el.classList.add('is-text-swapping');
+    setTimeout(() => {
+      el.innerHTML = el._pendingHTML;
+      el._pendingHTML = null;
+      el.classList.remove('is-text-swapping');
+    }, LIVE_TEXT_FADE_MS);
+  }
+
+  // Focus-layout time: before the start the usual "in 5 Min" / clock time;
+  // once running, the main app ribbon's "Abfahrt in HH:MM:SS" countdown to
+  // its end (formatCountdown) instead of the compact row's "bis HH:MM".
+  function focusTimeHTML(train, now) {
+    const holder = document.createElement('div');
+    const start = parseTime(train.actual || train.plan, now, train.date);
+    const end = getOccupancyEnd(train, now);
+    if (start && end && start <= now && now < end) {
+      holder.appendChild(formatCountdown({ ...train, actual: train.actual || train.plan }, now));
+      return holder.innerHTML;
+    }
+    return start
+      ? kioskTimeHTML(preciseDepartureHTML(train, start, now), train, 'departure-num')
+      : '';
+  }
+
+  // Same combination as the main app's notice tag (Templates.trainEntry):
+  // inline "[reason]" from the stops, manual reason, auto-suggestions
+  function noticeTextOf(train) {
+    let inlineReason = '';
+    for (const s of (Array.isArray(train.zwischenhalte) ? train.zwischenhalte : [])) {
+      const m = String(s).match(/\[([^\]]+)\]/);
+      if (m) { inlineReason = m[1].trim(); break; }
+    }
+    return [inlineReason, train.delayReason, ...(train._delayReasonAuto || [])].filter(Boolean).join(' +++ ');
+  }
+
+  // Focus layout: line icon + time, notice tag, destination, stops
+  // Focus layout / FEX screen: the notice tag's space under the header is
+  // always reserved, so the line icon and destination don't move when a
+  // notice appears or goes. Without one, an invisible tag takes its place.
+  const EMPTY_NOTICE_TAG = '<div class="cancel-notice-tag is-empty" aria-hidden="true"><span class="cancel-notice-text">&nbsp;</span></div>';
+
+  // timeBlock / destAside / extraClass let the FEX screen reuse the layout:
+  // its day countdown takes the time slot, the time sits right of the
+  // destination
+  function buildKioskFocus(train, now, timeBlock, extraClass = '', destAside = '') {
+    const dest = kioskEscape(expandDestinationPrefix(train.ziel || ''));
+    const notice = kioskEscape(noticeTextOf(train));
+    const stops = (Array.isArray(train.zwischenhalte) ? train.zwischenhalte : [])
+      .map(s => String(s).replace(/\[[^\]]*\]/g, '').trim())
+      .filter(Boolean);
+    const destHTML = `<div class="kiosk-focus-dest"><span class="zugziel-text" data-ziel-text="${dest}">${dest}</span></div>`;
+    return `
+      <div class="kiosk-focus ${extraClass}">
+        ${notice ? `<div class="cancel-notice-tag"><span class="cancel-notice-text" data-notice="${notice}">${notice}</span></div>` : EMPTY_NOTICE_TAG}
+        <div class="kiosk-focus-top">
+          ${Templates.lineIcon(train.linie, 'train-symbol')}
+          ${timeBlock || `<span class="kiosk-focus-time" data-live>${focusTimeHTML(train, now)}</span>`}
+        </div>
+        ${destAside ? `<div class="kiosk-focus-destrow">${destHTML}${destAside}</div>` : destHTML}
+        ${stops.length ? `<div class="kiosk-focus-stops">${kioskEscape(stops.join(' – '))}</div>` : ''}
+      </div>`;
+  }
+
+  // Row wrapper = compact main-app row + focus layout. Read-only copy:
+  // suppresses the check-in widget and approve affordance in
+  // Templates.trainEntry without touching the shared train objects.
+  // [data-live] marks text that changes every tick (patched in place).
+  function buildKioskRow(train, now) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = Templates.trainEntry({ ...train, _readOnly: true }, now, false).trim();
+    const entry = tpl.content.firstChild;
+    const depText = entry.querySelector('.departure-text');
+    if (depText) {
+      // Not yet started: same to-the-second rules as the board. Running
+      // ("bis HH:MM") and cancelled entries keep the main app's text.
+      const start = parseTime(train.actual || train.plan, now, train.date);
+      const upcoming = start && start > now && !train.canceled;
+      const html = upcoming ? preciseDepartureHTML(train, start, now) : depText.innerHTML;
+      depText.innerHTML = kioskTimeHTML(html, train, 'departure-num');
+      depText.setAttribute('data-live', '');
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'kiosk-row';
+    if (entry.classList.contains('fex-entry')) wrap.classList.add('fex-row');
+    if (entry.classList.contains('sev-entry')) wrap.classList.add('sev-row');
+    wrap.dataset.uniqueId = train._uniqueId || '';
+    wrap.appendChild(entry);
+    if (!train.canceled) wrap.insertAdjacentHTML('beforeend', buildKioskFocus(train, now));
+    return wrap;
+  }
+
+  // Focus shows a single task: "Nächste Abfahrt" until it starts, then
+  // "Aktuelle Fahrt" while it runs
+  function updateKioskTitle(focus, train, now) {
+    const el = document.getElementById('kiosk-title');
+    const start = focus && parseTime(train.actual || train.plan, now, train.date);
+    const text = !focus ? 'Nächste Abfahrten' : (start && start <= now ? 'Aktuelle Fahrt' : 'Nächste Abfahrt');
+    if (el.dataset.target === text) return;
+    el.dataset.target = text;
+    el.classList.add('is-swapping');
+    setTimeout(() => {
+      el.textContent = el.dataset.target;
+      el.classList.remove('is-swapping');
+    }, 350);
+  }
+
+  function buildEmptyRow() {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = `
+      <div class="kiosk-row">
+        <div class="train-entry kiosk-empty">
+          <div class="train-info">
+            <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text">Keine weiteren Abfahrten</span></div></div>
+          </div>
+        </div>
+      </div>`.trim();
+    return tpl.content.firstChild;
+  }
+
+  // === FOCUS MODE ===
+  // The first task takes over the screen from `focusLeadMinutes` (control
+  // site, default 15) before it starts until it is over.
+  function focusLeadMs() {
+    const minutes = Number(kioskConfig && kioskConfig.focusLeadMinutes);
+    return (Number.isFinite(minutes) ? minutes : 15) * 60000;
+  }
+
+  function isFocusTrain(train, now) {
+    if (!train || train.canceled) return false;
+    const start = parseTime(train.actual || train.plan, now, train.date);
+    return !!start && start - now <= focusLeadMs();
+  }
+
+  function applyKioskFocus(container, focus) {
+    const first = container.firstElementChild;
+    container.querySelectorAll('.kiosk-row.is-expanded').forEach(el => {
+      if (el !== first) el.classList.remove('is-expanded');
+    });
+    if (!first) return;
+    const expand = focus && !!rowKey(first);
+    if (expand === first.classList.contains('is-expanded')) return;
+    void first.offsetHeight; // a just-inserted row must render collapsed once, or nothing animates
+    first.classList.toggle('is-expanded', expand);
+  }
+
+  // === HEADER COUNTDOWN BAR ===
+  // While the first task runs and has a duration, the header fill in its
+  // line colour shows the remaining share; the elapsed part is black again.
+  let headerProgressActive = false;
+
+  function updateHeaderProgress(train, now) {
+    const header = document.querySelector('#screen-abfahrten .kiosk-header');
+    const bar = header.querySelector('.kiosk-header-progress');
+    const start = train && parseTime(train.actual || train.plan, now, train.date);
+    const end = train && getOccupancyEnd(train, now);
+    const active = !!(train && !train.canceled && start && end && start <= now && now < end);
+
+    if (!active) {
+      if (headerProgressActive) {
+        headerProgressActive = false;
+        header.classList.remove('has-progress');
+        bar.style.opacity = '0';
+      }
+      return;
+    }
+
+    if (!headerProgressActive) {
+      // Arrival: the bar fades in full-width, then starts shrinking
+      headerProgressActive = true;
+      bar.style.transition = 'none';
+      bar.style.width = '100%';
+      bar.style.opacity = '0';
+      void bar.offsetWidth;
+      bar.style.transition = '';
+      header.classList.add('has-progress');
+    }
+    const linie = train.linie || '';
+    bar.style.background = hasSpecialLineGradient(linie) ? getLineGradient(linie) : getLineColor(linie);
+    bar.style.opacity = '1';
+    bar.style.width = `${(((end - now) / (end - start)) * 100).toFixed(3)}%`;
+  }
+
+  // Rows are rebuilt only when something other than the minute-relative
+  // departure text changed ("in 5 Min" → "in 4 Min"); otherwise just that
+  // text is patched, so destination marquees and toggle animations keep
+  // running instead of restarting on every tick.
+  function rowSignature(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('[data-live]').forEach(d => { d.innerHTML = ''; });
+    return clone.outerHTML;
+  }
+
+  let lastSignature = null;
+
+  // === DEPARTURE TRANSITION ===
+  // When the top departure is gone and the second one moves up, animate it
+  // like a real board instead of swapping rows instantly:
+  //   1. the departed row fades out,
+  //   2. the remaining row slides up into its place while the next
+  //      departure slides in from below.
+  // Any other change (first load, config change, reordering) swaps directly.
+  const ROW_FADE_MS = 450;
+  const ROW_SLIDE_MS = 650;
+
+  // Row identity: main-app rows carry data-unique-id, board rows data-key
+  function rowKey(el) {
+    return (el && (el.dataset.uniqueId || el.dataset.key)) || null;
+  }
+
+  // Returns true while an animation owns the container; callers then skip
+  // rendering it and pick up the latest state on a later tick.
+  function isRowTransitionRunning(container) {
+    return !!container._rowTransition;
+  }
+
+  // How many rows departed from the top: the first n old rows are gone and
+  // the remaining old rows now lead the new list in the same order (none
+  // left is fine — e.g. both trains of a side leaving in the same minute).
+  // 0 = not a departure (first load, reordering, …) → swap directly.
+  function departedCount(oldKeys, newKeys) {
+    for (let n = 1; n <= oldKeys.length; n++) {
+      if (!oldKeys[n - 1] || newKeys.includes(oldKeys[n - 1])) return 0;
+      if (oldKeys.slice(n).every((k, i) => k && newKeys[i] === k)) return n;
+    }
+    return 0;
+  }
+
+  // Reorder (not a departure from the top): every row moves from where it
+  // was to where it now belongs.
+  //   - rows that stay just slide to their new slot (a swap passes the
+  //     upward one over the other),
+  //   - rows that dropped out of view slide down out of the container,
+  //   - rows that are new slide up from below into their slot.
+  // The new rows are inserted first, then offset back to their old place
+  // and transitioned to zero (FLIP).
+  function reorderRows(container, oldRows, newRows, insertRows, afterSwap) {
+    container._rowTransition = true;
+    const cTop = container.getBoundingClientRect().top;
+    const topOf = (el) => el.getBoundingClientRect().top - cTop;
+    const newKeys = newRows.map(rowKey);
+
+    const oldTop = new Map();
+    oldRows.forEach(r => { if (rowKey(r)) oldTop.set(rowKey(r), topOf(r)); });
+    const leavers = oldRows
+      .filter(r => !rowKey(r) || !newKeys.includes(rowKey(r)))
+      .map(r => ({ clone: r.cloneNode(true), top: topOf(r) }));
+
+    insertRows();
+    const height = container.clientHeight;
+    const ease = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+    leavers.forEach(({ clone, top }) => {
+      Object.assign(clone.style, { position: 'absolute', left: '0', right: '0', top: `${top}px`, margin: '0', transition: 'none' });
+      container.appendChild(clone);
+    });
+
+    const moved = [];
+    newRows.forEach(r => {
+      const k = rowKey(r);
+      const known = k && oldTop.has(k);
+      const offset = known ? oldTop.get(k) - topOf(r) : height - topOf(r);
+      if (known && Math.abs(offset) < 1) return;
+      r.style.transition = 'none';
+      r.style.transform = `translateY(${offset}px)`;
+      if (!known) r.style.opacity = '0';
+      if (offset > 0) Object.assign(r.style, { position: 'relative', zIndex: '2' }); // moving up: on top
+      moved.push(r);
+    });
+
+    void container.offsetHeight; // commit the start positions
+    moved.forEach(r => {
+      r.style.transition = `transform ${ROW_SLIDE_MS}ms ${ease}, opacity ${ROW_SLIDE_MS}ms ease`;
+      r.style.transform = '';
+      r.style.opacity = '';
+    });
+    leavers.forEach(({ clone, top }) => {
+      clone.style.transition = `transform ${ROW_SLIDE_MS}ms ${ease}, opacity ${ROW_FADE_MS}ms ease-out`;
+      clone.style.transform = `translateY(${height - top}px)`;
+      clone.style.opacity = '0';
+    });
+
+    setTimeout(() => {
+      leavers.forEach(({ clone }) => clone.remove());
+      moved.forEach(r => { r.style.transition = r.style.position = r.style.zIndex = ''; });
+      container._rowTransition = false;
+      requestAnimationFrame(afterSwap);
+    }, ROW_SLIDE_MS + 50);
+  }
+
+  // beforeInsert(newRows, departed) may prepare the rows just before they
+  // go in (e.g. keep a focused row expanded when nothing departed).
+  function swapRows(container, newRows, afterSwap, beforeInsert) {
+    const oldRows = Array.from(container.children);
+    const oldKeys = oldRows.map(rowKey);
+    const newKeys = newRows.map(rowKey);
+    const departedRows = oldRows.slice(0, departedCount(oldKeys, newKeys));
+    const departed = departedRows.length > 0;
+
+    const insertRows = () => {
+      // A rebuild of a row that's still there (e.g. its status dot changes
+      // as it starts) would swap its time text instantly. Carry the shown
+      // text over and let setLiveText move to the new one, so a change of
+      // form ("in 1 Min" → "fährt ab" → "Abfahrt in …") still fades.
+      const shownLive = new Map();
+      Array.from(container.children).forEach(r => {
+        const k = rowKey(r);
+        if (k) shownLive.set(k, Array.from(r.querySelectorAll('[data-live]'))
+          .map(e => (e._pendingHTML != null ? e._pendingHTML : e.innerHTML)));
+      });
+
+      if (beforeInsert) beforeInsert(newRows, departed);
+      container.replaceChildren(...newRows);
+
+      newRows.forEach(r => {
+        const shown = shownLive.get(rowKey(r));
+        if (!shown) return;
+        r.querySelectorAll('[data-live]').forEach((el, j) => {
+          const fresh = el.innerHTML;
+          if (shown[j] == null || shown[j] === fresh) return;
+          el.innerHTML = shown[j];
+          setLiveText(el, fresh);
+        });
+      });
+    };
+    const finish = () => {
+      container._rowTransition = false;
+      insertRows();
+      requestAnimationFrame(afterSwap);
+    };
+
+    const sameOrder = oldKeys.length === newKeys.length && oldKeys.every((k, i) => k === newKeys[i]);
+    if (document.hidden || sameOrder || !oldKeys.some(Boolean)) { finish(); return; }
+    if (!departed) { reorderRows(container, oldRows, newRows, insertRows, afterSwap); return; }
+
+    container._rowTransition = true;
+    const first = departedRows[0];
+    const last = departedRows[departedRows.length - 1];
+
+    // Phase 1: departed row(s) fade out
+    departedRows.forEach(el => {
+      el.style.transition = `opacity ${ROW_FADE_MS}ms ease-out`;
+      el.style.opacity = '0';
+    });
+
+    setTimeout(() => {
+      // Phase 2: append the incoming row(s) below and slide everything up by
+      // the height the departed rows took (up to whatever now follows them)
+      newRows.filter(r => !oldKeys.includes(rowKey(r)) || !rowKey(r))
+        .forEach(r => container.appendChild(r.cloneNode(true)));
+      const moving = Array.from(container.children);
+      const anchor = moving[departedRows.length];
+      const shift = anchor
+        ? anchor.offsetTop - first.offsetTop
+        : last.offsetTop + last.offsetHeight - first.offsetTop;
+      void container.offsetHeight; // commit the start position before transitioning
+      moving.forEach(el => {
+        el.style.transition = `transform ${ROW_SLIDE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)${departedRows.includes(el) ? `, opacity ${ROW_FADE_MS}ms` : ''}`;
+        el.style.transform = `translateY(-${shift}px)`;
+      });
+      setTimeout(finish, ROW_SLIDE_MS + 50);
+    }, ROW_FADE_MS);
+  }
+
+  function renderKiosk() {
+    if (activeScreen !== 'abfahrten') return;
+    const container = document.getElementById('kiosk-rows');
+    const now = new Date();
+    const trains = getKioskTrains();
+    updateHeaderProgress(trains[0], now);
+    if (isRowTransitionRunning(container)) return;
+    assignConnectorFlags(trains, now);
+
+    const rows = trains.length ? trains.map(t => buildKioskRow(t, now)) : [buildEmptyRow()];
+    // Focus is applied after the signature, so expanding/collapsing animates
+    // on the live row instead of counting as a content change
+    const signature = rows.map(rowSignature).join('');
+    const focus = isFocusTrain(trains[0], now);
+    updateKioskTitle(focus, trains[0], now);
+
+    if (signature !== lastSignature) {
+      lastSignature = signature;
+      swapRows(container, rows, () => {
+        applyKioskFocus(container, focus);
+        applyCancelNoticeScrolling(container);
+        applyZugzielScrolling(container);
+      }, (newRows, departed) => {
+        // Same task still on top: insert it already expanded (no re-animation).
+        // After a departure the next task expands visibly in afterSwap.
+        if (!departed && focus && newRows[0]) newRows[0].classList.add('is-expanded');
+      });
+      return;
+    }
+
+    applyKioskFocus(container, focus);
+
+    rows.forEach((row, i) => {
+      const liveRow = container.children[i];
+      if (!liveRow) return;
+      const liveEls = liveRow.querySelectorAll('[data-live]');
+      row.querySelectorAll('[data-live]').forEach((fresh, j) => {
+        if (liveEls[j]) setLiveText(liveEls[j], fresh.innerHTML);
+      });
+    });
+  }
+
+  // === CYCLING SCREENS: "Nächster FEX" and "Buffet" ===
+  // Both show one trip at a time in the focus layout and cycle through a
+  // list, `fexCycleSeconds` each, then start over:
+  //   FEX:    every upcoming trip of the chosen lines (`fexLine`, default
+  //           FEX: important events, can be days away)
+  //   Buffet: the next trip of every line that currently has one
+  // Time field: day countdown in row 1, the usual time right of the
+  // destination in row 2.
+
+  function upcomingTrains() {
+    return (processedTrainData.futureTrains || []).filter(t => !t.canceled);
+  }
+
+  // Lines shown on the "FEX" screen (kiosk config `fexLine`, comma
+  // separated, FEX by default)
+  const normalizeLine = line => String(line || '').toUpperCase().replace(/\s+/g, '');
+  function fexLines() {
+    const lines = String((kioskConfig && kioskConfig.fexLine) || '')
+      .split(',').map(l => l.trim()).filter(Boolean);
+    return lines.length ? lines : ['FEX'];
+  }
+
+  // All upcoming (or running) trips of those lines, in time order
+  function getUpcomingFex() {
+    const lines = new Set(fexLines().map(normalizeLine));
+    return upcomingTrains().filter(t => lines.has(normalizeLine(t.linie)));
+  }
+
+  // "Nächster FEX" (der Zug), but "Nächste S1"
+  function fexTitleWord(line) {
+    return /^(FEX|RE|RB|IC|ICE|EC|MEX)\d*$/.test(normalizeLine(line)) ? 'Nächster' : 'Nächste';
+  }
+
+  // Without a trip: "Nächster FEX", or "Nächste Fahrt" for several lines
+  function fexEmptyTitle() {
+    const lines = fexLines();
+    return lines.length === 1 ? `${fexTitleWord(lines[0])} ${kioskEscape(lines[0])}` : 'Nächste Fahrt';
+  }
+
+  // First trip of each line, in order of departure
+  // Grouped by type (the line's letters: S-Bahn, Stadtbahn, bare numbers =
+  // bus/Zacke, then the rest like FEX/RE), each by line number:
+  // S1, S2, S11, U1, U5, 10, 42, FEX, RE5
+  const BUFFET_TYPE_ORDER = ['S', 'U', ''];
+  function getBuffetTrains() {
+    const seen = new Set();
+    const lineType = t => String(t.linie || '').toUpperCase().replace(/[\d\s]+/g, '');
+    const typeRank = t => {
+      const rank = BUFFET_TYPE_ORDER.indexOf(lineType(t));
+      return rank === -1 ? BUFFET_TYPE_ORDER.length : rank;
+    };
+    const lineNumber = t => {
+      const match = String(t.linie || '').match(/\d+/);
+      return match ? Number(match[0]) : Infinity;
+    };
+    return upcomingTrains().filter(t => {
+      const line = String(t.linie || '').toUpperCase();
+      if (!line || seen.has(line)) return false;
+      seen.add(line);
+      return true;
+    }).sort((a, b) => (typeRank(a) - typeRank(b))
+      || lineType(a).localeCompare(lineType(b))
+      || (lineNumber(a) - lineNumber(b))
+      || String(a.linie).localeCompare(String(b.linie), 'de', { numeric: true }));
+  }
+
+  // Derived from the clock, so it needs no state and simply re-aligns when
+  // trips are added or removed
+  function currentCycleIndex(count, now) {
+    const seconds = Number(kioskConfig && kioskConfig.fexCycleSeconds) || 10;
+    return Math.floor(now.getTime() / 1000 / seconds) % count;
+  }
+
+  // Day countdown styled like "in 3 Min" (number emphasized)
+  function fexDaysHTML(days) {
+    if (days <= 0) return 'Heute';
+    if (days === 1) return 'Morgen';
+    return `in <span class="departure-num">${days}</span> Tagen`;
+  }
+
+  // Row 1: line icon ··· day countdown. Row 2: destination ··· time.
+  // Both times use the normal departure-time style.
+  function buildCycleView(train, now) {
+    const start = parseTime(train.actual || train.plan, now, train.date);
+    const days = start ? calendarDaysUntil(start, now) : 0;
+    // Another day: plain clock time; today: the live countdown like focus mode
+    const time = days > 0 ? clockTimeHTML(train, start) : focusTimeHTML(train, now);
+    const daysBlock = `<span class="kiosk-focus-time" data-live>${fexDaysHTML(days)}</span>`;
+    const timeAside = `<span class="kiosk-focus-time" data-live>${time}</span>`;
+    return buildKioskFocus(train, now, daysBlock, 'is-static', timeAside);
+  }
+
+  // Header title: word + the line's icon instead of its name
+  // ("Nächste [S1]"). Each piece is its own
+  // part so a trip change only fades the parts that differ.
+  function cycleTitleHTML(word, train, index, count) {
+    const part = html => `<span class="kiosk-title-part">${html}</span>`;
+    const icon = train ? Templates.lineIcon(train.linie, 'train-symbol kiosk-title-icon') : '';
+    return `${part(word)} ${part(icon)}`;
+  }
+
+  // Title parts to change: with the same parts as now, only the differing
+  // ones (index-aligned with the new parts); otherwise the whole title.
+  function changedTitleParts(titleEl, html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    const next = [...tpl.content.querySelectorAll('.kiosk-title-part')];
+    const current = [...titleEl.querySelectorAll('.kiosk-title-part')];
+    if (!current.length || current.length !== next.length) return null;
+    return current
+      .map((el, i) => ({ el, html: next[i].innerHTML }))
+      .filter(p => p.el.innerHTML !== p.html);
+  }
+
+  // Per direction, same as the main app's row cross-fade (style.css
+  // pastTrainTimeToggle/pastTrainStatusToggle: 7% of a 10 s cycle each way),
+  // so 1.4 s in total. Keep equal to the transition on .fex-screen-body > *.
+  const CYCLE_FADE_MS = 700;
+
+  const CYCLE_SCREENS = {
+    fex: {
+      bodyId: 'fex-body',
+      titleId: 'fex-title',
+      list: getUpcomingFex,
+      title: (train, i, n) => (train ? cycleTitleHTML(fexTitleWord(train.linie), train, i, n) : fexEmptyTitle()),
+      empty: () => {
+        const lines = fexLines();
+        return `Keine Fahrt der Linie${lines.length > 1 ? 'n' : ''} ${kioskEscape(lines.join(', '))} geplant`;
+      },
+      state: { signature: null, shownId: null, title: null }
+    },
+    buffet: {
+      bodyId: 'buffet-body',
+      titleId: 'buffet-title',
+      list: getBuffetTrains,
+      title: (train, i, n) => (train ? cycleTitleHTML('Nächste', train, i, n) : 'Buffet'),
+      empty: () => 'Keine Abfahrten geplant',
+      state: { signature: null, shownId: null, title: null }
+    }
+  };
+
+  function resetCycleScreens() {
+    Object.values(CYCLE_SCREENS).forEach(s => { s.state.signature = null; s.state.title = null; });
+  }
+
+  function renderCycleScreen(name) {
+    if (activeScreen !== name) return;
+    const screen = CYCLE_SCREENS[name];
+    const state = screen.state;
+    const body = document.getElementById(screen.bodyId);
+    if (body._cycleFading) return;
+    const now = new Date();
+    const list = screen.list();
+    const index = list.length ? currentCycleIndex(list.length, now) : 0;
+    const train = list[index] || null;
+
+    const tpl = document.createElement('template');
+    tpl.innerHTML = train ? buildCycleView(train, now) : `<div class="fex-empty">${screen.empty()}</div>`;
+    const sig = tpl.content.cloneNode(true);
+    sig.querySelectorAll('[data-live]').forEach(el => { el.innerHTML = ''; });
+    const holder = document.createElement('div');
+    holder.appendChild(sig);
+    const signature = `${train ? train._uniqueId : ''}|${holder.innerHTML}`;
+
+    if (signature !== state.signature) {
+      state.signature = signature;
+      const nextId = train ? train._uniqueId : null;
+      const titleHTML = screen.title(train, index, list.length);
+      const titleEl = document.getElementById(screen.titleId);
+      // Worked out before the swap: parts left alone (the word, the FEX
+      // icon) stay put without flickering.
+      const titleParts = titleHTML !== state.title ? changedTitleParts(titleEl, titleHTML) : [];
+      const swap = () => {
+        // Each trip keeps its line's look: FEX white, SEV magenta, else blue
+        const line = String((train && train.linie) || '').toUpperCase();
+        body.classList.toggle('fex-row', line === 'FEX');
+        body.classList.toggle('sev-row', !!train && isErsatzverkehr(train));
+        if (titleHTML !== state.title) {
+          state.title = titleHTML;
+          if (titleParts) titleParts.forEach(p => { p.el.innerHTML = p.html; });
+          else titleEl.innerHTML = titleHTML;
+        }
+        body.replaceChildren(tpl.content);
+        requestAnimationFrame(() => {
+          applyCancelNoticeScrolling(body);
+          applyZugzielScrolling(body);
+        });
+      };
+      // Moving on to another trip: fade out, swap, fade in. The header title
+      // parts that change (the line icon) fade along with the body;
+      // the rest stays. Updates of the same trip (delay, notice) swap in place.
+      if (state.shownId && nextId && nextId !== state.shownId && !document.hidden) {
+        const fading = titleHTML === state.title ? []
+          : titleParts ? titleParts.map(p => p.el) : [titleEl];
+        body._cycleFading = true;
+        body.classList.add('is-fading');
+        fading.forEach(el => {
+          el.style.transition = `opacity ${CYCLE_FADE_MS}ms ease`;
+          el.classList.add('is-swapping');
+        });
+        setTimeout(() => {
+          swap();
+          void body.offsetWidth; // new content starts hidden, then fades in
+          body.classList.remove('is-fading');
+          fading.forEach(el => el.classList.remove('is-swapping'));
+          body._cycleFading = false;
+        }, CYCLE_FADE_MS);
+      } else {
+        swap();
+      }
+      state.shownId = nextId;
+      return;
+    }
+    const fresh = tpl.content.querySelectorAll('[data-live]');
+    body.querySelectorAll('[data-live]').forEach((live, i) => {
+      if (fresh[i]) setLiveText(live, fresh[i].innerHTML);
+    });
+  }
+
+  // === DEPARTURE BOARD ===
+
+  const BOARD_POLL_MS = 30 * 1000; // server caches VVS for 30 s as well
+
+  let kioskConfig = null;
+  // Per side: live departures from /api/db-departures for the configured stop
+  const boardData = [
+    { eva: null, trains: [], fetchedAt: 0, error: '' },
+    { eva: null, trains: [], fetchedAt: 0, error: '' }
+  ];
+  const boardSignatures = [null, null];
+  const boardHeadSignatures = [null, null];
+
+  const BOARD_ARROW_SVG = '<svg class="board-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4M10 5l-7 7 7 7"/></svg>';
+  // Status marks, drawn in the status colour (currentColor)
+  const BOARD_TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+  const BOARD_CROSS_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  // Pedestrian (Material "directions_walk")
+  const BOARD_WALK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>';
+
+  async function loadBoardSide(i) {
+    const side = kioskConfig && kioskConfig.sides[i];
+    const data = boardData[i];
+    if (!side) {
+      Object.assign(data, { eva: null, trains: [], fetchedAt: 0, error: '' });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/db-departures?eva=${encodeURIComponent(side.eva)}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      Object.assign(data, { eva: side.eva, trains: json.trains || [], fetchedAt: Date.now(), error: '' });
+    } catch (e) {
+      // Keep the last good departures for the same stop; the times still count down
+      if (data.eva !== side.eva) data.trains = [];
+      data.eva = side.eva;
+      data.fetchedAt = Date.now();
+      data.error = e.message || 'Abfahrten nicht verfügbar';
+    }
+  }
+
+  async function loadBoard() {
+    await Promise.all([loadBoardSide(0), loadBoardSide(1)]);
+    renderBoard();
+  }
+
+  // Only fetch live departures if some setting can show the board
+  function boardNeeded() {
+    if (!kioskConfig) return false;
+    switch (kioskConfig.screenMode) {
+      case 'board': return true;
+      case 'alternate': return (kioskConfig.alternateScreens || []).includes('board');
+      case 'schedule': return Object.values(kioskConfig.schedule || {})
+        .some(list => list.some(w => (w.screen || 'board') === 'board'));
+      default: return false;
+    }
+  }
+
+  function buildBoardHeader(side) {
+    const icon = side && KIOSK_STATION_ICONS[side.icon];
+    return `
+      <div class="board-edge">
+        ${BOARD_ARROW_SVG}
+        ${side && side.walkMinutes > 0
+          ? `<div class="board-walk" title="Gehzeit">${BOARD_WALK_SVG}<span>${side.walkMinutes} Min</span></div>`
+          : ''}
+      </div>
+      <div class="board-station">
+        ${icon && icon.src ? `<img class="board-station-icon" src="${icon.src}" alt="${icon.label}">` : ''}
+        <span class="board-station-name">${kioskEscape(side ? side.name : 'Abfahrtstafel')}</span>
+      </div>`;
+  }
+
+  // No prognosis an hour or more away (same threshold as the countdown in
+  // preciseDepartureHTML) — unless the train already has live data
+  function boardStatusFar(train, at, now) {
+    return !train.actual && Math.ceil((at - now) / 60000) >= 60;
+  }
+
+  function buildBoardRow({ train, reachable, at }, now) {
+    // Countdown "in 5 Min": the minutes stand out, the words step back. The
+    // countdown class sits inside the live-patched text, so a switch to
+    // "… fährt ab" fades like any other text change instead of rebuilding.
+    const timeHTML = kioskTimeHTML(boardDepartureHTML(train, at, now), train, 'board-time-num');
+    const countdown = timeHTML.includes('board-time-num')
+      ? `<span class="board-time--countdown">${timeHTML}</span>`
+      : timeHTML;
+    const ziel = kioskEscape(train.ziel || '');
+    const key = kioskEscape(`${train.linie}|${train.ziel}|${train.date}|${train.plan}`);
+    return `
+      <div class="board-row${isErsatzverkehr(train) ? ' sev-row' : ''}" data-key="${key}">
+        <div class="board-row-top">
+          ${kioskLineIconHTML(train)}
+          <span class="board-time" data-live>${countdown}</span>
+        </div>
+        <div class="board-dest"><span class="zugziel-text" data-ziel-text="${ziel}">${ziel}</span></div>
+        <div class="board-status board-status--${reachable ? 'reachable' : 'unreachable'}${boardStatusFar(train, at, now) ? ' is-far' : ''}">
+          ${reachable ? BOARD_TICK_SVG : BOARD_CROSS_SVG}
+          <span>${reachable ? 'Vsl. erreichbar' : 'Vsl. nicht erreichbar'}</span>
+        </div>
+      </div>`;
+  }
+
+  function buildBoardRows(i, now) {
+    const side = kioskConfig && kioskConfig.sides[i];
+    const data = boardData[i];
+    if (!side) return '<div class="board-empty">Keine Haltestelle eingerichtet</div>';
+    const next = kioskNextDepartures(data.trains, side, now, 2);
+    if (next.length) return next.map(d => buildBoardRow(d, now)).join('');
+    if (data.error) return '<div class="board-empty">Abfahrten zurzeit nicht verfügbar</div>';
+    return data.fetchedAt ? '<div class="board-empty">Keine Abfahrten</div>' : '';
+  }
+
+  // Same rebuild-or-patch approach as renderKiosk: the countdown text
+  // changes every minute, everything else (incl. the reachable status)
+  // only when the departures do — so destination marquees keep running.
+  function renderBoard() {
+    if (activeScreen !== 'board') return;
+    const now = new Date();
+    [0, 1].forEach((i) => {
+      const side = kioskConfig && kioskConfig.sides[i];
+      const headEl = document.querySelector(`#screen-board [data-head="${i}"]`);
+      const rowsEl = document.querySelector(`#screen-board [data-side="${i}"]`);
+
+      const headHTML = buildBoardHeader(side);
+      if (headHTML !== boardHeadSignatures[i]) {
+        boardHeadSignatures[i] = headHTML;
+        headEl.innerHTML = headHTML;
+      }
+
+      if (isRowTransitionRunning(rowsEl)) return;
+      const tpl = document.createElement('template');
+      tpl.innerHTML = buildBoardRows(i, now);
+      const sig = tpl.content.cloneNode(true);
+      sig.querySelectorAll('.board-time').forEach(t => { t.innerHTML = ''; });
+      // The prognosis showing up is patched (fade) below, not a rebuild
+      sig.querySelectorAll('.board-status').forEach(s => s.classList.remove('is-far'));
+      const holder = document.createElement('div');
+      holder.appendChild(sig);
+      const signature = holder.innerHTML;
+
+      if (signature !== boardSignatures[i]) {
+        boardSignatures[i] = signature;
+        swapRows(rowsEl, Array.from(tpl.content.children), () => applyZugzielScrolling(rowsEl));
+        return;
+      }
+      const fresh = tpl.content.querySelectorAll('.board-time');
+      rowsEl.querySelectorAll('.board-time').forEach((live, idx) => {
+        if (fresh[idx]) setLiveText(live, fresh[idx].innerHTML);
+      });
+      const freshStatus = tpl.content.querySelectorAll('.board-status');
+      rowsEl.querySelectorAll('.board-status').forEach((live, idx) => {
+        if (freshStatus[idx]) live.classList.toggle('is-far', freshStatus[idx].classList.contains('is-far'));
+      });
+    });
+  }
+
+  // === SCREEN SELECTION ===
+
+  let activeScreen = 'abfahrten';
+
+  function toMinutes(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  // The schedule window open right now (board or FEX), if any. A window
+  // ending before it starts runs past midnight, so yesterday's overnight
+  // windows can still be open.
+  function activeScheduleWindow(now) {
+    const schedule = kioskConfig.schedule || {};
+    const minute = now.getHours() * 60 + now.getMinutes();
+    const today = now.getDay();
+    const yesterday = (today + 6) % 7;
+    return (schedule[today] || []).find(w => {
+      const from = toMinutes(w.from), to = toMinutes(w.to);
+      return from < to ? minute >= from && minute < to : minute >= from;
+    }) || (schedule[yesterday] || []).find(w => {
+      const from = toMinutes(w.from), to = toMinutes(w.to);
+      return from > to && minute < to;
+    }) || null;
+  }
+
+  // === ANNOUNCEMENT ===
+  // Message from the control site: first line as a bold heading, the rest
+  // as text below.
+  function announcementText() {
+    return String((kioskConfig && kioskConfig.announcement) || '').trim();
+  }
+
+  let announcementShown = null;
+  let announcementFadeTimer = null;
+  function renderAnnouncement() {
+    const text = announcementText();
+    // A pending fade picks up the latest text when it swaps
+    if (text === announcementShown || announcementFadeTimer) return;
+    const el = document.getElementById('announcement-body');
+    const swap = () => {
+      announcementShown = announcementText();
+      const [heading, ...rest] = announcementShown.split(/\r?\n/);
+      const body = rest.join('\n').trim();
+      el.innerHTML =
+        `<div class="announcement-heading">${kioskEscape(heading)}</div>` +
+        (body ? `<div class="announcement-text">${kioskEscape(body)}</div>` : '');
+    };
+    // Message changed while on screen: fade out, swap, fade in (like the
+    // FEX trip change). Otherwise swap in place.
+    const visible = !document.getElementById('screen-announcement').hidden;
+    if (announcementShown && visible && !document.hidden) {
+      el.classList.add('is-fading');
+      announcementFadeTimer = setTimeout(() => {
+        announcementFadeTimer = null;
+        swap();
+        void el.offsetWidth; // new content starts hidden, then fades in
+        el.classList.remove('is-fading');
+      }, CYCLE_FADE_MS);
+    } else {
+      swap();
+    }
+  }
+
+  function desiredScreen(now) {
+    if (!kioskConfig) return 'abfahrten';
+    // FEX / Buffet / announcement only take part in automatic modes while
+    // they have something to show
+    const available = (s) => (s === 'announcement' ? !!announcementText()
+      : !CYCLE_SCREENS[s] || CYCLE_SCREENS[s].list().length > 0);
+    switch (kioskConfig.screenMode) {
+      case 'board': return 'board';
+      case 'fex': return 'fex';
+      case 'buffet': return 'buffet';
+      case 'announcement': return 'announcement';
+      case 'alternate': {
+        const list = (kioskConfig.alternateScreens || ['abfahrten', 'board']).filter(available);
+        if (!list.length) return 'abfahrten';
+        const period = Math.floor(now.getTime() / 1000 / kioskConfig.alternateSeconds);
+        return list[period % list.length];
+      }
+      case 'schedule': {
+        const window = activeScheduleWindow(now);
+        const screen = window ? (window.screen || 'board') : 'abfahrten';
+        return available(screen) ? screen : 'abfahrten';
+      }
+      default: return 'abfahrten';
+    }
+  }
+
+  const SCREEN_FADE_MS = CYCLE_FADE_MS; // each way, like the trip change
+  let screenFadeTimer = null;
+
+  // Marquees measure their container, which is 0 wide while a screen is
+  // hidden — so the newly shown screen is always rebuilt from scratch.
+  // It's un-hidden right away but transparent (rendered underneath) while
+  // the previous screen fades out; then that one is hidden and the new one
+  // fades in.
+  function updateScreen() {
+    const next = desiredScreen(new Date());
+    if (next === activeScreen) return;
+    activeScreen = next;
+    const screens = {
+      abfahrten: document.getElementById('screen-abfahrten'),
+      board: document.getElementById('screen-board'),
+      fex: document.getElementById('screen-fex'),
+      buffet: document.getElementById('screen-buffet'),
+      announcement: document.getElementById('screen-announcement')
+    };
+    const incoming = screens[next];
+
+    clearTimeout(screenFadeTimer);
+    const outgoing = Object.values(screens).filter(s => s !== incoming && !s.hidden);
+    Object.values(screens).forEach(s => {
+      s.style.transition = `opacity ${SCREEN_FADE_MS}ms ease`;
+    });
+    incoming.classList.add('is-faded');
+    incoming.hidden = false;
+    void incoming.offsetWidth; // start from transparent
+    outgoing.forEach(s => s.classList.add('is-faded'));
+
+    screenFadeTimer = setTimeout(() => {
+      outgoing.forEach(s => {
+        s.hidden = true;
+        s.classList.remove('is-faded');
+      });
+      void incoming.offsetWidth;
+      incoming.classList.remove('is-faded');
+    }, outgoing.length && !document.hidden ? SCREEN_FADE_MS : 0);
+
+    lastSignature = null;
+    resetCycleScreens();
+    boardSignatures[0] = boardSignatures[1] = null;
+    if (next === 'board') {
+      const stale = boardData.some(d => Date.now() - d.fetchedAt > BOARD_POLL_MS);
+      renderBoard();
+      if (stale) loadBoard();
+    } else if (CYCLE_SCREENS[next]) {
+      renderCycleScreen(next);
+    } else if (next === 'announcement') {
+      renderAnnouncement();
+    } else {
+      renderKiosk();
+    }
+  }
+
+  async function loadKioskConfig() {
+    try {
+      const res = await fetch('/api/kiosk-config');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      kioskConfig = await res.json();
+    } catch (err) {
+      console.error('Kiosk: failed to load config', err);
+      return;
+    }
+    boardSignatures[0] = boardSignatures[1] = null;
+    renderAnnouncement();
+    updateScreen();
+    if (boardNeeded()) await loadBoard();
+  }
+
+  function updateKioskClock() {
+    const now = new Date();
+    const min = now.getMinutes();
+    const minuteRot = `translateX(-50%) rotate(${min * 6}deg)`;
+    const hourRot = `translateX(-50%) rotate(${(now.getHours() % 12) * 30 + min * 0.5}deg)`;
+    // Same clock in every screen's header
+    [['clock', 'minute', 'hour'], ['board-clock', 'board-minute', 'board-hour'], ['fex-clock', 'fex-minute', 'fex-hour'], ['buffet-clock', 'buffet-minute', 'buffet-hour'], ['announcement-clock', 'announcement-minute', 'announcement-hour']].forEach(([c, m, h]) => {
+      document.getElementById(c).textContent = formatClock(now);
+      document.getElementById(m).style.transform = minuteRot;
+      document.getElementById(h).style.transform = hourRot;
+    });
+  }
+
+  let loadInFlight = false;
+
+  async function loadKioskSchedule() {
+    if (loadInFlight) return;
+    loadInFlight = true;
+    try {
+      // fetchSchedule keeps client-only entries (for unsaved local edits in
+      // the main app). The kiosk never edits, so start empty and let the
+      // server be authoritative — otherwise deleted trains would linger.
+      schedule.fixedSchedule = [];
+      schedule.spontaneousEntries = [];
+      schedule.projects = [];
+      const fresh = await fetchSchedule(true);
+      Object.assign(schedule, fresh);
+      processTrainData(schedule);
+      renderKiosk();
+    } catch (err) {
+      console.error('Kiosk: failed to load schedule', err);
+    } finally {
+      loadInFlight = false;
+    }
+  }
+
+  function connectKioskSSE() {
+    const es = new EventSource('/events');
+    es.addEventListener('update', (event) => {
+      let data = {};
+      try { data = JSON.parse(event.data); } catch (_) {}
+      if (data.dataType === 'lovemeter') return;
+      if (data.dataType === 'kiosk-config') { loadKioskConfig(); return; }
+      if (data.version && schedule._meta && data.version <= schedule._meta.version) return;
+      loadKioskSchedule();
+    });
+    // EventSource reconnects on its own; resync once it's back.
+    es.addEventListener('open', () => { loadKioskSchedule(); loadKioskConfig(); });
+  }
+
+  // Keep the panel awake (where supported); the lock drops whenever the
+  // page is hidden, so re-acquire on return.
+  async function keepAwake() {
+    try {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+        await navigator.wakeLock.request('screen');
+      }
+    } catch (_) {}
+  }
+
+  (async function initKiosk() {
+    updateKioskClock();
+    setInterval(() => {
+      updateKioskClock();
+      updateScreen();
+      if (kioskTrainsStale(new Date())) processTrainData(schedule);
+      renderKiosk();
+      renderCycleScreen('fex');
+      renderCycleScreen('buffet');
+      renderBoard();
+    }, 1000);
+
+    loadKioskConfig();
+    await window.AppSettings.ready; // lookahead window etc. for materializeFromStems
+    await loadKioskSchedule();
+
+    setInterval(() => { processTrainData(schedule); renderKiosk(); }, KIOSK_REPROCESS_MS);
+    setInterval(loadKioskSchedule, KIOSK_POLL_MS);
+    setInterval(() => { if (boardNeeded()) loadBoard(); }, BOARD_POLL_MS);
+    connectKioskSSE();
+
+    keepAwake();
+    document.addEventListener('visibilitychange', keepAwake);
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        lastSignature = null;
+        resetCycleScreens();
+        boardSignatures[0] = boardSignatures[1] = null;
+        renderKiosk();
+        renderCycleScreen('fex');
+        renderCycleScreen('buffet');
+        renderBoard();
+      }, 200);
+    });
+  })();
+</script>
+</body>
+</html>

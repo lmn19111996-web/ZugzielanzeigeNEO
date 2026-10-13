@@ -64,6 +64,13 @@
     #dashboard-header-grid .col-platform,
     #dashboard-overlay .col-platform    { width: 9vw; flex-shrink: 0; margin: 0 1vw; border-top: 1px solid white; box-sizing: border-box; }
     #dashboard-overlay .dep-empty       { border-top: none !important; }
+    /* Rows following the first of a coupled run merge into it: the separator
+       above them is dropped so the run reads as one block under a single
+       departure time. .departure-row is `display: contents`, but it is still
+       in the tree, so descendant selectors on it work. */
+    #dashboard-overlay .departure-row.grouped-follow .col-time,
+    #dashboard-overlay .departure-row.grouped-follow .col-destination,
+    #dashboard-overlay .departure-row.grouped-follow .col-platform { border-top: none; }
     /* Station overlay must appear above dashboard */
     #station-overlay                     { z-index: 10000; }
 
@@ -117,6 +124,36 @@
     }
     #dashboard-overlay .dep-dot .indicator-dot.current   { border-radius: 50%; background: white; }
     #dashboard-overlay .dep-dot .indicator-dot.cancelled::before { content: '✕'; color: white; font-size: 3.5vh; }
+
+    /* Coupled-service bracket (same departure time + platform — see
+       assignDbConnectorFlags in dashboard.js). Anchored to .dep-dot rather
+       than to the row: .departure-row is `display: contents`, so it has no box
+       of its own, while the cell is a grid item that spans the full row height.
+       Drawn as one box with mitred borders so the corners join by
+       construction. These win over the train-list rules in style.css on
+       specificity, which is what re-anchors the bracket to this column. */
+    #dashboard-overlay .dep-dot { position: relative; }
+    /* Positioned from the RIGHT so the arm's tip reaches toward the line badge
+       and stops just short of it. .col-time carries margin-left: 1vw, so
+       right: -0.55vw puts the tip 0.55vw past this 3vw column and leaves a
+       ~0.45vw breathing gap before the badge. */
+    #dashboard-overlay .dep-dot .indicator-dot.connector::before {
+      content: ''; position: absolute; pointer-events: none;
+      /* left:auto is required — the train-list rule in style.css sets a `left`,
+         and with left + width + right all resolved the browser drops `right`
+         in LTR, which would pin the bracket back to the column's left edge. */
+      left: auto; right: -0.55vw; width: 1.2vh;
+      border-left: 0.25vh solid white; box-sizing: border-box;
+    }
+    #dashboard-overlay .dep-dot .indicator-dot.connector--first::before {
+      top: calc(50% - 0.125vh); bottom: 0; border-top: 0.25vh solid white;
+    }
+    #dashboard-overlay .dep-dot .indicator-dot.connector--middle::before {
+      top: 0; bottom: 0;
+    }
+    #dashboard-overlay .dep-dot .indicator-dot.connector--last::before {
+      top: 0; bottom: calc(50% - 0.125vh); border-bottom: 0.25vh solid white;
+    }
 
     #dashboard-overlay .dep-time {
       display: flex; flex-direction: column; justify-content: flex-start;
@@ -504,23 +541,19 @@
 
   <!-- Main display area -->
 
+  <!-- Hidden badge host: the energy/lovemeter badges are no longer shown in the UI,
+       but the elements remain so stressmeter-ui.js / lovemeter-ui.js keep working. -->
+  <div id="badge-host" class="badge-host" aria-hidden="true">
+  <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span id="sg-badge-edit" class="badge-edit" title="Energiepunkt jetzt setzen">✎</span><span class="badge-label" id="sg-badge-label"></span></button>
+  <button id="lovemeter-badge" aria-label="Lovemeter" aria-expanded="false"><span class="lm-badge-heart">♥</span><span class="badge-num" id="lm-badge-num">—</span><img id="lm-badge-trend" src="res/doubleup.svg" class="badge-trend-icon lm-badge-trend" alt=""><span id="lm-badge-edit" class="badge-edit" title="Mood-Event eintragen">✎</span><span class="badge-label" id="lm-badge-label"></span></button>
+  </div>
+
   <div id="container">
     <!-- Left column: clock + train list -->
     <div class="left-column">
       <!-- Top ribbon with clock + journal island -->
       <div class="top-bar">
         <div class="top-bar-main">
-          <div class="badge-rotator" id="badge-rotator">
-            <button id="stressmeter-badge" aria-label="Stressmeter" aria-expanded="false"><img id="sg-badge-icon" src="res/auslastung1.svg" class="badge-icon" alt=""><span class="badge-num" id="sg-badge-num">—</span><img id="sg-badge-energy" src="res/energy.svg" class="badge-energy-icon" alt=""><img id="sg-badge-trend" src="res/doubleup.svg" class="badge-trend-icon" alt=""><span id="sg-badge-edit" class="badge-edit" title="Energiepunkt jetzt setzen">✎</span><span class="badge-label" id="sg-badge-label"></span></button>
-            <button id="lovemeter-badge" aria-label="Lovemeter" aria-expanded="false"><span class="lm-badge-heart">♥</span><span class="badge-num" id="lm-badge-num">—</span><img id="lm-badge-trend" src="res/doubleup.svg" class="badge-trend-icon lm-badge-trend" alt=""><span id="lm-badge-edit" class="badge-edit" title="Mood-Event eintragen">✎</span><span class="badge-label" id="lm-badge-label"></span></button>
-            <div class="badge-rotator-menu" id="badge-rotator-menu" role="menu">
-              <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="badge-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
-              <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="badge-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
-              <button class="badge-rotator-menu-item badge-rotator-menu-item--search" id="badge-menu-search" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>Suche</button>
-              <button class="badge-rotator-menu-item badge-rotator-menu-item--dashboard" id="badge-menu-dashboard" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="8" y1="3" x2="8" y2="9"/></svg>Abfahrtstafel</button>
-              <button class="badge-rotator-menu-item badge-rotator-menu-item--settings" id="badge-menu-settings" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Einstellungen</button>
-            </div>
-          </div>
           <div class="top-ribbon now-card">
             <!-- Mobile ribbon-tap dropdown menu -->
             <div class="mobile-ribbon-menu" id="mobile-ribbon-menu" role="menu">
@@ -546,13 +579,6 @@
               <input type="text" id="train-search-input" class="train-search-input" placeholder="Linie, Ziel, Beschreibung …" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
               <button id="train-search-close" class="train-search-close" aria-label="Suche schließen">✕</button>
             </div>
-          </div>
-        </div>
-        <!-- Right-side floating group: journal island, centred on ribbon height -->
-        <div class="top-bar-right-group">
-          <div id="journal-island" class="journal-island" aria-label="Tagebuch öffnen">
-            <span class="journal-island-icon">★</span>
-            <span class="journal-island-label">Rezension</span>
           </div>
         </div>
       </div>
@@ -634,53 +660,81 @@
       <div class="container-task-panel">
         <div class="taskbar">
           <div class="task-icon-group">
-            <button class="task-icon-button" id="station-select-button">
-              <img src="res/DB_logo_white_rgb_100px.svg" alt="Station Selection">
-              <span class="task-icon-label">Station</span>
+            <!-- Brand block: DB logo stays untouched (brand asset), framed per design -->
+            <div class="db-menu-host">
+              <button class="task-icon-button nav-brand" id="station-select-button" aria-haspopup="menu">
+                <span class="nav-brand-frame">
+                  <img src="res/DB_logo_white_rgb_100px.svg" alt="Station Selection">
+                </span>
+                <span class="task-icon-label">Station</span>
+              </button>
+              <div class="badge-rotator-menu" id="badge-rotator-menu" role="menu">
+                <button class="badge-rotator-menu-item badge-rotator-menu-item--energy" id="badge-menu-energy" role="menuitem"><img src="res/energy.svg" class="badge-rotator-menu-icon" alt="">Energieverlauf</button>
+                <button class="badge-rotator-menu-item badge-rotator-menu-item--love" id="badge-menu-lovemeter" role="menuitem"><span class="badge-rotator-menu-heart">♥</span>Lovemeter</button>
+                <button class="badge-rotator-menu-item badge-rotator-menu-item--journal" id="badge-menu-journal" role="menuitem"><span class="badge-rotator-menu-star">★</span>Rezension</button>
+                <button class="badge-rotator-menu-item badge-rotator-menu-item--search" id="badge-menu-search" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>Suche</button>
+                <button class="badge-rotator-menu-item badge-rotator-menu-item--dashboard" id="badge-menu-dashboard" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="8" y1="3" x2="8" y2="9"/></svg>Abfahrtstafel</button>
+                <button class="badge-rotator-menu-item badge-rotator-menu-item--settings" id="badge-menu-settings" role="menuitem"><svg class="badge-rotator-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Einstellungen</button>
+              </div>
+            </div>
+
+            <!-- Primary action -->
+            <button class="task-button nav-only nav-cta" id="sidebar-add-button">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span class="nav-cta-label">Neu</span>
             </button>
-            <button class="task-button nav-only" id="sidebar-add-button">+</button>
-            <button class="task-icon-button nav-only" id="list-view-button">
-              <img src="res/list.png" alt="List View">
+
+            <div class="nav-divider nav-only"></div>
+
+            <!-- Views -->
+            <button class="task-icon-button nav-only" id="list-view-button" data-nav="list">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4" cy="6" r="1.1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.1" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/></svg>
               <span class="task-icon-label">Liste</span>
-              <span class="taskbar-tooltip">Liste</span>
             </button>
-            <button class="task-icon-button nav-only" id="occupancy-view-button">
-              <img src="res/belegung.svg" alt="Occupancy View">
+            <button class="task-icon-button nav-only" id="occupancy-view-button" data-nav="occupancy">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>
               <span class="task-icon-label">Belegung</span>
-              <span class="taskbar-tooltip">Belegung</span>
             </button>
-            <button class="task-icon-button" id="announcements-button">
-              <img src="res/announcement.png" alt="Announcements">
+            <button class="task-icon-button" id="announcements-button" data-nav="announcements">
+              <span class="nav-icon-slot">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.2 7.5-2.2 7.5h16.4S18 14.5 18 8.5"/><path d="M10.4 20a2 2 0 0 0 3.2 0"/></svg>
+                <span class="nav-dot" id="announcements-dot" hidden></span>
+              </span>
               <span class="task-icon-label">Meldungen</span>
-              <span class="taskbar-tooltip">Meldungen</span>
             </button>
-            <button class="task-icon-button" id="notes-button">
-              <img src="res/notes.png" alt="Notes">
+
+            <div class="nav-divider nav-only"></div>
+
+            <!-- Content -->
+            <button class="task-icon-button" id="notes-button" data-nav="notes">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.4"/><line x1="8.5" y1="8" x2="15.5" y2="8"/><line x1="8.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="13" y2="16"/></svg>
               <span class="task-icon-label">Notizen</span>
-              <span class="taskbar-tooltip">Notizen</span>
             </button>
-            <button class="task-icon-button" data-mode="projects">
-              <img src="res/project.svg" alt="Projects">
+            <button class="task-icon-button" data-mode="projects" data-nav="projects">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.4"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="12.5" y1="8" x2="17.5" y2="8"/><line x1="12.5" y1="13" x2="17.5" y2="13"/></svg>
               <span class="task-icon-label">Projekte</span>
-              <span class="taskbar-tooltip">Projekte</span>
             </button>
-            <button class="task-icon-button" data-mode="vorlagen">
-              <img src="res/template.svg" alt="Vorlagen">
+            <button class="task-icon-button" data-mode="vorlagen" data-nav="vorlagen">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 15.5H6.2A2.2 2.2 0 0 1 4 13.3V5.2A2.2 2.2 0 0 1 6.2 3h8.1A2.2 2.2 0 0 1 16.5 5.2v2.3"/><rect x="8.5" y="7.5" width="11.5" height="13" rx="2.2"/></svg>
               <span class="task-icon-label">Vorlagen</span>
-              <span class="taskbar-tooltip">Vorlage</span>
             </button>
-            <button class="task-icon-button" data-mode="log-viewer">
-              <img src="res/log.svg" alt="Log Viewer">
+
+            <div class="nav-divider nav-only"></div>
+
+            <!-- Archive -->
+            <button class="task-icon-button" data-mode="log-viewer" data-nav="log-viewer">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><polyline points="3 4 3 9 8 9"/><polyline points="12 7.5 12 12 15.4 14.2"/></svg>
               <span class="task-icon-label">Logs</span>
-              <span class="taskbar-tooltip">Logs</span>
             </button>
-            <button class="task-icon-button nav-only task-icon-button--star" data-mode="reviews">
-              <span class="task-icon-star">★</span>
+            <button class="task-icon-button nav-only" data-mode="reviews" data-nav="reviews">
+              <span class="nav-icon-slot">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 3.4 14.7 9.1 20.9 9.9 16.4 14.2 17.5 20.4 12 17.4 6.5 20.4 7.6 14.2 3.1 9.9 9.3 9.1"/></svg>
+                <span class="nav-dot nav-dot--reminder" id="journal-dot" hidden></span>
+              </span>
               <span class="task-icon-label">Rezensionen</span>
-              <span class="taskbar-tooltip">Rezensionen</span>
             </button>
             <button class="task-icon-button mobile-only" id="lm-quick-log-btn">
-              <span class="lm-taskbar-heart">♥</span>
+              <svg class="nav-icon nav-icon--heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4S3.6 15.1 3.6 9.4a4.6 4.6 0 0 1 8.4-2.6 4.6 4.6 0 0 1 8.4 2.6c0 5.7-8.4 11-8.4 11Z"/></svg>
               <span class="task-icon-label">Lovemeter</span>
             </button>
           </div>
@@ -856,26 +910,6 @@
     <button id="swipe-undo-btn">Rückgängig</button>
   </div>
 
-  <!-- Journal Card (hidden by default) -->
-  <div id="journal-card" class="journal-card" aria-hidden="true">
-    <div class="journal-card-header">
-      <span class="journal-card-title">Wie war dein Tag?</span>
-      <button class="journal-card-close" id="journal-card-close" aria-label="Schließen">✕</button>
-    </div>
-    <div class="journal-card-body">
-      <div class="journal-card-date" id="journal-card-date"></div>
-      <div class="journal-star-row" id="journal-star-row">
-        <span class="journal-star" data-val="1">★</span>
-        <span class="journal-star" data-val="2">★</span>
-        <span class="journal-star" data-val="3">★</span>
-        <span class="journal-star" data-val="4">★</span>
-        <span class="journal-star" data-val="5">★</span>
-      </div>
-      <textarea id="journal-text" class="journal-textarea" placeholder="Schreib was dazu!"></textarea>
-      <button id="journal-submit" class="journal-submit-btn" disabled>Speichern</button>
-    </div>
-  </div>
-  <!-- End of Journal Island -->
 
   <!-- script extracted to app.js -->
 <script src="templates.js"></script>
@@ -951,31 +985,19 @@
 <script src="js/lovemeter-ui.js?v=1"></script>
 <script src="js/checkin.js"></script>
 <script src="js/offline.js"></script>
+<script src="js/print-schedule.js"></script>
 <script src="js/init.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/shortcut-hints.js"></script>
 
 <script>
-// ── Badge rotator: alternates energy / lovemeter every 5 s ──────────────────
+// ── Taskbar DB-button hover menu (formerly the energy/lovemeter badge menu) ──
 (function () {
-  var rotator  = document.getElementById('badge-rotator');
   var menuEnergy   = document.getElementById('badge-menu-energy');
   var menuLovemeter = document.getElementById('badge-menu-lovemeter');
-  if (!rotator) return;
 
-  // Both badges animate on the same 10 s CSS cycle (pastTrainTimeToggle /
-  // pastTrainStatusToggle) — no JS interval needed for the fade.
-  // We still toggle pointer-events classes so only the visible badge is clickable.
-  rotator.classList.add('showing-energy');
-  setInterval(function () {
-    rotator.classList.toggle('showing-energy');
-    rotator.classList.toggle('showing-lovemeter');
-  }, 5000); // swap pointer-events target in sync with CSS mid-cycle
-
-  // Clicking the rotator background (i.e. the currently visible badge itself)
-  // is handled by the badge's own click listener — no extra code needed.
-
-  // Menu items explicitly open the respective UI regardless of rotation phase
+  // The energy / lovemeter badges are no longer rendered in the top bar; the
+  // buttons live hidden in #badge-host and are driven from these menu items.
   if (menuEnergy) {
     menuEnergy.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -1098,6 +1120,16 @@
     }
     var q = normalizeUmlauts(query.trim());
 
+    // Empty query: show nothing rather than the whole schedule. Cleared
+    // directly instead of rendering an empty result set, because
+    // renderTrainListWithEntries() always prepends processedTrainData.currentTrain
+    // and would leave that one row behind.
+    if (!q) {
+      trainListEl.innerHTML = '';
+      trainListEl.classList.add('search-mode');
+      return;
+    }
+
     // Use scheduledTrains (timed) + durationOnlyTrains as the full searchable pool
     var pd = window.processedTrainData || processedTrainData;
     var timed    = (pd && pd.scheduledTrains)    || [];
@@ -1105,7 +1137,6 @@
 
     function matches(t) {
       if (!t) return false;
-      if (!q) return true;
       return (
         normalizeUmlauts(t.linie        || '').includes(q) ||
         normalizeUmlauts(t.ziel         || '').includes(q) ||
@@ -1160,7 +1191,17 @@
   // Ctrl+F to open search. Inside the log viewer this toggles a local search
   // over the loaded log entries instead of the global train search, since the
   // global search would replace the log viewer page with unrelated results.
+  // Esc exits search mode even when the search input no longer has focus
+  // (e.g. after clicking a result). Escape inside some other text field is
+  // left alone so it can cancel that field's edit instead.
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isSearchMode) {
+      var el = document.activeElement;
+      var inOtherField = el && el !== searchInput &&
+        (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+      if (!inOtherField) closeSearch();
+      return;
+    }
     if (e.ctrlKey && (e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
       if (typeof currentWorkspaceMode !== 'undefined' && currentWorkspaceMode === 'log-viewer'

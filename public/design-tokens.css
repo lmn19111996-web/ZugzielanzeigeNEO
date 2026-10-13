@@ -135,6 +135,29 @@
 
 
   /* ============================================================
+     NAVIGATION RAIL
+     The left taskbar. Surfaces derive from the Bahnblau palette.
+
+     --color-nav-accent drives the "Neu" call-to-action and the
+     active-item indicator bar. render-trains.js overwrites it on
+     :root with the live accent (currentAccentColor — the current
+     train's line color) on every ribbon update, so the rail tracks
+     the line on display. The value below is the no-train fallback.
+  ============================================================ */
+
+  --color-nav-accent:        var(--color-accent-primary);  /* CTA fill + active bar */
+  --color-nav-accent-text:   #ffffff;                      /* Label on the CTA fill */
+
+  --color-nav-item:          rgba(255, 255, 255, 0.62);  /* Idle icon + label */
+  --color-nav-item-hover:    rgba(255, 255, 255, 0.92);  /* Hover icon + label */
+  --color-nav-item-active:   #ffffff;                    /* Active icon + label */
+  --color-nav-item-active-bg: rgba(255, 255, 255, 0.10); /* Active item surface */
+  --color-nav-divider:       rgba(255, 255, 255, 0.12);  /* Group separators */
+  --color-nav-dot:           #f05252;                    /* Alert dot — schedule conflict */
+  --color-nav-dot-reminder:  #ffcc00;                    /* Reminder dot — matches the journal island */
+
+
+  /* ============================================================
      ACCENT / BRAND
   ============================================================ */
 

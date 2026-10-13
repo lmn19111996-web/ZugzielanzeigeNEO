@@ -186,6 +186,9 @@
         });
       });
 
+      // Light up the nav-rail item for the workspace we boot into
+      if (typeof window.syncTaskbarActiveState === 'function') window.syncTaskbarActiveState();
+
       const modeDrawer = document.getElementById('mode-drawer');
       const modeDrawerToggle = document.getElementById('mode-drawer-toggle');
       const modeDrawerClose = document.getElementById('mode-drawer-close');

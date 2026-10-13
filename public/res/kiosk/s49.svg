@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 8">
+            <!-- pill background -->
+            <defs>
+                <linearGradient id="prideGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#E40303" />
+                    <stop offset="16.6%" stop-color="#E40303" />
+                    <stop offset="16.6%" stop-color="#FF8C00" />
+                    <stop offset="33.3%" stop-color="#FF8C00" />
+                    <stop offset="33.3%" stop-color="#FFED00" />
+                    <stop offset="50%" stop-color="#FFED00" />
+                    <stop offset="50%" stop-color="#008026" />
+                    <stop offset="66.6%" stop-color="#008026" />
+                    <stop offset="66.6%" stop-color="#004DFF" />
+                    <stop offset="83.3%" stop-color="#004DFF" />
+                    <stop offset="83.3%" stop-color="#750787" />
+                    <stop offset="100%" stop-color="#750787" />
+                </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="16" height="8" rx="4" ry="4" fill="url(#prideGradient)" />
+            <!-- text -->
+            <text x="48%" y="60%" text-anchor="middle" dominant-baseline="middle"
+                font-family="Bahnschrift, sans-serif" font-size="7" fill="black" font-weight="500"
+                stroke="white" stroke-width="1" paint-order="stroke">
+                S49
+            </text>
+        </svg>

@@ -24,11 +24,21 @@ const Templates = {
     } else if (isCurrent) {
       indicatorClass += ' current';
     }
+
+    // Same-departure-time connector bracket. It shares the indicator slot with
+    // the now-dot and the cancel cross and ranks below both, so a row that
+    // shows either of those draws no connector piece. The run itself is still
+    // grouped around that row (see assignConnectorFlags in render-trains.js) —
+    // only this row's segment is suppressed. Never on the headline card, which
+    // stands alone outside the list.
+    if (!isFirstTrain && !train.canceled && !isCurrent && train._connector) {
+      indicatorClass += ` connector connector--${train._connector}`;
+    }
     
     // Determine train symbol HTML
     let trainSymbolHTML = '';
-    if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
-      trainSymbolHTML = `<img class="train-symbol" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${train.linie || ''}</div>'">`;
+    if (hasLineIcon(train)) {
+      trainSymbolHTML = `<img class="train-symbol" src="${getLineIconSrc(train)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${train.linie || ''}</div>'">`;
     } else {
       trainSymbolHTML = `<div class="line-badge">${train.linie || ''}</div>`;
     }
@@ -85,7 +95,7 @@ const Templates = {
     const entryClasses = ['train-entry'];
     if (isFirstTrain) entryClasses.push('first-train');
     if (train.linie === 'FEX') entryClasses.push('fex-entry');
-    if (train.linie === 'SEV') entryClasses.push('sev-entry');
+    if (isErsatzverkehr(train)) entryClasses.push('sev-entry');
     if (train._isPastTrain) entryClasses.push('past-train');
     
     // Create a temporary container for departure HTML
@@ -337,7 +347,7 @@ const Templates = {
     const blockClasses = ['belegungsplan-train-block', `overlap-${overlapLevel}`];
     const normalizedLine = typeof train.linie === 'string' ? train.linie.trim() : '';
     const isFexLine = /^fex$/i.test(normalizedLine);
-    const isSevLine = /^sev$/i.test(normalizedLine);
+    const isSevLine = isErsatzverkehr(train);
     const lineColor = getLineColor(normalizedLine || 's1');
 
     let lineBgColor = lineColor;
@@ -387,8 +397,8 @@ const Templates = {
     
     if (duration >= 30) {
       let lineIconHTML = '';
-      if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
-        lineIconHTML = `<img class="belegungsplan-line-icon" src="${getTrainSVG(train.linie)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill belegungsplan-line-badge\\'>${train.linie || ''}</div>'">`;  
+      if (hasLineIcon(train)) {
+        lineIconHTML = `<img class="belegungsplan-line-icon" src="${getLineIconSrc(train)}" alt="${train.linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill belegungsplan-line-badge\\'>${train.linie || ''}</div>'">`;  
       } else {
         lineIconHTML = `<div class="line-badge belegungsplan-line-badge">${train.linie || ''}</div>`;
       }
@@ -406,6 +416,8 @@ const Templates = {
     // tooltip in render-trains.js (deliberately not the native `title` tooltip,
     // which follows the cursor and would sit right under it).
     const tooltipText = `${train.linie || ''} ${train.ziel || ''}`.trim().replace(/"/g, '&quot;');
+    // Full (unclipped) occupancy range - the week view always shows it on hover.
+    const timeRangeText = trainStart && trainEnd ? `${formatClock(trainStart)} – ${formatClock(trainEnd)}` : '';
 
     return `
       <div class="${blockClasses.join(' ')}"
@@ -413,7 +425,8 @@ const Templates = {
            data-unique-id="${train._uniqueId || ''}"
            data-linie="${train.linie || ''}"
            data-plan="${train.plan || ''}"
-           data-tooltip="${tooltipText}">
+           data-tooltip="${tooltipText}"
+           data-time-range="${timeRangeText}">
         ${headerHTML}
       </div>
     `;
@@ -457,10 +470,11 @@ const Templates = {
   /**
    * Unified header for the Belegungsplan (day/week toggle + date picker + nav)
    */
-  belegungsplanHeader(label, mode, dateInputValue, minDateStr, maxDateStr) {
+  belegungsplanHeader(label, mode, dateInputValue, minDateStr, maxDateStr, lineFilter = null) {
     const toggleLabel = mode === 'week' ? 'Tag' : 'Woche';
     const minAttr = minDateStr ? ` min="${minDateStr}"` : '';
     const maxAttr = maxDateStr ? ` max="${maxDateStr}"` : '';
+    const lineFilterHTML = lineFilter ? this.belegungsplanLineFilter(lineFilter) : '';
     return `
       <div class="belegungsplan-page-header">
         <button class="belegungsplan-nav-btn" id="belegungsplan-prev-btn" aria-label="Zur&uuml;ck">&#8249;</button>
@@ -471,6 +485,38 @@ const Templates = {
         <button class="belegungsplan-nav-btn" id="belegungsplan-next-btn" aria-label="Weiter">&#8250;</button>
         <button class="belegungsplan-today-btn" id="belegungsplan-today-btn">Heute</button>
         <button class="belegungsplan-toggle-btn" id="belegungsplan-toggle-btn">${toggleLabel}</button>
+        ${lineFilterHTML}
+      </div>
+    `;
+  },
+
+  /**
+   * Line show/hide dropdown for the Belegungsplan week view header.
+   * lineFilter: { lines: string[], hidden: Set<string>, open: boolean }
+   */
+  belegungsplanLineFilter({ lines, hidden, open }) {
+    const visibleCount = lines.filter(l => !hidden.has(l)).length;
+    const btnLabel = visibleCount < lines.length ? `Linien (${visibleCount}/${lines.length})` : 'Linien';
+    const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const itemsHTML = lines.length
+      ? lines.map(line => `
+          <label class="belegungsplan-line-filter-item">
+            <input type="checkbox" value="${escapeAttr(line)}"${hidden.has(line) ? '' : ' checked'}>
+            <span class="belegungsplan-line-filter-swatch" style="background: ${getLineColor(line || 's1')}"></span>
+            <span>${escapeAttr(line || 'Ohne Linie')}</span>
+          </label>
+        `).join('')
+      : '<div class="belegungsplan-line-filter-empty">Keine Linien</div>';
+    return `
+      <div class="belegungsplan-line-filter" id="belegungsplan-line-filter">
+        <button class="belegungsplan-line-filter-btn${visibleCount < lines.length ? ' is-filtered' : ''}" id="belegungsplan-line-filter-btn" aria-haspopup="true" aria-expanded="${open}">${btnLabel}</button>
+        <div class="belegungsplan-line-filter-popover${open ? ' open' : ''}">
+          <div class="belegungsplan-line-filter-actions">
+            <button type="button" data-action="all">Alle</button>
+            <button type="button" data-action="none">Keine</button>
+          </div>
+          <div class="belegungsplan-line-filter-list">${itemsHTML}</div>
+        </div>
       </div>
     `;
   },
@@ -540,8 +586,8 @@ const Templates = {
    * Create line icon element (img or badge)
    */
   lineIcon(linie, className = 'train-symbol', fontSize = 'inherit') {
-    if (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || linie === 'SEV' || /^\d+$/.test(linie))) {
-      return `<img class="${className}" src="${getTrainSVG(linie)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\' style=\\'font-size: ${fontSize}\\'>${linie || ''}</div>'">`;  
+    if (hasLineIcon(linie)) {
+      return `<img class="${className}" src="${getLineIconSrc(linie)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\' style=\\'font-size: ${fontSize}\\'>${linie || ''}</div>'">`;  
     } else {
       return `<div class="line-badge" style="font-size: ${fontSize}">${linie || ''}</div>`;
     }
@@ -723,8 +769,8 @@ const Templates = {
    * Create line picker option button (mobile)
    */
   linePickerOption(linie, beschreibung) {
-    const iconHTML = (typeof linie === 'string' && (/^S\d+/i.test(linie) || linie === 'FEX' || linie === 'SEV' || /^\d+$/.test(linie)))
-      ? `<img src="${getTrainSVG(linie)}" alt="${linie}" style="height: 2vh; width: auto;" onerror="this.outerHTML='<div style=\\'padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;\\'>${linie}</div>'">`
+    const iconHTML = hasLineIcon(linie)
+      ? `<img src="${getLineIconSrc(linie)}" alt="${linie}" style="height: 2vh; width: auto;" onerror="this.outerHTML='<div style=\\'padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;\\'>${linie}</div>'">`
       : `<div style="padding: 0.5vh 1vw; background: rgba(255,255,255,0.2); border-radius: 2px; font-weight: bold; font-size: 2vh;">${linie}</div>`;
     
     return `
@@ -910,7 +956,9 @@ const Templates = {
    * Create station search suggestion item
    */
   stationSuggestion(station) {
-    const label = station.ds100 ? `${station.name} (${station.ds100})` : station.name;
+    const label = station.vvs
+      ? `${station.name}${station.place ? `, ${station.place}` : ''} · VVS`
+      : station.ds100 ? `${station.name} (${station.ds100})` : station.name;
     return `
       <div class="suggestion-item" title="${label}">
         ${label}

@@ -9,6 +9,7 @@
 
 const SETTINGS_DEFAULTS = {
   turnaroundThresholdMin: 15,
+  showShortTurnaroundReason: true,
   delayReasons: [
     'Fahrzeugmangel',
     'Verspätete Bereitstellung des Zuges',
@@ -247,6 +248,7 @@ function _buildDelayReasonsSection() {
   );
 
   _buildNumberRow(section, 'Kurze-Wendezeit-Schwelle (Minuten)', 'turnaroundThresholdMin', { min: 0 });
+  _buildCheckboxRow(section, '"Kurze Wendezeit" als Hinweis anzeigen', 'showShortTurnaroundReason');
   _buildStringListEditor(section, 'delayReasons', '+ Grund hinzufügen', 'Neuer Grund');
 
   return section;
@@ -424,6 +426,21 @@ function _buildNotificationsSection() {
   }
 
   async function refreshPushStatus() {
+    // Without a secure context there is no Notification and no serviceWorker at
+    // all, so reading Notification.permission here used to throw and leave every
+    // button disabled with no explanation. Say so instead of dying silently.
+    if (!('Notification' in window)) {
+      permLabel.textContent = window.isSecureContext
+        ? 'Browser-Berechtigung: Nicht unterstützt'
+        : 'Browser-Berechtigung: Nur über HTTPS oder localhost verfügbar';
+      setDot(permDot, 'err');
+      subLabel.textContent = 'Dieses Gerät: Nicht unterstützt';
+      setDot(subDot, 'err');
+      serverLabel.textContent = 'Server: –';
+      setDot(serverDot, '');
+      return;
+    }
+
     const perm = Notification.permission;
     permLabel.textContent = 'Browser-Berechtigung: ' + (perm === 'granted' ? 'Erlaubt' : perm === 'denied' ? 'Verweigert' : 'Nicht gesetzt');
     setDot(permDot, perm === 'granted' ? 'ok' : perm === 'denied' ? 'err' : 'warn');
@@ -438,7 +455,14 @@ function _buildNotificationsSection() {
     }
 
     try {
-      const reg = await navigator.serviceWorker.ready;
+      // serviceWorker.ready never resolves if no worker ever activates (a
+      // failed install, or a page outside the worker's scope). Without this
+      // race the await hangs forever and the buttons stay disabled silently.
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => setTimeout(
+          () => reject(new Error('Service Worker nicht aktiv')), 5000))
+      ]);
       const sub = await reg.pushManager.getSubscription();
       subLabel.textContent = 'Dieses Gerät: ' + (sub ? 'Angemeldet' : 'Nicht angemeldet');
       setDot(subDot, sub ? 'ok' : '');
@@ -446,8 +470,12 @@ function _buildNotificationsSection() {
       btnUnsubscribe.disabled = !sub;
       btnTest.disabled = !sub;
     } catch (e) {
-      subLabel.textContent = 'Dieses Gerät: Fehler';
+      console.error('Push status check failed:', e);
+      subLabel.textContent = 'Dieses Gerät: Fehler (' + (e && e.message ? e.message : 'unbekannt') + ')';
       setDot(subDot, 'err');
+      // The permission is known and the browser can subscribe - only the
+      // status read failed, so leave the way back in open.
+      btnSubscribe.disabled = perm === 'denied';
     }
 
     try {
@@ -506,10 +534,18 @@ function _buildNotificationsSection() {
     }
   });
 
+  // refreshPushStatus() must never reject unhandled - an unhandled rejection
+  // here is exactly what left the whole panel greyed out.
+  function safeRefreshPushStatus() {
+    return Promise.resolve().then(refreshPushStatus).catch(function (e) {
+      console.error('Push status refresh failed:', e);
+    });
+  }
+
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js').then(refreshPushStatus).catch(refreshPushStatus);
+    navigator.serviceWorker.register('/service-worker.js').then(safeRefreshPushStatus, safeRefreshPushStatus);
   } else {
-    refreshPushStatus();
+    safeRefreshPushStatus();
   }
 
   return section;
@@ -539,6 +575,94 @@ function _buildLookaheadSection() {
     `Wie viele Tage im Voraus wiederkehrende Fahrten und geplante Benachrichtigungen erzeugt werden (maximal ${LOOKAHEAD_WINDOW_MAX_DAYS} Tage). Täglich/wöchentlich/werktags nutzen dieses Fenster; monatliche und jährliche Muster verwenden weiterhin ihr eigenes volles Zeitfenster.`
   );
   _buildNumberRow(section, `Vorschau-Fenster (Tage, max. ${LOOKAHEAD_WINDOW_MAX_DAYS})`, 'lookaheadWindowDays', { min: 1, max: LOOKAHEAD_WINDOW_MAX_DAYS });
+  return section;
+}
+
+// Print export of the timetable for a chosen range (see print-schedule.js).
+// The range isn't a setting, so it lives in local inputs instead of _settingsDraft.
+function _buildPrintSection() {
+  const section = _buildSettingsSection(
+    'Fahrplan drucken',
+    'Wähle einen Zeitraum, um den Fahrplan als druckbare Übersicht zu exportieren. Im Druckdialog lässt er sich auch als PDF speichern.'
+  );
+
+  const toInputValue = d =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const dayStart = offset => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + offset); return d; };
+  const dayEnd = offset => { const d = dayStart(offset); d.setHours(23, 59, 0, 0); return d; };
+
+  function buildDateTimeRow(labelText, initial) {
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    const label = document.createElement('label');
+    label.className = 'settings-label';
+    label.textContent = labelText;
+    const input = document.createElement('input');
+    input.type = 'datetime-local';
+    input.className = 'settings-input';
+    input.value = toInputValue(initial);
+    row.append(label, input);
+    section.appendChild(row);
+    return input;
+  }
+
+  const fromInput = buildDateTimeRow('Von', dayStart(0));
+  const toInput = buildDateTimeRow('Bis', dayEnd(6));
+
+  const presetRow = document.createElement('div');
+  presetRow.className = 'settings-print-presets';
+  [
+    { label: 'Heute', from: 0, to: 0 },
+    { label: 'Morgen', from: 1, to: 1 },
+    { label: '7 Tage', from: 0, to: 6 },
+    { label: '14 Tage', from: 0, to: 13 }
+  ].forEach(function (preset) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'settings-add-reason';
+    btn.textContent = preset.label;
+    btn.addEventListener('click', function () {
+      fromInput.value = toInputValue(dayStart(preset.from));
+      toInput.value = toInputValue(dayEnd(preset.to));
+    });
+    presetRow.appendChild(btn);
+  });
+  section.appendChild(presetRow);
+
+  const canceledRow = document.createElement('div');
+  canceledRow.className = 'settings-row';
+  const canceledLabel = document.createElement('label');
+  canceledLabel.className = 'settings-label';
+  canceledLabel.textContent = 'Ausgefallene Fahrten mitdrucken';
+  const canceledInput = document.createElement('input');
+  canceledInput.type = 'checkbox';
+  canceledInput.checked = true;
+  canceledRow.append(canceledLabel, canceledInput);
+  section.appendChild(canceledRow);
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'settings-push-buttons';
+  const printBtn = document.createElement('button');
+  printBtn.type = 'button';
+  printBtn.className = 'settings-btn-subscribe';
+  printBtn.textContent = 'Drucken…';
+  printBtn.addEventListener('click', function () {
+    const from = new Date(fromInput.value);
+    const to = new Date(toInput.value);
+    if (isNaN(from) || isNaN(to)) {
+      alert('Bitte einen gültigen Zeitraum wählen.');
+      return;
+    }
+    if (to < from) {
+      alert('Das Ende des Zeitraums liegt vor dem Anfang.');
+      return;
+    }
+    const opened = window.printScheduleRange(from, to, { includeCanceled: canceledInput.checked });
+    if (!opened) alert('Das Druckfenster konnte nicht geöffnet werden. Bitte Pop-ups für diese Seite erlauben.');
+  });
+  btnRow.appendChild(printBtn);
+  section.appendChild(btnRow);
+
   return section;
 }
 
@@ -768,6 +892,7 @@ async function renderSettingsPage() {
   scroll.appendChild(_buildJournalSection());
   scroll.appendChild(_buildLookaheadSection());
   scroll.appendChild(_buildCurfewSection());
+  scroll.appendChild(_buildPrintSection());
   scroll.appendChild(_buildDataBackupSection());
   scroll.appendChild(_buildJournalBackupSection());
   scroll.appendChild(_buildSettingsBackupSection());

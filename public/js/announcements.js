@@ -88,6 +88,41 @@
 
     // Render comprehensive announcement panel with all announcement types
 
+    /**
+     * Nav-rail alert dot on "Meldungen": lit only while a Konflikt exists —
+     * two active (non-cancelled) upcoming trains whose occupancy windows
+     * overlap. Same rule as the drawer's Konflikt section below, including
+     * its "all future, not just today" scope; this one stops at the first
+     * overlap it finds rather than collecting every pair.
+     */
+    function updateAnnouncementsDot() {
+      const dot = document.getElementById('announcements-dot');
+      if (!dot) return;
+
+      const now = new Date();
+      const active = ((processedTrainData && processedTrainData.futureTrains) || [])
+        .filter(t => !t.canceled);
+
+      let conflict = false;
+      outer:
+      for (let i = 0; i < active.length; i++) {
+        const start1 = parseTime(active[i].actual || active[i].plan, now, active[i].date);
+        const end1   = getOccupancyEnd(active[i], now);
+        if (!start1 || !end1) continue;
+
+        for (let j = i + 1; j < active.length; j++) {
+          const start2 = parseTime(active[j].actual || active[j].plan, now, active[j].date);
+          const end2   = getOccupancyEnd(active[j], now);
+          if (!start2 || !end2) continue;
+
+          if (start1 < end2 && end1 > start2) { conflict = true; break outer; }
+        }
+      }
+
+      dot.hidden = !conflict;
+    }
+    window.updateAnnouncementsDot = updateAnnouncementsDot;
+
     function renderComprehensiveAnnouncementPanel() {
       const now = new Date();
       const panel = document.getElementById('announcement-panel'); // MOVED to bottom panel
@@ -327,8 +362,8 @@
 
           // Main train icon
           const mainIcon = clone.querySelector('[data-konflikt="main-icon"]');
-          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
-            mainIcon.src = getTrainSVG(train.linie);
+          if (hasLineIcon(train)) {
+            mainIcon.src = getLineIconSrc(train);
             mainIcon.alt = train.linie;
             mainIcon.onerror = () => {
               const template = document.createElement('template');
@@ -349,8 +384,8 @@
 
           // Conflict train icon
           const conflictIcon = clone.querySelector('[data-konflikt="conflict-icon"]');
-          if (typeof conflictTrain.linie === 'string' && (/^S\d+/i.test(conflictTrain.linie) || conflictTrain.linie === 'FEX' || conflictTrain.linie === 'SEV' || /^\d+$/.test(conflictTrain.linie))) {
-            conflictIcon.src = getTrainSVG(conflictTrain.linie);
+          if (hasLineIcon(conflictTrain)) {
+            conflictIcon.src = getLineIconSrc(conflictTrain);
             conflictIcon.alt = conflictTrain.linie;
             conflictIcon.onerror = () => {
               const template = document.createElement('template');
@@ -585,8 +620,8 @@
           lineIconTypeGroup.style.display = 'none';
         } else {
           const lineIcon = clone.querySelector('[data-announcement="line-icon"]');
-          if (typeof train.linie === 'string' && (/^S\d+/i.test(train.linie) || train.linie === 'FEX' || train.linie === 'SEV' || /^\d+$/.test(train.linie))) {
-            lineIcon.src = getTrainSVG(train.linie);
+          if (hasLineIcon(train)) {
+            lineIcon.src = getLineIconSrc(train);
             lineIcon.alt = train.linie;
             lineIcon.onerror = () => {
               const template = document.createElement('template');

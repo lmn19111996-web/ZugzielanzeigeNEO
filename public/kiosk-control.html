@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kiosk-Steuerung</title>
+  <meta name="theme-color" content="#161B75">
+  <link rel="stylesheet" href="design-tokens.css">
+  <style>
+    :root {
+      --kc-reachable: rgb(99, 166, 21);   /* check-in green (checked-in status text) */
+      --kc-unreachable: #eab308;          /* check-in yellow (checkin.svg) */
+      --kc-card: rgba(255, 255, 255, 0.07);
+      --kc-line: rgba(255, 255, 255, 0.18);
+      --kc-muted: rgba(255, 255, 255, 0.65);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      background: var(--color-bg-primary);
+      color: white;
+      font-family: "Bahnschrift", "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+      font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px 110px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+    .page-sub {
+      color: var(--kc-muted);
+      margin: 0 0 24px;
+    }
+    .page-sub a { color: white; }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 14px;
+    }
+
+    .card {
+      background: var(--kc-card);
+      border: 1px solid var(--kc-line);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .hint {
+      color: var(--kc-muted);
+      font-size: 14px;
+      margin: 6px 0 0;
+    }
+
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    input[type="text"], input[type="number"], input[type="time"], select, textarea {
+      font: inherit;
+      color: white;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--kc-line);
+      border-radius: 8px;
+      padding: 9px 11px;
+      min-width: 0;
+    }
+    input[type="time"] { color-scheme: dark; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid rgba(255, 255, 255, 0.6); outline-offset: 1px; }
+
+    button {
+      font: inherit;
+      color: white;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--kc-line);
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    button:hover { background: rgba(255, 255, 255, 0.2); }
+    button.small { padding: 4px 10px; font-size: 14px; }
+    button.link {
+      background: none;
+      border: none;
+      padding: 4px 0;
+      text-decoration: underline;
+      color: var(--kc-muted);
+      font-size: 14px;
+    }
+
+    /* ── Screen mode ── */
+    .mode-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+    }
+    .mode-option {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid var(--kc-line);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .mode-option:has(input:checked) {
+      border-color: white;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .mode-option input { margin-top: 3px; accent-color: white; }
+    .mode-option strong { display: block; }
+    .mode-option span { color: var(--kc-muted); font-size: 14px; }
+
+    .mode-extra { margin-top: 16px; }
+    .mode-extra[hidden] { display: none; }
+
+    .inline-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .inline-field input[type="number"] { width: 90px; }
+
+    .schedule-day {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--kc-line);
+    }
+    .schedule-day:first-child { border-top: none; }
+    .schedule-day-name { font-weight: 600; padding-top: 8px; }
+    .schedule-windows { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .schedule-window {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 4px 6px;
+    }
+    .schedule-window input, .schedule-window select { padding: 5px 6px; }
+    #alternate-screens label { display: inline-flex; align-items: center; gap: 6px; }
+    #alternate-screens input { accent-color: white; width: 16px; height: 16px; }
+    .schedule-empty { color: var(--kc-muted); font-size: 14px; }
+
+    /* ── Sides ── */
+    .sides {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+    .sides .card { margin-bottom: 0; }
+
+    .side-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .side-arrow { font-size: 26px; line-height: 1; }
+
+    .field { margin-top: 16px; }
+    .field > label, .field-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .search-wrap { position: relative; }
+    .search-wrap input { width: 100%; }
+    .suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 10;
+      max-height: 320px;
+      overflow-y: auto;
+      background: #0e1250;
+      border: 1px solid var(--kc-line);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .suggestions[hidden] { display: none; }
+    .suggestion {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 0;
+      background: none;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .suggestion:hover, .suggestion.active { background: rgba(255, 255, 255, 0.14); }
+    .suggestion small { display: block; color: var(--kc-muted); font-size: 13px; }
+
+    .selected-station {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 18px;
+    }
+    .selected-station img { height: 28px; width: auto; }
+    .source-tag {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .platforms { display: grid; gap: 8px; }
+    .platform {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid var(--kc-line);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .platform:has(input:checked) {
+      border-color: white;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .platform input { grid-row: span 3; margin-top: 4px; width: 18px; height: 18px; accent-color: white; }
+    .platform-name { font-weight: 600; font-size: 17px; }
+    .platform-lines { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .platform-dirs { color: var(--kc-muted); font-size: 14px; }
+    .platform-dirs b { color: white; font-weight: 400; }
+
+    .kiosk-line-icon { height: 20px; width: auto; display: block; }
+    .kiosk-line-icon--square { height: 22px; }
+    .kiosk-line-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 20px;
+      min-width: 34px;
+      padding: 0 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 14px;
+      background: rgba(110, 110, 120, 0.9);
+      white-space: nowrap;
+    }
+
+    .icon-row { display: flex; align-items: center; gap: 12px; }
+    .icon-row img { height: 34px; width: auto; }
+
+    .preview-list { display: grid; gap: 6px; }
+    .preview-item {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 4px 10px;
+      align-items: center;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+    .preview-item .dest { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .preview-item .time { font-variant-numeric: tabular-nums; }
+    .preview-item .status { grid-column: 2 / -1; font-size: 14px; }
+    .status.ok { color: var(--kc-reachable); }
+    .status.no { color: var(--kc-unreachable); }
+
+    .muted { color: var(--kc-muted); }
+    .error { color: var(--kc-unreachable); }
+
+    /* ── Save bar ── */
+    .save-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(10, 12, 60, 0.96);
+      border-top: 1px solid var(--kc-line);
+    }
+    .save-bar button {
+      background: white;
+      color: var(--color-bg-primary);
+      font-weight: 600;
+      padding: 10px 28px;
+    }
+    .save-bar button:disabled { opacity: 0.5; cursor: default; }
+    #save-status { min-width: 140px; color: var(--kc-muted); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Kiosk-Steuerung</h1>
+    <p class="page-sub">Einstellungen für das Kiosk-Display (<a href="kiosk.html" target="_blank">Kiosk öffnen</a>). Änderungen erscheinen nach dem Speichern sofort auf dem Display.</p>
+
+    <section class="card">
+      <h2>Anzeige</h2>
+      <div class="mode-options" id="mode-options">
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="abfahrten">
+          <div><strong>Nächste Abfahrten</strong><span>Immer die eigenen nächsten Fahrten</span></div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="board">
+          <div><strong>Abfahrtstafel</strong><span>Immer die Live-Abfahrten der zwei Haltestellen</span></div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="fex">
+          <div><strong>Nächster FEX</strong><span>Nacheinander alle Fahrten der gewählten Linie (Standard FEX), auch Tage im Voraus</span></div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="buffet">
+          <div><strong>Buffet</strong><span>Nacheinander die nächste Fahrt jeder Linie</span></div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="announcement">
+          <div><strong>Durchsage</strong><span>Eigene Nachricht, nur mit Uhr in der Kopfzeile</span></div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="alternate">
+          <div><strong>Abwechselnd</strong><span>Gewählte Ansichten im festen Takt</span></div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="screenMode" value="schedule">
+          <div><strong>Nach Zeitplan</strong><span>Abfahrtstafel oder FEX in festen Zeitfenstern, sonst Nächste Abfahrten</span></div>
+        </label>
+      </div>
+
+      <div class="mode-extra">
+        <div class="inline-field">
+          <label for="focus-lead">Nächste Abfahrten: Fahrt bildschirmfüllend ab</label>
+          <input type="number" id="focus-lead" min="0" max="180" step="1">
+          <span>Minuten vor Abfahrt</span>
+        </div>
+        <p class="hint">Die nächste Fahrt wird so lange vorher groß mit Details angezeigt und bleibt es, bis sie vorbei ist. 0 = erst ab Abfahrt.</p>
+      </div>
+
+      <div class="mode-extra">
+        <div class="inline-field">
+          <label for="fex-cycle">Nächster FEX / Buffet: nächste Fahrt alle</label>
+          <input type="number" id="fex-cycle" min="3" max="600" step="1">
+          <span>Sekunden</span>
+        </div>
+        <div class="inline-field" style="margin-top: 12px;">
+          <label for="fex-line">Nächster FEX: Linien</label>
+          <input type="text" id="fex-line" maxlength="200" placeholder="FEX" style="width: 16em;">
+        </div>
+        <p class="hint">Beide zeigen ihre Fahrten nacheinander (alle Fahrten der Linie bzw. die nächste Fahrt jeder Linie) und beginnen dann von vorn. Linien wie im Fahrplan geschrieben, mehrere mit Komma getrennt, z. B. FEX, S1, U6.</p>
+      </div>
+
+      <div class="mode-extra">
+        <label for="announcement">Durchsage</label>
+        <textarea id="announcement" rows="5" maxlength="2000" placeholder="Überschrift&#10;Text der Durchsage …" style="margin-top: 8px;"></textarea>
+        <p class="hint">Die erste Zeile wird fett als Überschrift angezeigt, der Rest darunter. Ohne Text wird die Durchsage beim Abwechseln und im Zeitplan übersprungen.</p>
+      </div>
+
+      <div class="mode-extra" id="extra-alternate" hidden>
+        <div class="inline-field" id="alternate-screens">
+          <span>Ansichten:</span>
+          <label><input type="checkbox" value="abfahrten"> Nächste Abfahrten</label>
+          <label><input type="checkbox" value="board"> Abfahrtstafel</label>
+          <label><input type="checkbox" value="fex"> Nächster FEX</label>
+          <label><input type="checkbox" value="buffet"> Buffet</label>
+          <label><input type="checkbox" value="announcement"> Durchsage</label>
+        </div>
+        <div class="inline-field" style="margin-top: 12px;">
+          <label for="alternate-seconds">Wechsel alle</label>
+          <input type="number" id="alternate-seconds" min="5" max="3600" step="1">
+          <span>Sekunden</span>
+        </div>
+        <p class="hint">FEX, Buffet und Durchsage werden übersprungen, solange sie nichts zu zeigen haben.</p>
+      </div>
+
+      <div class="mode-extra" id="extra-schedule" hidden>
+        <div id="schedule-days"></div>
+        <p class="hint">Je Zeitfenster Abfahrtstafel oder FEX wählen; außerhalb der Zeitfenster (und in FEX-Fenstern ohne geplante FEX-Fahrt) zeigt der Kiosk die Nächsten Abfahrten. Ein Fenster über Mitternacht (z. B. 22:00–01:00) gilt ab dem eingetragenen Tag.</p>
+      </div>
+    </section>
+
+    <div class="sides" id="sides"></div>
+  </div>
+
+  <div class="save-bar">
+    <span id="save-status"></span>
+    <button type="button" id="save-btn">Speichern</button>
+  </div>
+
+<script src="js/utils.js"></script>
+<script src="js/kiosk-shared.js"></script>
+<script>
+  // === KIOSK CONTROL ===
+
+  const SIDE_META = [
+    { title: 'Linke Seite', arrow: '←' },
+    { title: 'Rechte Seite', arrow: '→' }
+  ];
+  // Mon–Sun display order, Date#getDay keys (0 = Sunday)
+  const DAYS = [[1, 'Mo'], [2, 'Di'], [3, 'Mi'], [4, 'Do'], [5, 'Fr'], [6, 'Sa'], [0, 'So']];
+  const BUS_ONLY_TRANSPORTS = new Set(['BUS', 'SHUTTLE', 'TAXI', 'ON_DEMAND']);
+
+  let config = null;
+  let dirty = false;
+  // Per side, UI-only: fetched departures for the Gleis-Vorschau
+  const sideState = [
+    { trains: [], loading: false, error: '', iconTouched: false },
+    { trains: [], loading: false, error: '', iconTouched: false }
+  ];
+
+  function markDirty() {
+    dirty = true;
+    document.getElementById('save-status').textContent = 'Nicht gespeichert';
+  }
+
+  // ── Station index (same sources as the main app's station picker) ──
+  let stationIndexPromise = null;
+
+  function normalize(s) {
+    try { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+    catch { return String(s || '').toLowerCase(); }
+  }
+
+  function loadStationIndex() {
+    if (stationIndexPromise) return stationIndexPromise;
+    stationIndexPromise = Promise.all([
+      fetch('vvs-stations.json').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('stations.json').then(r => r.ok ? r.json() : []).catch(() => [])
+    ]).then(([vvs, db]) => {
+      const dbList = (Array.isArray(db) ? db : (db.stations || []))
+        .filter(s => /^\d{6,8}$/.test(String(s.eva || '')))
+        .filter(s => {
+          const tr = s.available_transports || [];
+          return !tr.length || !tr.every(t => BUS_ONLY_TRANSPORTS.has(String(t).toUpperCase()));
+        })
+        .map(s => ({ name: s.name, eva: String(s.eva), source: 'DB', detail: s.ds100 || '' }));
+      const vvsList = (vvs || []).map(s => ({
+        name: s.name,
+        eva: s.eva,
+        source: 'VVS',
+        detail: [s.place, s.lines].filter(Boolean).join(' · '),
+        searchText: s.searchText || ''
+      }));
+      return [...vvsList, ...dbList].map(s => ({ ...s, _hay: normalize(`${s.name} ${s.detail} ${s.searchText || ''}`), _name: normalize(s.name) }));
+    });
+    return stationIndexPromise;
+  }
+
+  async function searchStations(query) {
+    const q = normalize(query.trim());
+    if (q.length < 2) return [];
+    const words = q.split(/\s+/).filter(Boolean);
+    const index = await loadStationIndex();
+    const rank = s => (s._name === q ? 0 : s._name.startsWith(q) ? 1 : 2);
+    return index
+      .filter(s => words.every(w => s._hay.includes(w)))
+      .map((s, i) => ({ s, i, r: rank(s) }))
+      .sort((a, b) => a.r - b.r || a.i - b.i)
+      .slice(0, 40)
+      .map(x => x.s);
+  }
+
+  // ── Departures for the Gleis-Vorschau ──
+  async function loadSideDepartures(i) {
+    const side = config.sides[i];
+    const state = sideState[i];
+    if (!side) { state.trains = []; renderSide(i); return; }
+    state.loading = true;
+    state.error = '';
+    renderSide(i);
+    try {
+      const res = await fetch(`/api/db-departures?eva=${encodeURIComponent(side.eva)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      state.trains = (data.trains || []).filter(t => t.ziel !== 'Ankunft');
+    } catch (e) {
+      state.trains = [];
+      state.error = e.message || 'Abfahrten konnten nicht geladen werden';
+    } finally {
+      state.loading = false;
+      maybeAutoIcon(i);
+      renderSide(i);
+    }
+  }
+
+  // Header symbol follows the selected platforms until the user picks one
+  function maybeAutoIcon(i) {
+    const side = config.sides[i];
+    if (!side || sideState[i].iconTouched) return;
+    const platforms = new Set(side.platforms);
+    const relevant = sideState[i].trains.filter(t => !platforms.size || platforms.has(kioskPlatformOf(t)));
+    const detected = kioskDetectStationIcon(relevant.length ? relevant : sideState[i].trains);
+    if (detected !== side.icon) {
+      side.icon = detected;
+      markDirty();
+    }
+  }
+
+  function groupByPlatform(trains) {
+    const groups = new Map();
+    trains.forEach(t => {
+      const key = kioskPlatformOf(t);
+      if (!groups.has(key)) groups.set(key, { platform: key, lines: new Map(), dirs: new Map(), trains: [] });
+      const g = groups.get(key);
+      g.trains.push(t);
+      if (!g.lines.has(t.linie)) g.lines.set(t.linie, t);
+      g.dirs.set(t.ziel, (g.dirs.get(t.ziel) || 0) + 1);
+    });
+    const numeric = s => (/^\d+/.test(s) ? parseInt(s, 10) : Infinity);
+    return [...groups.values()].sort((a, b) =>
+      (a.platform === '') - (b.platform === '') || numeric(a.platform) - numeric(b.platform) || a.platform.localeCompare(b.platform));
+  }
+
+  // ── Rendering ──
+  function renderMode() {
+    document.querySelectorAll('input[name="screenMode"]').forEach(r => { r.checked = r.value === config.screenMode; });
+    document.getElementById('extra-alternate').hidden = config.screenMode !== 'alternate';
+    document.getElementById('extra-schedule').hidden = config.screenMode !== 'schedule';
+    document.getElementById('alternate-seconds').value = config.alternateSeconds;
+    document.querySelectorAll('#alternate-screens input').forEach(cb => {
+      cb.checked = (config.alternateScreens || []).includes(cb.value);
+    });
+    document.getElementById('focus-lead').value = config.focusLeadMinutes;
+    document.getElementById('fex-cycle').value = config.fexCycleSeconds;
+    document.getElementById('fex-line').value = config.fexLine || 'FEX';
+    document.getElementById('announcement').value = config.announcement || '';
+    renderSchedule();
+  }
+
+  function renderSchedule() {
+    const root = document.getElementById('schedule-days');
+    root.innerHTML = DAYS.map(([day, label]) => {
+      const windows = config.schedule[day] || [];
+      const copy = day === 1 ? '<button type="button" class="link" data-copy="1" data-to="2,3,4,5">Auf Di–Fr übertragen</button>'
+        : day === 6 ? '<button type="button" class="link" data-copy="6" data-to="0">Auf So übertragen</button>' : '';
+      return `
+        <div class="schedule-day">
+          <div class="schedule-day-name">${label}</div>
+          <div class="schedule-windows">
+            ${windows.length ? '' : '<span class="schedule-empty">Kein Zeitfenster</span>'}
+            ${windows.map((w, idx) => `
+              <span class="schedule-window">
+                <input type="time" value="${w.from}" data-day="${day}" data-idx="${idx}" data-field="from" aria-label="${label} von">
+                –
+                <input type="time" value="${w.to}" data-day="${day}" data-idx="${idx}" data-field="to" aria-label="${label} bis">
+                <select data-day="${day}" data-idx="${idx}" data-field="screen" aria-label="${label} Ansicht">
+                  <option value="board" ${(w.screen || 'board') === 'board' ? 'selected' : ''}>Abfahrtstafel</option>
+                  <option value="fex" ${w.screen === 'fex' ? 'selected' : ''}>FEX</option>
+                  <option value="buffet" ${w.screen === 'buffet' ? 'selected' : ''}>Buffet</option>
+                  <option value="announcement" ${w.screen === 'announcement' ? 'selected' : ''}>Durchsage</option>
+                </select>
+                <button type="button" class="small" data-remove-day="${day}" data-idx="${idx}" aria-label="Zeitfenster entfernen">✕</button>
+              </span>`).join('')}
+            <button type="button" class="small" data-add-day="${day}">+ Zeitfenster</button>
+            ${copy}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderSide(i) {
+    const root = document.getElementById(`side-${i}`);
+    const side = config.sides[i];
+    const state = sideState[i];
+    const meta = SIDE_META[i];
+
+    let body = '';
+    if (side) {
+      const iconSrc = KIOSK_STATION_ICONS[side.icon] && KIOSK_STATION_ICONS[side.icon].src;
+      body += `
+        <div class="selected-station">
+          ${iconSrc ? `<img src="${iconSrc}" alt="">` : ''}
+          <strong>${kioskEscape(side.name)}</strong>
+          <span class="source-tag">${String(side.eva).startsWith('VVS_') ? 'VVS' : 'DB'}</span>
+        </div>`;
+
+      // Gleis-Vorschau
+      body += '<div class="field"><span class="field-label">Gleis</span>';
+      if (state.loading) {
+        body += '<p class="muted">Lade Abfahrten…</p>';
+      } else if (state.error) {
+        body += `<p class="error">${kioskEscape(state.error)}</p>`;
+      } else if (!state.trains.length) {
+        body += '<p class="muted">Keine Abfahrten gefunden.</p>';
+      } else {
+        const selected = new Set(side.platforms);
+        body += '<div class="platforms">' + groupByPlatform(state.trains).map(g => {
+          const dirs = [...g.dirs.entries()].sort((a, b) => b[1] - a[1]).map(([d]) => d);
+          const shownDirs = dirs.slice(0, 4).map(d => `<b>${kioskEscape(d)}</b>`).join(', ') + (dirs.length > 4 ? ` +${dirs.length - 4}` : '');
+          return `
+            <label class="platform">
+              <input type="checkbox" data-platform="${kioskEscape(g.platform)}" ${selected.has(g.platform) ? 'checked' : ''}>
+              <span class="platform-name">${g.platform ? `Gleis ${kioskEscape(g.platform)}` : 'Ohne Gleisangabe'}</span>
+              <span class="platform-lines">${[...g.lines.values()].map(kioskLineIconHTML).join('')}</span>
+              <span class="platform-dirs">Richtung ${shownDirs}</span>
+            </label>`;
+        }).join('') + '</div>';
+        body += '<p class="hint">Kein Gleis gewählt = alle Gleise. <button type="button" class="link" data-reload>Vorschau aktualisieren</button></p>';
+      }
+      body += '</div>';
+
+      body += `
+        <div class="field">
+          <label for="walk-${i}">Gehzeit zur Haltestelle</label>
+          <div class="inline-field">
+            <input type="number" id="walk-${i}" data-walk min="0" max="120" step="1" value="${side.walkMinutes}">
+            <span>Minuten</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="field-label">Nicht erreichbare Abfahrten</span>
+          <div class="inline-field">
+            <label><input type="checkbox" data-skip-unreachable ${side.skipUnreachable ? 'checked' : ''}> Ausblenden, wenn mehr als</label>
+            <input type="number" id="grace-${i}" data-grace min="0" max="120" step="1" value="${side.unreachableGraceMinutes || 0}" ${side.skipUnreachable ? '' : 'disabled'} aria-label="Toleranz in Minuten">
+            <span>Min. zu knapp</span>
+          </div>
+          <p class="hint">Abfahrten, die mehr als so viele Minuten vor „jetzt + Gehzeit“ fahren, werden übersprungen – dafür rücken spätere nach. 0 = nur erreichbare.</p>
+        </div>
+        <div class="field">
+          <label for="icon-${i}">Symbol in der Kopfzeile</label>
+          <div class="icon-row">
+            <select id="icon-${i}" data-icon>
+              ${Object.entries(KIOSK_STATION_ICONS).map(([key, v]) => `<option value="${key}" ${side.icon === key ? 'selected' : ''}>${v.label}</option>`).join('')}
+            </select>
+            ${iconSrc ? `<img src="${iconSrc}" alt="">` : ''}
+          </div>
+        </div>`;
+
+      // What the kiosk will show right now
+      const next = kioskNextDepartures(state.trains, side, new Date());
+      body += '<div class="field"><span class="field-label">Vorschau Kiosk</span>';
+      body += next.length ? '<div class="preview-list">' + next.map(({ train, reachable }) => `
+          <div class="preview-item">
+            <span>${kioskLineIconHTML(train)}</span>
+            <span class="dest">${kioskEscape(train.ziel)}</span>
+            <span class="time">${kioskEscape(train.actual || train.plan)}</span>
+            <span class="status ${reachable ? 'ok' : 'no'}">${reachable ? 'Vsl. erreichbar' : 'Vsl. nicht erreichbar'}</span>
+          </div>`).join('') + '</div>'
+        : '<p class="muted">Keine kommenden Abfahrten.</p>';
+      body += '</div>';
+    } else {
+      body = '<p class="muted">Noch keine Haltestelle gewählt.</p>';
+    }
+
+    root.querySelector('.side-body').innerHTML = body;
+  }
+
+  function buildSides() {
+    const root = document.getElementById('sides');
+    root.innerHTML = SIDE_META.map((meta, i) => `
+      <section class="card" id="side-${i}" data-side="${i}">
+        <h2 class="side-title">
+          ${i === 0 ? `<span class="side-arrow">${meta.arrow}</span>` : ''}
+          ${meta.title}
+          ${i === 1 ? `<span class="side-arrow">${meta.arrow}</span>` : ''}
+        </h2>
+        <div class="field">
+          <label for="search-${i}">Haltestelle</label>
+          <div class="search-wrap">
+            <input type="text" id="search-${i}" data-search placeholder="Haltestelle suchen…" autocomplete="off" spellcheck="false">
+            <div class="suggestions" hidden></div>
+          </div>
+        </div>
+        <div class="side-body"></div>
+      </section>`).join('');
+
+    SIDE_META.forEach((_, i) => wireSide(i));
+  }
+
+  function chooseStation(i, station) {
+    config.sides[i] = {
+      eva: station.eva,
+      name: station.name,
+      platforms: [],
+      walkMinutes: config.sides[i] ? config.sides[i].walkMinutes : 5,
+      skipUnreachable: config.sides[i] ? !!config.sides[i].skipUnreachable : false,
+      unreachableGraceMinutes: config.sides[i] ? (config.sides[i].unreachableGraceMinutes || 0) : 0,
+      icon: 'none'
+    };
+    sideState[i].iconTouched = false;
+    sideState[i].trains = [];
+    markDirty();
+    loadSideDepartures(i);
+  }
+
+  function wireSide(i) {
+    const card = document.getElementById(`side-${i}`);
+    const input = card.querySelector('[data-search]');
+    const sugg = card.querySelector('.suggestions');
+    let results = [];
+    let active = -1;
+    let timer = null;
+
+    const close = () => { sugg.hidden = true; active = -1; };
+    const pick = (station) => { input.value = ''; close(); chooseStation(i, station); };
+    const highlight = () => sugg.querySelectorAll('.suggestion').forEach((el, idx) => {
+      el.classList.toggle('active', idx === active);
+      if (idx === active) el.scrollIntoView({ block: 'nearest' });
+    });
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        results = await searchStations(input.value);
+        active = -1;
+        if (!results.length) {
+          sugg.innerHTML = input.value.trim().length >= 2 ? '<div class="suggestion muted">Keine Haltestelle gefunden</div>' : '';
+          sugg.hidden = input.value.trim().length < 2;
+          return;
+        }
+        sugg.innerHTML = results.map((s, idx) => `
+          <button type="button" class="suggestion" data-idx="${idx}">
+            ${kioskEscape(s.name)} <span class="source-tag">${s.source}</span>
+            ${s.detail ? `<small>${kioskEscape(s.detail)}</small>` : ''}
+          </button>`).join('');
+        sugg.hidden = false;
+      }, 150);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (sugg.hidden || !results.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % results.length; highlight(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); active = active <= 0 ? results.length - 1 : active - 1; highlight(); }
+      else if (e.key === 'Enter') { e.preventDefault(); pick(results[Math.max(active, 0)]); }
+      else if (e.key === 'Escape') { close(); }
+    });
+
+    sugg.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-idx]');
+      if (btn) pick(results[Number(btn.dataset.idx)]);
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+      if (!card.querySelector('.search-wrap').contains(e.target)) close();
+    });
+
+    // Delegated controls inside the re-rendered side body
+    card.addEventListener('change', (e) => {
+      const side = config.sides[i];
+      if (!side) return;
+      if (e.target.matches('[data-platform]')) {
+        const p = e.target.dataset.platform;
+        side.platforms = e.target.checked ? [...new Set([...side.platforms, p])] : side.platforms.filter(x => x !== p);
+        markDirty();
+        maybeAutoIcon(i);
+        renderSide(i);
+      } else if (e.target.matches('[data-walk]')) {
+        side.walkMinutes = Math.min(Math.max(Math.round(Number(e.target.value)) || 0, 0), 120);
+        markDirty();
+        renderSide(i);
+      } else if (e.target.matches('[data-skip-unreachable]')) {
+        side.skipUnreachable = e.target.checked;
+        markDirty();
+        renderSide(i);
+      } else if (e.target.matches('[data-grace]')) {
+        side.unreachableGraceMinutes = Math.min(Math.max(Math.round(Number(e.target.value)) || 0, 0), 120);
+        markDirty();
+        renderSide(i);
+      } else if (e.target.matches('[data-icon]')) {
+        side.icon = e.target.value;
+        sideState[i].iconTouched = true;
+        markDirty();
+        renderSide(i);
+      }
+    });
+
+    card.addEventListener('click', (e) => {
+      if (e.target.matches('[data-reload]')) loadSideDepartures(i);
+    });
+  }
+
+  function wireMode() {
+    document.getElementById('mode-options').addEventListener('change', (e) => {
+      if (e.target.name !== 'screenMode') return;
+      config.screenMode = e.target.value;
+      markDirty();
+      renderMode();
+    });
+
+    document.getElementById('alternate-seconds').addEventListener('change', (e) => {
+      config.alternateSeconds = Math.min(Math.max(Math.round(Number(e.target.value)) || 20, 5), 3600);
+      e.target.value = config.alternateSeconds;
+      markDirty();
+    });
+
+    // At least one screen stays ticked; order follows the checkbox order
+    document.getElementById('alternate-screens').addEventListener('change', (e) => {
+      const ticked = Array.from(document.querySelectorAll('#alternate-screens input:checked')).map(cb => cb.value);
+      if (!ticked.length) { e.target.checked = true; return; }
+      config.alternateScreens = ticked;
+      markDirty();
+    });
+
+    document.getElementById('fex-cycle').addEventListener('change', (e) => {
+      const seconds = Math.round(Number(e.target.value));
+      config.fexCycleSeconds = Number.isFinite(seconds) ? Math.min(Math.max(seconds, 3), 600) : 10;
+      e.target.value = config.fexCycleSeconds;
+      markDirty();
+    });
+
+    document.getElementById('fex-line').addEventListener('change', (e) => {
+      config.fexLine = e.target.value.split(',').map(l => l.trim().slice(0, 20))
+        .filter(Boolean).slice(0, 20).join(', ') || 'FEX';
+      e.target.value = config.fexLine;
+      markDirty();
+    });
+
+    document.getElementById('announcement').addEventListener('input', (e) => {
+      config.announcement = e.target.value;
+      markDirty();
+    });
+
+    document.getElementById('focus-lead').addEventListener('change', (e) => {
+      const minutes = Math.round(Number(e.target.value));
+      config.focusLeadMinutes = Number.isFinite(minutes) ? Math.min(Math.max(minutes, 0), 180) : 15;
+      e.target.value = config.focusLeadMinutes;
+      markDirty();
+    });
+
+    const days = document.getElementById('schedule-days');
+    days.addEventListener('change', (e) => {
+      const { day, idx, field } = e.target.dataset;
+      if (!field || !e.target.value) return;
+      config.schedule[day][Number(idx)][field] = e.target.value;
+      markDirty();
+    });
+    days.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t.dataset.addDay != null) {
+        const list = config.schedule[t.dataset.addDay];
+        const last = list[list.length - 1];
+        list.push(last
+          ? { from: last.to, to: last.to, screen: last.screen || 'board' }
+          : { from: '07:00', to: '08:00', screen: 'board' });
+      } else if (t.dataset.removeDay != null) {
+        config.schedule[t.dataset.removeDay].splice(Number(t.dataset.idx), 1);
+      } else if (t.dataset.copy != null) {
+        const source = config.schedule[t.dataset.copy];
+        t.dataset.to.split(',').forEach(d => { config.schedule[d] = source.map(w => ({ ...w })); });
+      } else {
+        return;
+      }
+      markDirty();
+      renderSchedule();
+    });
+  }
+
+  async function save() {
+    const btn = document.getElementById('save-btn');
+    const status = document.getElementById('save-status');
+    // Windows that are empty or zero-length would be dropped by the server
+    const invalid = Object.values(config.schedule).some(list => list.some(w => !w.from || !w.to || w.from === w.to));
+    if (config.screenMode === 'schedule' && invalid) {
+      status.textContent = 'Zeitfenster prüfen (Beginn ≠ Ende)';
+      return;
+    }
+    btn.disabled = true;
+    status.textContent = 'Speichere…';
+    try {
+      const res = await fetch('/api/kiosk-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      config = data.config;
+      dirty = false;
+      status.textContent = 'Gespeichert ✓';
+      renderMode();
+      SIDE_META.forEach((_, i) => renderSide(i));
+    } catch (e) {
+      status.textContent = `Fehler: ${e.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  window.addEventListener('beforeunload', (e) => {
+    if (dirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  (async function init() {
+    try {
+      const res = await fetch('/api/kiosk-config');
+      config = await res.json();
+      if (!res.ok) throw new Error(config.error || `HTTP ${res.status}`);
+    } catch (e) {
+      document.getElementById('save-status').textContent = `Konfiguration nicht geladen: ${e.message}`;
+      return;
+    }
+    buildSides();
+    wireMode();
+    renderMode();
+    SIDE_META.forEach((_, i) => {
+      // Keep a stored symbol choice; only fresh stations auto-pick one
+      sideState[i].iconTouched = !!config.sides[i];
+      renderSide(i);
+      loadSideDepartures(i);
+    });
+    document.getElementById('save-btn').addEventListener('click', save);
+    // Keep the kiosk preview's reachability current
+    setInterval(() => SIDE_META.forEach((_, i) => {
+      const body = document.querySelector(`#side-${i} .side-body`);
+      if (!sideState[i].loading && !body.contains(document.activeElement)) renderSide(i);
+    }), 30000);
+    loadStationIndex(); // warm up while the user looks at the page
+  })();
+</script>
+</body>
+</html>

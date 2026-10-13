@@ -369,5 +369,8 @@
       // Sync pinned trains with updated data
       syncPinnedTrains();
 
+      // Refresh the nav-rail alert dot on "Meldungen"
+      if (typeof window.updateAnnouncementsDot === 'function') window.updateAnnouncementsDot();
+
       return processedTrainData;
     }

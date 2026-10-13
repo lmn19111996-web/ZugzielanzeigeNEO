@@ -36,6 +36,23 @@
       }
     }
 
+
+    /**
+     * Mirror the current workspace onto the nav rail: the matching item gets
+     * .is-active (lighter surface + accent bar). The two drawer-backed items
+     * (Meldungen / Notizen) are driven from body.announcements-open /
+     * body.notes-open in CSS instead, since drawers toggle independently.
+     */
+    function syncTaskbarActiveState() {
+      document.querySelectorAll('.task-icon-button[data-nav]').forEach((btn) => {
+        const nav = btn.dataset.nav;
+        // Drawer items are handled in CSS — leave them alone here.
+        if (nav === 'announcements' || nav === 'notes') return;
+        btn.classList.toggle('is-active', nav === currentWorkspaceMode);
+      });
+    }
+    window.syncTaskbarActiveState = syncTaskbarActiveState;
+
     function setWorkspaceMode(mode) {
       const isMobile = window.innerWidth <= 768;
       // Note: currentWorkspaceMode is only set for actual workspaces (list, occupancy, projects, reviews, log-viewer)
@@ -152,10 +169,7 @@
         settingWorkspaceMode = false;
       }
 
-      // Sync island visibility whenever workspace mode changes
-      if (typeof window.updateJournalIslandVisibility === 'function') {
-        window.updateJournalIslandVisibility(currentWorkspaceMode);
-      }
+      syncTaskbarActiveState();
     }
 
     /**

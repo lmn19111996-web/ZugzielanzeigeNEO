@@ -1,6 +1,6 @@
 // Express server to fetch DB Timetables API and feed the frontend
 // Endpoints:
-// - GET /api/db-departures -> { trains: [...] }
+// - GET /api/db-departures -> { trains: [...] } (eva=VVS_<globalId> routes to the VVS EFA API)
 // - GET /api/db-raw        -> raw parsed XML from DB API (for debugging)
 // - GET /api/schedule      -> serves fallback JSON from public/data.json
 // - GET /api/health        -> health status
@@ -113,6 +113,22 @@ async function sendPushToAll(title, options) {
   }
 }
 
+// setTimeout delays above 2^31-1 ms (~24.8 days) overflow and fire after 1 ms,
+// which with a 30-day lookahead window fired every far-future event at once.
+// Long waits are therefore split into capped chunks and re-armed until due.
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
+function armPushEvent(ev, fireAt) {
+  const delay = Math.max(0, fireAt - Date.now());
+  const handle = setTimeout(async () => {
+    if (fireAt - Date.now() > 1000) { armPushEvent(ev, fireAt); return; } // not due yet — keep waiting
+    console.log(`[Push] Firing scheduled event ${ev.id} ("${ev.title}")`);
+    pendingPushTimeouts.delete(ev.id);
+    await sendPushToAll(ev.title, ev.options);
+  }, Math.min(delay, MAX_TIMEOUT_MS));
+  pendingPushTimeouts.set(ev.id, { handle, event: ev });
+}
+
 function schedulePushEvents(events) {
   // Cancel previous timeouts
   pendingPushTimeouts.forEach(({ handle }) => clearTimeout(handle));
@@ -122,15 +138,10 @@ function schedulePushEvents(events) {
   let scheduled = 0, skippedPast = 0;
   (events || []).forEach(ev => {
     const fireAt = new Date(ev.notifyAt).getTime();
+    if (!Number.isFinite(fireAt)) return;
     const delay = fireAt - now;
     if (delay < -60000) { skippedPast++; return; } // already more than 1 min past — skip
-    const clampedDelay = Math.max(0, delay);
-    const handle = setTimeout(async () => {
-      console.log(`[Push] Firing scheduled event ${ev.id} ("${ev.title}")`);
-      await sendPushToAll(ev.title, ev.options);
-      pendingPushTimeouts.delete(ev.id);
-    }, clampedDelay);
-    pendingPushTimeouts.set(ev.id, { handle, event: ev });
+    armPushEvent(ev, fireAt);
     scheduled++;
   });
   console.log(`[Push] schedulePushEvents: ${scheduled} scheduled, ${skippedPast} skipped (already past)`);
@@ -375,7 +386,14 @@ function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
     : [];
   const notice = [cancelReason, delayReason, ...autoDelayReasons].filter(Boolean).join(' +++ ');
 
-  return {
+  // Provenance, not time data: present-and-true means actual/dauer were
+  // measured by a real check-in. There is no false: a record without the flag
+  // is simply not a check-in, so the flag is only ever added, never written as
+  // false. Entries predating v11.8.4 carry the old checkinTime instead.
+  const wasCheckedIn = Boolean(train && (train.checkedIn || train.checkinTime));
+  const wasCheckedOut = Boolean(train && (train.checkedOut || train.checkoutTime));
+
+  const record = {
     schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
     recordId,
     trainKey: recordId,
@@ -405,6 +423,11 @@ function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
     startDate: (train && train.startDate) || null,
     skippedDates: Array.isArray(train && train.skippedDates) ? train.skippedDates.slice() : []
   };
+
+  if (wasCheckedIn) record.checkedIn = true;
+  if (wasCheckedOut) record.checkedOut = true;
+
+  return record;
 }
 
 // Accumulate train data in memory (no immediate write)
@@ -653,6 +676,10 @@ function normalizeLogRecordFromAny(entry) {
   if (Number(entry.schemaVersion) >= 3 && typeof entry.recordId === 'string' && entry.recordId) {
     const normalized = { ...entry };
     normalized.schemaVersion = TRAIN_LOG_SCHEMA_VERSION;
+    // The flags are additive only - a false carries no more meaning than an
+    // absent field, so it is dropped rather than persisted.
+    if (!normalized.checkedIn) delete normalized.checkedIn;
+    if (!normalized.checkedOut) delete normalized.checkedOut;
     normalized.scheduleType = normalizeSourceType(normalized.scheduleType);
     normalized.serviceDate = normalizeText(normalized.serviceDate || normalized.date || normalized.plannedDate);
     normalized.serviceTime = normalizeText(normalized.serviceTime || normalized.actual || normalized.plan);
@@ -681,7 +708,7 @@ function normalizeLogRecordFromAny(entry) {
   }
 
   const zwischenhalte = normalizeStops(entry.zwischenhalte != null ? entry.zwischenhalte : entry.stops);
-  return {
+  const migrated = {
     schemaVersion: TRAIN_LOG_SCHEMA_VERSION,
     recordId,
     trainKey: recordId,
@@ -708,6 +735,13 @@ function normalizeLogRecordFromAny(entry) {
     startDate: entry.startDate || null,
     skippedDates: Array.isArray(entry.skippedDates) ? entry.skippedDates.slice() : []
   };
+
+  // Same additive provenance rule as buildLogRecordV3, with the pre-v11.8.4
+  // checkinTime read as a fallback so migrating an old record keeps the tag.
+  if (entry.checkedIn || entry.checkinTime) migrated.checkedIn = true;
+  if (entry.checkedOut || entry.checkoutTime) migrated.checkedOut = true;
+
+  return migrated;
 }
 
 function getLogRecordTimestampMs(entry) {
@@ -880,6 +914,13 @@ function extractEvent(ev) {
 }
 
 // Extract a user-visible line string from stop data
+// DB timetables tag road services with the category "Bus" (incl. SEV buses)
+function isDbBusStop(stop) {
+  const tl = stop.tl || stop.ref?.tl || null;
+  const tlo = Array.isArray(tl) ? tl[0] : tl;
+  return String(tlo?.c || '').toUpperCase() === 'BUS';
+}
+
 function extractLine(stop) {
   // Prefer a user-facing line indicator over raw long train numbers where applicable
   const dp = stop.dp || null;
@@ -1060,6 +1101,7 @@ function buildTrainsFromTimetables({ p1, p2, ch }) {
       date,
       stops: extractStopsPath(stop),
       dauer: null, // unknown from API; frontend handles null
+      bus: isDbBusStop(stop),
     };
     if (id) byId.set(String(id), record);
     else byId.set(`${record.linie}-${record.plan}-${record.ziel}`, record); // fallback key
@@ -1119,6 +1161,7 @@ function buildTrainsFromTimetables({ p1, p2, ch }) {
       date: t.date || undefined,
       stops: t.stops || '',
       dauer: t.dauer == null ? null : Number(t.dauer),
+      bus: Boolean(t.bus),
     }));
 }
 
@@ -1217,6 +1260,173 @@ function buildCustomDepartures(evaStr) {
   }
   trains.sort((a, b) => (a.plan || '99:99').localeCompare(b.plan || '99:99'));
   return { trains, metadata: { stationEva: evaStr, stationName: stop.name, fetchedAt: new Date().toISOString() } };
+}
+
+// ─── VVS (Verkehrsverbund Stuttgart) EFA departures ──────────────────────────
+// Station IDs look like "VVS_de:08111:321" (prefix + global stop ID / DHID).
+const VVS_EFA_BASE = 'https://www3.vvs.de/mngvvs';
+const VVS_CACHE_TTL_MS = 30 * 1000;
+const VVS_DEPARTURE_LIMIT = 60;
+const vvsCache = new Map(); // Map<stopId, { at, data }>
+// EFA product classes for road services: 5 city/night bus, 6 regional bus,
+// 7 express bus, 10 on-demand bus
+const VVS_BUS_PRODUCT_CLASSES = new Set([5, 6, 7, 10]);
+
+// Replacement buses come as product "SEV-Bus" (id 13, class 5) and carry the
+// replaced line plus "E" (S1E, U6E, RE14E, 20E = Seilbahn). Flagged `sev` so
+// the frontend draws their bus icon in the SEV colors.
+function isVvsReplacementBus(t) {
+  const product = t.product || {};
+  if (product.id === 13 || /^SEV/i.test(product.name || '')) return true;
+  return VVS_BUS_PRODUCT_CLASSES.has(product.class) && /\dE$|^SXE$/i.test(t.number || '');
+}
+
+// VVS returns UTC ISO timestamps; the app expects local Berlin HH:mm / YYYY-MM-DD
+const berlinTimeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const berlinDateFmt = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' });
+const vvsHHmm = (iso) => (iso ? berlinTimeFmt.format(new Date(iso)) : undefined);
+const vvsDate = (iso) => (iso ? berlinDateFmt.format(new Date(iso)) : undefined);
+
+// Disruption texts arrive either as short `hints` or structured `infos`;
+// the same message repeats on every departure, so collect them once by id.
+function collectVvsMessages(stopEvents) {
+  const byId = new Map();
+  for (const e of stopEvents) {
+    for (const h of e.hints || []) {
+      if (h.content && !byId.has(h.content)) byId.set(h.content, { id: null, title: null, lines: null, text: h.content });
+    }
+    for (const info of e.infos || []) {
+      for (const link of info.infoLinks || []) {
+        const id = info.id || link.subtitle;
+        if (byId.has(id)) continue;
+        byId.set(id, { id: info.id || null, title: link.subtitle || link.urlText || null, lines: link.title || null, text: link.content || '' });
+      }
+    }
+  }
+  return Array.from(byId.values());
+}
+
+function buildTrainsFromVvs(json) {
+  const events = Array.isArray(json?.stopEvents) ? json.stopEvents : [];
+  const trains = events.map((e) => {
+    const t = e.transportation || {};
+    const props = e.location?.properties || {};
+    const plannedIso = e.departureTimePlanned || e.departureTimeBaseTimetable;
+    const platform = props.platform || props.platformName || undefined;
+    return {
+      // `number` is the label shown on the vehicle — depot runs are just "U"
+      linie: t.number || t.disassembledName || 'Unknown',
+      sev: isVvsReplacementBus(t),
+      ziel: t.destination?.name || '',
+      platform,
+      plannedPlatform: props.plannedPlatformName ? props.plannedPlatformName.replace(/^Gleis\s+/i, '') : platform,
+      platformChanged: !!(props.plannedPlatformName && props.platformName && props.plannedPlatformName !== props.platformName),
+      plan: vvsHHmm(plannedIso),
+      actual: vvsHHmm(e.departureTimeEstimated),
+      // Exact expected departure (UTC ISO). Real-time estimates carry
+      // seconds, plan/actual above are truncated to HH:mm for the main app.
+      departureAt: e.departureTimeEstimated || plannedIso || undefined,
+      canceled: !!e.isCancelled || (props.realtimeStatus || []).includes('DEPARTURE_CANCELLED'),
+      date: vvsDate(plannedIso),
+      stops: '',
+      dauer: null,
+      product: t.product?.name || undefined,
+      bus: VVS_BUS_PRODUCT_CLASSES.has(t.product?.class),
+      provider: 'vvs',
+    };
+  }).filter((t) => t.plan);
+  return { trains, messages: collectVvsMessages(events) };
+}
+
+// Platform memory: VVS intermittently drops the platform for whole
+// directions at a stop (the stop event then points at the parent stop
+// "de:08111:321" instead of "de:08111:321:0:1"). Remember the platform each
+// line + destination uses per stop from responses that do carry it, and fill
+// gaps from that. Persisted so it survives restarts; last sighting wins.
+const VVS_PLATFORM_MEMORY_FILE = path.join(__dirname, 'vvs_platform_memory.json');
+let vvsPlatformMemory = null; // { [stopId]: { ["linie|ziel"]: platform } }
+
+function getVvsPlatformMemory() {
+  if (vvsPlatformMemory) return vvsPlatformMemory;
+  try {
+    vvsPlatformMemory = JSON.parse(fs.readFileSync(VVS_PLATFORM_MEMORY_FILE, 'utf8'));
+  } catch (e) {
+    if (e.code !== 'ENOENT') console.warn('Could not read vvs_platform_memory.json:', e.message);
+    vvsPlatformMemory = {};
+  }
+  return vvsPlatformMemory;
+}
+
+function applyVvsPlatformMemory(stopId, trains) {
+  const memory = getVvsPlatformMemory();
+  const stopMemory = memory[stopId] || (memory[stopId] = {});
+  const key = (t) => `${t.linie}|${t.ziel}`;
+  let changed = false;
+
+  // Learn from the planned platform, so a one-off platform change doesn't
+  // overwrite where that direction normally departs
+  for (const t of trains) {
+    const known = t.plannedPlatform || t.platform;
+    if (known && stopMemory[key(t)] !== known) {
+      stopMemory[key(t)] = known;
+      changed = true;
+    }
+  }
+
+  for (const t of trains) {
+    if (t.platform || t.plannedPlatform) continue;
+    const remembered = stopMemory[key(t)];
+    if (!remembered) continue;
+    t.platform = remembered;
+    t.plannedPlatform = remembered;
+    t.platformInferred = true;
+  }
+
+  if (changed) {
+    fsPromises.writeFile(VVS_PLATFORM_MEMORY_FILE, JSON.stringify(memory, null, 2), 'utf8')
+      .catch((e) => console.warn('Could not write vvs_platform_memory.json:', e.message));
+  }
+}
+
+async function loadVvsDepartures(evaStr) {
+  const stopId = evaStr.slice('VVS_'.length);
+  const cached = vvsCache.get(stopId);
+  if (cached && Date.now() - cached.at < VVS_CACHE_TTL_MS) return cached.data;
+
+  try {
+    const res = await axios.get(`${VVS_EFA_BASE}/XML_DM_REQUEST`, {
+      params: {
+        outputFormat: 'rapidJSON',
+        type_dm: 'any',
+        name_dm: stopId,
+        mode: 'direct',
+        useRealtime: 1,
+        limit: VVS_DEPARTURE_LIMIT,
+        deleteAssignedStops_dm: 1,
+        SpEncId: 0,
+        coordOutputFormat: 'EPSG:4326',
+      },
+      timeout: 10000,
+    });
+    const { trains, messages } = buildTrainsFromVvs(res.data);
+    applyVvsPlatformMemory(stopId, trains);
+    const data = {
+      trains,
+      metadata: {
+        stationEva: evaStr,
+        stationName: res.data?.locations?.[0]?.name || null,
+        provider: 'vvs',
+        messages,
+        fetchedAt: new Date().toISOString(),
+      },
+    };
+    vvsCache.set(stopId, { at: Date.now(), data });
+    return data;
+  } catch (e) {
+    // Serve stale data for this stop rather than nothing
+    if (cached) return cached.data;
+    throw e;
+  }
 }
 
 // --- Express app ---
@@ -1430,7 +1640,7 @@ function resolveWeeklyLogFileForDate(dateStr) {
 // the UI.
 app.patch('/api/train-history/entry', async (req, res) => {
   try {
-    const { recordId, date, actual, dauer, canceled, projectId, projectName } = req.body || {};
+    const { recordId, date, actual, dauer, canceled, projectId, projectName, checkedIn, checkedOut } = req.body || {};
     if (!recordId || typeof recordId !== 'string') {
       return res.status(400).json({ error: 'Missing recordId' });
     }
@@ -1459,6 +1669,15 @@ app.patch('/api/train-history/entry', async (req, res) => {
     if (canceled !== undefined) {
       record.canceled = Boolean(canceled);
     }
+    // Provenance flags only - never touches actual/dauer (see log-triage.html).
+    // Additive: true sets the flag, anything else removes it. A stored false
+    // would mean exactly what an absent field already means.
+    if (checkedIn !== undefined) {
+      if (checkedIn) record.checkedIn = true; else delete record.checkedIn;
+    }
+    if (checkedOut !== undefined) {
+      if (checkedOut) record.checkedOut = true; else delete record.checkedOut;
+    }
     if (projectId !== undefined) {
       record.projectId = normalizeText(projectId) || null;
     }
@@ -1472,6 +1691,127 @@ app.patch('/api/train-history/entry', async (req, res) => {
     res.json({ success: true, entry: record });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update log entry', details: e.message });
+  }
+});
+
+// Mirrors triage decisions onto the live schedule (public/data.json).
+// Used ONLY by the triage route below - normal check-in/check-out writes the
+// flags through the ordinary save path, and no other endpoint edits provenance
+// on the schedule. Entry shape is otherwise untouched: only checkedIn /
+// checkedOut are added or removed, and the same additive rule applies (there is
+// no stored false). Entries not in the schedule any more are skipped - their
+// log record is the only copy and it has already been updated.
+async function applyTriageFlagsToSchedule(decisions) {
+  if (!decisions || !decisions.size) return { patched: 0, notInSchedule: 0 };
+
+  const filePath = path.join(PUBLIC_DIR, 'data.json');
+  let data;
+  try {
+    data = JSON.parse(await fsPromises.readFile(filePath, 'utf8'));
+  } catch (e) {
+    console.error('Triage: could not read schedule to mirror flags:', e.message);
+    return { patched: 0, notInSchedule: decisions.size, error: 'schedule unreadable' };
+  }
+
+  let patched = 0;
+  const seen = new Set();
+  for (const key of ['spontaneousEntries', 'trains', 'fixedSchedule']) {
+    const list = Array.isArray(data[key]) ? data[key] : [];
+    for (const entry of list) {
+      if (!entry || !entry._uniqueId) continue;
+      const decision = decisions.get(entry._uniqueId);
+      if (!decision) continue;
+      seen.add(entry._uniqueId);
+      if (decision.checkedIn) entry.checkedIn = true; else delete entry.checkedIn;
+      if (decision.checkedOut) entry.checkedOut = true; else delete entry.checkedOut;
+      patched += 1;
+    }
+  }
+
+  if (!patched) return { patched: 0, notInSchedule: decisions.size };
+
+  // Bump the version so open clients refetch instead of saving stale entries
+  // back over these flags.
+  data._meta = data._meta || {};
+  data._meta.version = Date.now();
+  data._meta.lastSaved = new Date().toISOString();
+
+  await fsPromises.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  scheduleCache = data;
+  scheduleCacheTime = Date.now();
+  try { broadcastUpdate('triage-flags', { version: data._meta.version }); } catch {}
+
+  return { patched, notInSchedule: decisions.size - seen.size };
+}
+
+// Bulk provenance update for the triage tool (public/log-triage.html).
+// Groups updates by weekly file so each file is read and rewritten exactly
+// once, instead of a full rewrite per entry. Only checkedIn/checkedOut are
+// touched - no time field is read from the payload, so actual/dauer/plan
+// cannot be altered through this route.
+app.post('/api/train-history/flags', async (req, res) => {
+  try {
+    const updates = (req.body && req.body.updates) || [];
+    if (!Array.isArray(updates) || !updates.length) {
+      return res.status(400).json({ error: 'Missing updates array' });
+    }
+    if (updates.length > 5000) {
+      return res.status(400).json({ error: 'Too many updates in one request' });
+    }
+
+    // Bucket by target file first; an unresolvable date fails the whole
+    // request rather than silently dropping a decision.
+    const byFile = new Map();
+    for (const u of updates) {
+      if (!u || typeof u.recordId !== 'string' || !u.recordId) {
+        return res.status(400).json({ error: 'Update missing recordId' });
+      }
+      if (!u.date || typeof u.date !== 'string') {
+        return res.status(400).json({ error: 'Update missing date for ' + u.recordId });
+      }
+      const logFile = resolveWeeklyLogFileForDate(u.date);
+      if (!logFile) {
+        return res.status(400).json({ error: 'Invalid date for ' + u.recordId });
+      }
+      if (!byFile.has(logFile)) byFile.set(logFile, []);
+      byFile.get(logFile).push(u);
+    }
+
+    let updated = 0;
+    const missing = [];
+    // _uniqueId of every record actually updated, so the same decision can be
+    // mirrored onto the live schedule entry below.
+    const decisions = new Map();
+
+    for (const [logFile, group] of byFile.entries()) {
+      const stateMap = await readLogAsStateMap(logFile);
+      let touched = false;
+
+      for (const u of group) {
+        const record = stateMap.get(u.recordId);
+        if (!record) { missing.push(u.recordId); continue; }
+        if (u.checkedIn) record.checkedIn = true; else delete record.checkedIn;
+        if (u.checkedOut) record.checkedOut = true; else delete record.checkedOut;
+        stateMap.set(u.recordId, record);
+        if (record._uniqueId) {
+          decisions.set(record._uniqueId, { checkedIn: !!u.checkedIn, checkedOut: !!u.checkedOut });
+        }
+        touched = true;
+        updated += 1;
+      }
+
+      if (touched) await rewriteLogFile(stateMap, logFile);
+    }
+
+    // Mirror onto the live schedule. Without this the next save re-logs the
+    // entry from data.json, where the flag is absent, and silently reverts the
+    // decision. Only entries still present in the schedule are affected -
+    // pruned ones live in the log alone and need nothing here.
+    const schedulePatch = await applyTriageFlagsToSchedule(decisions);
+
+    res.json({ success: true, updated, missing, files: byFile.size, schedule: schedulePatch });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update log flags', details: e.message });
   }
 });
 
@@ -1979,6 +2319,109 @@ app.put('/api/settings', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- Kiosk config API (set on kiosk-control.html, read by kiosk.html) ---
+// Which screen the kiosk shows (fixed, alternating, or by weekly time
+// windows) and the two stations of the departure board.
+const KIOSK_CONFIG_FILE = path.join(__dirname, 'kiosk_config.json');
+// Fixed screens plus the two automatic modes
+const KIOSK_SCREENS = ['abfahrten', 'board', 'fex', 'buffet', 'announcement'];
+const KIOSK_SCREEN_MODES = new Set([...KIOSK_SCREENS, 'alternate', 'schedule']);
+const KIOSK_WINDOW_SCREENS = new Set(['board', 'fex', 'buffet', 'announcement']); // shown during a schedule window
+const KIOSK_STATION_ICONS = new Set(['sbahn', 'stadtbahn', 'zacke', 'bus', 'none']);
+const KIOSK_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const KIOSK_CONFIG_DEFAULTS = {
+  screenMode: 'abfahrten',
+  alternateSeconds: 20,
+  alternateScreens: ['abfahrten', 'board'], // rotation order in 'alternate' mode
+  fexCycleSeconds: 10, // FEX / Buffet screens: time each trip is shown before the next
+  fexLine: 'FEX', // lines (comma separated) whose trips the "FEX" screen cycles through
+  announcement: '', // announcement screen: first line = bold heading, rest = text
+  focusLeadMinutes: 15, // "Nächste Abfahrten": first task fills the screen this long before it starts
+  schedule: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // Date#getDay keys, 0 = Sunday
+  sides: [null, null] // [left, right]
+};
+
+function sanitizeKioskSide(side) {
+  if (!side || typeof side !== 'object' || !side.eva) return null;
+  const walk = Math.round(Number(side.walkMinutes));
+  const grace = Math.round(Number(side.unreachableGraceMinutes));
+  return {
+    eva: String(side.eva),
+    name: String(side.name || ''),
+    // '' is a real choice: departures without a platform ("Ohne Gleisangabe")
+    platforms: Array.isArray(side.platforms)
+      ? [...new Set(side.platforms.filter(p => p != null).map(p => String(p).trim()))]
+      : [],
+    walkMinutes: Number.isFinite(walk) ? Math.min(Math.max(walk, 0), 120) : 0,
+    // Skip departures leaving more than `unreachableGraceMinutes` before the
+    // reachable mark (now + walk), so the board shows ones you can still get
+    skipUnreachable: Boolean(side.skipUnreachable),
+    unreachableGraceMinutes: Number.isFinite(grace) ? Math.min(Math.max(grace, 0), 120) : 0,
+    icon: KIOSK_STATION_ICONS.has(side.icon) ? side.icon : 'none'
+  };
+}
+
+function sanitizeKioskConfig(input) {
+  const cfg = input && typeof input === 'object' ? input : {};
+  const schedule = {};
+  for (let day = 0; day < 7; day++) {
+    const windows = cfg.schedule && Array.isArray(cfg.schedule[day]) ? cfg.schedule[day] : [];
+    schedule[day] = windows
+      .filter(w => w && KIOSK_TIME_RE.test(w.from) && KIOSK_TIME_RE.test(w.to) && w.from !== w.to)
+      .map(w => ({ from: w.from, to: w.to, screen: KIOSK_WINDOW_SCREENS.has(w.screen) ? w.screen : 'board' }));
+  }
+  const alternateScreens = Array.isArray(cfg.alternateScreens)
+    ? KIOSK_SCREENS.filter(s => cfg.alternateScreens.includes(s))
+    : [];
+  const seconds = Math.round(Number(cfg.alternateSeconds));
+  const focusLead = cfg.focusLeadMinutes == null ? NaN : Math.round(Number(cfg.focusLeadMinutes));
+  const fexCycle = Math.round(Number(cfg.fexCycleSeconds));
+  const sides = Array.isArray(cfg.sides) ? cfg.sides : [];
+  // Comma separated lines, tidied to "FEX, S1"
+  const fexLine = String(cfg.fexLine == null ? '' : cfg.fexLine)
+    .split(',').map(l => l.trim().slice(0, 20)).filter(Boolean).slice(0, 20).join(', ');
+  return {
+    screenMode: KIOSK_SCREEN_MODES.has(cfg.screenMode) ? cfg.screenMode : KIOSK_CONFIG_DEFAULTS.screenMode,
+    alternateSeconds: Number.isFinite(seconds) ? Math.min(Math.max(seconds, 5), 3600) : KIOSK_CONFIG_DEFAULTS.alternateSeconds,
+    alternateScreens: alternateScreens.length ? alternateScreens : KIOSK_CONFIG_DEFAULTS.alternateScreens,
+    fexCycleSeconds: Number.isFinite(fexCycle) ? Math.min(Math.max(fexCycle, 3), 600) : KIOSK_CONFIG_DEFAULTS.fexCycleSeconds,
+    fexLine: fexLine || KIOSK_CONFIG_DEFAULTS.fexLine,
+    announcement: String(cfg.announcement == null ? '' : cfg.announcement).replace(/\r\n?/g, '\n').slice(0, 2000),
+    focusLeadMinutes: Number.isFinite(focusLead) ? Math.min(Math.max(focusLead, 0), 180) : KIOSK_CONFIG_DEFAULTS.focusLeadMinutes,
+    schedule,
+    sides: [sanitizeKioskSide(sides[0]), sanitizeKioskSide(sides[1])]
+  };
+}
+
+async function readKioskConfig() {
+  try {
+    return sanitizeKioskConfig(JSON.parse(await fsPromises.readFile(KIOSK_CONFIG_FILE, 'utf8')));
+  } catch (e) {
+    if (e.code === 'ENOENT') return sanitizeKioskConfig(KIOSK_CONFIG_DEFAULTS);
+    throw e;
+  }
+}
+
+// GET /api/kiosk-config
+app.get('/api/kiosk-config', async (req, res) => {
+  try { res.json(await readKioskConfig()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/kiosk-config – replace the whole config; kiosks pick it up via SSE
+app.put('/api/kiosk-config', async (req, res) => {
+  try {
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({ error: 'expected object' });
+    }
+    const config = sanitizeKioskConfig(req.body);
+    await fsPromises.writeFile(KIOSK_CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+    broadcastUpdate('kiosk-config-change', { dataType: 'kiosk-config' });
+    res.json({ ok: true, config });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 
 let cachedData = { trains: [], metadata: null };
 let cachedEva = null; // EVA the cachedData belongs to
@@ -2021,15 +2464,15 @@ app.get('/api/db-departures', async (req, res) => {
     if (eva.startsWith('CUSTOM_')) {
       return res.json(buildCustomDepartures(eva));
     }
-    const data = await loadDbDepartures(eva);
+    const data = eva.startsWith('VVS_') ? await loadVvsDepartures(eva) : await loadDbDepartures(eva);
     cachedData = data;
     cachedEva = eva;
     res.json(data);
   } catch (e) {
     // If live fetch fails, return last cached data only if it's for the same station
-    console.warn('DB fetch failed:', e.message);
+    console.warn('Departure fetch failed:', e.message);
     if (cachedEva === eva && cachedData.trains?.length) return res.json(cachedData);
-    res.status(503).json({ trains: [], error: 'DB API unavailable' });
+    res.status(503).json({ trains: [], error: eva.startsWith('VVS_') ? 'VVS API unavailable' : 'DB API unavailable' });
   }
 });
 

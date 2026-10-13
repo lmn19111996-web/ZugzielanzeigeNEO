@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(node scripts/build-vvs-stations.js)",
+      "Bash(node -e \"const s=require\\('./public/vvs-stations.json'\\);console.log\\(JSON.stringify\\(s.find\\(x=>x.eva==='VVS_de:08111:321'\\)\\),JSON.stringify\\(s.find\\(x=>x.place!=='Stuttgart'\\)\\)\\)\")",
+      "PowerShell(cd D:\\\\ZugzielanzeigeNEO\\\\public; \\(Select-String -Path res\\\\eingecheckt.svg -Pattern '#[0-9a-fA-F]{6}' -AllMatches\\).Matches.Value | Sort-Object -Unique; Get-Content style.css | Select-Object -Skip 2214 -First 12; Select-String -Path server.js -Pattern 'function broadcast|APP_SETTINGS_FILE|async function \\(read|write\\)AppSettings' | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
+      "PowerShell(cd D:\\\\ZugzielanzeigeNEO; Get-Content .gitignore; \"---\"; \\(Get-Item public\\\\stations.json\\).Length; $s = Get-Content public\\\\stations.json -Raw -Encoding UTF8 | ConvertFrom-Json; if \\($s.stations\\) { $s = $s.stations }; $s.Count; $s | Select-Object -First 2 | ConvertTo-Json -Compress; \"---\"; Select-String -Path server.js -Pattern \"dataType\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })"
+    ]
+  }
+}

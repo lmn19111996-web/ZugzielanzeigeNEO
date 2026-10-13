@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100" viewBox="0 0 150 100">
+  <!-- Stadtbahn blue rectangle -->
+  <rect x="0" y="0" width="150" height="100" fill="#0068b4" />
+  <!-- centered white U -->
+  <text x="75" y="56" font-size="90" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Bahnschrift, sans-serif">U</text>
+</svg>

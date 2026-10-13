@@ -1,10 +1,31 @@
 ﻿// === TRAIN LIST & BELEGUNGSPLAN RENDERING ===
 
+    /**
+     * Single write point for the app accent. Keeps the currentAccentColor
+     * global (read by note headers, journal, lovemeter) in sync with the
+     * --color-nav-accent custom property the nav rail paints its CTA and
+     * active-item bar with.
+     *
+     * The rail's fallback is the brand blue, not currentAccentColor's own
+     * default: with no train the accent resets to var(--color-divider),
+     * which is near-white and would swallow the CTA's white label.
+     */
+    function setAppAccentColor(color) {
+      currentAccentColor = color;
+      const navAccent = (!color || color === 'var(--color-divider)')
+        ? 'var(--color-accent-primary)'
+        : color;
+      document.documentElement.style.setProperty('--color-nav-accent', navAccent);
+    }
+    window.setAppAccentColor = setAppAccentColor;
+
     // Marquee for long/combined notice tags (cancel + delayReason + auto-suggestions).
     // Unlike dashboard.js's applyViaScrolling (which scrolls to the end, pauses, then
     // resets), this scrolls infinitely: the text is duplicated back-to-back and the
     // loop point lands exactly where the duplicate lines up with the original, so it
     // never visibly "resets" — see startInfiniteMarquee (utils.js).
+
+
     function applyCancelNoticeScrolling(root) {
       (root || document).querySelectorAll('.cancel-notice-text').forEach(span => {
         if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
@@ -63,12 +84,40 @@
       });
     }
 
+    const NO_TRAINS_TODAY_TEXT = 'Keine planmäßigen Abfahrten heute. Genieße deinen Tag!';
+
+    function getLocalDateKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    // True when the personal schedule has at least one timed train dated today
+    // (past or upcoming). Duration-only (FÜSQ) entries don't count.
+    function hasScheduledTrainToday(now = new Date()) {
+      const todayKey = getLocalDateKey(now);
+      return (processedTrainData.localTrains || []).some(t =>
+        t && t.date === todayKey && !isDurationOnlyTrain(t) && hasTrainTime(t)
+      );
+    }
+
+    // The headline shows the "no trains today" message instead of the next
+    // (future-day) train when today has nothing scheduled — unless that train
+    // is already running (e.g. an overnight train from yesterday).
+    function shouldShowNoTrainsToday(now = new Date()) {
+      if (hasScheduledTrainToday(now)) return false;
+      const train = processedTrainData.currentTrain;
+      if (!train) return true;
+      const start = parseTime(train.actual || train.plan, now, train.date);
+      return !(start && start <= now);
+    }
+    window.shouldShowNoTrainsToday = shouldShowNoTrainsToday;
+
     function renderHeadlineTrain() {
       const now = new Date();
       const firstTrainContainer = document.getElementById('first-train-container');
-      const currentTrain = processedTrainData.currentTrain;
+      const showNoTrainsToday = shouldShowNoTrainsToday(now);
+      const currentTrain = showNoTrainsToday ? null : processedTrainData.currentTrain;
       const topRibbon = document.querySelector('.top-ribbon');
-      
+
       if (currentTrain) {
         const existingEntry = firstTrainContainer.querySelector('.train-entry');
         const expandedCurrentZiel = expandDestinationPrefix(currentTrain.ziel || '');
@@ -114,7 +163,7 @@
               topRibbon.style.borderImageSlice = '';
               topRibbon.style.background = '';
             }
-            currentAccentColor = lineColor; // Update global accent color for note headers
+            setAppAccentColor(lineColor); // Drives note headers, journal and the nav rail
             
             // Update add button border color on mobile
             const addBtn = document.getElementById('add-train-button');
@@ -125,14 +174,28 @@
         }
         // If train hasn't changed, updateClock() will handle the countdown update
       } else {
-        firstTrainContainer.innerHTML = '';
+        if (showNoTrainsToday) {
+          if (!firstTrainContainer.querySelector('.headline-no-trains')) {
+            // Same train-entry/zugziel markup as a real headline train so the
+            // text picks up the destination styling and marquee scrolling.
+            firstTrainContainer.innerHTML = `
+              <div class="train-entry headline-no-trains">
+                <div class="train-info">
+                  <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="${escapeHTML(NO_TRAINS_TODAY_TEXT)}">${escapeHTML(NO_TRAINS_TODAY_TEXT)}</span></div></div>
+                </div>
+              </div>`;
+            requestAnimationFrame(() => applyZugzielScrolling(firstTrainContainer));
+          }
+        } else {
+          firstTrainContainer.innerHTML = '';
+        }
         // Reset to default border color when no train
         if (topRibbon) {
           topRibbon.style.borderImage = '';
           topRibbon.style.borderImageSlice = '';
           topRibbon.style.background = '';
           topRibbon.style.borderBottom = '0.3vh solid var(--color-divider)';
-          currentAccentColor = 'var(--color-divider)'; // Reset accent color
+          setAppAccentColor('var(--color-divider)'); // Reset accent color
           
           // Reset add button border color
           const addBtn = document.getElementById('add-train-button');
@@ -464,6 +527,11 @@
         projectName: (entry && entry.projectName) || null,
         zwischenhalte: stopsArr,
         canceled: !!(entry && entry.canceled),
+        // Check-in tag on past log rows (formatPastTrainTime -> .is-checked).
+        // Records written before v11.8.4 have no flags but do carry the old
+        // checkinTime/checkoutTime, so fall back to those when absent.
+        checkedIn: !!(entry && (entry.checkedIn || entry.checkinTime)),
+        checkedOut: !!(entry && (entry.checkedOut || entry.checkoutTime)),
         // Carry the persisted manual reason and the save-time auto-suggestion
         // snapshot through to Templates.trainEntry, which already combines them
         // (+ any inline "[...]" Zwischenhalt notice) into the notice tag —
@@ -840,6 +908,39 @@
     let belegungsplanDisplayMode = 'day'; // 'day' | 'week'
     let belegungsplanSelectedDate = new Date(); // any date within the viewed day/week
 
+    // Week view line filter: lines hidden from the grid, remembered per browser.
+    const BELEGUNGSPLAN_HIDDEN_LINES_KEY = 'belegungsplanHiddenLines';
+    let belegungsplanHiddenLines = new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(BELEGUNGSPLAN_HIDDEN_LINES_KEY) || '[]');
+      if (Array.isArray(saved)) belegungsplanHiddenLines = new Set(saved);
+    } catch (e) { /* storage unavailable - start with all lines visible */ }
+    let belegungsplanLineFilterOpen = false;
+
+    function saveBelegungsplanHiddenLines() {
+      try {
+        localStorage.setItem(BELEGUNGSPLAN_HIDDEN_LINES_KEY, JSON.stringify([...belegungsplanHiddenLines]));
+      } catch (e) { /* ignore */ }
+    }
+
+    function getBelegungsplanLineKey(train) {
+      return typeof train.linie === 'string' ? train.linie.trim() : '';
+    }
+
+    // Every line in the schedule (plus any still-hidden ones, so they can be
+    // re-enabled even if they currently have no trains), naturally sorted.
+    function getBelegungsplanAllLines() {
+      const lines = new Set(belegungsplanHiddenLines);
+      processedTrainData.scheduledTrains.forEach(t => {
+        if (!t.canceled) lines.add(getBelegungsplanLineKey(t));
+      });
+      return [...lines].sort((a, b) => {
+        if (!a) return 1;
+        if (!b) return -1;
+        return a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' });
+      });
+    }
+
     function getIsoWeekNumber(date) {
       const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
       const dayNum = d.getUTCDay() || 7;
@@ -1035,7 +1136,8 @@
       dayColumns.className = 'week-day-columns';
 
       const todayStr = now.toLocaleDateString('sv-SE');
-      const allScheduledTrains = processedTrainData.scheduledTrains.filter(t => !t.canceled);
+      const allScheduledTrains = processedTrainData.scheduledTrains
+        .filter(t => !t.canceled && !belegungsplanHiddenLines.has(getBelegungsplanLineKey(t)));
 
       weekDates.forEach(dateObj => {
         const dateStr = dateObj.toLocaleDateString('sv-SE');
@@ -1130,9 +1232,19 @@
       return destEl.scrollWidth > destEl.clientWidth + 1;
     }
 
+    // Week view tiles always get a tooltip with the start/end time (plus line
+    // and destination); day view tiles only when their text is hidden.
     function showBelegungsplanTooltip(tileEl) {
-      if (!belegungsplanTileTextIsHidden(tileEl)) return;
-      const text = tileEl.getAttribute('data-tooltip');
+      const isWeekView = !!tileEl.closest('.week-day-body');
+      const label = tileEl.getAttribute('data-tooltip') || '';
+      const timeRange = tileEl.getAttribute('data-time-range') || '';
+      let text;
+      if (isWeekView) {
+        text = [label, timeRange].filter(Boolean).join('\n');
+      } else {
+        if (!belegungsplanTileTextIsHidden(tileEl)) return;
+        text = label;
+      }
       if (!text) return;
       const tooltip = ensureBelegungsplanTooltipEl();
       tooltip.textContent = text;
@@ -1173,6 +1285,54 @@
         if (tile && !tile.contains(e.relatedTarget)) hideBelegungsplanTooltip();
       });
       trainListEl.addEventListener('scroll', hideBelegungsplanTooltip);
+    }
+
+    // Line filter dropdown in the week view header. Checkbox changes re-render the
+    // grid (so overlap levels are recomputed without the hidden trains) and keep
+    // the dropdown open; clicking anywhere outside it closes it.
+    let belegungsplanLineFilterOutsideClickWired = false;
+
+    function wireBelegungsplanLineFilter(pageEl) {
+      const filterEl = pageEl.querySelector('#belegungsplan-line-filter');
+      if (!filterEl) return;
+      const btn = filterEl.querySelector('#belegungsplan-line-filter-btn');
+      const popover = filterEl.querySelector('.belegungsplan-line-filter-popover');
+
+      btn.addEventListener('click', () => {
+        belegungsplanLineFilterOpen = !belegungsplanLineFilterOpen;
+        popover.classList.toggle('open', belegungsplanLineFilterOpen);
+        btn.setAttribute('aria-expanded', String(belegungsplanLineFilterOpen));
+      });
+
+      popover.addEventListener('change', (e) => {
+        const checkbox = e.target.closest('input[type="checkbox"]');
+        if (!checkbox) return;
+        if (checkbox.checked) belegungsplanHiddenLines.delete(checkbox.value);
+        else belegungsplanHiddenLines.add(checkbox.value);
+        saveBelegungsplanHiddenLines();
+        renderBelegungsplan();
+      });
+
+      popover.addEventListener('click', (e) => {
+        const actionBtn = e.target.closest('[data-action]');
+        if (!actionBtn) return;
+        if (actionBtn.dataset.action === 'all') belegungsplanHiddenLines.clear();
+        else belegungsplanHiddenLines = new Set(getBelegungsplanAllLines());
+        saveBelegungsplanHiddenLines();
+        renderBelegungsplan();
+      });
+
+      if (!belegungsplanLineFilterOutsideClickWired) {
+        belegungsplanLineFilterOutsideClickWired = true;
+        document.addEventListener('click', (e) => {
+          if (!belegungsplanLineFilterOpen || e.target.closest('.belegungsplan-line-filter')) return;
+          belegungsplanLineFilterOpen = false;
+          const openPopover = document.querySelector('.belegungsplan-line-filter-popover.open');
+          if (openPopover) openPopover.classList.remove('open');
+          const filterBtn = document.getElementById('belegungsplan-line-filter-btn');
+          if (filterBtn) filterBtn.setAttribute('aria-expanded', 'false');
+        });
+      }
     }
 
     // The date range actually covered by the day view's continuous timeline (see
@@ -1234,7 +1394,10 @@
       }
       const dateInputValue = selectedDate.toLocaleDateString('sv-SE');
       const { minDateStr, maxDateStr } = getBelegungsplanDataDateBounds(now);
-      pageEl.innerHTML = Templates.belegungsplanHeader(headerLabel, belegungsplanDisplayMode, dateInputValue, minDateStr, maxDateStr);
+      const lineFilter = belegungsplanDisplayMode === 'week'
+        ? { lines: getBelegungsplanAllLines(), hidden: belegungsplanHiddenLines, open: belegungsplanLineFilterOpen }
+        : null;
+      pageEl.innerHTML = Templates.belegungsplanHeader(headerLabel, belegungsplanDisplayMode, dateInputValue, minDateStr, maxDateStr, lineFilter);
 
       const contentEl = document.createElement('div');
       contentEl.className = 'belegungsplan-content';
@@ -1272,9 +1435,12 @@
       if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
           belegungsplanDisplayMode = belegungsplanDisplayMode === 'day' ? 'week' : 'day';
+          belegungsplanLineFilterOpen = false;
           renderBelegungsplan({ jumpToSelectedDate: true });
         });
       }
+
+      wireBelegungsplanLineFilter(pageEl);
 
       const dateInput = pageEl.querySelector('#belegungsplan-date-input');
       const dateLabel = pageEl.querySelector('#belegungsplan-date-label');
@@ -1355,7 +1521,8 @@
         enableDateJump = true,
         append = false,
         targetEl = null,
-        durationOnlyEntries = []
+        durationOnlyEntries = [],
+        fillToday = false
       } = options;
 
       const now = new Date();
@@ -1389,8 +1556,22 @@
         ...durationOnlyEntries
       ];
 
+      // De-duplicate by _uniqueId. Outside real-station mode, schedule.trains
+      // and schedule.localTrains are both rebuilt from spontaneousEntries
+      // (regenerateTrainsFromSchedule), so currentTrain — taken from
+      // localTrains — is a second copy of a train that remainingTrains already
+      // holds via allTrains. trainsByDate feeds the day separator's stacked
+      // duration bar, which was double-counting that train's dauer.
+      // In real-station mode the two lists are genuinely different, so the
+      // current train must still be included when it is not already present.
+      const seenForGrouping = new Set();
       allForGrouping.forEach((t) => {
         if (!t || !t.date) return;
+        const key = t._uniqueId;
+        if (key) {
+          if (seenForGrouping.has(key)) return;
+          seenForGrouping.add(key);
+        }
         if (!trainsByDate[t.date]) trainsByDate[t.date] = [];
         trainsByDate[t.date].push(t);
       });
@@ -1407,16 +1588,23 @@
         durationByDate[t.date].push(t);
       });
 
+      // Today's section is always rendered (even with no trains) and padded
+      // with blank space to at least one list-viewport tall, so upcoming days
+      // always start below the fold.
+      const todayKey = getLocalDateKey(now);
+
       const orderedDates = Array.from(new Set([
         ...Object.keys(timedByDate),
-        ...Object.keys(durationByDate)
+        ...Object.keys(durationByDate),
+        ...(fillToday ? [todayKey] : [])
       ])).sort();
 
       orderedDates.forEach((date) => {
         const separatorHTML = Templates.daySeparator(date, trainsByDate[date] || []);
         const separatorTemplate = document.createElement('template');
         separatorTemplate.innerHTML = separatorHTML.trim();
-        listRoot.appendChild(separatorTemplate.content.firstChild);
+        const separatorEl = separatorTemplate.content.firstChild;
+        listRoot.appendChild(separatorEl);
 
         const durationTrainsForDay = durationByDate[date] || [];
         if (durationTrainsForDay.length > 0) {
@@ -1452,10 +1640,25 @@
           listRoot.appendChild(dayGroup);
         }
 
-        (timedByDate[date] || []).forEach((train) => {
+        const timedTrainsForDay = timedByDate[date] || [];
+        assignConnectorFlags(timedTrainsForDay, now);
+        timedTrainsForDay.forEach((train) => {
           const entry = createTrainEntry(train, now, false);
           listRoot.appendChild(entry);
         });
+
+        if (fillToday && date === todayKey) {
+          const lastEl = listRoot.lastElementChild;
+          const sectionHeight = lastEl.getBoundingClientRect().bottom - separatorEl.getBoundingClientRect().top;
+          const missing = listRoot.clientHeight - sectionHeight;
+          if (missing > 0) {
+            const spacer = document.createElement('div');
+            spacer.className = 'today-fill-spacer';
+            spacer.setAttribute('aria-hidden', 'true');
+            spacer.style.height = `${missing}px`;
+            listRoot.appendChild(spacer);
+          }
+        }
       });
       
       // Attach swipe gestures on mobile after list is populated
@@ -1484,15 +1687,16 @@
         applyZugzielScrolling(listRoot);
       });
 
-      // Wait for DOM to fully render, then restore scroll and show
-      if (preserveScroll) {
+      // Restore scroll synchronously, before the browser paints — setting
+      // scrollTop forces layout of the freshly built list, so there's no
+      // frame where the rebuilt list shows from the top. The rAF pass is a
+      // fallback for when late layout (fonts, images) clamped the first set.
+      if (preserveScroll && savedScrollPosition > 0) {
+        listRoot.scrollTop = savedScrollPosition;
         requestAnimationFrame(() => {
-          setTimeout(() => {
-            // Set scroll position
-            if (savedScrollPosition > 0) {
-              listRoot.scrollTop = savedScrollPosition;
-            }
-          }, 50);
+          if (listRoot.scrollTop !== savedScrollPosition) {
+            listRoot.scrollTop = savedScrollPosition;
+          }
         });
       }
     }
@@ -1505,7 +1709,8 @@
         enableSwipe: true,
         enableDateJump: true,
         append: false,
-        durationOnlyEntries: processedTrainData.durationOnlyTrains
+        durationOnlyEntries: processedTrainData.durationOnlyTrains,
+        fillToday: true
       });
       renderPinnedProjectsInSidebar();
     }
@@ -1548,7 +1753,10 @@
 
       function jumpToDate(dateStr) {
         if (!dateStr) return;
-        const sep = listEl.querySelector('[data-jump-date="' + dateStr + '"]');
+        // Exact day if it's in the list, otherwise the next listed day after
+        // it (or the last one, when typing past the end of the schedule).
+        const target = available.find(d => d >= dateStr) || available[available.length - 1];
+        const sep = target && listEl.querySelector('[data-jump-date="' + target + '"]');
         if (sep) {
           sep.closest('.day-separator').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -1556,10 +1764,18 @@
         removeOutsideListener();
       }
 
-      input.addEventListener('change', () => jumpToDate(input.value));
+      // Typing fires 'change' after every segment (the prefilled value makes
+      // each keystroke a complete date), so keyboard edits only commit on
+      // Enter; 'change' commits immediately only for picks from the calendar.
+      let typing = false;
+      input.addEventListener('pointerdown', () => { typing = false; });
+      input.addEventListener('change', () => {
+        if (!typing) jumpToDate(input.value);
+      });
       input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') jumpToDate(input.value);
-        if (e.key === 'Escape') { popup.remove(); removeOutsideListener(); }
+        if (e.key === 'Enter') { e.preventDefault(); jumpToDate(input.value); return; }
+        if (e.key === 'Escape') { popup.remove(); removeOutsideListener(); return; }
+        typing = true;
       });
 
       function outsideClick(e) {
@@ -1576,6 +1792,72 @@
     }
 
     // ===== MOBILE SWIPE GESTURES =====
+
+    /**
+     * Train connector brackets (DB departure-board style).
+     *
+     * Rows are joined into a run when they belong together in time, either
+     * because they share a departure time or because they sit closer than the
+     * "Kurze Wendezeit" threshold (AppSettings.turnaroundThresholdMin) — the
+     * same dwell-time limit that drives the delay-reason advisory. The gap is
+     * measured from the earlier row's occupancy end to the later row's start,
+     * exactly as hasShortTurnaround() does in delay-reason.js; a negative gap
+     * (the two overlap) is well under the threshold and joins too, which is
+     * also what makes equal departure times fall out of the same test.
+     *
+     * Cancelled rows are skipped when forming runs: they are neither members
+     * nor a break, so a cancellation sitting between two close trains does not
+     * split the bracket. (That row still shows its cross rather than a
+     * connector segment — see templates.js — since the cross outranks it.)
+     *
+     * The first and last member of a run get the horizontal arm, members in
+     * between only continue the vertical line, so a run of three or more reads
+     * as one C shape rather than a stack of brackets.
+     *
+     * Sets the transient _connector flag ('first' | 'middle' | 'last' | null)
+     * consumed by Templates.trainEntry. Always clears first, since train
+     * objects survive between renders and a row can drop out of a run.
+     */
+    function assignConnectorFlags(trainsInRenderOrder, now) {
+      const list = trainsInRenderOrder || [];
+      list.forEach((t) => { if (t) t._connector = null; });
+
+      const threshold = window.AppSettings
+        ? Number(window.AppSettings.get('turnaroundThresholdMin'))
+        : 15;
+      if (!Number.isFinite(threshold)) return;
+
+      const startOf = (t) => parseTime(t.actual || t.plan, now, t.date);
+      // No duration recorded → the train occupies only its departure moment.
+      const endOf = (t) => getOccupancyEnd(t, now) || startOf(t);
+
+      const members = list.filter((t) =>
+        t && !t.canceled && !isDurationOnlyTrain(t) && (t.actual || t.plan));
+
+      const joins = (a, b) => {
+        // Equal departure times always join, independently of the threshold —
+        // otherwise a threshold of 0 would stop grouping two trains that leave
+        // at the same moment but carry no duration (their gap is exactly 0).
+        if ((a.actual || a.plan) === (b.actual || b.plan)) return true;
+
+        const aEnd = endOf(a);
+        const bStart = startOf(b);
+        if (!aEnd || !bStart) return false;
+        return (bStart - aEnd) / 60000 < threshold;
+      };
+
+      let i = 0;
+      while (i < members.length) {
+        let end = i;
+        while (end + 1 < members.length && joins(members[end], members[end + 1])) end++;
+        if (end > i) {
+          members[i]._connector = 'first';
+          members[end]._connector = 'last';
+          for (let k = i + 1; k < end; k++) members[k]._connector = 'middle';
+        }
+        i = end + 1;
+      }
+    }
 
     function createTrainEntry(train, now, isFirstTrain = false) {
       const isReadOnly = !!(train && train._readOnly);

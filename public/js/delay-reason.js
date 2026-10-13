@@ -201,7 +201,10 @@ function computeSuggestedDelayReasons(train, allActiveTrainsOrContext, now) {
     reasons.push('Vorfahrt eines anderen Zuges');
   }
 
-  if (hasShortTurnaround(train, context, now)) {
+  // Display-only toggle: connector grouping in render-trains.js reads the
+  // threshold directly and is unaffected.
+  const showTurnaround = window.AppSettings ? window.AppSettings.get('showShortTurnaroundReason') !== false : true;
+  if (showTurnaround && hasShortTurnaround(train, context, now)) {
     reasons.push('Kurze Wendezeit');
   }
 

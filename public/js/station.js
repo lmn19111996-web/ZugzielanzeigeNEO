@@ -55,6 +55,8 @@
       }
 
       function stationHasAllowedTags(st) {
+        // VVS stops come from the regional stop list — buses and Stadtbahn included
+        if (st && st.vvs) return true;
         const hasDs100 = typeof st?.ds100 === 'string' && st.ds100.trim().length > 0;
         const evaStr = st?.eva != null ? String(st.eva) : '';
         const hasEva = /^\d{6,8}$/.test(evaStr);
@@ -80,9 +82,10 @@
       async function ensureStationsIndex() {
         if (stationsIndex) return stationsIndex;
         try {
-          const [res, customRes] = await Promise.all([
+          const [res, customRes, vvsRes] = await Promise.all([
             fetch('/stations.json'),
             fetch('/api/custom-stations').catch(() => null),
+            fetch('/vvs-stations.json').catch(() => null),
           ]);
           if (!res.ok) throw new Error('stations.json not found');
           const json = await res.json();
@@ -91,8 +94,12 @@
           if (customRes && customRes.ok) {
             try { custom = await customRes.json(); } catch {}
           }
+          let vvs = [];
+          if (vvsRes && vvsRes.ok) {
+            try { vvs = await vvsRes.json(); } catch {}
+          }
           // Custom stops appear first so they show up at the top of results
-          stationsIndex = [...custom, ...base];
+          stationsIndex = [...custom, ...vvs, ...base];
           return stationsIndex;
         } catch (e) {
           console.warn('Failed loading stations.json', e);
@@ -222,8 +229,25 @@
         timer = setTimeout(async () => {
           const idx = await ensureStationsIndex();
           const qn = normalizeStr(val);
-          const rawMatches = idx.filter((s) => normalizeStr(s.name).includes(qn) || (s.ds100 && normalizeStr(s.ds100).includes(qn)));
-          const matches = rawMatches.filter(stationHasAllowedTags);
+          // Every query word must appear in the name, DS100 or (VVS) place text,
+          // so "gnesener stuttgart" finds the VVS stop
+          const words = qn.split(/\s+/).filter(Boolean);
+          const haystack = (s) => normalizeStr(`${s.name} ${s.ds100 || ''} ${s.searchText || ''}`);
+          const rawMatches = idx.filter((s) => {
+            const h = haystack(s);
+            return words.every(w => h.includes(w));
+          });
+          // Rank exact name, then name prefix, then the rest (stable within each group)
+          const rank = (s) => {
+            const n = normalizeStr(s.name);
+            if (n === qn) return 0;
+            if (n.startsWith(qn)) return 1;
+            return 2;
+          };
+          const matches = rawMatches.filter(stationHasAllowedTags)
+            .map((s, i) => ({ s, i, r: rank(s) }))
+            .sort((a, b) => a.r - b.r || a.i - b.i)
+            .map(x => x.s);
           hint.textContent = matches.length ? 'Bitte auswählen:' : 'Keine passenden Bahnhöfe gefunden.';
           renderSuggestions(matches);
         }, 150);

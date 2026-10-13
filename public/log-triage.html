@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log-Triage (provisorisch)</title>
+<!--
+  PROVISIONAL TOOL - not part of the app. Not linked from any nav; open
+  /log-triage.html directly. Delete this file once the backlog is triaged.
+
+  Purpose: v11.8.4 stopped logging the checkedIn flag, so history entries that
+  were really checked in are indistinguishable from tasks that were only ever
+  planned. `actual`/`dauer` are unaffected - what was lost is the provenance
+  marker saying whether those times were measured or merely scheduled.
+
+  This page lets that call be made by hand. Decisions are staged in memory and
+  only written when "Speichern" is pressed, via POST /api/train-history/flags -
+  one rewrite per weekly file for the whole batch. That route also mirrors each
+  decision onto the matching live entry in data.json, so the next app save
+  cannot revert it; this is the only route that does so. Only checkedIn /
+  checkedOut are sent. No time field is ever in the payload, so actual, dauer
+  and plan cannot be altered from here.
+-->
+<link rel="stylesheet" href="design-tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0 0 96px;
+    background: var(--color-bg-primary, #161B75);
+    color: var(--color-text-primary, #fff);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--color-bg-panel, #0F1450);
+    border-bottom: 1px solid var(--color-border-subtle, rgba(255,255,255,.2));
+    padding: 14px 16px 12px;
+  }
+  h1 { margin: 0 0 2px; font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+  .sub { font-size: 12px; color: var(--color-text-muted, rgba(255,255,255,.7)); line-height: 1.45; }
+  .warn { color: var(--color-state-warning-text, rgb(255,200,100)); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 11px; }
+  input, select, button {
+    font: inherit; font-size: 13px;
+    background: var(--color-bg-input, #0a0e3c);
+    color: var(--color-text-primary, #fff);
+    border: 1px solid var(--color-border-subtle, rgba(255,255,255,.2));
+    border-radius: 8px; padding: 7px 10px;
+  }
+  input[type="search"] { min-width: 170px; flex: 1 1 170px; }
+  button { background: var(--color-surface-3, rgba(255,255,255,.1)); cursor: pointer; }
+  button:hover { background: var(--color-surface-5, rgba(255,255,255,.15)); }
+  button:disabled { opacity: .45; cursor: default; }
+  .savebar { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+  .progress { flex: 1 1 auto; font-size: 12px; color: var(--color-text-secondary, rgba(255,255,255,.8)); }
+  .dirty { font-size: 12px; color: var(--color-text-placeholder, rgba(255,255,255,.5)); white-space: nowrap; }
+  .dirty.on { color: var(--color-state-warning-text, rgb(255,200,100)); font-weight: 600; }
+  .mirror { font-size: 12px; color: var(--color-state-success-text, rgb(150,255,200)); white-space: nowrap; }
+  button.primary {
+    background: var(--color-state-success-bg, rgba(0,200,100,.3));
+    color: var(--color-state-success-text, rgb(150,255,200));
+    border-color: transparent; font-weight: 600;
+  }
+  button.primary:hover:not(:disabled) { background: rgba(0, 200, 100, .45); }
+  .bar { height: 3px; border-radius: 2px; background: var(--color-surface-3, rgba(255,255,255,.1)); margin-top: 5px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--energy-green, #63c522); width: 0; transition: width .25s; }
+
+  .list { padding: 0 8px; }
+  .daysep {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .8px;
+    color: var(--color-text-muted, rgba(255,255,255,.7));
+    padding: 16px 8px 6px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 54px minmax(0,1fr) auto auto;
+    gap: 10px; align-items: center;
+    padding: 9px 10px; border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--color-surface-1, rgba(255,255,255,.05));
+    margin-bottom: 4px;
+  }
+  .row:hover { background: var(--color-surface-4, rgba(255,255,255,.12)); }
+  .row.legit { background: rgba(99, 197, 34, .13); }
+  .row.staged { box-shadow: inset 3px 0 0 var(--color-state-warning-text, rgb(255,200,100)); }
+  .row.canceled .ziel { text-decoration: line-through; opacity: .6; }
+  .linie {
+    font-weight: 700; font-size: 13px; text-align: center;
+    padding: 3px 0; border-radius: 6px;
+    background: var(--color-surface-3, rgba(255,255,255,.1));
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ziel { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta { font-size: 11px; color: var(--color-text-placeholder, rgba(255,255,255,.5)); margin-top: 1px; }
+  .times { font-size: 13px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .plan-strike { text-decoration: line-through; opacity: .45; margin-right: 5px; }
+  .dauer { font-size: 11px; color: var(--color-text-placeholder, rgba(255,255,255,.5)); }
+  .actions { display: flex; gap: 6px; }
+  .mark {
+    min-width: 86px; text-align: center; padding: 7px 10px;
+    border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .mark.keep:hover {
+    background: var(--color-state-success-bg, rgba(0,200,100,.3));
+    color: var(--color-state-success-text, rgb(150,255,200));
+  }
+  .mark.drop { min-width: 108px; color: var(--color-text-label, rgba(255,255,255,.6)); }
+  .mark.drop:hover { background: var(--color-surface-5, rgba(255,255,255,.15)); color: inherit; }
+  /* The top row is the one every shortcut acts on - keep it unmistakable. */
+  .row.head {
+    background: var(--color-surface-4, rgba(255,255,255,.12));
+    border-color: var(--color-divider, rgba(255,255,255,.64));
+  }
+  .row:not(.head) { opacity: .62; }
+  .row:not(.head):hover { opacity: 1; }
+  .empty { padding: 48px 16px; text-align: center; color: var(--color-text-label, rgba(255,255,255,.6)); }
+  .err {
+    margin: 10px 8px; padding: 9px 12px; border-radius: 8px; font-size: 13px;
+    background: var(--color-state-danger-bg, rgba(255,80,80,.3));
+    color: var(--color-state-danger-text, rgb(255,150,150));
+  }
+  kbd {
+    background: var(--color-surface-3, rgba(255,255,255,.1));
+    border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Log-Triage <span class="sub">— provisorisch</span></h1>
+  <div class="sub">
+    Markiert nur <strong>checkedIn / checkedOut</strong>. <span class="warn">Zeiten (plan, actual, dauer) werden nie verändert.</span>
+    &nbsp;Immer die <strong>oberste Zeile</strong>: <kbd>L</kbd> echt · <kbd>D</kbd> überspringen · <kbd>U</kbd> rückgängig · <kbd>Strg</kbd>+<kbd>S</kbd> speichern
+  </div>
+
+  <div class="controls">
+    <input type="date" id="from">
+    <input type="date" id="to">
+    <button id="load">Laden</button>
+    <input type="search" id="q" placeholder="Linie, Ziel suchen…">
+    <select id="filter">
+      <option value="open">Nur offene</option>
+      <option value="all">Alle</option>
+      <option value="legit">Nur markierte</option>
+    </select>
+  </div>
+
+  <div class="savebar">
+    <div class="progress" id="progress">Noch nichts geladen.</div>
+    <span class="dirty" id="dirty">alles gespeichert</span>
+    <span class="mirror" id="mirror"></span>
+    <button id="undo">↶ Rückgängig</button>
+    <button id="discard" disabled>Alle zurücksetzen</button>
+    <button id="submit" class="primary" disabled>Speichern</button>
+  </div>
+  <div class="bar"><i id="barfill"></i></div>
+</header>
+
+<div id="error"></div>
+<div class="list" id="list"><div class="empty">Zeitraum wählen und „Laden“ drücken.</div></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var entries = [];   // raw log records, newest last
+  var view = [];      // currently rendered subset
+  var pending = {};   // recordId -> true, staged as real, unsaved
+  var skipped = {};   // recordId -> hidden this session, never sent
+  var undoStack = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ── Data ────────────────────────────────────────────────────────────────
+  // The flag is additive: present-and-true means a real check-in, absent means
+  // not. Pre-11.8.4 records have no flag but do carry the old checkinTime,
+  // which is itself proof of a check-in, so those count as legit.
+  function storedLegit(e) {
+    return !!(e.checkedIn || e.checkinTime || e.checkoutTime);
+  }
+  // What the row shows: the staged decision if there is one, else what is saved.
+  function isLegit(e) {
+    return Object.prototype.hasOwnProperty.call(pending, e.recordId) || storedLegit(e);
+  }
+  function isTriaged(e) {
+    return Object.prototype.hasOwnProperty.call(pending, e.recordId) || storedLegit(e);
+  }
+  function isHandled(e) {
+    return isTriaged(e) || Object.prototype.hasOwnProperty.call(skipped, e.recordId);
+  }
+
+  function fold(s) {
+    return String(s || '').toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+  }
+
+  function showError(msg) {
+    $('error').innerHTML = msg ? '<div class="err">' + msg + '</div>' : '';
+  }
+
+  function load() {
+    var from = $('from').value, to = $('to').value;
+    if (!from || !to) { showError('Bitte Start- und Enddatum wählen.'); return; }
+    if (Object.keys(pending).length &&
+        !confirm(Object.keys(pending).length + ' ungespeicherte Entscheidungen gehen verloren. Trotzdem laden?')) return;
+    showError('');
+    $('load').disabled = true;
+    $('progress').textContent = 'Lade…';
+
+    // The endpoint needs BOTH the absolute ISO window (from/to) and the
+    // calendar window (fromDate/toDate) - it validates the first and filters
+    // on the second.
+    var url = '/api/train-history/range' +
+              '?from=' + encodeURIComponent(new Date(from + 'T00:00:00').toISOString()) +
+              '&to=' + encodeURIComponent(new Date(to + 'T23:59:59').toISOString()) +
+              '&fromDate=' + encodeURIComponent(from) +
+              '&toDate=' + encodeURIComponent(to) + '&limit=20000';
+
+    fetch(url)
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+      .then(function (data) {
+        // Template/meta rows are not occurrences, so there is nothing to judge:
+        // recurring stems, duration-only templates and notes are filtered out.
+        entries = (data.entries || []).filter(function (e) {
+          return e && e.scheduleType !== 'fixed' && e.type !== 'duration-only' && e.type !== 'note';
+        });
+        if (data.limited) showError('Hinweis: Ergebnis auf ' + data.showing + ' von ' + data.total + ' Einträgen begrenzt.');
+        pending = {};
+        skipped = {};
+        undoStack = [];
+        render();
+      })
+      .catch(function (e) { showError('Laden fehlgeschlagen: ' + e.message); $('progress').textContent = 'Fehler.'; })
+      .finally(function () { $('load').disabled = false; });
+  }
+
+  // ── Staging ─────────────────────────────────────────────────────────────
+  // Decisions live in `pending` (recordId -> bool) until submitted, so nothing
+  // is written while judging. checkedOut mirrors "has a duration", so a
+  // finished session renders as abgefahren and a zero-duration one as laufend.
+  // Only a positive verdict is ever written. A skipped entry simply keeps no
+  // flag, which already means "not a real check-in" - there is no false to
+  // record. So `skipped` is view state only and never reaches the server.
+  // `undoStack` exists because a handled row vanishes immediately, so a
+  // misclick would otherwise be unrecoverable without reloading.
+  function keep(entry) {
+    undoStack.push({ id: entry.recordId, kind: 'keep' });
+    pending[entry.recordId] = true;
+    delete skipped[entry.recordId];
+    render();
+  }
+
+  function skip(entry) {
+    undoStack.push({ id: entry.recordId, kind: 'skip', wasPending: Object.prototype.hasOwnProperty.call(pending, entry.recordId) });
+    skipped[entry.recordId] = true;
+    delete pending[entry.recordId];
+    render();
+  }
+
+  function undo() {
+    var last = undoStack.pop();
+    if (!last) return;
+    if (last.kind === 'keep') delete pending[last.id];
+    else { delete skipped[last.id]; if (last.wasPending) pending[last.id] = true; }
+    render();
+  }
+
+  function submit() {
+    var ids = Object.keys(pending);
+    if (!ids.length) return;
+
+    var byId = {};
+    entries.forEach(function (e) { byId[e.recordId] = e; });
+
+    // Every staged entry is a positive verdict, so checkedIn is always true.
+    // checkedOut mirrors "has a duration": a finished session renders as
+    // abgefahren, a zero-duration one as laufend.
+    var updates = ids.map(function (id) {
+      var e = byId[id];
+      return {
+        recordId: id,
+        date: e.date || e.serviceDate || e.plannedDate,
+        checkedIn: true,
+        checkedOut: Number(e.dauer) > 0
+      };
+    });
+
+    $('submit').disabled = true;
+    $('submit').textContent = 'Speichere…';
+
+    fetch('/api/train-history/flags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates: updates })
+    })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+      .then(function (res) {
+        // Fold the saved state into the local records so the list stays live
+        // without a reload; anything the server could not find stays pending.
+        var missing = {};
+        (res.missing || []).forEach(function (id) { missing[id] = true; });
+        updates.forEach(function (u) {
+          if (missing[u.recordId]) return;
+          var e = byId[u.recordId];
+          e.checkedIn = u.checkedIn;
+          e.checkedOut = u.checkedOut;
+          delete pending[u.recordId];
+        });
+        undoStack = [];
+        // The server also mirrors each decision onto the live schedule, so the
+        // next app save cannot revert it. Entries already pruned from the
+        // schedule only exist in the log and need no mirror.
+        var sched = res.schedule || {};
+        var note = '';
+        if (res.missing && res.missing.length) {
+          note = res.updated + ' gespeichert, ' + res.missing.length + ' Einträge nicht gefunden (bleiben offen).';
+        } else if (sched.error) {
+          note = res.updated + ' im Log gespeichert, aber der Zeitplan konnte nicht aktualisiert werden (' + sched.error + ').';
+        }
+        showError(note);
+        $('mirror').textContent = res.updated
+          ? res.updated + ' gespeichert · ' + (sched.patched || 0) + ' auch im Zeitplan'
+          : '';
+        render();
+      })
+      .catch(function (e) { showError('Speichern fehlgeschlagen: ' + e.message + ' — Änderungen bleiben erhalten.'); })
+      .finally(function () { $('submit').disabled = false; render(); });
+  }
+
+  function discard() {
+    if (!Object.keys(pending).length) return;
+    if (!confirm('Alle nicht gespeicherten Entscheidungen verwerfen?')) return;
+    pending = {};
+    skipped = {};
+    undoStack = [];
+    render();
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────
+  function addMinutes(t, mins) {
+    var p = String(t || '').split(':');
+    if (p.length !== 2) return '';
+    var total = ((parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0) + (Number(mins) || 0) + 1440) % 1440;
+    return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+  }
+
+  function render() {
+    var q = fold($('q').value.trim());
+    var mode = $('filter').value;
+
+    view = entries.filter(function (e) {
+      if (mode === 'open' && isHandled(e)) return false;
+      if (mode === 'legit' && !isLegit(e)) return false;
+      if (!q) return true;
+      return fold(e.linie).indexOf(q) >= 0 || fold(e.ziel).indexOf(q) >= 0;
+    });
+
+    var triaged = entries.filter(isTriaged).length;
+    var skippedCount = entries.filter(function (e) { return Object.prototype.hasOwnProperty.call(skipped, e.recordId); }).length;
+    var legit = entries.filter(isLegit).length;
+    var dirty = Object.keys(pending).length;
+    $('progress').textContent = entries.length
+      ? triaged + '/' + entries.length + ' markiert' +
+        (skippedCount ? ' · ' + skippedCount + ' übersprungen' : '') + ' · ' +
+        (mode === 'open' ? view.length + ' übrig' : view.length + ' angezeigt')
+      : 'Keine Einträge im Zeitraum.';
+    $('dirty').textContent = dirty ? dirty + ' ungespeichert' : 'alles gespeichert';
+    $('dirty').className = dirty ? 'dirty on' : 'dirty';
+    $('submit').disabled = !dirty;
+    $('submit').textContent = dirty ? 'Speichern (' + dirty + ')' : 'Speichern';
+    $('discard').disabled = !dirty;
+    $('undo').disabled = !undoStack.length;
+    $('barfill').style.width = entries.length ? (triaged / entries.length * 100) + '%' : '0';
+
+    var list = $('list');
+    if (!view.length) {
+      list.innerHTML = '<div class="empty">' + (entries.length ? 'Nichts passt zum Filter.' : 'Keine Einträge.') + '</div>';
+      return;
+    }
+
+    var html = '', lastDate = '';
+    view.forEach(function (e, i) {
+      var date = e.date || e.serviceDate || e.plannedDate || '';
+      if (date !== lastDate) { html += '<div class="daysep">' + date + '</div>'; lastDate = date; }
+
+      var legitNow = isLegit(e);
+      var dauer = Number(e.dauer) || 0;
+      var actual = e.actual || e.plan || '';
+      var timeStr = dauer > 0 && actual
+        ? actual + ' – ' + addMinutes(actual, dauer)
+        : (actual || '--:--');
+      var planDiffers = e.plan && e.actual && e.plan !== e.actual;
+
+      // The old timestamps are shown where they survive: they are the one piece
+      // of evidence that is independent of actual/dauer.
+      var legacy = (e.checkinTime || e.checkoutTime)
+        ? ' · Alt-Zeiten ' + (e.checkinTime || '—') + '→' + (e.checkoutTime || '—')
+        : '';
+
+      var staged = Object.prototype.hasOwnProperty.call(pending, e.recordId);
+      html += '<div class="row' + (legitNow ? ' legit' : '') + (e.canceled ? ' canceled' : '') +
+              (staged ? ' staged' : '') + (i === 0 ? ' head' : '') + '" data-i="' + i + '">' +
+                '<div class="linie">' + esc(e.linie || '—') + '</div>' +
+                '<div>' +
+                  '<div class="ziel">' + esc(e.ziel || '(ohne Ziel)') + '</div>' +
+                  '<div class="meta">' + esc(e.scheduleType || '') + (e.projectName ? ' · ' + esc(e.projectName) : '') + esc(legacy) + '</div>' +
+                '</div>' +
+                '<div class="times">' +
+                  (planDiffers ? '<span class="plan-strike">' + esc(e.plan) + '</span>' : '') +
+                  esc(timeStr) +
+                  '<div class="dauer">' + (dauer > 0 ? dauer + ' min' : 'keine Dauer') + '</div>' +
+                '</div>' +
+                '<div class="actions">' +
+                  '<button class="mark keep" data-i="' + i + '" data-act="keep">✓ Echt</button>' +
+                  '<button class="mark drop" data-i="' + i + '" data-act="skip">Überspringen</button>' +
+                '</div>' +
+              '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Events ──────────────────────────────────────────────────────────────
+  $('list').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button.mark');
+    if (!btn) return;
+    var e = view[Number(btn.dataset.i)];
+    if (!e) return;
+    if (btn.dataset.act === 'keep') keep(e); else skip(e);
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+    var k = ev.key.toLowerCase();
+    var head = view[0];
+
+    if (k === 'l' && head)      { keep(head); ev.preventDefault(); }
+    else if (k === 'd' && head) { skip(head); ev.preventDefault(); }
+    else if (k === 'u' || (k === 'z' && (ev.ctrlKey || ev.metaKey))) { undo(); ev.preventDefault(); }
+    else if (k === 's' && (ev.ctrlKey || ev.metaKey)) { submit(); ev.preventDefault(); }
+  });
+
+  $('load').addEventListener('click', load);
+  $('submit').addEventListener('click', submit);
+  $('discard').addEventListener('click', discard);
+  $('undo').addEventListener('click', undo);
+
+  // Staged decisions live only in memory - warn before they are lost.
+  window.addEventListener('beforeunload', function (ev) {
+    if (!Object.keys(pending).length) return;
+    ev.preventDefault();
+    ev.returnValue = '';
+  });
+  $('q').addEventListener('input', render);
+  $('filter').addEventListener('change', render);
+
+  // Default window: the logs start in Feb 2026; end today.
+  var today = new Date();
+  $('to').value = today.getFullYear() + '-' +
+    String(today.getMonth() + 1).padStart(2, '0') + '-' +
+    String(today.getDate()).padStart(2, '0');
+  $('from').value = '2026-02-01';
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,113 @@
 ﻿// === UTILITY FUNCTIONS ===
 // Pure helper functions with no side effects.
+    // Folder the line icons (s1.svg, u13.svg, fex.svg, …) are loaded from.
+    // The main app uses res/; a page can point it at its own icon set, and
+    // getLineIconSrc can take a folder per call (the kiosk's live board uses
+    // res/kiosk/ while its own-schedule rows keep res/).
+    let lineIconDir = './res/';
+
+    function setLineIconDir(dir) {
+      lineIconDir = String(dir || './res/').replace(/\/?$/, '/');
+    }
+
+    function getLineIconDir() {
+      return lineIconDir;
+    }
+
     function getTrainSVG(line) {
-      return `./res/${line.toLowerCase()}.svg`;
+      if (isBusLine(line)) return getBusSVG(line);
+      return `${lineIconDir}${line.toLowerCase()}.svg`;
+    }
+
+    // === BUS LINES ===
+    // Bus numbers ("42", "10") collide with rail line names, so the API's `bus`
+    // flag is the source of truth. Line names seen as buses are remembered so
+    // call sites that only have the name (e.g. projects, stressmeter) match too.
+    const BUS_COLOR = '#e2001a';
+    // Replacement buses (API `sev` flag, e.g. S1E) keep the bus hexagon in the
+    // SEV colors of sev.svg
+    const SEV_BUS_FILL = '#1e1e1e';
+    const SEV_BUS_TEXT = '#eab308';
+    const knownBusLines = new Set();
+    const knownSevBusLines = new Set();
+
+    function registerBusLines(trains) {
+      (trains || []).forEach(t => {
+        if (!t || !t.linie) return;
+        const l = String(t.linie).toLowerCase();
+        if (t.bus) knownBusLines.add(l);
+        if (t.sev) knownSevBusLines.add(l);
+      });
+    }
+
+    // Any replacement service: the plain "SEV" line or a replacement bus (S1E, …)
+    function isErsatzverkehr(lineOrTrain) {
+      const linie = lineOrTrain && typeof lineOrTrain === 'object' ? lineOrTrain.linie : lineOrTrain;
+      return String(linie || '').trim().toUpperCase() === 'SEV' || isSevBus(lineOrTrain);
+    }
+
+    // Replacement bus with its own label (not the plain "SEV" line)
+    function isSevBus(lineOrTrain) {
+      if (lineOrTrain && typeof lineOrTrain === 'object') {
+        if (typeof lineOrTrain.sev === 'boolean') return lineOrTrain.sev && isBusLine(lineOrTrain);
+        lineOrTrain = lineOrTrain.linie;
+      }
+      return typeof lineOrTrain === 'string' && knownSevBusLines.has(lineOrTrain.toLowerCase());
+    }
+
+    // Accepts a train object or a bare line name. Night (N…) and express (X…)
+    // lines are buses even without API data. SEV keeps its own icon.
+    function isBusLine(lineOrTrain) {
+      if (lineOrTrain && typeof lineOrTrain === 'object') {
+        if (typeof lineOrTrain.bus === 'boolean' && String(lineOrTrain.linie || '').toUpperCase() !== 'SEV') {
+          return lineOrTrain.bus;
+        }
+        lineOrTrain = lineOrTrain.linie;
+      }
+      if (typeof lineOrTrain !== 'string' || !lineOrTrain) return false;
+      const l = lineOrTrain.toLowerCase();
+      if (l === 'sev') return false;
+      return knownBusLines.has(l) || /^[nx]\d+$/.test(l);
+    }
+
+    // Whether a line has an image icon (rail SVG file or generated bus hexagon)
+    function hasLineIcon(lineOrTrain) {
+      if (isBusLine(lineOrTrain)) return true;
+      const linie = lineOrTrain && typeof lineOrTrain === 'object' ? lineOrTrain.linie : lineOrTrain;
+      if (typeof linie !== 'string') return false;
+      const u = linie.toUpperCase();
+      return /^[SU]\d+/.test(u) || u === 'U' || u === 'FEX' || u === 'SEV' || /^\d+$/.test(u);
+    }
+
+    // Icon src for a train object: respects its own bus flag over the name.
+    // `dir` overrides the page's icon folder for this one call.
+    function getLineIconSrc(lineOrTrain, dir = lineIconDir) {
+      const linie = lineOrTrain && typeof lineOrTrain === 'object' ? lineOrTrain.linie : lineOrTrain;
+      if (isBusLine(lineOrTrain)) return getBusSVG(linie, isSevBus(lineOrTrain));
+      return `${dir}${String(linie || '').toLowerCase()}.svg`;
+    }
+
+    // Red hexagon with white label (SEV: dark with yellow label), same 3:2 box
+    // as the U-line icons
+    const busSvgCache = new Map();
+    function getBusSVG(line, sev = isSevBus(line)) {
+      const label = String(line || '').toUpperCase();
+      const key = (sev ? 'sev:' : '') + label;
+      if (busSvgCache.has(key)) return busSvgCache.get(key);
+      const esc = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // Same text scale as the U-line icons (90) for every label; long labels
+      // widen the hexagon instead of squeezing the text. Width estimate:
+      // ~0.56em per Bahnschrift glyph + room for the slanted ends.
+      const size = 90;
+      const y = Math.round(50 + size * 0.067);
+      const w = Math.max(150, Math.ceil(label.length * size * 0.56 + 38));
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="100" viewBox="0 0 ${w} 100">`
+        + `<polygon points="24,0 ${w - 24},0 ${w},50 ${w - 24},100 24,100 0,50" fill="${sev ? SEV_BUS_FILL : BUS_COLOR}"/>`
+        + `<text x="${w / 2}" y="${y}" font-size="${size}" text-anchor="middle" dominant-baseline="middle" fill="${sev ? SEV_BUS_TEXT : '#ffffff'}" font-family="Bahnschrift, sans-serif">${esc}</text>`
+        + '</svg>';
+      const uri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      busSvgCache.set(key, uri);
+      return uri;
     }
 
     // Parse a platform filter string like "1,2,3" or "3-5" or "1,3-5,7"
@@ -80,9 +186,27 @@
         '11': '#ffaf19',
         '10': '#72bf43',
         '12': '#72bf43',
-        '17': '#72bf43'
+        '17': '#72bf43',
+        'u': '#0068b4',
+        'u1': '#d09a72',
+        'u2': '#ec7a32',
+        'u3': '#9a6034',
+        'u4': '#7b5fa8',
+        'u5': '#1fb1e6',
+        'u6': '#e3157f',
+        'u7': '#1aa486',
+        'u8': '#c4b68a',
+        'u9': '#fdd31e',
+        'u12': '#8bb8e2',
+        'u13': '#f49fb0',
+        'u14': '#6cb33f',
+        'u15': '#0d5aa7',
+        'u16': '#c6cc3c',
+        'u19': '#fbb535'
 
       };
+      if (isSevBus(line)) return lineColors.sev;
+      if (isBusLine(line)) return BUS_COLOR;
       return lineColors[line.toLowerCase()] || '#8c8c8c';
     }
 
@@ -227,8 +351,15 @@
     // `scrollDist` px, pausing at each end, looping until cancelled via
     // span._marqueeCancel(). Originally lived in dashboard.js (via-stops ticker);
     // extracted here so other tickers (e.g. cancel-notice-tag) can reuse it.
+    // Scroll speed in px/s. 40 suits the app's small text; a page with much
+    // larger text (kiosk.html) can set window.marqueeSpeedFor(span) to scale it.
+    function marqueeSpeed(span) {
+      const custom = typeof window.marqueeSpeedFor === 'function' ? Number(window.marqueeSpeedFor(span)) : NaN;
+      return custom > 0 ? custom : 40;
+    }
+
     function startMarquee(span, scrollDist) {
-      const SPEED = 40; // px per second (slow scroll)
+      const SPEED = marqueeSpeed(span); // px per second (slow scroll)
       const PAUSE = 3000; // ms pause at start and end
       const scrollDuration = Math.round((scrollDist / SPEED) * 1000);
       let cancelled = false;
@@ -266,7 +397,7 @@
     // copy is identical to the first and now sits exactly where it started —
     // unlike startMarquee, there is no pause/reverse, it just keeps going.
     function startInfiniteMarquee(span, segmentWidth) {
-      const SPEED = 40; // px per second, consistent with startMarquee
+      const SPEED = marqueeSpeed(span); // px per second, consistent with startMarquee
       const duration = Math.round((segmentWidth / SPEED) * 1000);
       let cancelled = false;
 

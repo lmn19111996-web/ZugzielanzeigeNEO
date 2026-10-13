@@ -53,7 +53,15 @@
           needsHeadlineUpdate = true;
         }
       }
-      
+
+      // Check 3: "no trains today" message state changed (e.g. at midnight)
+      if (!needsHeadlineUpdate && typeof shouldShowNoTrainsToday === 'function') {
+        const showingNoTrains = !!document.querySelector('#first-train-container .headline-no-trains');
+        if (showingNoTrains !== shouldShowNoTrainsToday(now)) {
+          needsHeadlineUpdate = true;
+        }
+      }
+
       // If headline needs update, reprocess data and re-render
       if (needsHeadlineUpdate) {
         processTrainData(schedule);
@@ -215,6 +223,7 @@
             }
 
             const dbData = await dbRes.json();
+            registerBusLines(dbData.trains);
             let dbTrains = (dbData.trains || []).map(t => {
               const normalized = { ...t, source: 'db-api' };
               if (t.stops && !t.zwischenhalte) {
@@ -288,7 +297,10 @@
           if (typeof window.lovemeterOnDataChanged === 'function') window.lovemeterOnDataChanged();
           return;
         }
-      
+
+        // Kiosk display config — only kiosk.html cares
+        if (eventData.dataType === 'kiosk-config') return;
+
         // Complete save status indicator (if saving)
         completeSaveStatus();
       

@@ -138,7 +138,7 @@ function toRecord(train, sourceType, projectNameById, nowIso) {
   const zwischenhalte = normalizeStops(train && (train.zwischenhalte != null ? train.zwischenhalte : train.stops));
   const projectId = normalizeText(train && train.projectId) || null;
 
-  return {
+  const record = {
     schemaVersion: SCHEMA_VERSION,
     recordId,
     trainKey: recordId,
@@ -165,6 +165,14 @@ function toRecord(train, sourceType, projectNameById, nowIso) {
     startDate: (train && train.startDate) || null,
     skippedDates: Array.isArray(train && train.skippedDates) ? train.skippedDates.slice() : []
   };
+
+  // Provenance, not time data, and additive only: present-and-true means the
+  // times were measured by a real check-in, absent means they were not.
+  // Entries predating v11.8.4 carry the old checkinTime instead of the flag.
+  if (train && (train.checkedIn || train.checkinTime)) record.checkedIn = true;
+  if (train && (train.checkedOut || train.checkoutTime)) record.checkedOut = true;
+
+  return record;
 }
 
 function recordTimestampMs(record) {

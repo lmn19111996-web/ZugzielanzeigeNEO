@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100" viewBox="0 0 150 100">
+  <!-- pink rectangle -->
+  <rect x="0" y="0" width="150" height="100" fill="#f49fb0" />
+  <!-- centered dark line label -->
+  <text x="75" y="56" font-size="90" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#231f20" font-family="Bahnschrift, sans-serif">U13</text>
+</svg>

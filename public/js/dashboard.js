@@ -16,16 +16,90 @@
     return localStorage.getItem('selectedEva') || null;
   }
 
-  function isSBahnLike(linie) {
-    if (typeof linie !== 'string') return false;
-    return /^S\d+/i.test(linie) || linie.toUpperCase() === 'FEX' || linie.toUpperCase() === 'SEV' || /^\d+$/.test(linie);
-  }
-
   function getViaText(train) {
     const zh = train.zwischenhalte;
     if (!zh) return '';
     if (Array.isArray(zh)) return zh.filter(s => s && s.trim()).join(' – ');
     return String(zh).replace(/\n/g, ' – ');
+  }
+
+  /**
+   * Connector brackets for the departure board.
+   *
+   * DB-API variant of the train-list rule (assignConnectorFlags in
+   * render-trains.js), deliberately stricter: no dwell-time/"Kurze Wendezeit"
+   * grouping here, and a run requires the same departure time AND the same
+   * platform — on a real board only those are actually coupled services
+   * (Flügelzug) sharing one physical train. Two services leaving the same
+   * minute from different platforms are unrelated and must not be bracketed.
+   *
+   * A platform is required on both rows: when it is unknown ('—' or blank)
+   * coupling cannot be established, so those rows never join.
+   *
+   * Cancelled rows are skipped when deciding who joins whom — neither members
+   * nor a break — so a cancellation between two coupled services does not
+   * split the bracket. That row still shows its cross instead of a connector
+   * segment, but it does count as being inside the run for _dbRunFollow, so
+   * the run stays visually merged across it.
+   *
+   * Sets two transient flags, NOT the _connector used by the train list: in
+   * real-station mode this is handed the very same processedTrainData
+   * .futureTrains objects the list renders, and the two views group by
+   * different rules.
+   *
+   *   _dbConnector  'first' | 'middle' | 'last' | null — the bracket segment
+   *   _dbRunFollow  true on every row of a run except the first — these drop
+   *                 their departure time and their separator line so the run
+   *                 reads as one block under a single time.
+   */
+  function assignDbConnectorFlags(trains) {
+    const list = trains || [];
+    list.forEach((t) => {
+      if (!t) return;
+      t._dbConnector = null;
+      t._dbRunFollow = false;
+    });
+
+    const platformOf = (t) => {
+      const p = t.platform == null ? '' : String(t.platform).trim();
+      return (!p || p === '—' || p === '-') ? null : p;
+    };
+    const timeOf = (t) => t.actual || t.plan || null;
+
+    // Indices into `list`, so a run can be expanded back to the rows it spans
+    // (cancelled rows included) once its members are known.
+    const memberIdx = [];
+    list.forEach((t, i) => {
+      if (t && !t.canceled && timeOf(t)) memberIdx.push(i);
+    });
+
+    const joins = (a, b) => {
+      const pa = platformOf(a);
+      const pb = platformOf(b);
+      if (!pa || !pb) return false;
+      return timeOf(a) === timeOf(b) && pa === pb;
+    };
+
+    let i = 0;
+    while (i < memberIdx.length) {
+      let end = i;
+      while (end + 1 < memberIdx.length &&
+             joins(list[memberIdx[end]], list[memberIdx[end + 1]])) end++;
+
+      if (end > i) {
+        list[memberIdx[i]]._dbConnector = 'first';
+        list[memberIdx[end]]._dbConnector = 'last';
+        for (let k = i + 1; k < end; k++) list[memberIdx[k]]._dbConnector = 'middle';
+
+        // Everything the run spans except its first row, so a cancelled row
+        // caught between two coupled services merges in rather than cutting
+        // the block in half with its own time and separator.
+        for (let r = memberIdx[i] + 1; r <= memberIdx[end]; r++) {
+          if (list[r]) list[r]._dbRunFollow = true;
+        }
+      }
+      i = end + 1;
+    }
   }
 
   function buildRow(train, now) {
@@ -36,13 +110,24 @@
     const occEnd = getOccupancyEnd(train, now);
     const isOccupying = !isCancelled && tTime && occEnd && tTime <= now && occEnd > now;
 
-    const rowClass = 'departure-row' + (isCancelled ? ' cancelled' : '');
-    const dotClass = 'indicator-dot' + (isCancelled ? ' cancelled' : (isOccupying ? ' current' : ''));
+    // Rows after the first in a coupled run merge upwards: no repeated
+    // departure time, no separator line above them.
+    const isRunFollow = !!train._dbRunFollow;
+    const rowClass = 'departure-row'
+      + (isCancelled ? ' cancelled' : '')
+      + (isRunFollow ? ' grouped-follow' : '');
+    let dotClass = 'indicator-dot' + (isCancelled ? ' cancelled' : (isOccupying ? ' current' : ''));
+    // Coupled-service bracket. Shares the dot column with the status dot and
+    // the cancellation cross and ranks below both, so a row showing either
+    // draws no connector segment (the run is still grouped around it).
+    if (!isCancelled && !isOccupying && train._dbConnector) {
+      dotClass += ` connector connector--${train._dbConnector}`;
+    }
 
     const linie = train.linie || '—';
     let badgeHTML;
-    if (isSBahnLike(train.linie)) {
-      badgeHTML = `<img class="train-symbol" src="res/${linie.toLowerCase()}.svg" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${linie}</div>'">`;
+    if (hasLineIcon(train)) {
+      badgeHTML = `<img class="train-symbol" src="${getLineIconSrc(train)}" alt="${linie}" onerror="this.outerHTML='<div class=\\'line-badge line-badge--pill\\'>${linie}</div>'">`;
     } else {
       badgeHTML = `<div class="line-badge">${linie}</div>`;
     }
@@ -54,10 +139,10 @@
       <div class="col-dot dep-dot"><div class="${dotClass}"></div></div>
       <div class="col-time dep-time">
         ${badgeHTML}
-        <div class="time-row">
+        ${isRunFollow ? '' : `<div class="time-row">
           <span class="dep-sched">${train.plan || '—'}</span>
           ${isDelayed ? `<span class="dep-delayed">${train.actual}</span>` : ''}
-        </div>
+        </div>`}
       </div>
       <div class="col-destination dep-destination">
         <div class="via-stops"><span class="via-scroll-text" data-via="${viaText.replace(/"/g, '&quot;')}">${viaText}</span></div>
@@ -105,6 +190,7 @@
 
     const trainList = (trains || []);
     const trains_ = trainList;
+    assignDbConnectorFlags(trains_);
     const rowsHTML = trains_.map(t => buildRow(t, now)).join('');
 
     // Replace existing departure rows
@@ -150,6 +236,7 @@
       .then(r => r.ok ? r.json() : Promise.reject('not ok'))
       .then(data => {
         if (!dashboardOpen) return;
+        registerBusLines(data.trains);
         const trains = (data.trains || [])
           .filter(t => t.ziel !== 'Ankunft')
           .map(t => {

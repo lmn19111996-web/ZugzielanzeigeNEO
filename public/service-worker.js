@@ -1,14 +1,23 @@
-const ICON_CACHE = 'push-icons-v1';
+const ICON_CACHE = 'push-icons-v3';
 const ICON_URLS = [
-  '/res/png/square/s1.png', '/res/png/square/s2.png', '/res/png/square/s3.png',
-  '/res/png/square/s4.png', '/res/png/square/s5.png', '/res/png/square/s6.png',
-  '/res/png/square/s7.png', '/res/png/square/s8.png', '/res/png/square/s9.png',
-  '/res/png/square/s11.png', '/res/png/square/s25.png', '/res/png/square/s26.png',
-  '/res/png/square/s41.png', '/res/png/square/s42.png', '/res/png/square/s45.png',
-  '/res/png/square/s46.png', '/res/png/square/s47.png', '/res/png/square/s51.png',
-  '/res/png/square/s60.png', '/res/png/square/s62.png', '/res/png/square/s75.png',
-  '/res/png/square/s85.png', '/res/png/square/s95.png',
-  '/res/announcement.png'
+  '/res/png/s1.png', '/res/png/s2.png', '/res/png/s3.png',
+  '/res/png/s4.png', '/res/png/s5.png', '/res/png/s6.png',
+  '/res/png/s7.png', '/res/png/s8.png', '/res/png/s9.png',
+  '/res/png/s11.png', '/res/png/s17.png', '/res/png/s21.png',
+  '/res/png/s25.png', '/res/png/s26.png', '/res/png/s28.png',
+  '/res/png/s41.png', '/res/png/s42.png', '/res/png/s45.png',
+  '/res/png/s46.png', '/res/png/s47.png', '/res/png/s49.png',
+  '/res/png/s51.png', '/res/png/s57.png', '/res/png/s60.png',
+  '/res/png/s62.png', '/res/png/s74.png', '/res/png/s75.png',
+  '/res/png/s85.png', '/res/png/s91.png', '/res/png/s92.png',
+  '/res/png/s93.png', '/res/png/s94.png', '/res/png/s95.png',
+  '/res/png/s96.png', '/res/png/s97.png', '/res/png/s98.png',
+  '/res/png/s99.png', '/res/png/sev.png', '/res/png/1.png',
+  '/res/png/2.png', '/res/png/3.png', '/res/png/4.png',
+  '/res/png/5.png', '/res/png/6.png', '/res/png/7.png',
+  '/res/png/8.png', '/res/png/9.png', '/res/png/10.png',
+  '/res/png/11.png', '/res/png/12.png', '/res/png/13.png',
+  '/res/png/17.png', '/res/png/fex.png', '/res/announcement.png'
 ];
 
 // ── App Shell Cache ───────────────────────────────────────────────────────────
@@ -19,6 +28,7 @@ const SHELL_URLS = [
   '/design-tokens.css',
   '/manifest.json',
   '/stations.json',
+  '/vvs-stations.json',
   '/templates.js',
   '/app.js',
   '/js/globals.js',
@@ -55,6 +65,9 @@ const SHELL_URLS = [
   '/res/s41.svg', '/res/s42.svg', '/res/s45.svg', '/res/s46.svg', '/res/s47.svg',
   '/res/s51.svg', '/res/s60.svg', '/res/s62.svg', '/res/s74.svg', '/res/s75.svg',
   '/res/s85.svg', '/res/s95.svg',
+  '/res/u.svg', '/res/u1.svg', '/res/u2.svg', '/res/u3.svg', '/res/u4.svg', '/res/u5.svg',
+  '/res/u6.svg', '/res/u7.svg', '/res/u8.svg', '/res/u9.svg', '/res/u12.svg',
+  '/res/u13.svg', '/res/u14.svg', '/res/u15.svg', '/res/u16.svg', '/res/u19.svg',
   '/res/fex.svg', '/res/c0.svg', '/res/c1.svg', '/res/c2.svg', '/res/c3.svg', '/res/c4.svg',
   '/res/cb0.svg', '/res/cb1.svg', '/res/cb2.svg', '/res/cb3.svg', '/res/cb4.svg',
   '/res/auslastung1.svg', '/res/auslastung2.svg', '/res/auslastung3.svg', '/res/auslastung4.svg',
@@ -83,7 +96,14 @@ self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
     Promise.all([
-      caches.open(ICON_CACHE).then(cache => cache.addAll(ICON_URLS)),
+      // Per-URL, like SHELL_URLS below: addAll() rejects atomically, so a
+      // single missing icon used to fail install outright - the worker never
+      // activated, serviceWorker.ready never resolved, and push died with it.
+      caches.open(ICON_CACHE).then(cache =>
+        Promise.all(ICON_URLS.map(url =>
+          cache.add(url).catch(err => console.warn('[SW] Failed to cache icon', url, err))
+        ))
+      ),
       caches.open(SHELL_CACHE).then(cache =>
         Promise.all(SHELL_URLS.map(url =>
           cache.add(url).catch(err => console.warn('[SW] Failed to cache', url, err))

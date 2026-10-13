@@ -1,0 +1,682 @@
+{
+  "metadata": {
+    "stationEva": "VVS_de:08111:321",
+    "stationName": "Stuttgart, Gnesener Straße",
+    "fetchedAt": "2026-10-08T18:50:58.847Z"
+  },
+  "messages": {
+    "ems-28013": {
+      "id": "ems-28013",
+      "title": "Stuttgart-Ost/Bad Cannstatt: Erhöhtes Fahrgastaufkommen während des Volksfests",
+      "lines": "Linien U1, U2, U9, U11, U13, U16, 42, 45",
+      "text": "Von Freitag, 25. September 2026 bis Sonntag, 11. Oktober 2026 muss insbesondere an den Wochenenden und an Feiertagen mit einem erhöhten Fahrgastaufkommen während des Volksfests auf dem Cannstatter Wasen gerechnet werden."
+    },
+    "ems-27439": {
+      "id": "ems-27439",
+      "title": "Stuttgart-Mühlhausen: Haltestellenverlegung Aalstraße, Steinbuttstraße und Forellenweg",
+      "lines": "Linien 54, N5",
+      "text": "Von Montag, 24. August 2026, Betriebsbeginn, bis voraussichtlich Ende November 2026 wird die Hechtstraße in Mönchfeld wegen Straßensanierungsarbeiten voll gesperrt. Die Linien 54 und N5 werden deshalb in beiden Richtungen über die Mönchfeldstraße umgeleitet.\n\nHaltestellenänderungen\nDie Haltestellen Aalstraße, Steinbuttstraße und Forellenweg entfallen während der Bauarbeiten in beiden Richtungen. \n\nAls Ersatz wird die Haltestelle Mönchfeld in der Mönchfeldstraße bedient:\nRichtung Freiberg: Ersatzhaltestelle gegenüber der Stadtbahnhaltestelle Mönchfeld\nRichtung Neugereut: Ersatzhaltestelle nach der Stadtbahnhaltestelle Mönchfeld\nDie Haltestellen Forellenweg und Steinbuttstraße werden im Zuge der Baumaßnahme barrierefrei ausgebaut.\n\n\nBitte beachten:\nDie Linie 54 fährt ab der Haltestelle Freiberg 2 Minuten später als bisher.\nBitte berücksichtigen Sie die geänderten Haltestellen und Abfahrtszeiten bei Ihrer Fahrt."
+    }
+  },
+  "trains": [
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "20:59",
+      "actual": "21:01",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "21:04",
+      "actual": "21:04",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Mühlhausen",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "21:08",
+      "actual": "21:08",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "21:12",
+      "actual": "21:14",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "21:19",
+      "actual": "21:19",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "21:27",
+      "actual": "21:27",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "21:34",
+      "actual": "21:34",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "21:42",
+      "actual": "21:42",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "21:49",
+      "actual": "21:49",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "21:57",
+      "actual": "21:57",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "22:04",
+      "actual": "22:04",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "22:12",
+      "actual": "22:12",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "22:19",
+      "actual": "22:19",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "22:27",
+      "actual": "22:27",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "22:34",
+      "actual": "22:34",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "22:42",
+      "actual": "22:42",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "22:49",
+      "actual": "22:49",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "22:57",
+      "actual": "22:57",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "23:04",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "23:12",
+      "actual": "23:12",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": true,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "23:19",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "23:27",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "23:34",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "23:42",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "23:49",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "23:57",
+      "date": "2026-10-08",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "00:04",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "00:12",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "00:19",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "00:27",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Botnang",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "00:34",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "00:42",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Rathaus",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "00:44",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "00:57",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Bad Cannstatt Wilhelmsplatz",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "00:57",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Bad Cannstatt Wilhelmsplatz",
+      "product": "Stadtbahn",
+      "platform": "1",
+      "platformChanged": false,
+      "plan": "01:12",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "N5",
+      "ziel": "Suttnerstraße",
+      "product": "Nachtbus",
+      "platform": "4",
+      "platformChanged": false,
+      "plan": "01:38",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-27439"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "N5",
+      "ziel": "Suttnerstraße",
+      "product": "Nachtbus",
+      "platform": "4",
+      "platformChanged": false,
+      "plan": "02:53",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-27439"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "N5",
+      "ziel": "Suttnerstraße",
+      "product": "Nachtbus",
+      "platform": "4",
+      "platformChanged": false,
+      "plan": "04:08",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-27439"
+      ],
+      "stops": "",
+      "source": "vvs"
+    },
+    {
+      "linie": "U2",
+      "ziel": "Neugereut",
+      "product": "Stadtbahn",
+      "platform": "2",
+      "platformChanged": false,
+      "plan": "04:29",
+      "date": "2026-10-09",
+      "canceled": false,
+      "realtime": false,
+      "messages": [
+        "ems-28013"
+      ],
+      "stops": "",
+      "source": "vvs"
+    }
+  ]
+}

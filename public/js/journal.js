@@ -1,9 +1,7 @@
-﻿// === JOURNAL ISLAND & REVIEW WRITE DRAWER ===
-//  Journal Island Widget
-// ══════════════════════════════════════════════════════════════
+﻿// === JOURNAL: LOGICAL DAY, REMINDER DOT & REVIEW WRITE DRAWER ===
 
 // ── Logical day: journalDayStartHour – (journalDayStartHour - 1) next day ──
-// Shared by the journal island and the review-write drawer below.
+// Shared by the reminder dot and the review-write drawer below.
 window.getLogicalDate = function() {
   const startHour = window.AppSettings ? window.AppSettings.get('journalDayStartHour') : 6;
   const d = new Date();
@@ -11,186 +9,129 @@ window.getLogicalDate = function() {
   return d.toISOString().split('T')[0];
 };
 
-(function initJournalIsland() {
-  const island   = document.getElementById('journal-island');
-  const card     = document.getElementById('journal-card');
-  const closeBtn = document.getElementById('journal-card-close');
-  const starRow  = document.getElementById('journal-star-row');
-  const textarea = document.getElementById('journal-text');
-  const submitBtn = document.getElementById('journal-submit');
-  const toast    = document.getElementById('journal-card-toast');
-  const dateEl   = document.getElementById('journal-card-date');
+// ══════════════════════════════════════════════════════════════
+//  Journal Reminder Dot  (nav rail → "Rezensionen")
+// ══════════════════════════════════════════════════════════════
+// Lit once the evening is late enough that the day should have been
+// journalled but hasn't been. The window runs from 21:00 until the logical
+// day rolls over (journalDayStartHour), so the nudge lasts exactly as long as
+// the day it refers to.
+(function initJournalReminderDot() {
+  const REMINDER_HOUR = 21;
+  const RECHECK_MS    = 10 * 60 * 1000;  // re-poll while the dot is lit
 
-  if (!island || !card) return;
+  let knownDate = null;   // logical date the cached answer applies to
+  let hasEntry  = false;
+  let lastCheck = 0;
+  let inFlight  = null;
 
-  // Hidden by default; updateJournalIslandVisibility() reveals it once the
-  // correct workspace mode is active and no entry exists for today.
-  island.style.display = 'none';
-
-  let selectedRating = 0;
-  let islandDone = false; // permanently hidden after today's submit
-
-  const getLogicalDate = window.getLogicalDate;
-
-  // ── Accent color applied when card opens ─────────────────────
-  function applyAccentToCard() {
-    const ac = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
-      ? currentAccentColor : '#ffcc00';
-    const hdr = card.querySelector('.journal-card-header');
-    if (hdr) hdr.style.borderBottomColor = ac;
-    if (textarea) textarea.style.borderColor = ac;
-    if (submitBtn) submitBtn.style.background = ac;
+  function dayStartHour() {
+    const h = window.AppSettings ? window.AppSettings.get('journalDayStartHour') : 6;
+    return Math.min(Number(h) || 6, REMINDER_HOUR);
   }
 
-  // ── Reminder mode: 21:00–05:59 always expands label ─────────
-  function updateReminderMode() {
+  function inReminderWindow() {
     const h = new Date().getHours();
-    island.classList.toggle('is-reminder', h >= 21 || h < 6);
+    return h >= REMINDER_HOUR || h < dayStartHour();
   }
-  updateReminderMode();
-  setInterval(updateReminderMode, 60000);
 
-  // ── Workspace visibility ─────────────────────────────────────
-  window.updateJournalIslandVisibility = function(wsMode) {
-    if (islandDone) return;
-    island.style.display = (wsMode === 'list' || wsMode === 'occupancy') ? '' : 'none';
+  function paint() {
+    const dot = document.getElementById('journal-dot');
+    if (dot) dot.hidden = !(inReminderWindow() && !hasEntry);
+  }
+
+  /**
+   * @param {boolean} force  Skip the cache (use after a save).
+   */
+  async function refresh(force) {
+    const today = window.getLogicalDate();
+
+    if (today !== knownDate) {      // new logical day — previous answer is stale
+      knownDate = today;
+      hasEntry  = false;
+      lastCheck = 0;
+    }
+
+    paint();  // reflect the window/cache immediately
+
+    // Nothing to ask about outside the window, and no need to re-ask once an
+    // entry is known to exist for this logical day.
+    if (!force && (!inReminderWindow() || hasEntry)) return;
+    if (!force && Date.now() - lastCheck < RECHECK_MS) return;
+    if (inFlight) return inFlight;
+
+    inFlight = (async function () {
+      try {
+        const res  = await fetch('/api/journal');
+        const data = await res.json();
+        hasEntry = (data.reviews || []).some(function (rv) { return rv.date === today; });
+        lastCheck = Date.now();
+      } catch (e) {
+        // Offline or server down — leave the last known answer in place.
+      } finally {
+        inFlight = null;
+        paint();
+      }
+    })();
+
+    return inFlight;
+  }
+
+  // Called by the save paths so the dot clears without waiting for a re-poll.
+  window.markJournalEntrySaved = function () {
+    knownDate = window.getLogicalDate();
+    hasEntry  = true;
+    lastCheck = Date.now();
+    paint();
   };
 
-  // ── Check if entry already exists for today ──────────────────
-  (async function initIslandState() {
+  window.refreshJournalDot = refresh;
+
+  refresh();
+  setInterval(function () { refresh(); }, 60000);
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  "Rezension" entry in the DB button's flyout menu
+// ══════════════════════════════════════════════════════════════
+// Opens the review-write drawer directly — never the Rezensionen workspace.
+// If today's logical day already has an entry, that entry is opened for
+// editing so the day can't end up with two reviews.
+(function initJournalMenuEntry() {
+  const item = document.getElementById('badge-menu-journal');
+  if (!item) return;
+
+  let opening = false;
+
+  item.addEventListener('click', async function (e) {
+    e.stopPropagation();
+    if (opening) return;            // double-click while the fetch is in flight
+    if (typeof window.openReviewWriteDrawer !== 'function') return;
+
+    opening = true;
+    const today = window.getLogicalDate();
+    let existing = null;
+
     try {
       const res  = await fetch('/api/journal');
       const data = await res.json();
-      const today = getLogicalDate();
-      const exists = (data.reviews || []).some(function(rv) { return rv.date === today; });
-      if (exists) {
-        islandDone = true;
-        island.style.display = 'none';
-      }
-    } catch (e) { /* silent */ }
-  })();
-
-  // ── Open / close card ────────────────────────────────────────
-  function openCard() {
-    island.classList.add('island-hidden');
-    card.classList.add('is-open');
-    card.setAttribute('aria-hidden', 'false');
-    if (dateEl) {
-      const d = new Date(getLogicalDate() + 'T00:00:00');
-      dateEl.textContent = d.toLocaleDateString('de-DE', {
-        weekday: 'long', day: 'numeric', month: 'long'
-      });
+      existing = (data.reviews || []).find(function (rv) { return rv.date === today; }) || null;
+    } catch (err) {
+      // Offline or server down: fall through and open a blank entry. Saving
+      // it goes through the offline outbox like any other journal write.
+      console.warn('Rezension lookup failed, opening a new entry:', err);
+    } finally {
+      opening = false;
     }
-    applyAccentToCard();
-    textarea.focus();
-  }
 
-  function closeCard() {
-    card.classList.remove('is-open');
-    card.setAttribute('aria-hidden', 'true');
-    if (!islandDone) {
-      setTimeout(function() { island.classList.remove('island-hidden'); }, 180);
-    }
-  }
-
-  island.addEventListener('click', openCard);
-  closeBtn.addEventListener('click', closeCard);
-
-  document.addEventListener('click', function(e) {
-    if (card.classList.contains('is-open') && !card.contains(e.target)
-        && e.target !== island && !island.contains(e.target)) {
-      closeCard();
-    }
+    // No onSaved callback needed: doSave() already clears the reminder dot for
+    // new entries and re-renders the Rezensionen page when it is the open
+    // workspace (that gate is also why an onSaved passed from here would not
+    // fire in the normal case, where the drawer is opened over the train list).
+    window.openReviewWriteDrawer(existing, null);
   });
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && card.classList.contains('is-open')) closeCard();
-  });
-
-  // ── Star interaction ─────────────────────────────────────────
-  const stars = Array.from(starRow.querySelectorAll('.journal-star'));
-
-  function paintStars(upTo) {
-    stars.forEach(function(s, i) {
-      s.classList.toggle('hovered', i < upTo);
-      s.classList.toggle('selected', i < upTo);
-    });
-  }
-
-  starRow.addEventListener('mousemove', function(e) {
-    const s = e.target.closest('.journal-star');
-    if (!s) return;
-    const val = Number(s.dataset.val);
-    stars.forEach(function(st, i) {
-      st.classList.toggle('hovered', i < val);
-      st.classList.remove('selected');
-    });
-  });
-
-  starRow.addEventListener('mouseleave', function() {
-    stars.forEach(function(s, i) {
-      s.classList.remove('hovered');
-      s.classList.toggle('selected', i < selectedRating);
-    });
-  });
-
-  starRow.addEventListener('click', function(e) {
-    const s = e.target.closest('.journal-star');
-    if (!s) return;
-    selectedRating = Number(s.dataset.val);
-    paintStars(selectedRating);
-    submitBtn.disabled = false;
-  });
-
-  // ── Submit ───────────────────────────────────────────────────
-  submitBtn.addEventListener('click', async function() {
-    if (!selectedRating) return;
-    submitBtn.disabled = true;
-    submitBtn.textContent = '…';
-
-    const today = getLogicalDate();
-
-    try {
-      const res = await fetch('/api/journal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: selectedRating, text: textarea.value.trim(), date: today })
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(function() { return {}; });
-        throw new Error(err.error || 'Fehler beim Speichern');
-      }
-
-      // Transition button to success state (same accent color as card)
-      const successColor = (typeof currentAccentColor !== 'undefined' && currentAccentColor)
-        ? currentAccentColor : '#ffcc00';
-      submitBtn.textContent = '✓ Gespeichert';
-      submitBtn.style.background = successColor;
-      submitBtn.style.color = '#111';
-      islandDone = true;
-
-      setTimeout(function() {
-        closeCard();
-        island.style.display = 'none';
-      }, 1200);
-
-    } catch (e) {
-      // Show error briefly in button, then reset
-      submitBtn.textContent = e.message;
-      submitBtn.style.background = '#c0392b';
-      submitBtn.style.color = '#fff';
-      submitBtn.disabled = false;
-      setTimeout(function() {
-        submitBtn.textContent = 'Speichern';
-        submitBtn.style.background = '';
-        submitBtn.style.color = '';
-        submitBtn.disabled = false;
-      }, 2500);
-    }
-  });
-
 })();
+
 // ══════════════════════════════════════════════════════════════
 //  Review Write Drawer
 // ══════════════════════════════════════════════════════════════
@@ -384,6 +325,12 @@ window.getLogicalDate = function() {
       }
 
       const savedCallback = _onSaved;
+
+      // A brand-new review is dated today, so today's reminder is satisfied.
+      // Editing an existing one says nothing about today.
+      if (!_editEntry && typeof window.markJournalEntrySaved === 'function') {
+        window.markJournalEntrySaved();
+      }
 
       if (silent) {
         closeDrawerNow();

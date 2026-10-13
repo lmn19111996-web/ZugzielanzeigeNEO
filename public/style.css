@@ -296,6 +296,11 @@ html, body {
       min-height: 0;
     }
 
+    /* ── NAVIGATION RAIL ──────────────────────────────────────────────────
+       Vertical rail: brand block, primary action, then labelled icon items
+       grouped by dividers. Icons are inline SVG and inherit currentColor,
+       so one color rule drives icon + label for every state.
+       All colors come from the --color-nav-* tokens.                       */
     .taskbar {
       display: flex;
       flex-direction: column;
@@ -314,6 +319,43 @@ html, body {
       display: none;
     }
 
+    /* Group separator between nav sections */
+    .nav-divider {
+      width: 60%;
+      height: 1px;
+      background: var(--color-nav-divider);
+      margin: 0.8vh 0;
+      flex-shrink: 0;
+    }
+
+    /* ── Brand block: DB logo in a rounded frame (logo asset untouched) ── */
+    .nav-brand {
+      height: auto !important;
+      padding: 1.4vh 0 1vh !important;
+    }
+    .nav-brand:hover { background: transparent !important; }
+    .nav-brand-frame {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      width: 4.6vh;
+      height: 3.1vh;
+      margin: 0 auto;
+      transition: opacity 0.15s ease;
+      opacity: 0.85;
+    }
+    .nav-brand:hover .nav-brand-frame,
+    .db-menu-host:hover .nav-brand-frame {
+      opacity: 1;
+    }
+    .nav-brand-frame img {
+      width: 100% !important;
+      height: auto !important;
+      filter: none !important;  /* DB logo ships white already */
+    }
+
+    /* ── Primary action: "+ Neu" pill ─────────────────────────────────── */
     .task-button {
       width: 100%;
       height: 5vh;
@@ -334,55 +376,141 @@ html, body {
     .task-button:hover {
       background: var(--color-bg-button-hover);
     }
-    
+
     .task-button:active {
       background: rgba(255, 255, 255, 0.15);
     }
 
+    .nav-cta {
+      width: auto;
+      min-width: 76%;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5vh;
+      margin: 0.2vh 0 1.2vh;
+      padding: 0.9vh 1.2vh;
+      border-radius: 99px;
+      background: var(--color-nav-accent);
+      color: var(--color-nav-accent-text);
+      font-size: 1.75vh;
+      font-weight: 600;
+      font-stretch: var(--font-stretch-ui);
+      letter-spacing: 0.02em;
+      box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.35);
+      transition: background 0.2s ease, filter 0.15s ease, transform 0.12s ease;
+    }
+    .nav-cta:hover {
+      filter: brightness(1.18);
+    }
+    .nav-cta:active {
+      filter: brightness(1.18);
+      transform: scale(0.97);
+    }
+    .nav-cta .nav-icon {
+      width: 2.1vh;
+      height: 2.1vh;
+      flex-shrink: 0;
+    }
+    .nav-cta-label { line-height: 1; }
+
+    /* ── Nav items: icon over label ───────────────────────────────────── */
     .task-icon-button {
+      position: relative;
       width: 100%;
-      height: 5vh;
-      padding: 1.2vh;
-      background: var(--color-bg-taskbar);
+      height: auto;
+      min-height: 6.4vh;
+      padding: 0.9vh 0.4vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5vh;
+      background: transparent;
+      color: var(--color-nav-item);
       border: none;
       outline: none;
       cursor: pointer;
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
     .task-icon-button:hover {
-      background: var(--color-bg-icon-button-hover);
-    }
-    
-    .task-icon-button:active {
-      background: rgba(255, 255, 255, 0.15);
+      background: var(--color-surface-1);
+      color: var(--color-nav-item-hover);
     }
 
+    .task-icon-button:active {
+      background: var(--color-surface-3);
+    }
+
+    /* Active workspace: lighter surface + accent bar on the leading edge */
+    .task-icon-button.is-active {
+      background: var(--color-nav-item-active-bg);
+      color: var(--color-nav-item-active);
+    }
+    .task-icon-button.is-active::before,
+    body.announcements-open #announcements-button::before,
+    body.notes-open #notes-button::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0.4vh;
+      background: var(--color-nav-accent);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* The two drawer-backed items track their drawer, not the workspace mode */
+    body.announcements-open #announcements-button,
+    body.notes-open #notes-button {
+      background: var(--color-nav-item-active-bg);
+      color: var(--color-nav-item-active);
+    }
+
+    .nav-icon {
+      width: 2.5vh;
+      height: 2.5vh;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    /* Alert dot anchor (bell + badge) */
+    .nav-icon-slot {
+      position: relative;
+      display: block;
+      flex-shrink: 0;
+    }
+    .nav-dot {
+      position: absolute;
+      top: -0.2vh;
+      right: -0.3vh;
+      width: 0.9vh;
+      height: 0.9vh;
+      border-radius: 50%;
+      background: var(--color-nav-dot);
+      border: 0.2vh solid var(--color-bg-taskbar);
+      box-sizing: content-box;
+    }
+    .nav-dot--reminder { background: var(--color-nav-dot-reminder); }
+    .nav-dot[hidden] { display: none; }
+
+    /* Raster/asset icons inside a nav item (S-Bahn line pills, DB logo) —
+       the button is a flex column now, so they size to the icon slot. */
     .task-icon-button img {
-      width: 100%;
-      height: 100%;
+      max-width: 80%;
+      height: 2.5vh;
+      width: auto;
       object-fit: contain;
       filter: brightness(0) invert(1) opacity(0.7);
     }
 
-    /* Reviews taskbar button — star icon centered & white */
-    .task-icon-button--star {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .task-icon-star {
-      font-size: 2.4vh;
-      line-height: 1;
-      color: rgba(255, 255, 255, 0.7);
-    }
-    .lm-taskbar-heart {
-      font-size: 2.4vh;
-      line-height: 1;
-      color: rgba(255, 105, 180, 0.85);
-    }
+    .nav-icon--heart { color: var(--lm-accent-pink); }
+
     #lm-quick-log-btn {
       display: none;
     }
@@ -391,22 +519,41 @@ html, body {
         display: flex;
       }
     }
-    
-    /* Hide task labels on desktop */
+
+    /* Labels sit under the icon on the rail */
     .task-icon-label {
-      display: none;
+      display: block;
+      font-size: 1.45vh;
+      font-weight: 500;
+      font-stretch: var(--font-stretch-ui);
+      line-height: 1.1;
+      letter-spacing: 0.01em;
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: inherit;
     }
-    
+
     .task-button-icon {
       display: none;
     }
 
+    /* No overflow here: the DB button's flyout menu is absolutely positioned
+       at left:100%, and any non-visible overflow on an ancestor (even on one
+       axis — the other axis is forced to 'auto' with it) would clip it to the
+       rail's width. The item count is fixed and fits; only the pinned strip
+       below is variable, and it scrolls on its own. */
     .task-icon-group {
       width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.4vh;
+      gap: 0.1vh;
+      padding: 0 0 1vh;
+      box-sizing: border-box;
+      min-height: 0;
       border-bottom: 0.5px solid var(--color-divider)
     }
 
@@ -907,6 +1054,7 @@ html, body {
        square corners, no border. */
     .belegungsplan-nav-btn,
     .belegungsplan-today-btn,
+    .belegungsplan-line-filter-btn,
     .belegungsplan-toggle-btn {
       background: var(--color-bg-button);
       border: none;
@@ -919,8 +1067,90 @@ html, body {
     }
 
     .belegungsplan-nav-btn:hover,
-    .belegungsplan-today-btn:hover {
+    .belegungsplan-today-btn:hover,
+    .belegungsplan-line-filter-btn:hover {
       background: rgba(255, 255, 255, 0.16);
+    }
+
+    /* Week view line filter dropdown */
+    /* Pinned to the far right of the header, outside the centered controls */
+    .belegungsplan-line-filter {
+      position: absolute;
+      right: 1vw;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .belegungsplan-line-filter-btn.is-filtered {
+      box-shadow: inset 0 -2px 0 var(--color-accent, #ffffff);
+    }
+
+    .belegungsplan-line-filter-popover {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.6vh);
+      right: 0;
+      z-index: 20;
+      min-width: 14vw;
+      max-height: 60vh;
+      overflow-y: auto;
+      background: var(--color-bg-panel);
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.5);
+      padding: 0.8vh 0.8vw;
+    }
+
+    .belegungsplan-line-filter-popover.open {
+      display: block;
+    }
+
+    .belegungsplan-line-filter-actions {
+      display: flex;
+      gap: 0.5vw;
+      margin-bottom: 0.8vh;
+    }
+
+    .belegungsplan-line-filter-actions button {
+      flex: 1;
+      background: var(--color-bg-button);
+      border: none;
+      border-radius: 0;
+      color: inherit;
+      padding: 0.4vh 0.6vw;
+      font-size: 1.4vh;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .belegungsplan-line-filter-actions button:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .belegungsplan-line-filter-list {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 0.4vh 1vw;
+    }
+
+    .belegungsplan-line-filter-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4vw;
+      font-size: 1.5vh;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .belegungsplan-line-filter-swatch {
+      width: 1.2vh;
+      height: 1.2vh;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .belegungsplan-line-filter-empty {
+      font-size: 1.4vh;
+      color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
     }
 
     /* Bigger, easier-to-hit prev/next arrows */
@@ -1124,7 +1354,7 @@ html, body {
       padding: 0.6vh 1vw;
       font-size: 1.5vh;
       font-weight: 600;
-      white-space: nowrap;
+      white-space: pre;
       box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.5);
       pointer-events: none;
     }
@@ -1143,7 +1373,7 @@ html, body {
     }
 
     .week-day-body .belegungsplan-destination {
-      font-size: 1.1vh;
+      font-size: 1.4vh;
     }
 
     .week-day-body .belegungsplan-current-time-line {
@@ -1461,6 +1691,17 @@ html, body {
       position: relative;
     }
 
+    /* Contrast colour for the three marks drawn in the indicator column —
+       status dot, cancellation cross and grouping bracket. Kept as its own
+       custom property rather than reading `currentColor`, because
+       .train-entry.past-train re-asserts a white `color` at a higher
+       specificity than .fex-entry and would make those marks vanish on a past
+       FEX row (the same reason .past-train.fex-entry .zugziel exists). Nothing
+       overrides this property, so the row's variant always wins. */
+    .train-entry            { --indicator-color: white; }
+    .train-entry.fex-entry  { --indicator-color: var(--color-fex-text); }  /* dark on white */
+    .train-entry.sev-entry  { --indicator-color: white; }                  /* white on magenta */
+
     /* Status indicator */
     .indicator-dot {
       width: 0.9vh;
@@ -1478,13 +1719,74 @@ html, body {
     /* Solid dot for current train */
     .indicator-dot.current {
       border-radius: 50%;
-      background: white;
+      background: var(--indicator-color);
     }
 
     /* X symbol for cancelled train */
     .indicator-dot.cancelled::before {
       content: '✕';
-      color: white;
+      color: var(--indicator-color);
+    }
+
+    /* ── Same-departure-time connector ────────────────────────────────────
+       A "[" bracket drawn in the indicator column, joining consecutive rows
+       that share a departure time (DB departure-board style).
+
+       Drawn as ONE box per row using borders rather than a separate spine and
+       arm: the browser mitres adjacent borders of the same element, so the
+       corners are joined by construction. Two independently positioned bars
+       had to line up to the sub-pixel to look connected, and did not.
+
+         first  → border-left + border-top     ┌ spine running down
+         middle → border-left                  │ spine only
+         last   → border-left + border-bottom  └ spine running up
+
+       Only the ends of a run carry an arm, which keeps a run of 3+ a single
+       C shape instead of a stack of brackets.
+
+       The box is anchored to .train-entry (the nearest positioned ancestor —
+       the indicator box is deliberately left unpositioned) rather than to the
+       0.9vh indicator itself, so its height is a fraction of the row and stays
+       flush on rows taller than the 7.5vh minimum, e.g. when a cancel-notice
+       tag is present. Rows sit flush against each other, so a spine ending at
+       a row's bottom edge meets the next row's spine exactly.
+
+       Cancelled and current rows never receive these classes (templates.js),
+       so there is no collision with .cancelled::before above. */
+    .indicator-dot.connector::before {
+      content: '';
+      position: absolute;
+      /* .train-entry padding + half the dot, less half the stroke, so the
+         spine sits centred on the indicator column */
+      left: calc(1.5vw + 0.45vh - 0.11vh);
+      width: 1.1vh;
+      border-left: 0.22vh solid var(--indicator-color);
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+
+    /* The arm's stroke is centred on the row's mid-line; the spine then runs
+       from there to the row edge shared with the next row in the run. */
+    .indicator-dot.connector--first::before {
+      top: calc(50% - 0.11vh);
+      bottom: 0;
+      border-top: 0.22vh solid var(--indicator-color);
+    }
+
+    .indicator-dot.connector--middle::before {
+      top: 0;
+      bottom: 0;
+    }
+
+    .indicator-dot.connector--last::before {
+      top: 0;
+      bottom: calc(50% - 0.11vh);
+      border-bottom: 0.22vh solid var(--indicator-color);
+    }
+
+    /* A past row's connector dims along with the rest of the row */
+    .train-entry.past-train .indicator-dot.connector::before {
+      opacity: 0.45;
     }
 
     /* Cancellation reason notice tag */
@@ -3925,7 +4227,7 @@ html, body {
       .mobile-info-btn { display: none; }
 
       :root {
-        --nav-rail-width: 7.5vh;
+        --nav-rail-width: clamp(72px, 9.6vh, 104px);
         --editor-drawer-width: clamp(20vw, 300px, 350px);
       --project-drawer-width: clamp(25vw, 450px, 550px);
       --announcements-drawer-width: 20vw;
@@ -3995,21 +4297,9 @@ html, body {
       }
     }
 
-    /* Sidebar add button styling for desktop */
-    #sidebar-add-button {
-      background: rgba(255, 255, 255, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #sidebar-add-button:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    #sidebar-add-button:active {
-      background: rgba(255, 255, 255, 0.2);
-    }
+    /* The sidebar add button is styled as .nav-cta up in the nav-rail block.
+       Its old #id background rules lived here and outranked that class, which
+       is why the pill stayed white-alpha instead of taking the app accent. */
 
     /* Hide floating add button on desktop */
     #add-train-button {
@@ -4363,6 +4653,7 @@ html, body {
         min-width: auto;
         width: auto;
         height: 100%;
+        min-height: 0;
         display: flex;
         flex-direction: row; /* Icon next to text */
         align-items: center;
@@ -4377,11 +4668,54 @@ html, body {
         background: rgba(255, 255, 255, 0.2);
         border-radius: 1vh;
       }
+
+      /* Bottom bar runs horizontally — move the active bar to the top edge */
+      .task-icon-button.is-active::before,
+      body.announcements-open #announcements-button::before,
+      body.notes-open #notes-button::before {
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: auto;
+        width: auto;
+        height: 0.4vh;
+        border-radius: 0 0 2px 2px;
+      }
       
       .task-icon-button img {
         width: 2.5vh; /* Smaller icons */
         height: 2.5vh;
+        max-width: none;
         flex-shrink: 0;
+      }
+
+      .nav-icon {
+        width: 2.5vh;
+        height: 2.5vh;
+      }
+
+      /* Rail-only chrome: group dividers and the "+ Neu" pill */
+      .nav-divider { display: none; }
+
+      .nav-brand { padding: 0 !important; }
+      .nav-brand-frame {
+        width: auto;
+        height: 100%;
+        opacity: 1;
+      }
+      .nav-brand-frame img {
+        width: 2.5vh !important;
+        height: 2.5vh !important;
+      }
+
+      .taskbar-pinned-projects {
+        margin-top: 0;
+        padding: 0;
+        border-top: none;
+      }
+      .taskbar-pinned-chip img {
+        height: 2.5vh;
+        max-width: none;
       }
 
       .task-icon-group {
@@ -4402,7 +4736,8 @@ html, body {
         display: block;
         font-size: 1.8vh;
         font-weight: 400;
-        color: rgba(255, 255, 255, 0.85);
+        color: inherit;
+        white-space: nowrap;
         text-align: center;
         line-height: 1;
       }
@@ -4496,6 +4831,12 @@ html, body {
       .swipe-wrapper > .train-entry.fex-entry {
         background: white;
         color: var(--color-bg-primary);
+      }
+
+      /* SEV / Ersatzverkehr on mobile list: magenta card (stripe from .sev-entry::before) */
+      .swipe-wrapper > .train-entry.sev-entry {
+        background: #97235d;
+        color: white;
       }
 
       /* FEX mobile: destination text must be dark (overrides any white inherit) */
@@ -6193,60 +6534,42 @@ font-weight: 500;
   gap: 2vh 1vw;
 }
 
-/* Generic taskbar button tooltip (same mechanic as pinned chip tooltip) */
+/* The rail's own slide-out tooltips are gone — every nav item now carries a
+   visible label under its icon. (The pinned-project chips keep their tooltip;
+   they show a line pill, not a name.) */
 .task-icon-button {
   position: relative;
 }
 
-.task-icon-button .taskbar-tooltip {
-  position: absolute;
-  left: 100%;
-  top: 0;
-  height: 100%;
-  clip-path: inset(0 100% 0 0);
-  background: var(--color-bg-taskbar);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
-  padding: 0 0.5vw;
-  white-space: nowrap;
-  font-size: 2.4vh;
-  font-weight: 500;
-  color: #e3e3e3;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  transition: clip-path 0.1s ease;
-  z-index: 0;
-  border-radius: 1px;
-  box-shadow: 2px 0 6px rgba(0,0,0,0.5);
-}
-
-.task-icon-button:hover .taskbar-tooltip {
-  clip-path: inset(0 0% 0 0);
-}
-
-/* Hide on mobile — label is already visible */
-@media (max-width: 768px) {
-  .task-icon-button .taskbar-tooltip {
-    display: none;
-  }
-}
-
-/* Pinned projects section in taskbar */
+/* Pinned projects section — sits at the foot of the rail, per the design */
 .taskbar-pinned-projects {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2vh;
+  gap: 0.4vh;
+  margin-top: auto;         /* push to the bottom of the rail */
+  padding: 1vh 0 1.4vh;
+  max-height: 34vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border-top: 1px solid var(--color-nav-divider);
 }
+.taskbar-pinned-projects::-webkit-scrollbar { display: none; }
 
 .taskbar-pinned-chip {
   position: relative;
   box-sizing: border-box;
   overflow: visible;
+  min-height: 0;
+  padding: 0.6vh 0.4vh;
 }
 
+/* Line-pill artwork is a brand asset — never tinted or re-drawn */
 .taskbar-pinned-chip img {
+  height: 3vh;
+  max-width: 82%;
+  width: auto;
   object-fit: contain;
   filter: none;
 }
@@ -6453,10 +6776,10 @@ font-weight: 500;
 }
 
 /* ══════════════════════════════════════════════
-   Journal Island & Card
+   Top bar + shared journal star selector
    ══════════════════════════════════════════════ */
 
-/* Container that holds the top ribbon and the journal island together */
+/* Container that holds the top ribbon */
 .top-bar {
   position: relative;
 }
@@ -6464,151 +6787,10 @@ font-weight: 500;
 .top-bar-main {
   display: flex;
   align-items: center;
-  gap: 0.8vw;
+  /* The energy/lovemeter badge sat on the left and the journal island on the
+     right; the ribbon now claims both. */
   margin-left: 1.2vw;
-  margin-right: 7.8vw;
-}
-
-/* Floating pill group at top-right — vertically centred on the .now-card ribbon.
-   Holds the stressmeter badge and the journal island side-by-side. */
-.top-bar-right-group {
-  position: absolute;
-  right: 1.8vw;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Journal island is now a flex child — no longer needs its own abs positioning. */
-.journal-island {
-  position: relative;
-  background: rgba(255, 204, 0, 0.92);
-  color: #111;
-  border-radius: 99px;
-  /* uniform padding keeps it a perfect circle when label is hidden */
-  padding: 0.65vh;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  cursor: pointer;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.35);
-  transition: transform 0.18s ease, box-shadow 0.15s ease, background 0.15s, opacity 0.18s ease;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.journal-island:hover {
-  transform: scale(1.05);
-  box-shadow: 0 5px 18px rgba(0,0,0,0.45);
-  background: rgba(255, 204, 0, 1);
-}
-
-.journal-island:active {
-  transform: scale(0.97);
-}
-
-.journal-island-icon {
-  font-size: 2.8vh;
-  line-height: 1;
-  width: 2.8vh;
-  height: 2.8vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.journal-island-label {
-  /* collapsed by default; expands on hover or reminder mode */
-  font-size: 2.1vh;
-  font-weight: 600;
-  font-stretch: condensed;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  max-width: 0;
-  opacity: 0;
-  padding-left: 0;
-  padding-right: 0;
-  transition: max-width 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
-}
-
-/* expand label on hover or when reminder mode is active */
-.journal-island:hover .journal-island-label,
-.journal-island.is-reminder .journal-island-label {
-  max-width: 120px;
-  opacity: 1;
-  padding-left: 0.4vw;
-  padding-right: 0.7vw;
-}
-
-/* Hidden state - collapsed to icon only */
-.journal-island.island-hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.8);
-}
-
-/* ── Expanded card ─────────────────────────── */
-.journal-card {
-  position: fixed;
-  top: 2vh;
-  right: 1.8vw;
-  z-index: 2400;
-  width: min(88vw, 360px);
-  background: var(--color-project-row-bright);
-  border-radius: 0.5vh;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
-  padding: 0;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-12px) scale(0.96);
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.journal-card.is-open {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.journal-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.2vh 1.5vw;
-  background: var(--color-project-header-bg);
-  border-bottom: 0.8vh solid rgba(255, 204, 0, 1);
-}
-
-.journal-card-title {
-  font-size: 2.2vh;
-  font-weight: 500;
-  color: #fff;
-  letter-spacing: -0.01em;
-}
-
-.journal-card-close {
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.6);
-  font-size: 2vh;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  transition: color 0.15s;
-}
-.journal-card-close:hover { color: #fff; }
-
-.journal-card-body {
-  padding: 1vh;
-  display: flex;
-  flex-direction: column;
-  gap: 1.6vh;
+  margin-right: 1.2vw;
 }
 
 /* Star selector */
@@ -6638,82 +6820,12 @@ font-weight: 500;
   transform: scale(1.15);
 }
 
-/* Date shown in the card body */
-.journal-card-date {
-  font-size: 1.7vh;
-  color: rgba(0, 0, 0, 0.45);
-  margin-bottom: 0.2vh;
-  text-align: center;
-}
-
-/* Textarea */
-.journal-textarea {
-  width: 100%;
-  min-height: 12vh;
-  max-height: 60vh;
-  background: rgb(231, 231, 231);
-  border: 2px solid transparent; /* color set by JS to currentAccentColor */
-  border-radius: 0.4vh;
-  color: #000000;
-  font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif;
-  font-size: 2vh;
-  padding: 0.2vh 0.25vw;
-  resize: vertical;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-}
-.journal-textarea::placeholder { color: rgba(0, 0, 0, 0.562);}
-.journal-textarea:focus {
-  outline: none;
-  border-color: rgba(255,204,0,0.5);
-  background: rgb(231, 231, 231);
-}
-
-/* Submit button */
-.journal-submit-btn {
-  width: 100%;
-  padding: 1.2vh;
-  background: #ffcc00;
-  color: #111;
-  border: none;
-  border-radius: 0.4vh;
-  font-family: inherit;
-  font-size: 2.2vh;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
-  letter-spacing: -0.01em;
-}
-.journal-submit-btn:not(:disabled):hover { background: #ffd633; }
-.journal-submit-btn:not(:disabled):active { transform: scale(0.98); }
-.journal-submit-btn:disabled {
-  opacity: 0.50;
-  cursor: not-allowed;
-}
-
-/* Toast inside card */
-.journal-card-toast {
-  font-size: 1.8vh;
-  color: #7cfc76;
-  text-align: center;
-  min-height: 2.4vh;
-  padding: 0 3vw 1.5vh;
-  transition: opacity 0.3s;
-}
-.journal-card-toast.error { color: #ff7070; }
-
-/* Hide the island and its card on mobile — no pinch-to-zoom environment */
 @media screen and (max-width: 768px) {
   .top-bar-main {
     margin-left: 0;
     margin-right: 0;
     width: 100%;
     justify-content: center;
-  }
-
-  .journal-island,
-  .journal-card {
-    display: none;
   }
 }
 
@@ -6923,6 +7035,18 @@ select.settings-input option {
   padding: 0.6vh 1.2vw;
   cursor: pointer;
   font-size: 1.6vh;
+}
+
+.settings-print-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1vw;
+  margin-bottom: 1.2vh;
+}
+
+/* Native date/time picker icons render dark-on-dark without this. */
+.settings-input[type="datetime-local"] {
+  color-scheme: dark;
 }
 
 .settings-push-status {
@@ -7406,9 +7530,13 @@ select.settings-input option {
   color: #111;
 }
 
-/* ── Width adjustment when review-write drawer is open ─── */
+/* ── Width adjustment when review-write drawer is open ───
+   Must use the same variable the drawer itself is sized with
+   (--project-drawer-width, see .review-write-drawer above). Shrinking the
+   column by --announcements-drawer-width instead left it wider than the
+   gap, so the drawer overlapped the panel's right edge. */
 body.review-write-drawer-open .left-column {
-  width: calc(100% - var(--announcements-drawer-width) - 1vw);
+  width: calc(100% - var(--project-drawer-width) - 1vw);
 }
 
 /* Mobile: review-write-drawer full screen (like note-drawer) */
@@ -7529,72 +7657,70 @@ body.review-write-drawer-open .left-column {
 }
 #stressmeter-badge:hover .badge-label { opacity: 1; }
 
-/* ── Badge rotator: stacks both badges, alternates every 5 s ─────────────── */
-.badge-rotator {
-  position: relative;
-  display: inline-grid;
-  flex-shrink: 0;
-  z-index: 900;
-}
-.badge-rotator > button {
-  grid-area: 1 / 1;
-  opacity: 0;
-  pointer-events: none;
-  /* no transition — animation handles the fading */
-}
-/* Use same keyframes as pastTrainTimeToggle / pastTrainStatusToggle (10 s cycle) */
-.badge-rotator #stressmeter-badge {
-  animation: pastTrainTimeToggle 10s infinite;
-  pointer-events: none;
-}
-.badge-rotator.showing-energy #stressmeter-badge   { pointer-events: auto; }
-.badge-rotator #lovemeter-badge {
-  animation: pastTrainStatusToggle 10s infinite;
-  pointer-events: none;
-}
-.badge-rotator.showing-lovemeter #lovemeter-badge  { pointer-events: auto; }
+/* ── Hidden badge host ─────────────────────────────────────────────────────
+   The energy / lovemeter badges are no longer part of the visible UI. The
+   buttons stay in the DOM (inside #badge-host) so stressmeter-ui.js and
+   lovemeter-ui.js keep their entry points; the taskbar DB-button menu drives
+   them via .click().                                                        */
+.badge-host { display: none !important; }
 
-/* Hover popup menu */
-.badge-rotator-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
+/* ── DB button flyout menu ─────────────────────────────────────────────────
+   Slides out to the right of the brand block on hover. Anchored to
+   .db-menu-host, which wraps the button and the menu so the pointer can
+   travel from one to the other without the menu closing.
+   NOTE: no ancestor between here and .taskbar may set a non-visible
+   overflow, or the flyout is clipped to the rail's width.               */
+.db-menu-host {
+  position: relative;
   width: 100%;
-  background: #000;
-  border-top: none;
-  border-right: none;
-  border-bottom: none;
-  border-radius: 0 0 2px 2px;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  clip-path: inset(0 0 100% 0);
+  align-items: center;
+}
+.badge-rotator-menu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: max-content;
+  background: var(--color-bg-taskbar);
+  border: 1px solid var(--color-border-subtle);
+  border-left: none;
+  border-radius: 0 0.8vh 0.8vh 0;
+  padding: 0.4vh 0;
+  display: flex;
+  flex-direction: column;
+  clip-path: inset(0 100% 0 0);
   pointer-events: none;
   transition: clip-path 0.15s ease;
   z-index: 1100;
   white-space: nowrap;
-  box-shadow: 2px 4px 10px rgba(0,0,0,0.55);
+  box-shadow: 0.4vh 0.3vh 1.6vh rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
-.badge-rotator:hover .badge-rotator-menu {
-  clip-path: inset(0 0 0% 0);
+/* :has(:focus-visible) rather than :focus-within — keeps the menu reachable
+   by keyboard, but a mouse click (which leaves focus on the clicked item)
+   doesn't pin it open after the pointer leaves. */
+.db-menu-host:hover .badge-rotator-menu,
+.db-menu-host:has(:focus-visible) .badge-rotator-menu {
+  clip-path: inset(0 0% 0 0);
   pointer-events: auto;
 }
 .badge-rotator-menu-item {
   background: transparent;
   border: none;
-  border-left: 0.4vh solid transparent;
-  color: #fff;
-  font-size: 2.4vh;
-  font-weight: 600;
-  font-stretch: condensed;
-  padding: 0.9vh 0.6vw;
+  border-left: 0.35vh solid transparent;
+  color: var(--color-nav-item-hover);
+  font-family: inherit;
+  font-size: 1.9vh;
+  font-weight: 500;
+  font-stretch: var(--font-stretch-ui);
+  padding: 1vh 1.4vh 1vh 1vh;
   cursor: pointer;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 0.5vw;
-  transition: background 0.1s;
+  gap: 1vh;
+  transition: background 0.1s, color 0.1s;
   box-sizing: border-box;
   width: 100%;
 }
@@ -7605,19 +7731,29 @@ body.review-write-drawer-open .left-column {
   border-left-color: var(--lm-accent-pink);
 }
 .badge-rotator-menu-item:hover {
-  background: rgba(255,255,255,0.12);
+  background: var(--color-surface-3);
+  color: var(--color-nav-item-active);
 }
 .badge-rotator-menu-icon {
-  width: 2.2vh;
-  height: 2.2vh;
+  width: 2vh;
+  height: 2vh;
   flex-shrink: 0;
   display: block;
   filter: invert(1);
 }
 .badge-rotator-menu-heart {
-  font-size: 2.2vh;
+  font-size: 2vh;
   line-height: 1;
   color: var(--lm-accent-pink);
+  flex-shrink: 0;
+}
+.badge-rotator-menu-item--journal {
+  border-left-color: var(--color-nav-dot-reminder);
+}
+.badge-rotator-menu-star {
+  font-size: 2vh;
+  line-height: 1;
+  color: var(--color-nav-dot-reminder);
   flex-shrink: 0;
 }
 .badge-rotator-menu-item--search {
@@ -7710,7 +7846,12 @@ body.review-write-drawer-open .left-column {
 .mobile-ribbon-menu { display: none; }
 
 @media (max-width: 768px) {
-  .badge-rotator { display: none; }
+  /* Mobile uses the ribbon-tap menu instead; the taskbar is a horizontal row. */
+  .db-menu-host .badge-rotator-menu { display: none; }
+  .db-menu-host {
+    width: auto;
+    height: 100%;
+  }
 
   /* Mobile ribbon-tap menu — appears below the top-ribbon */
   .mobile-ribbon-menu {
@@ -7770,12 +7911,6 @@ body.review-write-drawer-open .left-column {
     padding-left: 4vw;
   }
 }
-
-/* Hide both badges whenever any drawer is open */
-body.editor-drawer-open .top-bar-right-group,
-body.announcements-open .top-bar-right-group,
-body.notes-open .top-bar-right-group,
-body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
 
 #stressmeter-badge:hover { background: var(--color-surface-4); }
 
@@ -8083,7 +8218,6 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
 #lovemeter-badge.lm-zone-severe        { border-color: rgba(192,38,211,0.70); box-shadow: 0 0 10px rgba(192,38,211,0.30); }
 #lovemeter-badge.lm-zone-supercritical { border-color: rgba(124,58,237,0.80); box-shadow: 0 0 14px rgba(124,58,237,0.40); }
 
-/* #lovemeter-badge mobile hide moved to .badge-rotator media rule above */
 
 /* ── Dashboard ──────────────────────────────────────────────────────────── */
 /* Inherits .stress-dashboard layout; add pink accent when open */
@@ -8681,12 +8815,6 @@ body.project-drawer-open .top-bar-right-group { opacity: 0; pointer-events: none
 /* When lm event drawer is open: keep overlay full-width (drawer is fixed, overlay is absolute) */
 body.lm-drawer-open .lm-overlay {
   right: 0 !important;
-}
-
-/* Hide energy/love badge and review island when lovemeter overlay is open */
-body.lm-open #badge-rotator,
-body.lm-open #journal-island {
-  display: none;
 }
 
 /* Preset grid in event drawer */

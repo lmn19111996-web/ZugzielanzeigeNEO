@@ -8,4 +8,6 @@ push_subscriptions.json
 lovemeter_data.json
 lovemeter_presets.json
 app_settings.json
+kiosk_config.json
+vvs_platform_memory.json
 node_modules/

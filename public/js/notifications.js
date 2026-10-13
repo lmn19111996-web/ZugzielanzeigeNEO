@@ -282,7 +282,7 @@
               title,
               options: {
                 body: chgBody,
-                icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+                icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
                 vibrate: [200, 100, 200],
                 data: { url: appUrl }
               }
@@ -321,7 +321,7 @@
             title: windowTitle,
             options: {
               body: windowBody,
-              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200, 100, 200],
               data: { url: appUrl }
             }
@@ -347,7 +347,7 @@
             title: depTitle,
             options: {
               body: depBody,
-              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [300, 100, 300],
               data: { url: appUrl }
             }
@@ -365,7 +365,7 @@
             title: 'Zeit für Ihren Umstieg',
             options: {
               body: connBody,
-              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200, 100, 200],
               data: { url: appUrl }
             }
@@ -390,7 +390,7 @@
             title,
             options: {
               body: endBody,
-              icon: lineLabel ? `/res/png/square/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
+              icon: lineLabel ? `/res/png/${lineLabel.toLowerCase()}.png` : '/res/announcement.png',
               vibrate: [200],
               data: { url: appUrl }
             }

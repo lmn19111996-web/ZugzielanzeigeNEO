@@ -107,6 +107,7 @@
         // Process DB API data if station selected
         if (dbRes && dbRes.ok) {
           const dbData = await dbRes.json();
+          registerBusLines(dbData.trains);
           dbTrains = (dbData.trains || []).map(t => {
             // Normalize property names: use zwischenhalte consistently
             const normalized = {
@@ -441,6 +442,22 @@
 
     // ==================== RECURRING TRAINS ====================
 
+    // True if the recurring stem runs on local-midnight Date `d`. startDateObj is
+    // the stem's local-midnight start date, which anchors weekly/monthly/yearly
+    // patterns. Shared by materializeFromStems and the print export
+    // (print-schedule.js), which projects stems past the materialized window.
+    function stemMatchesDate(stem, startDateObj, d) {
+      const { pattern = 'weekdays', days = [] } = stem.recurrence || {};
+      const dow = d.getDay(); // 0=Sun … 6=Sat
+      if      (pattern === 'daily')    return true;
+      else if (pattern === 'weekdays') return dow >= 1 && dow <= 5;
+      else if (pattern === 'weekly')   return dow === startDateObj.getDay();
+      else if (pattern === 'monthly')  return d.getDate() === startDateObj.getDate();
+      else if (pattern === 'yearly')   return d.getDate() === startDateObj.getDate() && d.getMonth() === startDateObj.getMonth();
+      else if (pattern === 'custom')   return Array.isArray(days) && days.includes(dow);
+      return false;
+    }
+
     // Materialize recurring stems into real spontaneousEntries for a rolling 60-day window.
     // Idempotent: skips dates whose _uniqueId already exists or is in stem.skippedDates.
     function materializeFromStems() {
@@ -482,11 +499,7 @@
         // A future startDate correctly limits the window; a past one never limits it.
         const effectiveStartMs = Math.max(startDateObj.getTime(), todayMs);
 
-        const { pattern = 'weekdays', days = [] } = stem.recurrence || {};
-        // For weekly: anchor DOW comes from startDate (local)
-        const stemDow = startDateObj.getDay(); // 0=Sun … 6=Sat
-        const stemDom = startDateObj.getDate();        // day-of-month for monthly
-        const stemMonth = startDateObj.getMonth();     // month index for yearly
+        const { pattern = 'weekdays' } = stem.recurrence || {};
 
         // Extend look-ahead window for infrequent patterns
         const windowDays = (pattern === 'yearly') ? 366 : (pattern === 'monthly') ? 35 : WINDOW_DAYS;
@@ -495,16 +508,7 @@
           const d = localMidnight(todayMs, i);         // fresh Date each iteration
           if (d.getTime() < effectiveStartMs) continue;
 
-          const dow = d.getDay();
-          let matches = false;
-          if      (pattern === 'daily')    matches = true;
-          else if (pattern === 'weekdays') matches = dow >= 1 && dow <= 5;
-          else if (pattern === 'weekly')   matches = dow === stemDow;
-          else if (pattern === 'monthly')  matches = d.getDate() === stemDom;
-          else if (pattern === 'yearly')   matches = d.getDate() === stemDom && d.getMonth() === stemMonth;
-          else if (pattern === 'custom')   matches = Array.isArray(days) && days.includes(dow);
-
-          if (!matches) continue;
+          if (!stemMatchesDate(stem, startDateObj, d)) continue;
 
           const dateStr = toLocalStr(d);
           if (skipped.has(dateStr)) continue;

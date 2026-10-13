@@ -702,7 +702,8 @@
         if (bw > 24) {
           var lineLower = (t.linie || '').toLowerCase().replace(/[^a-z0-9]/g, '');
           var iw = 32, ih = 16;
-          s += '<image href="res/' + lineLower + '.svg" x="' + f(bx + bw / 2 - iw / 2) + '" y="' + (T + 6) +
+          var lineHref = isBusLine(t) ? getBusSVG(t.linie, isSevBus(t)) : 'res/' + lineLower + '.svg';
+          s += '<image href="' + lineHref + '" x="' + f(bx + bw / 2 - iw / 2) + '" y="' + (T + 6) +
                '" width="' + iw + '" height="' + ih + '"/>';
           if (alertLvl > 0) {
             var aIcon = alertLvl === 3 ? 'auslastung4' : alertLvl === 2 ? 'auslastung3' : 'auslastung2';
@@ -995,7 +996,8 @@
     if (tipTask) {
       if (step.task) {
         var tipLine = (step.task.linie || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        tipTask.innerHTML = '<img src="res/' + tipLine + '.svg" class="sg-tip-linie-badge" alt="' + esc(step.task.linie || '') + '"> ' + esc(taskName);
+        var tipSrc = isBusLine(step.task) ? getBusSVG(step.task.linie, isSevBus(step.task)) : 'res/' + tipLine + '.svg';
+        tipTask.innerHTML = '<img src="' + tipSrc + '" class="sg-tip-linie-badge" alt="' + esc(step.task.linie || '') + '"> ' + esc(taskName);
       } else {
         tipTask.textContent = taskName;
       }
