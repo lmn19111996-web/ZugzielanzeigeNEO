@@ -14,6 +14,7 @@ const express = require('express');
 const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
 const webPush = require('web-push');
+const itemBins = require('./item-bins');
 
 // --- Config ---
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -214,16 +215,40 @@ function asArray(x) {
   return Array.isArray(x) ? x : [x];
 }
 
-// Prune spontaneousEntries: remove past entries that have no projectId
-// These are already archived in weekly .log files and have zero runtime value.
-function pruneExpiredEntries(spontaneousEntries) {
+// Age cap for pruneExpiredEntries, in months. Configurable in the settings
+// page (pruneAgeMonths in app_settings.json); out-of-range values fall back
+// to the default.
+const PRUNE_AGE_MONTHS_DEFAULT = 12;
+const PRUNE_AGE_MONTHS_MAX = 120;
+
+async function getPruneAgeMonths() {
+  try {
+    const num = Number((await readAppSettings()).pruneAgeMonths);
+    if (num >= 1 && num <= PRUNE_AGE_MONTHS_MAX) return num;
+  } catch {}
+  return PRUNE_AGE_MONTHS_DEFAULT;
+}
+
+// Prune spontaneousEntries: remove entries older than the age cap that have
+// no projectId and weren't checked in. Everything younger than the cap stays,
+// so recent history is visible in the app; all of it is archived in the
+// weekly .log files either way.
+function pruneExpiredEntries(spontaneousEntries, ageMonths = PRUNE_AGE_MONTHS_DEFAULT) {
   if (!Array.isArray(spontaneousEntries)) return [];
   const todayStr = fmtYYYYMMDD(new Date());
-  const now = new Date();
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - ageMonths);
+  const cutoffStr = fmtYYYYMMDD(cutoff);
   const before = spontaneousEntries.length;
   const pruned = spontaneousEntries.filter(t => {
     // Notes are intentionally persistent and must not be auto-pruned.
     if (t.type === 'note' || String(t.linie || '').toUpperCase() === 'NOTE') return true;
+    // Information entries live until the last day they're valid for;
+    // openEnded ones ("Kein Enddatum") never expire.
+    if (t.type === 'information') return !!t.openEnded || (t.dateEnd || t.date || '') >= todayStr;
+    // Checked-in trains are a record of real work (and open ones still need
+    // checking out), so they're always kept, project or not.
+    if (t.checkedIn) return true;
 
     // Past project train with dauer 0: treat as non-project for prune logic,
     // but do not mutate the original object in-place.
@@ -231,21 +256,13 @@ function pruneExpiredEntries(spontaneousEntries) {
     if (effectiveProjectId && t.date && t.date < todayStr && (Number(t.dauer) || 0) === 0) {
       effectiveProjectId = null;
     }
-    if (!t.date) return true;           // no date = note/undated, keep
-    if (effectiveProjectId) return true; // project task, always keep
-    if (t.date >= todayStr) return true; // today or future, always keep
-    // Past date, no project: keep only if end time (plan/actual + dauer) is still in the future
-    const timeStr = t.actual || t.plan;
-    const m = timeStr && timeStr.match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return false;
-    const [yy, mo, dd] = t.date.split('-').map(Number);
-    const end = new Date(yy, mo - 1, dd, Number(m[1]), Number(m[2]), 0, 0);
-    end.setMinutes(end.getMinutes() + (Number(t.dauer) || 0));
-    return end > now;
+    if (!t.date) return true;              // no date = note/undated, keep
+    if (effectiveProjectId) return true;    // project task, always keep
+    return t.date >= cutoffStr;             // otherwise keep until it ages out
   });
   const removed = before - pruned.length;
   if (removed > 0) {
-    console.log(`🧹 Pruned ${removed} expired entries (past, no projectId, already ended) from spontaneousEntries`);
+    console.log(`🧹 Pruned ${removed} entries older than ${ageMonths} months (no projectId, not checked in) from spontaneousEntries`);
   }
   return pruned;
 }
@@ -447,6 +464,7 @@ function accumulateTrainData(trains, scheduleType, additionalInfo = {}) {
 
   trains.forEach(train => {
     if (isRecurringStem(train, sourceType)) return;
+    if (train && train.type === 'information') return; // announcement text, not a trip
     const actualDate = resolveLogServiceDate(train, sourceType);
 
     // Skip future-dated entries. History logs should only contain past/present
@@ -1313,6 +1331,12 @@ function buildTrainsFromVvs(json) {
     const props = e.location?.properties || {};
     const plannedIso = e.departureTimePlanned || e.departureTimeBaseTimetable;
     const platform = props.platform || props.platformName || undefined;
+    // Live incident reports ("Reparatur an einer Weiche"); planned notices
+    // (`infos`, mostly roadworks already in the timetable) don't count
+    const incident = (e.hints || [])
+      .filter((h) => h.type === 'RTIncidentCall' && h.content)
+      .map((h) => h.content)
+      .join(' · ');
     return {
       // `number` is the label shown on the vehicle — depot runs are just "U"
       linie: t.number || t.disassembledName || 'Unknown',
@@ -1327,6 +1351,7 @@ function buildTrainsFromVvs(json) {
       // seconds, plan/actual above are truncated to HH:mm for the main app.
       departureAt: e.departureTimeEstimated || plannedIso || undefined,
       canceled: !!e.isCancelled || (props.realtimeStatus || []).includes('DEPARTURE_CANCELLED'),
+      incident: incident || undefined,
       date: vvsDate(plannedIso),
       stops: '',
       dauer: null,
@@ -1408,6 +1433,17 @@ async function loadVvsDepartures(evaStr) {
       },
       timeout: 10000,
     });
+    // EFA answers HTTP 200 even when its backend is down: it then reports an
+    // error in systemMessages (e.g. BROKER -100) and resolves no locations.
+    // Treat that as a failure so stale cached data is served instead of [].
+    const efaError = (res.data?.systemMessages || []).find((m) => m.type === 'error');
+    if (efaError || !res.data?.locations?.length) {
+      const err = new Error(efaError
+        ? `VVS EFA error ${efaError.module} ${efaError.code}${efaError.text ? `: ${efaError.text}` : ''}`
+        : `VVS EFA resolved no location for ${stopId}`);
+      err.providerFault = true;
+      throw err;
+    }
     const { trains, messages } = buildTrainsFromVvs(res.data);
     applyVvsPlatformMemory(stopId, trains);
     const data = {
@@ -1436,6 +1472,11 @@ const app = express();
 app.use(express.static(PUBLIC_DIR));
 // Parse JSON bodies for local schedule save
 app.use(express.json({ limit: '1mb' }));
+
+// Item bins (see item-bins.js). Deleted objects of every kind go to the
+// trash and are purged after 30 days; an archive bin can be added here later.
+itemBins.defineBin('trash', { file: path.join(__dirname, 'bin_trash.json'), retentionDays: 30 });
+app.use('/api/bins', itemBins.createRouter());
 
 // Health
 app.get('/api/health', (req, res) => {
@@ -1815,7 +1856,179 @@ app.post('/api/train-history/flags', async (req, res) => {
   }
 });
 
-// Remove a bad/spam log entry entirely.
+// ── Missing-entry triage (log-triage.html, "Gelöschte Einträge") ──────────
+// The logs keep every train that was ever saved on or after its date, and
+// nothing ever removes a record when the train is deleted from data.json. So
+// "in the log but not in data.json" is either pruned (by the old no-project
+// rule) or deleted by hand. These two routes list those trains with a best
+// guess at which, and put the ones picked back into data.json.
+
+// Latest logged state per _uniqueId across every weekly file, plus data that
+// is still waiting for the daily flush (so recent deletions show up too).
+// Occurrence records only - recurring stems, duration-only templates, notes
+// and information entries are skipped.
+async function readLatestLoggedTrains() {
+  const byUid = new Map();
+  const consider = (record) => {
+    if (!record || !record._uniqueId) return;
+    if (record.scheduleType === 'fixed') return;
+    if (['duration-only', 'note', 'information'].includes(record.type)) return;
+    const prev = byUid.get(record._uniqueId);
+    if (!prev || String(record.loggedAt || '') >= String(prev.loggedAt || '')) byUid.set(record._uniqueId, record);
+  };
+  for (const { filePath } of await listWeeklyLogFiles()) {
+    (await readLogAsStateMap(filePath)).forEach(consider);
+  }
+  for (const trainMap of pendingTrainData.values()) {
+    trainMap.forEach(record => consider(normalizeLogRecordFromAny(record)));
+  }
+  return byUid;
+}
+
+// _uniqueIds of schedule entries currently in the trash bin (single entries
+// and the children of trashed templates) - proof they were deleted on purpose.
+async function readTrashedScheduleUids() {
+  const uids = new Set();
+  try {
+    const bin = JSON.parse(await fsPromises.readFile(path.join(__dirname, 'bin_trash.json'), 'utf8'));
+    for (const item of (bin && bin.items) || []) {
+      const p = item && item.payload;
+      if (!p) continue;
+      if (item.kind === 'schedule-entry' && p.entry && p.entry._uniqueId) uids.add(p.entry._uniqueId);
+      if (item.kind === 'template') (p.children || []).forEach(c => c && c._uniqueId && uids.add(c._uniqueId));
+    }
+  } catch {}
+  return uids;
+}
+
+// Why a logged train is probably missing from data.json, most certain first:
+//   trash      - it's in the trash bin
+//   checked-in - checked-in trains were all restored on 2026-10-25 and the
+//                prune keeps them since, so it was deleted afterwards
+//   skipped    - a recurring occurrence listed in its template's skippedDates
+//   project    - project + duration, which the prune never removed
+//   pruned     - no project (or duration 0): what the old prune dropped
+function classifyMissingTrain(record, ctx) {
+  const date = record.date || record.serviceDate || record.plannedDate;
+  if (ctx.trashed.has(record._uniqueId)) return 'trash';
+  if (record.checkedIn) return 'checked-in';
+  if (record._templateId && ctx.skipped.has(`${record._templateId}|${date}`)) return 'skipped';
+  if (record.projectId && Number(record.dauer) > 0) return 'project';
+  return 'pruned';
+}
+
+async function readScheduleFile() {
+  return JSON.parse(await fsPromises.readFile(path.join(PUBLIC_DIR, 'data.json'), 'utf8'));
+}
+
+function scheduleUidSet(data) {
+  const uids = new Set();
+  for (const key of ['spontaneousEntries', 'trains', 'fixedSchedule']) {
+    for (const t of Array.isArray(data[key]) ? data[key] : []) if (t && t._uniqueId) uids.add(t._uniqueId);
+  }
+  return uids;
+}
+
+app.get('/api/train-history/missing', async (req, res) => {
+  try {
+    const data = await readScheduleFile();
+    const present = scheduleUidSet(data);
+    const stems = new Set((data.fixedSchedule || []).map(s => s && s._uniqueId).filter(Boolean));
+    const skipped = new Set();
+    for (const stem of data.fixedSchedule || []) {
+      for (const date of (stem && stem.skippedDates) || []) skipped.add(`${stem._uniqueId}|${date}`);
+    }
+    const ctx = { trashed: await readTrashedScheduleUids(), skipped };
+
+    const entries = [];
+    for (const record of (await readLatestLoggedTrains()).values()) {
+      if (present.has(record._uniqueId)) continue;
+      entries.push({
+        ...record,
+        reason: classifyMissingTrain(record, ctx),
+        templateGone: !!(record._templateId && !stems.has(record._templateId))
+      });
+    }
+    entries.sort((a, b) => getLogRecordTimestampMs(a) - getLogRecordTimestampMs(b));
+    res.json({ entries });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to list missing entries', details: e.message });
+  }
+});
+
+// Puts the picked trains (by _uniqueId) back into data.json, rebuilt from
+// their latest log record. Trains already in data.json are left alone.
+app.post('/api/train-history/restore', async (req, res) => {
+  try {
+    const uids = (req.body && req.body.uids) || [];
+    if (!Array.isArray(uids) || !uids.length) {
+      return res.status(400).json({ error: 'Missing uids array' });
+    }
+
+    const data = await readScheduleFile();
+    const present = scheduleUidSet(data);
+    const logged = await readLatestLoggedTrains();
+
+    const restored = [];
+    const missing = [];
+    for (const uid of uids) {
+      if (present.has(uid)) continue;
+      const r = logged.get(uid);
+      if (!r) { missing.push(uid); continue; }
+      const date = r.date || r.serviceDate || r.plannedDate;
+      const entry = {
+        _uniqueId: r._uniqueId,
+        linie: r.linie || '',
+        ziel: r.ziel || '',
+        plan: r.plan || '',
+        actual: r.actual || '',
+        dauer: Number(r.dauer) || 0,
+        zwischenhalte: Array.isArray(r.zwischenhalte) ? r.zwischenhalte : [],
+        canceled: !!r.canceled,
+        date,
+        plannedDate: date
+      };
+      if (r.checkedIn) entry.checkedIn = true;
+      if (r.checkedOut) entry.checkedOut = true;
+      if (r._templateId) entry._templateId = r._templateId;
+      if (r.projectId) entry.projectId = r.projectId;
+      if (r.type) entry.type = r.type;
+      if (r.delayReason) entry.delayReason = r.delayReason;
+      restored.push(entry);
+      present.add(uid);
+    }
+
+    if (restored.length) {
+      data.spontaneousEntries = [...(data.spontaneousEntries || []), ...restored];
+      // Bump the version so open clients refetch instead of saving stale
+      // entries back over the restored ones.
+      data._meta = data._meta || {};
+      data._meta.version = Date.now();
+      data._meta.lastSaved = new Date().toISOString();
+      await fsPromises.writeFile(path.join(PUBLIC_DIR, 'data.json'), JSON.stringify(data, null, 2), 'utf8');
+      scheduleCache = data;
+      scheduleCacheTime = Date.now();
+      try { broadcastUpdate('log-restore', { version: data._meta.version }); } catch {}
+    }
+
+    res.json({ success: true, restored: restored.length, missing });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to restore entries', details: e.message });
+  }
+});
+
+// Restoring a trashed log entry puts the record back into its weekly file.
+itemBins.registerKind('log-entry', {
+  async restore({ date, record } = {}) {
+    const logFile = resolveWeeklyLogFileForDate(date);
+    if (!logFile || !record || !record.recordId) throw new Error('Invalid log entry');
+    const stateMap = await readLogAsStateMap(logFile);
+    stateMap.set(record.recordId, record);
+    await rewriteLogFile(stateMap, logFile);
+  }
+});
+
+// Remove a bad/spam log entry (moves it to the trash).
 app.delete('/api/train-history/entry', async (req, res) => {
   try {
     const { recordId, date } = req.body || {};
@@ -1836,6 +2049,14 @@ app.delete('/api/train-history/entry', async (req, res) => {
       return res.status(404).json({ error: 'Log entry not found' });
     }
 
+    const record = stateMap.get(recordId);
+    await itemBins.addItems('trash', [{
+      kind: 'log-entry',
+      typeLabel: 'Log-Eintrag',
+      label: [record.linie, record.ziel].filter(Boolean).join(' → ') || recordId,
+      detail: date,
+      payload: { date, record }
+    }]);
     stateMap.delete(recordId);
     await rewriteLogFile(stateMap, logFile);
 
@@ -1907,8 +2128,8 @@ app.post('/api/schedule', async (req, res) => {
     // so no new `legacy|...` keys are produced.
     if (trainsArr.length > 0)     logTrainHistory(trainsArr, 'spontaneous', logContext);
 
-    // Prune expired entries (past + no projectId) before persisting to disk
-    const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous);
+    // Prune entries past the age cap before persisting to disk
+    const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous, await getPruneAgeMonths());
 
     // Use the client's newVersion so client and server agree on the version number.
     // If the client's SSE receives a version > its local version it triggers a refetch,
@@ -1959,7 +2180,7 @@ app.post('/api/prune', async (req, res) => {
     const data = JSON.parse(content);
 
     const rawSpontaneous = Array.isArray(data.spontaneousEntries) ? data.spontaneousEntries : [];
-    const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous);
+    const prunedSpontaneous = pruneExpiredEntries(rawSpontaneous, await getPruneAgeMonths());
     const removedCount = rawSpontaneous.length - prunedSpontaneous.length;
 
     const toSave = {
@@ -2090,9 +2311,49 @@ async function readJournal() {
   }
 }
 
+// One-time migration: the journal-only trash list (pre item-bins) moves
+// into the shared trash.
+(async function migrateJournalTrash() {
+  try {
+    const data = await readJournal();
+    if (!Array.isArray(data.trash)) return;
+    if (data.trash.length) await itemBins.addItems('trash', data.trash.map(journalTrashItem));
+    delete data.trash;
+    await writeJournal(data);
+    console.log('🗑️ Migrated journal trash into item bins');
+  } catch (e) {
+    console.warn('Journal trash migration failed:', e.message);
+  }
+})();
+
 async function writeJournal(data) {
   await fsPromises.writeFile(JOURNAL_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
+
+function journalTrashItem(entry) {
+  const { deletedAt, ...clean } = entry;
+  return {
+    kind: 'journal-entry',
+    typeLabel: 'Rezension',
+    label: (clean.date || '') + ' · ' + '★'.repeat(Number(clean.rating) || 0),
+    detail: (clean.text || '').slice(0, 140),
+    payload: clean
+  };
+}
+
+// Restoring re-inserts the entry in date order (newest first)
+itemBins.registerKind('journal-entry', {
+  async restore(entry) {
+    if (!entry || !entry.id) throw new Error('Invalid journal entry');
+    const data = await readJournal();
+    if (data.reviews.some(r => r.id === entry.id)) return;
+    const key = r => (r.date || '') + (r.createdAt || '');
+    const pos = data.reviews.findIndex(r => key(r) < key(entry));
+    if (pos === -1) data.reviews.push(entry);
+    else data.reviews.splice(pos, 0, entry);
+    await writeJournal(data);
+  }
+});
 
 // GET /api/journal - list all entries
 app.get('/api/journal', async (req, res) => {
@@ -2140,14 +2401,15 @@ app.put('/api/journal/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/journal/:id - delete entry
+// DELETE /api/journal/:id - move entry to the trash
 app.delete('/api/journal/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const data = await readJournal();
-    const before = data.reviews.length;
-    data.reviews = data.reviews.filter(r => r.id !== id);
-    if (data.reviews.length === before) return res.status(404).json({ error: 'Entry not found' });
+    const idx = data.reviews.findIndex(r => r.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Entry not found' });
+    const [entry] = data.reviews.splice(idx, 1);
+    await itemBins.addItems('trash', [journalTrashItem(entry)]);
     await writeJournal(data);
     res.json({ ok: true });
   } catch (e) {
@@ -2162,6 +2424,8 @@ app.put('/api/journal', async (req, res) => {
     if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.reviews)) {
       return res.status(400).json({ error: 'expected { reviews: [...] }' });
     }
+    // Trashed entries live in the item bins, never in journal.json
+    delete data.trash;
     await writeJournal(data);
     res.json({ ok: true, count: data.reviews.length });
   } catch (e) {
@@ -2219,15 +2483,34 @@ app.post('/api/lovemeter', async (req, res) => {
   }
 });
 
-// DELETE /api/lovemeter/:ts – remove a single data point by timestamp
+// Restoring a trashed point upserts it back by timestamp
+itemBins.registerKind('lovemeter-point', {
+  async restore(point) {
+    if (!point || typeof point.ts !== 'number') throw new Error('Invalid lovemeter point');
+    const points = await readLovemeterPoints();
+    if (!points.some(p => p.ts === point.ts)) points.push(point);
+    points.sort((a, b) => a.ts - b.ts);
+    await writeLovemeterPoints(points);
+    broadcastUpdate('lovemeter-change', { dataType: 'lovemeter' });
+  }
+});
+
+// DELETE /api/lovemeter/:ts – move a single data point to the trash
 app.delete('/api/lovemeter/:ts', async (req, res) => {
   try {
     const ts = Number(req.params.ts);
     if (!ts) return res.status(400).json({ error: 'invalid ts' });
     const points = await readLovemeterPoints();
-    const before = points.length;
+    const removed = points.find(p => p.ts === ts);
+    if (!removed) return res.status(404).json({ error: 'not found' });
     const next = points.filter(p => p.ts !== ts);
-    if (next.length === before) return res.status(404).json({ error: 'not found' });
+    await itemBins.addItems('trash', [{
+      kind: 'lovemeter-point',
+      typeLabel: 'Lovemeter',
+      label: removed.event || ('Wert ' + Math.round(removed.M)),
+      detail: new Date(ts).toLocaleString('de-DE'),
+      payload: removed
+    }]);
     await writeLovemeterPoints(next);
     broadcastUpdate('lovemeter-change', { dataType: 'lovemeter' });
     res.json({ ok: true, points: next });
@@ -2326,7 +2609,9 @@ const KIOSK_CONFIG_FILE = path.join(__dirname, 'kiosk_config.json');
 // Fixed screens plus the two automatic modes
 const KIOSK_SCREENS = ['abfahrten', 'board', 'fex', 'buffet', 'announcement'];
 const KIOSK_SCREEN_MODES = new Set([...KIOSK_SCREENS, 'alternate', 'schedule']);
-const KIOSK_WINDOW_SCREENS = new Set(['board', 'fex', 'buffet', 'announcement']); // shown during a schedule window
+// Shown during a schedule window, or outside them (`scheduleDefault`): any
+// fixed screen, or the rotation of 'alternate'
+const KIOSK_WINDOW_SCREENS = new Set([...KIOSK_SCREENS, 'alternate']);
 const KIOSK_STATION_ICONS = new Set(['sbahn', 'stadtbahn', 'zacke', 'bus', 'none']);
 const KIOSK_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -2339,6 +2624,7 @@ const KIOSK_CONFIG_DEFAULTS = {
   announcement: '', // announcement screen: first line = bold heading, rest = text
   focusLeadMinutes: 15, // "Nächste Abfahrten": first task fills the screen this long before it starts
   schedule: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // Date#getDay keys, 0 = Sunday
+  scheduleDefault: 'abfahrten', // 'schedule' mode: shown outside every window
   sides: [null, null] // [left, right]
 };
 
@@ -2390,6 +2676,7 @@ function sanitizeKioskConfig(input) {
     announcement: String(cfg.announcement == null ? '' : cfg.announcement).replace(/\r\n?/g, '\n').slice(0, 2000),
     focusLeadMinutes: Number.isFinite(focusLead) ? Math.min(Math.max(focusLead, 0), 180) : KIOSK_CONFIG_DEFAULTS.focusLeadMinutes,
     schedule,
+    scheduleDefault: KIOSK_WINDOW_SCREENS.has(cfg.scheduleDefault) ? cfg.scheduleDefault : KIOSK_CONFIG_DEFAULTS.scheduleDefault,
     sides: [sanitizeKioskSide(sides[0]), sanitizeKioskSide(sides[1])]
   };
 }
@@ -2472,7 +2759,15 @@ app.get('/api/db-departures', async (req, res) => {
     // If live fetch fails, return last cached data only if it's for the same station
     console.warn('Departure fetch failed:', e.message);
     if (cachedEva === eva && cachedData.trains?.length) return res.json(cachedData);
-    res.status(503).json({ trains: [], error: eva.startsWith('VVS_') ? 'VVS API unavailable' : 'DB API unavailable' });
+    // Only blame the provider when it actually answered (error status or an
+    // EFA error payload); no response at all means our own connection failed
+    const reason = e.providerFault || e.response ? 'provider' : 'network';
+    res.status(503).json({
+      trains: [],
+      reason,
+      error: reason === 'network' ? 'No connection to departure API'
+        : eva.startsWith('VVS_') ? 'VVS API unavailable' : 'DB API unavailable',
+    });
   }
 });
 
@@ -2584,4 +2879,23 @@ app.listen(PORT, '0.0.0.0', async () => {
   // Set up periodic check (every hour)
   setInterval(checkAndFlushIfNeeded, CHECK_INTERVAL_MS);
   console.log('✅ Daily logging timer started');
+});
+
+// Pending log data only lives in memory until the daily flush, so write it out
+// before the process exits - otherwise a stop/restart loses up to a day of
+// history. SIGINT = Ctrl+C, SIGTERM = kill/service stop, SIGHUP = console
+// window closed (Windows), SIGBREAK = Ctrl+Break (Windows).
+let shuttingDown = false;
+async function flushAndExit(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`🛑 ${signal} received - flushing pending train data before exit...`);
+  try {
+    await flushPendingTrainData();
+  } finally {
+    process.exit(0);
+  }
+}
+['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'].forEach(signal => {
+  process.on(signal, () => flushAndExit(signal));
 });

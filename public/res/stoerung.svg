@@ -1,0 +1,7 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Störung: warning triangle with the "!" cut out (evenodd), single color.
+     Consumed as a CSS mask (see .info-icon variants in style.css) and tinted
+     via tokens, so the "!" shows the plate color behind it.
+     Note: no double hyphens in XML comments - they make the file invalid. -->
+<path fill="#000000" fill-rule="evenodd" d="M10.27 3.0 C11.04 1.67 12.96 1.67 13.73 3.0 L22.73 18.6 C23.5 19.93 22.54 21.6 21.0 21.6 H3.0 C1.46 21.6 0.5 19.93 1.27 18.6 Z M10.75 8.2 H13.25 L12.85 15.1 H11.15 Z M12 16.3 A1.45 1.45 0 1 1 11.999 16.3 Z"/>
+</svg>

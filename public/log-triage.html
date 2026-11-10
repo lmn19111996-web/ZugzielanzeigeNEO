@@ -20,6 +20,13 @@
   cannot revert it; this is the only route that does so. Only checkedIn /
   checkedOut are sent. No time field is ever in the payload, so actual, dauer
   and plan cannot be altered from here.
+
+  Second tab, "Gelöschte Einträge": every train that is in the logs but not in
+  data.json (GET /api/train-history/missing). The logs never drop a train when
+  it's deleted, so each one was either pruned by the old no-project rule or
+  deleted by hand; the server labels its best guess. Picked trains are put back
+  into data.json via POST /api/train-history/restore, rebuilt from their latest
+  log record.
 -->
 <link rel="stylesheet" href="design-tokens.css">
 <style>
@@ -125,12 +132,42 @@
     background: var(--color-surface-3, rgba(255,255,255,.1));
     border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: inherit;
   }
+
+  .tabs { display: flex; gap: 6px; margin: 10px 0 2px; }
+  .tabs button { border-radius: 999px; padding: 6px 14px; }
+  .tabs button.on {
+    background: var(--color-text-primary, #fff);
+    color: var(--color-bg-panel, #0F1450);
+    font-weight: 650;
+  }
+  [hidden] { display: none !important; }
+  .row.restore { background: rgba(99, 197, 34, .13); }
+  .reason {
+    display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .2px;
+    background: var(--color-surface-3, rgba(255,255,255,.1));
+    color: var(--color-text-secondary, rgba(255,255,255,.8));
+  }
+  .reason.trash, .reason.checked-in, .reason.skipped, .reason.project {
+    background: var(--color-state-danger-bg, rgba(255,80,80,.3));
+    color: var(--color-state-danger-text, rgb(255,150,150));
+  }
+  .reason.pruned {
+    background: var(--color-state-success-bg, rgba(0,200,100,.3));
+    color: var(--color-state-success-text, rgb(150,255,200));
+  }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Log-Triage <span class="sub">— provisorisch</span></h1>
+  <nav class="tabs">
+    <button type="button" data-tab="checkins" class="on">Check-ins</button>
+    <button type="button" data-tab="missing">Gelöschte Einträge</button>
+  </nav>
+
+  <div id="head-checkins">
   <div class="sub">
     Markiert nur <strong>checkedIn / checkedOut</strong>. <span class="warn">Zeiten (plan, actual, dauer) werden nie verändert.</span>
     &nbsp;Immer die <strong>oberste Zeile</strong>: <kbd>L</kbd> echt · <kbd>D</kbd> überspringen · <kbd>U</kbd> rückgängig · <kbd>Strg</kbd>+<kbd>S</kbd> speichern
@@ -157,10 +194,51 @@
     <button id="submit" class="primary" disabled>Speichern</button>
   </div>
   <div class="bar"><i id="barfill"></i></div>
+  </div>
+
+  <div id="head-missing" hidden>
+    <div class="sub">
+      Fahrten, die im Log stehen, aber nicht mehr in data.json. <span class="warn">Rot = wahrscheinlich von dir gelöscht</span>, grün = wahrscheinlich vom alten Prune entfernt.
+      &nbsp;Immer die <strong>oberste Zeile</strong>: <kbd>L</kbd> zurückholen · <kbd>D</kbd> gelöscht lassen · <kbd>U</kbd> rückgängig · <kbd>Strg</kbd>+<kbd>S</kbd> wiederherstellen
+    </div>
+
+    <div class="controls">
+      <button id="m-load">Laden</button>
+      <input type="search" id="m-q" placeholder="Linie, Ziel suchen…">
+      <select id="m-filter">
+        <option value="open">Nur offene</option>
+        <option value="all">Alle</option>
+        <option value="restore">Nur zum Zurückholen markierte</option>
+      </select>
+      <select id="m-reason">
+        <option value="">Alle Gründe</option>
+        <option value="pruned">Vermutlich vom Prune entfernt</option>
+        <option value="deleted">Vermutlich von dir gelöscht</option>
+      </select>
+      <button id="m-stage-view">Alle angezeigten zurückholen</button>
+    </div>
+
+    <div class="savebar">
+      <div class="progress" id="m-progress">Noch nichts geladen.</div>
+      <span class="dirty" id="m-dirty">nichts markiert</span>
+      <span class="mirror" id="m-result"></span>
+      <button id="m-undo">↶ Rückgängig</button>
+      <button id="m-discard" disabled>Alle zurücksetzen</button>
+      <button id="m-submit" class="primary" disabled>Wiederherstellen</button>
+    </div>
+    <div class="bar"><i id="m-barfill"></i></div>
+  </div>
 </header>
 
-<div id="error"></div>
-<div class="list" id="list"><div class="empty">Zeitraum wählen und „Laden“ drücken.</div></div>
+<div id="body-checkins">
+  <div id="error"></div>
+  <div class="list" id="list"><div class="empty">Zeitraum wählen und „Laden“ drücken.</div></div>
+</div>
+
+<div id="body-missing" hidden>
+  <div id="m-error"></div>
+  <div class="list" id="m-list"><div class="empty">„Laden“ drücken.</div></div>
+</div>
 
 <script>
 (function () {
@@ -437,6 +515,7 @@
   });
 
   document.addEventListener('keydown', function (ev) {
+    if ($('head-checkins').hidden) return; // other tab is active
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
     var k = ev.key.toLowerCase();
     var head = view[0];
@@ -467,6 +546,273 @@
     String(today.getMonth() + 1).padStart(2, '0') + '-' +
     String(today.getDate()).padStart(2, '0');
   $('from').value = '2026-02-01';
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+(function () {
+  'use strict';
+  var tabs = document.querySelectorAll('.tabs button');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tab = btn.dataset.tab;
+      tabs.forEach(function (b) { b.classList.toggle('on', b === btn); });
+      ['checkins', 'missing'].forEach(function (name) {
+        document.getElementById('head-' + name).hidden = name !== tab;
+        document.getElementById('body-' + name).hidden = name !== tab;
+      });
+    });
+  });
+})();
+
+// ── Gelöschte Einträge ──────────────────────────────────────────────────────
+// Same flow as the check-in tab: decisions are staged in memory, the top row
+// is what the shortcuts act on, and nothing is written until "Wiederherstellen".
+// Only a positive verdict is sent - "gelöscht lassen" just hides the row for
+// this session, since leaving a train out of data.json needs no write.
+(function () {
+  'use strict';
+
+  var entries = [];   // missing trains from the server, oldest first
+  var view = [];
+  var pending = {};   // _uniqueId -> true, staged for restore
+  var dismissed = {}; // _uniqueId -> hidden this session, never sent
+  var undoStack = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var has = function (obj, key) { return Object.prototype.hasOwnProperty.call(obj, key); };
+
+  var REASONS = {
+    'trash':      'Im Papierkorb',
+    'checked-in': 'Eingecheckt, nach dem 25.10. gelöscht',
+    'skipped':    'Wiederholung, einzeln gelöscht',
+    'project':    'Projekt mit Dauer, gelöscht',
+    'pruned':     'Vermutlich vom Prune entfernt'
+  };
+
+  function fold(s) {
+    return String(s || '').toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function addMinutes(t, mins) {
+    var p = String(t || '').split(':');
+    if (p.length !== 2) return '';
+    var total = ((parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0) + (Number(mins) || 0) + 1440) % 1440;
+    return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+  }
+
+  function showError(msg) {
+    $('m-error').innerHTML = msg ? '<div class="err">' + msg + '</div>' : '';
+  }
+
+  function load() {
+    if (Object.keys(pending).length &&
+        !confirm(Object.keys(pending).length + ' markierte Einträge gehen verloren. Trotzdem neu laden?')) return;
+    showError('');
+    $('m-load').disabled = true;
+    $('m-progress').textContent = 'Lade…';
+    fetch('/api/train-history/missing')
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+      .then(function (data) {
+        entries = data.entries || [];
+        pending = {};
+        dismissed = {};
+        undoStack = [];
+        render();
+      })
+      .catch(function (e) { showError('Laden fehlgeschlagen: ' + e.message); $('m-progress').textContent = 'Fehler.'; })
+      .finally(function () { $('m-load').disabled = false; });
+  }
+
+  function stage(entry) {
+    undoStack.push([{ id: entry._uniqueId, kind: 'restore', wasDismissed: has(dismissed, entry._uniqueId) }]);
+    pending[entry._uniqueId] = true;
+    delete dismissed[entry._uniqueId];
+    render();
+  }
+
+  function dismiss(entry) {
+    undoStack.push([{ id: entry._uniqueId, kind: 'dismiss', wasPending: has(pending, entry._uniqueId) }]);
+    dismissed[entry._uniqueId] = true;
+    delete pending[entry._uniqueId];
+    render();
+  }
+
+  // One undo step for the whole batch, so a mis-click on the bulk button is
+  // a single U away from undone.
+  function stageView() {
+    var batch = view.filter(function (e) { return !has(pending, e._uniqueId); });
+    if (!batch.length) return;
+    if (batch.length > 20 && !confirm(batch.length + ' Einträge zum Zurückholen markieren?')) return;
+    undoStack.push(batch.map(function (e) { return { id: e._uniqueId, kind: 'restore', wasDismissed: has(dismissed, e._uniqueId) }; }));
+    batch.forEach(function (e) { pending[e._uniqueId] = true; delete dismissed[e._uniqueId]; });
+    render();
+  }
+
+  function undo() {
+    var step = undoStack.pop();
+    if (!step) return;
+    step.forEach(function (s) {
+      if (s.kind === 'restore') { delete pending[s.id]; if (s.wasDismissed) dismissed[s.id] = true; }
+      else { delete dismissed[s.id]; if (s.wasPending) pending[s.id] = true; }
+    });
+    render();
+  }
+
+  function discard() {
+    if (!Object.keys(pending).length) return;
+    if (!confirm('Alle Markierungen verwerfen?')) return;
+    pending = {};
+    dismissed = {};
+    undoStack = [];
+    render();
+  }
+
+  function submit() {
+    var uids = Object.keys(pending);
+    if (!uids.length) return;
+    if (!confirm(uids.length + ' Einträge in data.json wiederherstellen?')) return;
+
+    $('m-submit').disabled = true;
+    $('m-submit').textContent = 'Stelle wieder her…';
+
+    fetch('/api/train-history/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uids: uids })
+    })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+      .then(function (res) {
+        // Restored trains are back in data.json, so they're no longer missing.
+        // Anything the server couldn't find in the logs stays staged.
+        var notFound = {};
+        (res.missing || []).forEach(function (id) { notFound[id] = true; });
+        entries = entries.filter(function (e) { return !has(pending, e._uniqueId) || has(notFound, e._uniqueId); });
+        uids.forEach(function (id) { if (!has(notFound, id)) delete pending[id]; });
+        undoStack = [];
+        $('m-result').textContent = res.restored + ' wiederhergestellt';
+        showError(res.missing && res.missing.length ? res.missing.length + ' Einträge nicht im Log gefunden (bleiben markiert).' : '');
+        render();
+      })
+      .catch(function (e) { showError('Wiederherstellen fehlgeschlagen: ' + e.message + ' — Markierungen bleiben erhalten.'); })
+      .finally(function () { render(); });
+  }
+
+  function render() {
+    var q = fold($('m-q').value.trim());
+    var mode = $('m-filter').value;
+    var reason = $('m-reason').value;
+
+    view = entries.filter(function (e) {
+      var uid = e._uniqueId;
+      if (mode === 'open' && (has(pending, uid) || has(dismissed, uid))) return false;
+      if (mode === 'restore' && !has(pending, uid)) return false;
+      if (reason === 'pruned' && e.reason !== 'pruned') return false;
+      if (reason === 'deleted' && e.reason === 'pruned') return false;
+      if (!q) return true;
+      return fold(e.linie).indexOf(q) >= 0 || fold(e.ziel).indexOf(q) >= 0;
+    });
+
+    var staged = Object.keys(pending).length;
+    var handled = entries.filter(function (e) { return has(pending, e._uniqueId) || has(dismissed, e._uniqueId); }).length;
+    var dismissedCount = entries.filter(function (e) { return has(dismissed, e._uniqueId); }).length;
+    $('m-progress').textContent = entries.length
+      ? handled + '/' + entries.length + ' entschieden' +
+        (dismissedCount ? ' · ' + dismissedCount + ' gelöscht gelassen' : '') + ' · ' +
+        (mode === 'open' ? view.length + ' übrig' : view.length + ' angezeigt')
+      : 'Keine fehlenden Einträge.';
+    $('m-dirty').textContent = staged ? staged + ' zum Zurückholen markiert' : 'nichts markiert';
+    $('m-dirty').className = staged ? 'dirty on' : 'dirty';
+    $('m-submit').disabled = !staged;
+    $('m-submit').textContent = staged ? 'Wiederherstellen (' + staged + ')' : 'Wiederherstellen';
+    $('m-discard').disabled = !staged;
+    $('m-undo').disabled = !undoStack.length;
+    $('m-stage-view').disabled = !view.some(function (e) { return !has(pending, e._uniqueId); });
+    $('m-barfill').style.width = entries.length ? (handled / entries.length * 100) + '%' : '0';
+
+    var list = $('m-list');
+    if (!view.length) {
+      list.innerHTML = '<div class="empty">' + (entries.length ? 'Nichts passt zum Filter.' : 'Keine Einträge.') + '</div>';
+      return;
+    }
+
+    var html = '', lastDate = '';
+    view.forEach(function (e, i) {
+      var date = e.date || e.serviceDate || e.plannedDate || '';
+      if (date !== lastDate) { html += '<div class="daysep">' + esc(date) + '</div>'; lastDate = date; }
+
+      var dauer = Number(e.dauer) || 0;
+      var actual = e.actual || e.plan || '';
+      var timeStr = dauer > 0 && actual ? actual + ' – ' + addMinutes(actual, dauer) : (actual || '--:--');
+      var planDiffers = e.plan && e.actual && e.plan !== e.actual;
+      var meta = [];
+      if (e.projectName) meta.push(e.projectName);
+      if (e.checkedIn) meta.push(e.checkedOut ? 'ein- und ausgecheckt' : 'eingecheckt, nicht ausgecheckt');
+      if (e.canceled) meta.push('fällt aus');
+      if (e.templateGone) meta.push('Vorlage gelöscht');
+
+      var isStaged = has(pending, e._uniqueId);
+      html += '<div class="row' + (isStaged ? ' restore staged' : '') + (e.canceled ? ' canceled' : '') +
+              (i === 0 ? ' head' : '') + '">' +
+                '<div class="linie">' + esc(e.linie || '—') + '</div>' +
+                '<div>' +
+                  '<div class="ziel">' + esc(e.ziel || '(ohne Ziel)') + '</div>' +
+                  '<div class="meta"><span class="reason ' + esc(e.reason) + '">' + esc(REASONS[e.reason] || e.reason) + '</span>' +
+                    esc(meta.join(' · ')) + '</div>' +
+                '</div>' +
+                '<div class="times">' +
+                  (planDiffers ? '<span class="plan-strike">' + esc(e.plan) + '</span>' : '') +
+                  esc(timeStr) +
+                  '<div class="dauer">' + (dauer > 0 ? dauer + ' min' : 'keine Dauer') + '</div>' +
+                '</div>' +
+                '<div class="actions">' +
+                  '<button class="mark keep" data-i="' + i + '" data-act="restore">↺ Zurückholen</button>' +
+                  '<button class="mark drop" data-i="' + i + '" data-act="dismiss">Gelöscht lassen</button>' +
+                '</div>' +
+              '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  $('m-list').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button.mark');
+    if (!btn) return;
+    var e = view[Number(btn.dataset.i)];
+    if (!e) return;
+    if (btn.dataset.act === 'restore') stage(e); else dismiss(e);
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if ($('head-missing').hidden) return; // other tab is active
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+    var k = ev.key.toLowerCase();
+    var head = view[0];
+
+    if (k === 'l' && head)      { stage(head); ev.preventDefault(); }
+    else if (k === 'd' && head) { dismiss(head); ev.preventDefault(); }
+    else if (k === 'u' || (k === 'z' && (ev.ctrlKey || ev.metaKey))) { undo(); ev.preventDefault(); }
+    else if (k === 's' && (ev.ctrlKey || ev.metaKey)) { submit(); ev.preventDefault(); }
+  });
+
+  $('m-load').addEventListener('click', load);
+  $('m-submit').addEventListener('click', submit);
+  $('m-discard').addEventListener('click', discard);
+  $('m-undo').addEventListener('click', undo);
+  $('m-stage-view').addEventListener('click', stageView);
+  $('m-q').addEventListener('input', render);
+  $('m-filter').addEventListener('change', render);
+  $('m-reason').addEventListener('change', render);
+
+  window.addEventListener('beforeunload', function (ev) {
+    if (!Object.keys(pending).length) return;
+    ev.preventDefault();
+    ev.returnValue = '';
+  });
 })();
 </script>
 </body>

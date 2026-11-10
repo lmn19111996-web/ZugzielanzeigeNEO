@@ -83,6 +83,71 @@
         .map(x => ({ ...x, reachable: x.at.getTime() - now.getTime() >= walkMs }));
     }
 
+    // Disruption = significant deviation from the timetable among one board
+    // side's departures in the next `KIOSK_DISRUPTION_WINDOW_MIN`: any
+    // cancellation, a live incident report, or several clearly late trips.
+    // One late trip alone isn't a disruption. Departures without real-time
+    // data simply don't count as late.
+    const KIOSK_DISRUPTION_WINDOW_MIN = 45;
+    const KIOSK_DISRUPTION_DELAY_MIN = 5;
+    const KIOSK_DISRUPTION_DELAYED_COUNT = 2;
+
+    // Delay in minutes from HH:mm plan/actual (wraps over midnight)
+    function kioskDelayMinutes(train) {
+      if (!train || !train.plan || !train.actual) return 0;
+      const toMin = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; };
+      const diff = toMin(train.actual) - toMin(train.plan);
+      return Number.isNaN(diff) ? 0 : ((diff + 720 + 1440) % 1440) - 720;
+    }
+
+    function kioskSideDisrupted(trains, side, now) {
+      const platforms = new Set((side && side.platforms) || []);
+      const until = now.getTime() + KIOSK_DISRUPTION_WINDOW_MIN * 60000;
+      const relevant = (trains || [])
+        .filter(t => t && t.ziel !== 'Ankunft')
+        .filter(t => !platforms.size || platforms.has(kioskPlatformOf(t)))
+        .filter(t => {
+          const at = kioskDepartureTime(t);
+          return at && at.getTime() > now.getTime() && at.getTime() <= until;
+        });
+      if (relevant.some(t => t.canceled || t.incident)) return true;
+      return relevant.filter(t => kioskDelayMinutes(t) >= KIOSK_DISRUPTION_DELAY_MIN).length
+        >= KIOSK_DISRUPTION_DELAYED_COUNT;
+    }
+
+    // Last departure of the day: no further trip of the same line from the
+    // same platform for `KIOSK_LAST_GAP_H` hours. Only judged in the evening
+    // and at night (rural lines can have long midday gaps), and only when
+    // the fetched departures reach far enough to see that gap — otherwise
+    // it stays unmarked rather than guessing.
+    const KIOSK_LAST_GAP_H = 3;
+    const KIOSK_LAST_FROM_HOUR = 18;
+    const KIOSK_LAST_UNTIL_HOUR = 5;
+
+    // Stadtbahn depot runs are labelled just "U": one-off trips, not a line,
+    // so "no further U for hours" says nothing about the service ending
+    function kioskIsDepotRun(train) {
+      return String((train && train.linie) || '').trim().toUpperCase() === 'U';
+    }
+
+    function kioskIsLastDeparture(train, trains) {
+      const at = kioskDepartureTime(train);
+      if (!at || train.canceled || kioskIsDepotRun(train)) return false;
+      const hour = at.getHours();
+      if (hour < KIOSK_LAST_FROM_HOUR && hour >= KIOSK_LAST_UNTIL_HOUR) return false;
+      const gapMs = KIOSK_LAST_GAP_H * 3600000;
+      const key = (t) => `${t.linie}|${kioskPlatformOf(t)}`;
+      let horizon = 0;
+      let next = Infinity;
+      for (const t of trains || []) {
+        const tAt = kioskDepartureTime(t);
+        if (!tAt) continue;
+        horizon = Math.max(horizon, tAt.getTime());
+        if (t !== train && !t.canceled && key(t) === key(train) && tAt > at) next = Math.min(next, tAt.getTime());
+      }
+      return next === Infinity ? horizon - at.getTime() >= gapMs : next - at.getTime() >= gapMs;
+    }
+
     // Live departures (DB/VVS board) use the kiosk icon set; the own-schedule
     // rows (Templates.lineIcon) keep the main app's res/ icons. The helpers
     // (hasLineIcon/getLineIconSrc, utils.js) are shared.

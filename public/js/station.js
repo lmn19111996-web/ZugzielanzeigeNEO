@@ -434,7 +434,13 @@
         e.preventDefault();
         createNewTrainEntry({ type: 'duration-only' });
       }
-      
+
+      // Ctrl+I to create an information (announcement) entry
+      if (e.ctrlKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        createNewTrainEntry({ type: 'information' });
+      }
+
       // Ctrl+S to save current train in focus panel
       if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
         e.preventDefault();

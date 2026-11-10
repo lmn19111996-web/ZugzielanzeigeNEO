@@ -1,7 +1,6 @@
 ﻿// === WORKSPACE MODE MANAGEMENT ===
     let currentWorkspaceMode = 'list';
-    let _reviewsFilterRating = 0; // 0 = all, 1-5 = specific star filter
-    // Guards against closeNoteEditorWorkspace() recursing back into setWorkspaceMode()
+    let _reviewsFilterRating = 0; // 0 = all, 1-5 = specific star filter    // Guards against closeNoteEditorWorkspace() recursing back into setWorkspaceMode()
     // when setWorkspaceMode() itself is what triggered the note editor to close.
     let settingWorkspaceMode = false;
 
@@ -139,7 +138,8 @@
           renderCurrentWorkspaceView();
           break;
         case 'vorlagen':
-          currentWorkspaceMode = 'vorlagen';
+        case 'recycle-bin':
+          currentWorkspaceMode = mode;
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           closeEditorDrawer();

@@ -175,6 +175,14 @@
 
     // Render headline train (first train in top ribbon)
 
+    // Entries/templates worth keeping: trains need a line; informations have
+    // no line (identified by their explicit type) and need a message instead.
+    function hasScheduleContent(t) {
+      if (!t) return false;
+      if (isInformationTrain(t)) return (t.ziel || '').trim() !== '';
+      return !!(t.linie && t.linie.trim() !== '');
+    }
+
     async function saveSchedule() {
       // If a save is already in progress, queue this save
       if (saveInProgress) {
@@ -221,14 +229,14 @@
             newVersion: newVersion    // Client's new version
           },
           fixedSchedule: schedule.fixedSchedule
-            .filter(t => t.linie && t.linie.trim() !== '')
+            .filter(hasScheduleContent)
             .map(t => {
               // Fixed schedule: remove date property, keep only weekday
               const { date, source, ...cleanTrain } = t;
               return cleanTrain;
             }),
           spontaneousEntries: schedule.spontaneousEntries
-            .filter(t => t.linie && t.linie.trim() !== '')
+            .filter(hasScheduleContent)
             .map(t => {
               // Spontaneous: keep date, remove processing fields  
               // Set plannedDate during save only if user has entered a date
@@ -452,6 +460,13 @@
       if      (pattern === 'daily')    return true;
       else if (pattern === 'weekdays') return dow >= 1 && dow <= 5;
       else if (pattern === 'weekly')   return dow === startDateObj.getDay();
+      else if (pattern === 'biweekly') {
+        // Same weekday, every second week counted from the start date.
+        // Math.round absorbs the ±1h of a DST switch between the two dates.
+        if (dow !== startDateObj.getDay()) return false;
+        const weeks = Math.round((d - startDateObj) / 86400000) / 7;
+        return ((weeks % 2) + 2) % 2 === 0;
+      }
       else if (pattern === 'monthly')  return d.getDate() === startDateObj.getDate();
       else if (pattern === 'yearly')   return d.getDate() === startDateObj.getDate() && d.getMonth() === startDateObj.getMonth();
       else if (pattern === 'custom')   return Array.isArray(days) && days.includes(dow);
@@ -485,9 +500,14 @@
       const newEntries = [];
 
       for (const stem of (schedule.fixedSchedule || [])) {
-        if (!stem._uniqueId || !stem.linie || !stem.linie.trim()) continue;
+        if (!stem._uniqueId || !hasScheduleContent(stem)) continue;
 
         const skipped = new Set(stem.skippedDates || []);
+
+        // Information series repeat from startDate through endDate (its
+        // "Gültig bis"), unless "Kein Enddatum" (openEnded) is ticked. Without
+        // either they repeat forever, like any train Vorlage.
+        const seriesEnd = isInformationTrain(stem) && !stem.openEnded ? (stem.endDate || null) : null;
 
         // Parse startDate in LOCAL time; default to today
         const startDateObj = stem.startDate
@@ -511,6 +531,7 @@
           if (!stemMatchesDate(stem, startDateObj, d)) continue;
 
           const dateStr = toLocalStr(d);
+          if (seriesEnd && dateStr > seriesEnd) break; // series has ended
           if (skipped.has(dateStr)) continue;
 
           const uid = `${stem._uniqueId}_${dateStr}`;
@@ -540,7 +561,9 @@
             canceled:      false,
             date:          dateStr,
             plannedDate:   dateStr,
-            source:        'local'
+            source:        'local',
+            ...(stem.hideDateRange && { hideDateRange: true }),
+            ...(stem.icon && { icon: stem.icon })
           };
           newEntries.push(entry);
           existingByUid.set(uid, entry); // prevent intra-run duplicates
@@ -674,7 +697,9 @@
         source: 'local',
         _isNewEntry: true, // Not yet confirmed by the user - plannedDate may still be re-derived on first save
         _uniqueId: 'train_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
-        ...(options.projectId && { projectId: options.projectId })
+        ...(options.projectId && { projectId: options.projectId }),
+        // Information: "Gültig bis" starts at the start date (= today)
+        ...(options.type === 'information' && { dateEnd: today })
       };
       
       // For non-project trains, add to schedule and render immediately

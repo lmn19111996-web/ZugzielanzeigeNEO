@@ -140,10 +140,12 @@ function _ciCommitApprove(uid) {
     || (schedule.localTrains || []).find(function (t) { return t._uniqueId === uid; });
   if (!train || train.checkedIn || train.checkedOut || isDurationOnlyTrain(train)) return;
 
-  var planTime = train.plan || _ciNowHHMM();
+  // Stamp the actual (possibly delayed) departure; fall back to plan only when
+  // no actual time was recorded.
+  var departTime = train.actual || train.plan || _ciNowHHMM();
   var dur = Number(train.dauer) || 0;
 
-  train.actual = planTime;
+  train.actual = departTime;
   train.checkedIn = true;
   train.checkedOut = true;
   train.dauer = dur;
@@ -318,7 +320,13 @@ document.addEventListener('click', function _ciClickCapture(e) {
       // checking in (e.g. "I forgot to check in on time, it really left at
       // 10:00") changes the computed duration on checkout.
       var baseTime = train.actual || train.plan || '00:00';
-      checkoutDuration = _ciComputeDuration(baseTime, checkoutTime);
+      if (train.date && train.date !== _ciTodayStr()) {
+        // Check-in carried over from an earlier day: measure across midnight.
+        var startDate = new Date(train.date + 'T' + baseTime + ':00');
+        checkoutDuration = Math.max(1, _ciComputeDurationFromMs(startDate.getTime(), Date.now()));
+      } else {
+        checkoutDuration = _ciComputeDuration(baseTime, checkoutTime);
+      }
     }
 
     // Apply checked-out data immediately to avoid transient re-renders showing

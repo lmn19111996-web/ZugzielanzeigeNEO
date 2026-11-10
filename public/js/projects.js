@@ -32,7 +32,7 @@
       const stats = taskStatsMap
         ? (taskStatsMap.get(project._uniqueId) || { taskCount: 0, completedTasks: 0 })
         : (() => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = toLocalDateStr();
             const projectTasks = schedule.spontaneousEntries.filter(t => t.projectId === project._uniqueId);
             return { taskCount: projectTasks.length, completedTasks: projectTasks.filter(t => t.date && t.date <= today).length };
           })();
@@ -158,7 +158,7 @@
       // Built once per render: avoids every card (and the 'tasks' sort
       // comparator, called O(p log p) times) each re-filtering the entire
       // spontaneousEntries array from scratch.
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateStr();
       const taskStatsMap = buildProjectTaskStatsMap(today);
 
       const sortedProjects = [...activeProjects].sort((a, b) => {
@@ -432,8 +432,20 @@
       
       if (!drawer || !template) return;
 
-      // Save scroll position before clearing (will be 0 on first open, >0 on re-renders)
-      const savedScroll = drawer.scrollTop;
+      // A refresh re-renders the project and view already on screen, so it keeps the
+      // scroll position. Opening the drawer or switching project/view starts fresh.
+      const renderedView = project.currentView || 'aufgabe';
+      const isRefresh = drawer.classList.contains('is-open')
+        && drawer.dataset.renderedProjectId === project._uniqueId
+        && drawer.dataset.renderedView === renderedView;
+      drawer.dataset.renderedProjectId = project._uniqueId;
+      drawer.dataset.renderedView = renderedView;
+
+      // The list is the element that actually scrolls; the drawer only does if its
+      // content overflows. Both must be read before clearing.
+      const previousList = drawer.querySelector('[data-project="tasks-list"]');
+      const savedListScroll = isRefresh && previousList ? previousList.scrollTop : 0;
+      const savedDrawerScroll = isRefresh ? drawer.scrollTop : 0;
 
       const lineColor = getLineColor(project.linie || 's1');
       const deadlineDate = project.deadline ? new Date(project.deadline) : null;
@@ -551,7 +563,7 @@
             return dateA.localeCompare(dateB);
           });
         
-        const today = new Date().toISOString().split('T')[0];
+        const today = toLocalDateStr();
         
         trains.forEach((train, index) => {
           const taskHTML = renderProjectTask(train, index, trains.length, lineColor, project._uniqueId, today);
@@ -600,8 +612,8 @@
         tasksList.parentNode.insertBefore(statisticsBoard, tasksList.nextElementSibling.nextElementSibling);
         
         // Auto-scroll to focus on current progress point (where colored tasks end)
-        // Only on first open (savedScroll === 0), not on re-renders (editing, etc.)
-        if (savedScroll === 0 && trains.length > 0) {
+        // Only on first open, not on refreshes (editing, server updates, etc.)
+        if (!isRefresh && trains.length > 0) {
           const currentTaskIndex = trains.findIndex(t => !t.date || t.date > today);
           if (currentTaskIndex > 0) {
             // Scroll to show the transition point between colored and gray tasks
@@ -693,9 +705,13 @@
       // Set up event listeners
       setupProjectDrawerListeners(project);
       
-      // Restore scroll position after re-render (no-op on first open since savedScroll is 0)
-      if (savedScroll > 0) {
-        drawer.scrollTop = savedScroll;
+      // Restore scroll position after a refresh (both are 0 otherwise)
+      const renderedList = drawer.querySelector('[data-project="tasks-list"]');
+      if (renderedList && savedListScroll > 0) {
+        renderedList.scrollTop = savedListScroll;
+      }
+      if (savedDrawerScroll > 0) {
+        drawer.scrollTop = savedDrawerScroll;
       }
     }
 
@@ -825,14 +841,24 @@
       if (deleteBtn) {
         deleteBtn.addEventListener('click', () => {
           if (confirm('Möchten Sie dieses Projekt wirklich löschen?')) {
+            const liveProject = schedule.projects.find(p => p._uniqueId === project._uniqueId) || project;
+            const orphanedIds = [];
             // Remove project
             schedule.projects = schedule.projects.filter(p => p._uniqueId !== project._uniqueId);
             // Make trains projectless (orphaned) instead of deleting them
             schedule.spontaneousEntries.forEach(train => {
               if (train.projectId === project._uniqueId) {
                 train.projectId = null;
+                orphanedIds.push(train._uniqueId);
               }
             });
+            ItemBins.trash([{
+              kind: 'project',
+              typeLabel: 'Projekt',
+              label: liveProject.name || 'Projekt',
+              detail: orphanedIds.length ? orphanedIds.length + ' zugeordnete Einträge' : '',
+              payload: { project: liveProject, orphanedIds }
+            }]);
             
             // CRITICAL: Regenerate derived data after orphaning trains
             regenerateTrainsFromSchedule();
@@ -1100,6 +1126,7 @@
             const taskToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === taskId);
             const taskName = taskToDelete ? taskToDelete.ziel : 'Aufgabe';
             if (confirm(`Aufgabe "${taskName}" löschen?`)) {
+              if (taskToDelete) trashScheduleEntry(taskToDelete, 'Aufgabe');
               schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== taskId);
               
               // CRITICAL: Regenerate derived data after removing train
@@ -1241,6 +1268,8 @@
             e.stopPropagation();
             
             // OPTIMISTIC UI: Update immediately, save in background
+            const todoToDelete = schedule.spontaneousEntries.find(t => t._uniqueId === todoId);
+            if (todoToDelete) trashScheduleEntry(todoToDelete, 'Aufgabe');
             schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => t._uniqueId !== todoId);
             
             // CRITICAL: Regenerate derived data after removing train
@@ -1416,13 +1445,18 @@
       const pageClone = pageTemplate.content.cloneNode(true);
       const groupsEl = pageClone.querySelector('[data-vorlagen="groups"]');
 
-      const stems = schedule.fixedSchedule || [];
+      // Recurring informations are managed in the information editor itself
+      // (Wiederholung field), so their templates aren't listed here.
+      const stems = (schedule.fixedSchedule || []).filter(s => !isInformationTrain(s));
 
-      const PATTERN_ORDER = ['weekdays', 'daily', 'weekly', 'monthly', 'yearly', 'custom'];
+      const PATTERN_ORDER = ['weekdays', 'daily', 'weekly', 'biweekly', 'monthly', 'yearly', 'custom'];
+      // Patterns tied to one weekday get the extra "Tag" column
+      const WEEKDAY_PATTERNS = ['weekly', 'biweekly'];
       const patternLabels = {
         weekdays: 'Werktags',
         daily: 'Täglich',
         weekly: 'Wöchentlich',
+        biweekly: 'Alle 2 Wochen',
         monthly: 'Monatlich',
         yearly: 'Jährlich',
         custom: 'Benutzerdefiniert'
@@ -1473,7 +1507,7 @@
       function buildRow(stem, pattern) {
         const row = rowTemplate.content.cloneNode(true);
         const rowEl = row.querySelector('.vorlage-row');
-        if (pattern === 'weekly') rowEl.classList.add('vorlage-row--weekly');
+        if (WEEKDAY_PATTERNS.includes(pattern)) rowEl.classList.add('vorlage-row--weekly');
         rowEl.dataset.stemId = stem._uniqueId;
 
         const lineLower = (stem.linie || 's1').toLowerCase();
@@ -1501,8 +1535,8 @@
         const project = (schedule.projects || []).find(p => p._uniqueId === stem.projectId);
         rowEl.querySelector('[data-vorlagen="projekt"]').textContent = project?.name || '–';
 
-        // Weekly-only: weekday column
-        if (pattern === 'weekly') {
+        // Weekly/biweekly only: weekday column
+        if (WEEKDAY_PATTERNS.includes(pattern)) {
           const tagEl = rowEl.querySelector('[data-vorlagen="tag"]');
           if (tagEl) {
             const d = stem.startDate ? new Date(stem.startDate + 'T00:00:00') : new Date();
@@ -1528,6 +1562,7 @@
         rowEl.querySelector('[data-vorlagen="delete"]').addEventListener('click', e => {
           e.stopPropagation();
           if (!confirm(`Vorlage "${stem.linie} → ${stem.ziel}" löschen?`)) return;
+          trashTemplate(stem, (schedule.spontaneousEntries || []).filter(t => t._templateId === stem._uniqueId));
           schedule.fixedSchedule = (schedule.fixedSchedule || []).filter(s => s._uniqueId !== stem._uniqueId);
           schedule.spontaneousEntries = (schedule.spontaneousEntries || []).filter(t => t._templateId !== stem._uniqueId);
           saveSchedule();
@@ -1552,13 +1587,13 @@
         ];
 
         // Insert Tag column for weekly after Ziel
-        if (pattern === 'weekly') {
+        if (WEEKDAY_PATTERNS.includes(pattern)) {
           cols.splice(2, 0, { key: 'tag', cls: 'vorlage-col--tag', label: 'Tag' });
         }
 
         const hdr = document.createElement('div');
         hdr.className = 'vorlage-row vorlage-row--header';
-        if (pattern === 'weekly') hdr.classList.add('vorlage-row--weekly');
+        if (WEEKDAY_PATTERNS.includes(pattern)) hdr.classList.add('vorlage-row--weekly');
 
         cols.forEach(({ key, cls, label }) => {
           const cell = document.createElement('div');

@@ -9,6 +9,7 @@
     { keys: 'Ctrl + F', label: 'Suche' },
     { keys: 'Ctrl + G', label: 'Neuer Eintrag' },
     { keys: 'Ctrl + H', label: 'Neuer Dauereintrag' },
+    { keys: 'Ctrl + I', label: 'Neue Information' },
     { keys: 'Ctrl + L', label: 'Dashboard' },
   ];
 

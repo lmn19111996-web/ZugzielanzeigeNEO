@@ -28,59 +28,17 @@
 
     function applyCancelNoticeScrolling(root) {
       (root || document).querySelectorAll('.cancel-notice-text').forEach(span => {
-        if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
-
-        const container = span.parentElement;
-        if (!container) return;
-        const originalText = span.dataset.notice || '';
-        if (!originalText) return;
-
-        span.style.transition = 'none';
-        span.style.transform = '';
-        span.textContent = originalText;
-
-        const scrollDist = span.scrollWidth - container.clientWidth;
-        if (scrollDist <= 0) return;
-
-        const segment = `${originalText}   +++   `;
-        span.textContent = segment;
-        const segmentWidth = span.scrollWidth;
-        span.textContent = segment + segment;
-
-        startInfiniteMarquee(span, segmentWidth);
+        startInfiniteMarquee(span, span.dataset.notice || '');
       });
     }
 
     // Marquee for train destinations (list + headline, incl. the strikethrough
     // original destination on cancelled entries) that overflow their container
     // width (bounce scroll, like dashboard.js's applyViaScrolling) instead of
-    // wrapping/clipping.
+    // wrapping/clipping. Overflow measuring and resize refits: see startMarquee.
     function applyZugzielScrolling(root) {
       (root || document).querySelectorAll('.zugziel-text').forEach(span => {
-        if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
-
-        const container = span.parentElement;
-        if (!container) return;
-        const originalText = span.dataset.zielText || '';
-        if (!originalText) return;
-
-        span.style.transition = 'none';
-        span.style.transform = '';
-        span.textContent = originalText;
-
-        // The span sits inside the container's padding box (its left edge is
-        // offset by paddingLeft), so the actually-visible width is clientWidth
-        // minus the container's own padding — using clientWidth directly would
-        // let the marquee scroll the text into (and past) that padding.
-        const containerStyle = getComputedStyle(container);
-        const paddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
-        const paddingRight = parseFloat(containerStyle.paddingRight) || 0;
-        const availableWidth = container.clientWidth - paddingLeft - paddingRight;
-
-        const scrollDist = span.scrollWidth - availableWidth;
-        if (scrollDist <= 0) return;
-
-        startMarquee(span, scrollDist);
+        startMarquee(span, span.dataset.zielText || '');
       });
     }
 
@@ -320,12 +278,12 @@
     // Exports the currently loaded date range as a single merged JSON file,
     // instead of the per-week .log files the server stores history in. Only
     // entries for what actually happened are kept - recurring-train stems,
-    // duration-only templates, and note entries are template/meta data, not
-    // occurrences, so they're excluded.
+    // duration-only templates, note and information entries are template/meta
+    // data, not occurrences, so they're excluded.
     function exportLogViewerRange() {
       const filtered = filterLogViewerRawEntries(logViewerState.rawEntries, logViewerState.query);
       const entries = filtered
-        .filter(e => e && e.scheduleType !== 'fixed' && e.type !== 'duration-only' && e.type !== 'note')
+        .filter(e => e && e.scheduleType !== 'fixed' && e.type !== 'duration-only' && e.type !== 'note' && e.type !== 'information')
         .map(cleanLogEntryForExport);
       const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -876,6 +834,17 @@
           }
           break;
 
+        case 'recycle-bin':
+          // Recycle bin (item-bins.js)
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderRecycleBinPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+
         case 'settings':
           // Settings workspace
           if (includeHeadline) {
@@ -897,6 +866,8 @@
           console.warn('Unknown workspace mode:', currentWorkspaceMode);
           break;
       }
+
+      updateBackToTopButton();
     }
 
     // Belegungsplan (Occupancy Plan) - unified day/week view.
@@ -916,6 +887,34 @@
       if (Array.isArray(saved)) belegungsplanHiddenLines = new Set(saved);
     } catch (e) { /* storage unavailable - start with all lines visible */ }
     let belegungsplanLineFilterOpen = false;
+
+    // Week view statistics panel visibility, remembered per browser.
+    const BELEGUNGSPLAN_STATS_OPEN_KEY = 'belegungsplanStatsOpen';
+    let belegungsplanStatsOpen = false;
+    try {
+      belegungsplanStatsOpen = localStorage.getItem(BELEGUNGSPLAN_STATS_OPEN_KEY) === '1';
+    } catch (e) { /* ignore */ }
+
+    // Total occupied minutes per line within [weekStart, weekEnd) - trains
+    // overlapping the week's edges only count their in-week portion.
+    function computeBelegungsplanWeekStats(trains, weekStart, weekEnd, now) {
+      const byLine = new Map();
+      trains.forEach(train => {
+        const start = parseTime(train.actual || train.plan, now, train.date);
+        const duration = Number(train.dauer) || 0;
+        if (!start || duration <= 0) return;
+        const end = new Date(start.getTime() + duration * 60000);
+        const segStart = Math.max(start.getTime(), weekStart.getTime());
+        const segEnd = Math.min(end.getTime(), weekEnd.getTime());
+        if (segEnd <= segStart) return;
+        const line = getBelegungsplanLineKey(train);
+        const entry = byLine.get(line) || { line, minutes: 0, count: 0 };
+        entry.minutes += (segEnd - segStart) / 60000;
+        entry.count++;
+        byLine.set(line, entry);
+      });
+      return [...byLine.values()].sort((a, b) => b.minutes - a.minutes);
+    }
 
     function saveBelegungsplanHiddenLines() {
       try {
@@ -947,6 +946,10 @@
       d.setUTCDate(d.getUTCDate() + 4 - dayNum);
       const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
       return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    }
+
+    function getInformationsForDate(dateStr) {
+      return getInformationsForDay(processedTrainData.informationTrains, dateStr);
     }
 
     function getMondayOf(date) {
@@ -1045,7 +1048,7 @@
         const currentDate = markerTime.toLocaleDateString('sv-SE');
 
         if (isNewDay && currentDate !== lastDate) {
-          const dateSeparatorHTML = Templates.belegungsplanDateSeparator(markerTime, markerY);
+          const dateSeparatorHTML = Templates.belegungsplanDateSeparator(markerTime, markerY, getInformationsForDate(currentDate));
           const template = document.createElement('template');
           template.innerHTML = dateSeparatorHTML.trim();
           const separatorEl = template.content.firstChild;
@@ -1145,7 +1148,7 @@
 
         const columnEl = document.createElement('div');
         columnEl.className = 'week-day-column' + (isToday ? ' is-today' : '');
-        columnEl.innerHTML = Templates.belegungsplanWeekDayHeader(dateObj, isToday);
+        columnEl.innerHTML = Templates.belegungsplanWeekDayHeader(dateObj, isToday, getInformationsForDate(dateStr));
 
         const bodyEl = document.createElement('div');
         bodyEl.className = 'week-day-body';
@@ -1156,7 +1159,13 @@
         // rather than only ever appearing (and overflowing) in their start day.
         const dayStart = new Date(dateObj);
         dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+
+        // The grid is a fixed 00:00-24:00 wall clock, so place by clock time
+        // rather than elapsed time since midnight: on DST change days (23 or
+        // 25 hours long) elapsed time drifts an hour off the gridlines.
+        const wallHours = d => d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
 
         const dayTrains = allScheduledTrains
           .map(train => {
@@ -1169,8 +1178,11 @@
 
             const segStart = start < dayStart ? dayStart : start;
             const segEnd = end > dayEnd ? dayEnd : end;
-            const offsetHours = (segStart - dayStart) / (60 * 60 * 1000);
-            const durHours = (segEnd - segStart) / (60 * 60 * 1000);
+            const offsetHours = segStart <= dayStart ? 0 : wallHours(segStart);
+            const endHours = segEnd >= dayEnd ? 24 : wallHours(segEnd);
+            // Inside the repeated hour when clocks go back, end can read
+            // earlier than start - fall back to the elapsed duration there.
+            const durHours = endHours > offsetHours ? endHours - offsetHours : (segEnd - segStart) / (60 * 60 * 1000);
             const top = (offsetHours / 24) * 100;
             const height = (durHours / 24) * 100;
             return {
@@ -1188,9 +1200,7 @@
         renderOverlappingTrainBlocks(bodyEl, dayTrains, now, '%');
 
         if (isToday) {
-          const dayStart = new Date(dateObj);
-          dayStart.setHours(0, 0, 0, 0);
-          const nowOffsetHours = (now - dayStart) / (60 * 60 * 1000);
+          const nowOffsetHours = wallHours(now);
           if (nowOffsetHours >= 0 && nowOffsetHours <= 24) {
             const currentTimeLineHTML = Templates.belegungsplanCurrentTimeLine(`${(nowOffsetHours / 24) * 100}%`);
             const template = document.createElement('template');
@@ -1204,6 +1214,17 @@
       });
 
       gridWrapper.appendChild(dayColumns);
+
+      if (belegungsplanStatsOpen) {
+        const weekEnd = new Date(monday);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        const stats = computeBelegungsplanWeekStats(allScheduledTrains, monday, weekEnd, now);
+        const statsPanel = document.createElement('div');
+        statsPanel.className = 'week-stats-panel';
+        statsPanel.innerHTML = Templates.belegungsplanWeekStats(stats, `KW ${getIsoWeekNumber(monday)}`);
+        gridWrapper.appendChild(statsPanel);
+      }
+
       contentEl.appendChild(gridWrapper);
     }
 
@@ -1287,6 +1308,87 @@
       trainListEl.addEventListener('scroll', hideBelegungsplanTooltip);
     }
 
+    // Week view information slide-out: clicking a column's i marker slides that
+    // day's messages out of the icon (towards the screen centre, so it never
+    // runs off the edge); clicking a message opens the editor. Fixed-position
+    // overlay on body, like the tooltip above, so #train-list can't clip it.
+    let weekInfoPopoutMarker = null;
+    let weekInfoPopoutDismissWired = false;
+
+    function closeWeekInfoPopout({ animate = true } = {}) {
+      const popout = document.getElementById('week-info-popout');
+      if (weekInfoPopoutMarker) {
+        weekInfoPopoutMarker.classList.remove('is-open');
+        weekInfoPopoutMarker.setAttribute('aria-expanded', 'false');
+        weekInfoPopoutMarker = null;
+      }
+      if (!popout) return;
+      popout.id = '';
+      if (!animate) { popout.remove(); return; }
+      popout.classList.remove('is-open');
+      popout.addEventListener('transitionend', () => popout.remove(), { once: true });
+      setTimeout(() => popout.remove(), 400); // fallback if no transition fires
+    }
+
+    function toggleWeekInfoPopout(markerEl, { animate = true } = {}) {
+      if (weekInfoPopoutMarker === markerEl) { closeWeekInfoPopout(); return; }
+      closeWeekInfoPopout({ animate: false });
+
+      const infos = getInformationsForDate(markerEl.dataset.infoDate);
+      if (!infos.length) return;
+
+      const rect = markerEl.getBoundingClientRect();
+      const towardsLeft = rect.left + rect.width / 2 > window.innerWidth / 2;
+
+      const popout = document.createElement('div');
+      popout.id = 'week-info-popout';
+      popout.className = `week-info-popout ${towardsLeft ? 'from-right' : 'from-left'}`;
+      popout.innerHTML = infos.map(info => Templates.informationBar(info)).join('');
+      popout.style.top = `${rect.top}px`;
+      if (towardsLeft) popout.style.right = `${window.innerWidth - rect.left}px`;
+      else popout.style.left = `${rect.right}px`;
+      popout.addEventListener('click', (e) => {
+        const bar = e.target.closest('[data-info-id]');
+        const info = bar && infos.find(i => i._uniqueId === bar.dataset.infoId);
+        if (!info) return;
+        closeWeekInfoPopout();
+        renderFocusMode(info);
+      });
+      document.body.appendChild(popout);
+      // Its width comes from its content (max-content, capped at 30vw). Lock
+      // it to the plain-text width now, so the marquee's copies can't widen
+      // the slide-out and feed back into the marquee's own fit check.
+      popout.style.width = `${popout.getBoundingClientRect().width}px`;
+
+      weekInfoPopoutMarker = markerEl;
+      markerEl.classList.add('is-open');
+      markerEl.setAttribute('aria-expanded', 'true');
+
+      if (animate) void popout.offsetWidth; // commit the collapsed state before animating
+      else popout.classList.add('no-anim');
+      popout.classList.add('is-open');
+      if (!animate) requestAnimationFrame(() => popout.classList.remove('no-anim'));
+      requestAnimationFrame(() => applyCancelNoticeScrolling(popout));
+
+      if (!weekInfoPopoutDismissWired) {
+        weekInfoPopoutDismissWired = true;
+        document.addEventListener('pointerdown', (e) => {
+          if (!weekInfoPopoutMarker) return;
+          if (e.target.closest('#week-info-popout, .week-day-info-marker')) return;
+          closeWeekInfoPopout();
+        }, true);
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && weekInfoPopoutMarker) closeWeekInfoPopout();
+        });
+        window.addEventListener('resize', () => closeWeekInfoPopout({ animate: false }));
+        document.addEventListener('scroll', (e) => {
+          if (weekInfoPopoutMarker && !(e.target.closest && e.target.closest('#week-info-popout'))) {
+            closeWeekInfoPopout({ animate: false });
+          }
+        }, true);
+      }
+    }
+
     // Line filter dropdown in the week view header. Checkbox changes re-render the
     // grid (so overlap levels are recomputed without the hidden trains) and keep
     // the dropdown open; clicking anywhere outside it closes it.
@@ -1335,6 +1437,89 @@
       }
     }
 
+    function formatBelegungsplanDayLabel(date) {
+      return date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    // Day view: the timeline is one continuous scroll over many days, so the
+    // header (date label, date picker, information strip) follows the day
+    // under the reading line - one third down the view, the same spot the
+    // prev/next/date-picker jumps scroll a day's marker to, so a jump and the
+    // scroll detection always agree on the shown day. Updated in place (no
+    // re-render) and belegungsplanSelectedDate follows, so prev/next, the week
+    // toggle and later re-renders continue from the day being looked at.
+    let belegungsplanDayScrollWired = false;
+    let belegungsplanDayScrollFrame = null;
+
+    function wireBelegungsplanDayScroll(trainListEl) {
+      if (belegungsplanDayScrollWired) return;
+      belegungsplanDayScrollWired = true;
+      trainListEl.addEventListener('scroll', () => {
+        if (belegungsplanDayScrollFrame) return;
+        belegungsplanDayScrollFrame = requestAnimationFrame(() => {
+          belegungsplanDayScrollFrame = null;
+          syncBelegungsplanDayHeader(trainListEl);
+        });
+      }, { passive: true });
+    }
+
+    function syncBelegungsplanDayHeader(trainListEl) {
+      if (currentViewMode !== 'belegungsplan' || belegungsplanDisplayMode !== 'day') return;
+      if (currentWorkspaceMode !== 'occupancy') return;
+      const pageEl = trainListEl.querySelector('.belegungsplan-page');
+      const separators = pageEl ? pageEl.querySelectorAll('.belegungsplan-date-separator[data-date]') : [];
+      if (!separators.length) return;
+
+      // Separators are in chronological order; each sits just above its
+      // midnight line (translateY(-100%)), so its bottom edge is the day start.
+      const readingLine = trainListEl.getBoundingClientRect().top + trainListEl.clientHeight / 3;
+      let dateStr = null;
+      for (const sep of separators) {
+        if (sep.getBoundingClientRect().bottom <= readingLine + 2) dateStr = sep.dataset.date;
+        else break;
+      }
+      if (!dateStr) {
+        // Above the first midnight: the timeline started the day before
+        // (an overnight train from yesterday).
+        const [y, m, d] = separators[0].dataset.date.split('-').map(Number);
+        dateStr = new Date(y, m - 1, d - 1).toLocaleDateString('sv-SE');
+      }
+      if (dateStr !== pageEl.dataset.headerDate) updateBelegungsplanDayHeader(pageEl, dateStr);
+    }
+
+    function updateBelegungsplanDayHeader(pageEl, dateStr) {
+      const header = pageEl.querySelector('.belegungsplan-page-header');
+      if (!header) return;
+      const [y, m, d] = dateStr.split('-').map(Number);
+      belegungsplanSelectedDate = new Date(y, m - 1, d);
+      pageEl.dataset.headerDate = dateStr;
+      const infos = getInformationsForDate(dateStr);
+
+      const label = header.querySelector('#belegungsplan-date-label');
+      if (label) {
+        const badge = label.querySelector(':scope > .info-badge');
+        if (badge) badge.remove();
+        const text = label.querySelector(':scope > span:not(.info-badge)');
+        if (text) text.textContent = formatBelegungsplanDayLabel(belegungsplanSelectedDate);
+        if (infos.length) label.insertAdjacentHTML('afterbegin', Templates.informationBadge(getInformationIcon(infos[0])));
+      }
+      const dateInput = header.querySelector('#belegungsplan-date-input');
+      if (dateInput) dateInput.value = dateStr;
+
+      const oldStrip = header.querySelector('.belegungsplan-header-info');
+      if (oldStrip) {
+        oldStrip.querySelectorAll('.cancel-notice-text').forEach(span => {
+          if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
+        });
+        oldStrip.remove();
+      }
+      header.classList.toggle('has-info', infos.length > 0);
+      if (infos.length) {
+        header.insertAdjacentHTML('beforeend', Templates.belegungsplanHeaderInfo(infos));
+        applyCancelNoticeScrolling(header.querySelector('.belegungsplan-header-info'));
+      }
+    }
+
     // The date range actually covered by the day view's continuous timeline (see
     // buildBelegungsplanDayContent) - used to bound the date picker so users can't
     // pick a day so far out of range that navigating to it would never scroll.
@@ -1372,6 +1557,11 @@
       wireBelegungsplanTooltip(trainListEl);
       hideBelegungsplanTooltip();
 
+      // Re-renders replace the marker elements: drop the open slide-out and,
+      // if its day is still on screen, reopen it (unanimated) further down.
+      const reopenInfoDate = weekInfoPopoutMarker ? weekInfoPopoutMarker.dataset.infoDate : null;
+      closeWeekInfoPopout({ animate: false });
+
       const savedScrollPosition = trainListEl.scrollTop;
       trainListEl.innerHTML = '';
 
@@ -1390,14 +1580,17 @@
         sunday.setDate(sunday.getDate() + 6);
         headerLabel = `KW ${getIsoWeekNumber(monday)} · ${monday.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}–${sunday.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
       } else {
-        headerLabel = selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        headerLabel = formatBelegungsplanDayLabel(selectedDate);
       }
       const dateInputValue = selectedDate.toLocaleDateString('sv-SE');
       const { minDateStr, maxDateStr } = getBelegungsplanDataDateBounds(now);
       const lineFilter = belegungsplanDisplayMode === 'week'
         ? { lines: getBelegungsplanAllLines(), hidden: belegungsplanHiddenLines, open: belegungsplanLineFilterOpen }
         : null;
-      pageEl.innerHTML = Templates.belegungsplanHeader(headerLabel, belegungsplanDisplayMode, dateInputValue, minDateStr, maxDateStr, lineFilter);
+      const headerInfos = belegungsplanDisplayMode === 'day' ? getInformationsForDate(dateInputValue) : [];
+      pageEl.innerHTML = Templates.belegungsplanHeader(headerLabel, belegungsplanDisplayMode, dateInputValue, minDateStr, maxDateStr, lineFilter, belegungsplanStatsOpen, headerInfos);
+      if (belegungsplanDisplayMode === 'day') pageEl.dataset.headerDate = dateInputValue;
+      wireBelegungsplanDayScroll(trainListEl);
 
       const contentEl = document.createElement('div');
       contentEl.className = 'belegungsplan-content';
@@ -1441,6 +1634,40 @@
       }
 
       wireBelegungsplanLineFilter(pageEl);
+
+      // Week column i markers toggle the slide-out; day header info bars open the editor
+      pageEl.addEventListener('click', (e) => {
+        const markerEl = e.target.closest('.week-day-info-marker');
+        if (markerEl) {
+          toggleWeekInfoPopout(markerEl);
+          return;
+        }
+        const infoEl = e.target.closest('[data-info-id]');
+        if (!infoEl) return;
+        const info = (processedTrainData.informationTrains || []).find(i => i._uniqueId === infoEl.dataset.infoId);
+        if (info) renderFocusMode(info);
+      });
+      pageEl.addEventListener('keydown', (e) => {
+        const markerEl = (e.key === 'Enter' || e.key === ' ') && e.target.closest('.week-day-info-marker');
+        if (!markerEl) return;
+        e.preventDefault();
+        toggleWeekInfoPopout(markerEl);
+      });
+      requestAnimationFrame(() => applyCancelNoticeScrolling(pageEl));
+
+      if (reopenInfoDate) {
+        const reopenMarker = pageEl.querySelector(`.week-day-info-marker[data-info-date="${reopenInfoDate}"]`);
+        if (reopenMarker) toggleWeekInfoPopout(reopenMarker, { animate: false });
+      }
+
+      const statsBtn = pageEl.querySelector('#belegungsplan-stats-btn');
+      if (statsBtn) {
+        statsBtn.addEventListener('click', () => {
+          belegungsplanStatsOpen = !belegungsplanStatsOpen;
+          try { localStorage.setItem(BELEGUNGSPLAN_STATS_OPEN_KEY, belegungsplanStatsOpen ? '1' : '0'); } catch (e) { /* ignore */ }
+          renderBelegungsplan();
+        });
+      }
 
       const dateInput = pageEl.querySelector('#belegungsplan-date-input');
       const dateLabel = pageEl.querySelector('#belegungsplan-date-label');
@@ -1506,8 +1733,15 @@
             ? (dayCurrentTimeLineEl || contentEl.querySelector('.belegungsplan-current-time-line'))
             : daySelectedMarkerEl;
           if (targetEl) {
-            const viewportHeight = trainListEl.clientHeight;
-            trainListEl.scrollTo({ top: Math.max(0, targetEl.offsetTop - viewportHeight / 3), behavior: 'smooth' });
+            // Measured on screen (not offsetTop, which is relative to the
+            // timeline and ignores the header above it), so the target lands
+            // exactly on the reading line syncBelegungsplanDayHeader uses. A
+            // day marker's midnight line is its bottom edge (translateY(-100%)).
+            const listTop = trainListEl.getBoundingClientRect().top;
+            const rect = targetEl.getBoundingClientRect();
+            const lineY = targetEl === daySelectedMarkerEl ? rect.bottom : rect.top;
+            const top = trainListEl.scrollTop + (lineY - listTop) - trainListEl.clientHeight / 3;
+            trainListEl.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
           }
         }, 50);
       });
@@ -1522,7 +1756,11 @@
         append = false,
         targetEl = null,
         durationOnlyEntries = [],
-        fillToday = false
+        informationEntries = [],
+        fillToday = false,
+        // 'desc' lists day sections newest-first (used by the search's
+        // "Neueste zuerst" sort); entries inside a day stay chronological.
+        dateOrder = 'asc'
       } = options;
 
       const now = new Date();
@@ -1593,11 +1831,33 @@
       // always start below the fold.
       const todayKey = getLocalDateKey(now);
 
+      // An information also gives its day a section when that day has no
+      // trains: always its start day, plus the days it covers inside the
+      // lookahead window (so a month-long info doesn't add 30 empty days).
+      const infoDates = [];
+      if (informationEntries.length) {
+        const windowDays = window.AppSettings ? window.AppSettings.get('lookaheadWindowDays') : 14;
+        const windowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + windowDays);
+        const windowEndKey = getLocalDateKey(windowEnd);
+        informationEntries.forEach((info) => {
+          if (info.date >= todayKey) infoDates.push(info.date);
+          const endKey = getInformationEndDate(info);
+          const [y, m, d] = (info.date > todayKey ? info.date : todayKey).split('-').map(Number);
+          for (let day = new Date(y, m - 1, d); ; day.setDate(day.getDate() + 1)) {
+            const key = getLocalDateKey(day);
+            if (key > endKey || key > windowEndKey) break;
+            infoDates.push(key);
+          }
+        });
+      }
+
       const orderedDates = Array.from(new Set([
         ...Object.keys(timedByDate),
         ...Object.keys(durationByDate),
+        ...infoDates,
         ...(fillToday ? [todayKey] : [])
       ])).sort();
+      if (dateOrder === 'desc') orderedDates.reverse();
 
       orderedDates.forEach((date) => {
         const separatorHTML = Templates.daySeparator(date, trainsByDate[date] || []);
@@ -1605,6 +1865,16 @@
         separatorTemplate.innerHTML = separatorHTML.trim();
         const separatorEl = separatorTemplate.content.firstChild;
         listRoot.appendChild(separatorEl);
+
+        const infosForDay = getInformationsForDay(informationEntries, date);
+        if (infosForDay.length) separatorEl.classList.add('has-info');
+        infosForDay.forEach((info) => {
+          const barTemplate = document.createElement('template');
+          barTemplate.innerHTML = Templates.informationBar(info).trim();
+          const barEl = barTemplate.content.firstChild;
+          barEl.addEventListener('click', () => renderFocusMode(info));
+          listRoot.appendChild(barEl);
+        });
 
         const durationTrainsForDay = durationByDate[date] || [];
         if (durationTrainsForDay.length > 0) {
@@ -1685,6 +1955,7 @@
       requestAnimationFrame(() => {
         applyCancelNoticeScrolling(listRoot);
         applyZugzielScrolling(listRoot);
+        if (listRoot.id === 'train-list') updateBackToTopButton();
       });
 
       // Restore scroll synchronously, before the browser paints — setting
@@ -1710,9 +1981,78 @@
         enableDateJump: true,
         append: false,
         durationOnlyEntries: processedTrainData.durationOnlyTrains,
+        informationEntries: processedTrainData.informationTrains,
         fillToday: true
       });
       renderPinnedProjectsInSidebar();
+    }
+
+    // ===== BACK TO TOP (train list, log viewer, Rezensionen) =====
+    // Floating button that pops up once the workspace is scrolled down by more
+    // than BACK_TO_TOP_THRESHOLD of its height and smooth-scrolls back to the
+    // top. It lives next to #train-list (renders rebuild the list's
+    // innerHTML), positioned against the list's bottom-right corner, measured
+    // when it appears so it fits every layout (incl. above the mobile taskbar).
+    const BACK_TO_TOP_THRESHOLD = 0.6; // fraction of the visible height
+    let backToTopBtn = null;
+    let backToTopFrame = null;
+
+    // The element that actually scrolls in the current workspace, or null
+    // where the button doesn't apply. The list and the log viewer scroll
+    // #train-list itself; Rezensionen scrolls its own .reviews-page inside it.
+    function getBackToTopScroller(listEl) {
+      if (typeof currentWorkspaceMode === 'undefined') return null;
+      if (currentWorkspaceMode === 'list') {
+        return currentViewMode !== 'belegungsplan' ? listEl : null;
+      }
+      if (currentWorkspaceMode === 'log-viewer') return listEl;
+      if (currentWorkspaceMode === 'reviews') return listEl.querySelector('.reviews-page');
+      return null;
+    }
+
+    function ensureBackToTopButton(listEl) {
+      if (backToTopBtn) return backToTopBtn;
+      backToTopBtn = document.createElement('button');
+      backToTopBtn.type = 'button';
+      backToTopBtn.className = 'back-to-top-btn';
+      backToTopBtn.setAttribute('aria-label', 'Nach oben');
+      backToTopBtn.title = 'Nach oben';
+      backToTopBtn.tabIndex = -1;
+      backToTopBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"/></svg>';
+      backToTopBtn.addEventListener('click', () => {
+        const scroller = getBackToTopScroller(listEl);
+        if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      listEl.parentElement.appendChild(backToTopBtn);
+
+      // Capture phase: scroll events don't bubble, but capturing on the list
+      // also catches inner scrollers such as .reviews-page.
+      listEl.addEventListener('scroll', () => {
+        if (backToTopFrame) return;
+        backToTopFrame = requestAnimationFrame(() => {
+          backToTopFrame = null;
+          updateBackToTopButton();
+        });
+      }, { passive: true, capture: true });
+      window.addEventListener('resize', () => updateBackToTopButton());
+      return backToTopBtn;
+    }
+
+    function updateBackToTopButton() {
+      const listEl = document.getElementById('train-list');
+      if (!listEl || !listEl.parentElement) return;
+      const btn = ensureBackToTopButton(listEl);
+      const scroller = getBackToTopScroller(listEl);
+      const show = !!scroller && scroller.scrollTop > scroller.clientHeight * BACK_TO_TOP_THRESHOLD;
+
+      if (show && !btn.classList.contains('is-visible')) {
+        const listRect = listEl.getBoundingClientRect();
+        const parentRect = listEl.parentElement.getBoundingClientRect();
+        btn.style.right = `${parentRect.right - listRect.right}px`;
+        btn.style.bottom = `${parentRect.bottom - listRect.bottom}px`;
+      }
+      btn.classList.toggle('is-visible', show);
+      btn.tabIndex = show ? 0 : -1;
     }
 
     // ===== DATE JUMP POPUP =====

@@ -69,6 +69,7 @@
       noteTrains: [],          // Notes (objects with type='note')
       scheduledTrains: [],     // Trains with plan time
       durationOnlyTrains: [],  // Trains without time, rendered after timed trains per day
+      informationTrains: [],   // Announcement texts (type='information') still valid today or later
       futureTrains: [],        // Scheduled trains in the future or currently occupying
       currentTrain: null,      // First future/occupying train from PERSONAL SCHEDULE
       remainingTrains: []      // Future trains after the current one
@@ -107,6 +108,8 @@
     // A train with curfewOverride=true (set when the user manually toggles
     // cancel/reactivate on it — see editor.js/swipe.js) is skipped entirely so a
     // manual decision always wins and can't be immediately re-cancelled by the rule.
+    // Only the personal schedule is subject to the curfew — live station
+    // departures (source 'db-api') are never touched.
     function applyCurfewRule(trains) {
       const enabled = !!(window.AppSettings && window.AppSettings.get('curfewEnabled'));
       const lines = enabled ? (window.AppSettings.get('curfewLines') || []).map(l => String(l).toUpperCase()) : [];
@@ -115,7 +118,7 @@
       const now = new Date();
 
       trains.forEach(t => {
-        if (!t) return;
+        if (!t || t.source === 'db-api') return;
 
         // A manually-overridden train is completely hands-off from here on —
         // checked FIRST, before the stale-flag revert below, so it also skips
@@ -166,11 +169,12 @@
         noteTrains: [],
         scheduledTrains: [],
         durationOnlyTrains: [],
+        informationTrains: [],
         futureTrains: [],
         currentTrain: null,
         remainingTrains: []
       };
-      
+
       // Get all trains (IDs already assigned at load time)
       processedTrainData.allTrains = (schedule.trains || []).slice();
       processedTrainData.localTrains = (schedule.localTrains || []).slice();
@@ -252,6 +256,10 @@
           return 0;
         });
 
+      processedTrainData.informationTrains = processedTrainData.allTrains
+        .filter(t => isInformationTrain(t) && t.date && (t.ziel || '').trim() && getInformationEndDate(t) >= todayDate)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
       // Resolve each duration-only template's active clone (if any) once per
       // cycle here, instead of re-scanning schedule.* per FÜSQ row on every
       // render (that per-row rescan was expensive enough to noticeably delay
@@ -300,8 +308,17 @@
         return !!tTime && tTime <= now;
       });
       
+      // Trains from earlier days that were checked in but not yet checked out
+      // stay on the list until they're checked out, so a session running past
+      // midnight (or a forgotten check-out) doesn't disappear from the list.
+      // A planned duration doesn't make it finished — only checking out does.
+      const futureTrainSet = new Set(processedTrainData.futureTrains);
+      const openCheckinsFromEarlierDays = processedTrainData.scheduledTrains.filter(t =>
+        t.date && t.date < todayDate && t.checkedIn && !t.checkedOut && !t.canceled && !futureTrainSet.has(t)
+      );
+
       // Mark past trains with a flag for template rendering
-      pastTrainsFromToday.forEach(t => {
+      [...openCheckinsFromEarlierDays, ...pastTrainsFromToday].forEach(t => {
         t._isPastTrain = true;
       });
       
@@ -358,7 +375,7 @@
       
       // Remaining trains in main list are timed trains only.
       // Duration-only trains are rendered in a dedicated collapsed section.
-      processedTrainData.remainingTrains = [...pastTrainsFromToday, ...processedTrainData.futureTrains];
+      processedTrainData.remainingTrains = [...openCheckinsFromEarlierDays, ...pastTrainsFromToday, ...processedTrainData.futureTrains];
 
       const stressSig = buildStressDataSignature(processedTrainData.allTrains);
       if (stressSig !== lastStressDataSignature) {

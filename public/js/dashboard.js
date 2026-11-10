@@ -6,6 +6,7 @@
   let dashboardOpen = false;
   let dashboardClockInterval = null;
   let lastCtrlLTime = 0;
+  let openedAtStartup = false;
 
   // Use the shared selectedEva/selectedStationName localStorage keys as the single source of truth.
   // These are never removed when switching to personal mode — only stationMode changes.
@@ -203,27 +204,9 @@
 
   function applyViaScrolling(grid) {
     grid.querySelectorAll('.via-scroll-text').forEach(span => {
-      // Cancel any running marquee cycle on this span
-      if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
-
-      const container = span.parentElement;
-      if (!container) return;
+      // Marked with +++ at start and end only while it scrolls
       const originalText = span.dataset.via || '';
-      if (!originalText) return;
-
-      // Reset to plain text and measure overflow
-      span.style.transition = 'none';
-      span.style.transform = '';
-      span.textContent = originalText;
-
-      const scrollDist = span.scrollWidth - container.clientWidth;
-      if (scrollDist <= 0) return;
-
-      // Mark with +++ at start and end
-      span.textContent = `+++ ${originalText} +++`;
-      const markedScrollDist = span.scrollWidth - container.clientWidth;
-
-      startMarquee(span, markedScrollDist);
+      startMarquee(span, originalText, `+++ ${originalText} +++`);
     });
   }
 
@@ -249,9 +232,11 @@
       .catch(() => { if (dashboardOpen) renderDashboard([]); });
   }
 
-  function openDashboard() {
+  function openDashboard(opts) {
     if (dashboardOpen) return;
     dashboardOpen = true;
+    // Only the startup board earns the "Willkommen zurück!" ribbon on close.
+    openedAtStartup = !!(opts && opts.startup);
     history.pushState({ dashboardOpen: true }, '');
     const overlay = document.getElementById('dashboard-overlay');
     if (!overlay) return;
@@ -300,6 +285,9 @@
       clearInterval(dashboardClockInterval);
       dashboardClockInterval = null;
     }
+    const wasStartup = openedAtStartup;
+    openedAtStartup = false;
+    if (typeof window.welcomeRibbonDashboardClosed === 'function') window.welcomeRibbonDashboardClosed(wasStartup);
   }
 
   // Ctrl+L → open. While open: first Ctrl+L arms exit, second Ctrl+L within 500 ms closes.

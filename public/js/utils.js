@@ -162,13 +162,13 @@
         's8': '#6da939',
         's85': '#6da939',
         's9': '#962d44',
-        's91': '#03377a',
-        's92': '#7a0707',
-        's93': '#e4592b',
-        's94': '#41238d',
-        's95': '#207910',
-        's96': '#196489',
-        's97': '#074d70',
+        's91': '#3d3db8',
+        's92': '#00727a',
+        's93': '#f07167',
+        's94': '#5e2750',
+        's95': '#5f7385',
+        's96': '#1b2a5c',
+        's97': '#5c3b23',
         's98': '#ffd737',
         's99': '#ff76c4',
         'fex': '#FF0000',
@@ -240,13 +240,13 @@
     // Colors for s91-s99 are taken from their pill SVGs (./res/<line>.svg).
     const SPECIAL_LINE_GRADIENTS = {
       s49: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], // pride flag
-      s91: shineGradientStops('#03377a'),
-      s92: shineGradientStops('#7a0707'),
-      s93: shineGradientStops('#e4592b'),
-      s94: shineGradientStops('#41238d'),
-      s95: shineGradientStops('#e4592b'),
-      s96: shineGradientStops('#196489'),
-      s97: shineGradientStops('#074d70'),
+      s91: shineGradientStops('#3d3db8'), // indigo
+      s92: shineGradientStops('#00727a'), // petrol
+      s93: shineGradientStops('#f07167'), // coral
+      s94: shineGradientStops('#5e2750'), // aubergine
+      s95: shineGradientStops('#5f7385'), // slate
+      s96: shineGradientStops('#1b2a5c'), // navy
+      s97: shineGradientStops('#5c3b23'), // chocolate
       s98: shineGradientStops('#ffd737'), // gold text accent, dark pill
       s99: shineGradientStops('#ff76c4')  // pink text accent, dark pill
     };
@@ -270,6 +270,21 @@
       const size = (edge === 'left' || edge === 'right') ? `${thickness} 100%` : `100% ${thickness}`;
       const gradient = getLineGradient(line, direction);
       return `${gradient} ${edge} / ${size} no-repeat border-box, linear-gradient(var(${panelBgVar}), var(${panelBgVar})) padding-box`;
+    }
+
+    // True when a (non-cancelled) train departs/arrives within the next
+    // `windowMin` minutes — drives the blinking indicator dot. Defaults to the
+    // notification lead time (Einstellungen → Vorlaufzeit).
+    function isArrivingSoon(train, now = new Date(), windowMin) {
+      if (!train || train.canceled) return false;
+      if (windowMin == null) {
+        const lead = window.AppSettings ? Number(window.AppSettings.get('notificationLeadMin')) : NaN;
+        windowMin = lead > 0 ? lead : 20;
+      }
+      const t = parseTime(train.actual || train.plan, now, train.date);
+      if (!t) return false;
+      const diff = t - now;
+      return diff > 0 && diff <= windowMin * 60000;
     }
 
     function getCarriageSVG(dauer, isFEX = false, line = '') {
@@ -347,10 +362,21 @@
       return div.innerHTML;
     }
 
-    // Shared JS-driven marquee (no CSS @keyframes): scrolls `span` left by
-    // `scrollDist` px, pausing at each end, looping until cancelled via
-    // span._marqueeCancel(). Originally lived in dashboard.js (via-stops ticker);
-    // extracted here so other tickers (e.g. cancel-notice-tag) can reuse it.
+    // ===== MARQUEES =====
+    // Two JS-driven tickers (no CSS @keyframes), both self-measuring: callers
+    // only pass the span (an inline-block inside its clipping container) and
+    // the text. Each decides by itself whether the text overflows, and refits
+    // whenever the container's width changes - even without a re-render (e.g.
+    // a drawer closing): it starts when the text starts overflowing and stops
+    // (plain text) as soon as it fits again. Cancel with span._marqueeCancel().
+    //
+    // Performance: a drawer opening resizes every marquee in the list at once.
+    // So refits are (a) collected by ONE shared ResizeObserver and flushed
+    // together once the widths have been stable for MARQUEE_SETTLE_MS, (b) fed
+    // the width from the observer entry (no layout read), and (c) write-only:
+    // text widths are measured once when a marquee starts, never on a refit -
+    // otherwise each refit would force a full layout of the list.
+    //
     // Scroll speed in px/s. 40 suits the app's small text; a page with much
     // larger text (kiosk.html) can set window.marqueeSpeedFor(span) to scale it.
     function marqueeSpeed(span) {
@@ -358,79 +384,312 @@
       return custom > 0 ? custom : 40;
     }
 
-    function startMarquee(span, scrollDist) {
+    // Visible width = content box of the container (its padding is not part
+    // of the clipped text area). Only read when a marquee starts.
+    // Everything here is measured with fractional precision: clientWidth /
+    // scrollWidth are rounded to whole pixels, so a text 48.7px wide in a
+    // 48.7px field read as 49 > 48.7 - "overflowing" - and in a field sized by
+    // its content (week slide-out) that toggled the ticker on and off forever.
+    function marqueeAvailableWidth(container) {
+      const cs = getComputedStyle(container);
+      return container.getBoundingClientRect().width
+        - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0)
+        - (parseFloat(cs.borderLeftWidth) || 0) - (parseFloat(cs.borderRightWidth) || 0);
+    }
+
+    function marqueeTextWidth(span) {
+      return span.getBoundingClientRect().width;
+    }
+
+    // Sub-pixel slack so layout rounding never counts as overflow.
+    function marqueeFits(textWidth, width) {
+      return textWidth <= width + 0.5;
+    }
+
+    const MARQUEE_SETTLE_MS = 150;
+    const marqueeWatchers = new Map();      // container -> Set of watchers
+    const marqueePendingWidths = new Map(); // container -> latest content width
+    let marqueeFlushTimer = null;
+    let marqueeSweepTimer = null;
+
+    const marqueeResizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(entries => {
+          entries.forEach(entry => marqueePendingWidths.set(entry.target, entry.contentRect.width));
+          clearTimeout(marqueeFlushTimer);
+          marqueeFlushTimer = setTimeout(flushMarqueeWidths, MARQUEE_SETTLE_MS);
+        })
+      : null;
+
+    function flushMarqueeWidths() {
+      marqueeFlushTimer = null;
+      const pending = [...marqueePendingWidths];
+      marqueePendingWidths.clear();
+      pending.forEach(([container, width]) => {
+        const watchers = marqueeWatchers.get(container);
+        if (watchers) [...watchers].forEach(w => w.resize(width));
+      });
+    }
+
+    // Re-renders replace spans without cancelling them; drop watchers whose
+    // span left the DOM so their containers aren't observed forever.
+    function sweepMarqueeWatchers() {
+      marqueeSweepTimer = null;
+      marqueeWatchers.forEach(watchers => watchers.forEach(w => {
+        if (!w.span.isConnected) w.cancel();
+      }));
+    }
+
+    function unwatchMarquee(watcher) {
+      const watchers = marqueeWatchers.get(watcher.container);
+      if (!watchers) return;
+      watchers.delete(watcher);
+      if (!watchers.size) {
+        marqueeWatchers.delete(watcher.container);
+        marqueePendingWidths.delete(watcher.container);
+        if (marqueeResizeObserver) marqueeResizeObserver.unobserve(watcher.container);
+      }
+    }
+
+    // Shared lifecycle: fit(width) runs now and after every settled width
+    // change (changes under 1px are ignored), and span._marqueeCancel stops
+    // watching + runs cleanup().
+    function watchMarqueeWidth(span, container, fit, cleanup) {
+      let lastWidth = marqueeAvailableWidth(container);
+      const watcher = {
+        span,
+        container,
+        resize(width) {
+          if (!span.isConnected) { watcher.cancel(); return; }
+          if (Math.abs(width - lastWidth) < 1) return;
+          lastWidth = width;
+          fit(width);
+        },
+        cancel() {
+          unwatchMarquee(watcher);
+          if (span._marqueeCancel === watcher.cancel) span._marqueeCancel = null;
+          cleanup();
+        }
+      };
+      span._marqueeCancel = watcher.cancel;
+
+      fit(lastWidth);
+
+      if (!marqueeWatchers.has(container)) {
+        marqueeWatchers.set(container, new Set());
+        // Observing fires once right away; resize() ignores it (same width).
+        if (marqueeResizeObserver) marqueeResizeObserver.observe(container);
+      }
+      marqueeWatchers.get(container).add(watcher);
+      if (!marqueeSweepTimer) marqueeSweepTimer = setTimeout(sweepMarqueeWatchers, 1000);
+    }
+
+    // Bounce ticker: scrolls from the start to the end, pauses, jumps back,
+    // pauses, repeats. `scrollText` (default: `text`) is what's shown while
+    // scrolling, e.g. the dashboard's "+++ via +++" markers. Any width change
+    // restarts from the start with a fresh distance - the old one would leave
+    // a gap at the end (field grew) or cut the end off (field shrank).
+    function startMarquee(span, text, scrollText = text) {
+      if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
+      const container = span.parentElement;
+      if (!container || !text) return;
+
       const SPEED = marqueeSpeed(span); // px per second (slow scroll)
       const PAUSE = 3000; // ms pause at start and end
-      const scrollDuration = Math.round((scrollDist / SPEED) * 1000);
-      let cancelled = false;
       let timers = [];
+      let stopped = false;
+      const isStopped = () => stopped || !span.isConnected;
 
-      span._marqueeCancel = function() {
-        cancelled = true;
+      function showPlain() {
         timers.forEach(clearTimeout);
+        timers = [];
         span.style.transition = 'none';
         span.style.transform = '';
-      };
+        span.textContent = text;
+      }
 
-      function cycle() {
-        if (cancelled || !span.isConnected) return;
+      // Measured once; refits only compare against the new width.
+      showPlain();
+      const textWidth = marqueeTextWidth(span);
+      span.textContent = scrollText;
+      const scrollTextWidth = marqueeTextWidth(span);
+
+      function cycle(scrollDist) {
+        if (isStopped()) return;
+        const scrollDuration = Math.round((scrollDist / SPEED) * 1000);
         span.style.transition = 'none';
         span.style.transform = 'translateX(0)';
         timers.push(setTimeout(() => {
-          if (cancelled || !span.isConnected) return;
+          if (isStopped()) return;
           span.style.transition = `transform ${scrollDuration}ms linear`;
           span.style.transform = `translateX(-${scrollDist}px)`;
           timers.push(setTimeout(() => {
-            if (cancelled || !span.isConnected) return;
-            timers.push(setTimeout(cycle, PAUSE));
+            if (isStopped()) return;
+            timers.push(setTimeout(() => cycle(scrollDist), PAUSE));
           }, scrollDuration));
         }, PAUSE));
       }
 
-      cycle();
+      function fit(width) {
+        showPlain();
+        if (marqueeFits(textWidth, width)) return; // fits - no ticker
+        const scrollDist = scrollTextWidth - width;
+        if (scrollDist <= 0) return;
+        span.textContent = scrollText;
+        cycle(scrollDist);
+      }
+
+      watchMarqueeWidth(span, container, fit, () => { stopped = true; showPlain(); });
     }
 
-    // Seamless infinite ticker: `span` must already contain a repeating segment
-    // duplicated back-to-back (segment + segment), and `segmentWidth` is the pixel
-    // width of one segment. Scrolls continuously left by exactly `segmentWidth`
-    // then snaps back to translateX(0) with no visible seam, since the second
-    // copy is identical to the first and now sits exactly where it started —
-    // unlike startMarquee, there is no pause/reverse, it just keeps going.
-    function startInfiniteMarquee(span, segmentWidth) {
+    // Seamless infinite ticker (cancel notices, headline, information bars):
+    // while `text` overflows, the span holds back-to-back copies of
+    // `text + separator` and scrolls left by exactly one copy, then snaps
+    // back to translateX(0) - invisible, since the next copy now sits where
+    // the first one started. No pause/reverse, unlike startMarquee.
+    //
+    // Copy count: at the end of a loop the span is shifted by one copy, so
+    // the copies must still cover one copy + the whole visible width, i.e.
+    // ceil(width / copy) + 1 (never fewer than 2). On a width change while
+    // scrolling, only the copy count moves - the loop length is the same, so
+    // the animation keeps running from where it is.
+    function startInfiniteMarquee(span, text, separator = '   +++   ') {
+      if (typeof span._marqueeCancel === 'function') span._marqueeCancel();
+      const container = span.parentElement;
+      if (!container || !text) return;
+
       const SPEED = marqueeSpeed(span); // px per second, consistent with startMarquee
-      const duration = Math.round((segmentWidth / SPEED) * 1000);
-      let cancelled = false;
+      let stopped = false;
+      let running = false;
+      const isStopped = () => stopped || !span.isConnected;
 
       function onTransitionEnd(e) {
-        if (e.propertyName !== 'transform') return;
-        if (cancelled || !span.isConnected) return;
+        if (e.propertyName !== 'transform' || isStopped()) return;
         step();
       }
 
-      span._marqueeCancel = function() {
-        cancelled = true;
+      function showPlain() {
+        running = false;
         span.removeEventListener('transitionend', onTransitionEnd);
         span.style.transition = 'none';
         span.style.transform = '';
-      };
+        span.textContent = text;
+      }
+
+      // Measured once; refits only compare against the new width.
+      showPlain();
+      // The copy width is measured as width(2 copies) - width(1 copy): with
+      // nowrap, a trailing space at the end of a line isn't counted, but the
+      // same space between two copies is - measuring one copy alone would make
+      // every loop wrap a space short.
+      const textWidth = marqueeTextWidth(span);
+      span.textContent = text + separator;
+      const oneCopyWidth = marqueeTextWidth(span);
+      span.textContent = text + separator + text + separator;
+      const segmentWidth = marqueeTextWidth(span) - oneCopyWidth;
+      span.textContent = text;
 
       function step() {
-        if (cancelled || !span.isConnected) return;
+        if (isStopped()) return;
         span.style.transition = 'none';
         span.style.transform = 'translateX(0)';
         // Force reflow so the browser registers the reset before the next
         // transition starts (otherwise it can be coalesced away).
         void span.offsetWidth;
-        span.style.transition = `transform ${duration}ms linear`;
+        span.style.transition = `transform ${Math.round((segmentWidth / SPEED) * 1000)}ms linear`;
         span.style.transform = `translateX(-${segmentWidth}px)`;
       }
 
-      span.addEventListener('transitionend', onTransitionEnd);
-      step();
+      function fillCopies(width) {
+        const copies = Math.max(2, Math.ceil(width / segmentWidth) + 1);
+        span.textContent = (text + separator).repeat(copies);
+      }
+
+      function fit(width) {
+        if (marqueeFits(textWidth, width)) { showPlain(); return; } // fits - no ticker
+        fillCopies(width);
+        if (running) return; // keeps running from where it is
+        running = true;
+        span.addEventListener('transitionend', onTransitionEnd);
+        step();
+      }
+
+      watchMarqueeWidth(span, container, fit, () => { stopped = true; showPlain(); });
     }
 
     function isDurationOnlyTrain(train) {
       return !!train && train.type === 'duration-only';
+    }
+
+    // Information entries (type: 'information') are plain announcement texts
+    // stored in `ziel`, valid from `date` through `dateEnd` (inclusive,
+    // YYYY-MM-DD; missing = just that day) or every day from `date` on when
+    // `openEnded` ("Kein Enddatum"). No time, line or duration - they never
+    // act like a trip. A recurring information's template (fixedSchedule)
+    // repeats single-day occurrences from startDate through endDate (or
+    // forever when openEnded / without endDate).
+    function isInformationTrain(train) {
+      return !!train && train.type === 'information';
+    }
+
+    // Symbols an information can show (`icon` field; missing = 'information').
+    // Order = editor dropdown order. Glyphs live in res/ (see .info-glyph--*).
+    const INFORMATION_ICONS = [
+      { value: 'information',   label: 'Information' },
+      { value: 'stoerung',      label: 'Störung' },
+      { value: 'ersatzverkehr', label: 'Ersatzverkehr' }
+    ];
+
+    function getInformationIcon(train) {
+      const icon = train && train.icon;
+      return INFORMATION_ICONS.some(i => i.value === icon) ? icon : 'information';
+    }
+
+    // Far-future stand-in for "no end": keeps every YYYY-MM-DD comparison
+    // (still valid?, covers this day?, prune) working unchanged.
+    const INFORMATION_OPEN_END = '9999-12-31';
+
+    // Last day an information shows. `openEnded` ("Kein Enddatum" in the
+    // editor) = every day from its start, forever. Without it, a missing or
+    // earlier dateEnd means just the start day.
+    function getInformationEndDate(train) {
+      if (!train || !train.date) return '';
+      if (train.openEnded) return INFORMATION_OPEN_END;
+      return train.dateEnd && train.dateEnd > train.date ? train.dateEnd : train.date;
+    }
+
+    function informationCoversDate(train, dateStr) {
+      return !!train && !!train.date && train.date <= dateStr && getInformationEndDate(train) >= dateStr;
+    }
+
+    // The informations to show on one day, each series at most once (guards
+    // against a series occurrence and a leftover entry of the same template
+    // on one day; the one that started most recently wins).
+    function getInformationsForDay(infos, dateStr) {
+      const byTemplate = new Map();
+      (infos || []).forEach(info => {
+        if (!informationCoversDate(info, dateStr)) return;
+        const key = info._templateId || info._uniqueId;
+        const shown = byTemplate.get(key);
+        if (!shown || info.date > shown.date) byTemplate.set(key, info);
+      });
+      return [...byTemplate.values()];
+    }
+
+    // YYYY-MM-DD in local time. Use this instead of toISOString(), which is
+    // UTC and still reports the previous day for the first hours after midnight.
+    function toLocalDateStr(date = new Date()) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    // Message as shown in the list/Belegungsplan: multi-day entries get a
+    // "Von DD.MM bis DD.MM:" prefix, unless hideDateRange is set in the editor.
+    function formatInformationText(train) {
+      const text = (train && train.ziel || '').trim();
+      const endDate = getInformationEndDate(train);
+      if (!endDate || endDate === train.date || train.hideDateRange) return text;
+      const ddmm = (s) => { const [, m, d] = s.split('-'); return `${d}.${m}`; };
+      if (train.openEnded) return `Ab ${ddmm(train.date)}: ${text}`;
+      return `Von ${ddmm(train.date)} bis ${ddmm(endDate)}: ${text}`;
     }
 
     // A train with an open check-in session and no recorded duration yet

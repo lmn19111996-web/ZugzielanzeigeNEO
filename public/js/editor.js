@@ -7,6 +7,8 @@
     let editorDrawerClickOutHandler = null;
     let editorDrawerBackHandler = null;
     let editorDrawerToggleHandler = null;
+    let editorDrawerBadgeMousedownHandler = null;
+    let editorRenderSeq = 0; // see renderToken in renderFocusMode
 
     // Global handlers for announcement drawer (prevent duplicate listener registration)
     let announcementDrawerEscHandler = null;
@@ -45,7 +47,13 @@
       // Apply line color / VIP gradient to editor drawer border
       const lineColor = getLineColor(train.linie || 'S1');
       const vip = typeof getVipConfig === 'function' ? getVipConfig(train.linie) : null;
-      if (vip) {
+      if (isInformationTrain(train)) {
+        panel.style.borderLeft = '4px solid var(--color-info-bg)';
+        panel.style.borderImage = '';
+        panel.style.borderImageSlice = '';
+        panel.style.background = '';
+        delete panel.dataset.vipLine;
+      } else if (vip) {
         panel.style.borderLeft = '4px solid transparent';
         panel.style.borderImage = `linear-gradient(to bottom, ${vip.c3}, ${vip.c2}, ${vip.c1}) 1`;
         panel.style.borderImageSlice = '1';
@@ -71,6 +79,11 @@
       }
 
       try {
+        // Informations have no separate Vorlage page: a recurring one always
+        // opens its series (the template) right in the information editor.
+        const isInfoSeries = isInformationTrain(train) && !!train._templateId;
+        if (isInfoSeries) editMode = 'stem';
+
         // Detect recurring train type
         const isRecurring = !!train._templateId;
         const isRecurringStem     = isRecurring && editMode === 'stem';
@@ -89,6 +102,14 @@
               date:   stemObj.startDate || '',
               source: 'local'
             };
+            // Information series: "Gültig bis" is where the recurrence ends.
+            // A template without endDate repeats forever (like a train Vorlage).
+            if (isInformationTrain(stemObj)) {
+              // A series without endDate (older ones) repeats forever, so it
+              // shows ticked; unticking gives it an end (see the stem save path).
+              train.dateEnd = stemObj.endDate || undefined;
+              train.openEnded = !!stemObj.openEnded || !stemObj.endDate;
+            }
           }
         }
 
@@ -134,11 +155,69 @@
           day: 'numeric'
         });
         dateValue.textContent = dateDisplay;
-        dateValue.parentElement.setAttribute('data-value', train.date || now.toISOString().split('T')[0]);
+        dateValue.parentElement.setAttribute('data-value', train.date || toLocalDateStr(now));
         
         // Set data-editable for local trains only
         if (isEditable) {
           dateValue.parentElement.setAttribute('data-editable', 'true');
+        }
+
+        // Populate end date (information entries only - the field stays hidden otherwise).
+        // Defaults to the start date. A series ends its recurrence there.
+        // "Kein Enddatum" ticked: shows every day from the start (a series
+        // repeats) forever - the date is then inactive, but kept, so
+        // unticking restores it.
+        const isOpenEndedInfo = isInformationTrain(train) && !!train.openEnded;
+        const dateEndValue = clone.querySelector('[data-focus="date-end"]');
+        if (dateEndValue && isInformationTrain(train)) {
+          const endDateStr = train.dateEnd && train.dateEnd > (train.date || '') ? train.dateEnd : (train.date || '');
+          if (isOpenEndedInfo) {
+            dateEndValue.textContent = 'Kein Enddatum';
+            dateEndValue.parentElement.style.opacity = '0.6';
+          } else {
+            dateEndValue.textContent = endDateStr
+              ? new Date(endDateStr).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              : '';
+          }
+          dateEndValue.parentElement.setAttribute('data-value', endDateStr);
+          dateEndValue.parentElement.style.display = '';
+          if (isEditable && !isOpenEndedInfo) {
+            dateEndValue.parentElement.setAttribute('data-editable', 'true');
+          }
+        }
+
+        // Symbol of the information (i / Störung / Ersatzverkehr)
+        const iconValue = clone.querySelector('[data-focus="info-icon"]');
+        if (iconValue && isInformationTrain(train)) {
+          const icon = getInformationIcon(train);
+          iconValue.textContent = INFORMATION_ICONS.find(i => i.value === icon).label;
+          iconValue.parentElement.setAttribute('data-value', icon);
+          iconValue.parentElement.style.display = '';
+          if (isEditable) {
+            iconValue.parentElement.setAttribute('data-editable', 'true');
+          }
+        }
+
+        // "Kein Enddatum" tick box right under Gültig bis (wired after saveAllFields)
+        const openEndedBox = clone.querySelector('.info-open-ended-checkbox');
+        if (openEndedBox && isInformationTrain(train)) {
+          openEndedBox.checked = isOpenEndedInfo;
+          openEndedBox.disabled = !isEditable;
+          openEndedBox.closest('label').style.display = '';
+        }
+
+        // Whether the "Von … bis …:" prefix is shown in the message (information entries only)
+        const dateRangeVisValue = clone.querySelector('[data-focus="date-range-visibility"]');
+        // (Not for a series: its occurrences are single days, so there is no
+        // range to show.)
+        if (dateRangeVisValue && isInformationTrain(train) && !isRecurringStem) {
+          const visValue = train.hideDateRange ? 'hide' : 'show';
+          dateRangeVisValue.textContent = visValue === 'hide' ? 'Ausblenden' : 'Anzeigen';
+          dateRangeVisValue.parentElement.setAttribute('data-value', visValue);
+          dateRangeVisValue.parentElement.style.display = '';
+          if (isEditable) {
+            dateRangeVisValue.parentElement.setAttribute('data-editable', 'true');
+          }
         }
 
         // Populate train type
@@ -295,8 +374,42 @@
         const isNote = train.type === 'note';
         const isTodo = train.type === 'todo';
         const isDurationOnly = isDurationOnlyTrain(train);
+        const isInformation = isInformationTrain(train);
 
-        if (isNote) {
+        if (isInformation) {
+          // Information: just the message and its validity range
+          const hideFields = ['linie', 'type', 'plan', 'actual', 'delayReason', 'dauer', 'zwischenhalte', 'projectId'];
+          hideFields.forEach(field => {
+            const fieldEl = panel.querySelector(`.editor-field[data-field="${field}"]`);
+            if (fieldEl) {
+              fieldEl.style.display = 'none';
+              // Not editable either, so entering edit mode never turns them into inputs
+              fieldEl.removeAttribute('data-editable');
+            }
+          });
+          const infoProjectBadge = panel.querySelector('.editor-field[data-field="projectId"] .project-badge');
+          if (infoProjectBadge) infoProjectBadge.style.display = 'none';
+          const delayButtons = panel.querySelector('.editor-delay-buttons');
+          if (delayButtons) delayButtons.style.display = 'none';
+          const infoCancelBtn = panel.querySelector('[data-focus-action="cancel"]');
+          if (infoCancelBtn) infoCancelBtn.style.display = 'none';
+
+          const zielLabel = panel.querySelector('.editor-field[data-field="ziel"] .editor-field-label');
+          if (zielLabel) zielLabel.textContent = 'Nachricht';
+          const zielField = panel.querySelector('.editor-field[data-field="ziel"]');
+          if (zielField) {
+            zielField.setAttribute('data-placeholder', 'Information eingeben');
+            // Multi-line editing like Zwischenhalte (Enter = new line)
+            zielField.setAttribute('data-input-type', 'textarea');
+            zielField.classList.add('editor-field-multiline');
+          }
+          // Relabel only the leading text node: the label also holds the
+          // "Wiederholung konfigurieren" link, which informations offer too.
+          const dateLabel = panel.querySelector('.editor-field[data-field="date"] .editor-field-label');
+          if (dateLabel && dateLabel.firstChild && dateLabel.firstChild.nodeType === Node.TEXT_NODE) {
+            dateLabel.firstChild.nodeValue = 'Gültig ab ';
+          }
+        } else if (isNote) {
           // For notes: show only Ziel and Zwischenhalte
           const hideFields = ['linie', 'date', 'type', 'plan', 'actual', 'dauer', 'projectId'];
           hideFields.forEach(field => {
@@ -375,9 +488,10 @@
 
         // ---- RECURRING TRAIN: stem mode — change labels, hide irrelevant fields ----
         if (isRecurringStem) {
-          // VORLAGE identification badge at the top
+          // VORLAGE identification badge at the top (informations edit their
+          // series in the normal information editor - no Vorlage page)
           const container = panel.querySelector('.editor-container');
-          if (container) {
+          if (container && !isInfoSeries) {
             const badge = document.createElement('div');
             badge.className = 'editor-vorlage-badge';
             badge.textContent = 'VORLAGE';
@@ -401,9 +515,10 @@
           if (recFieldStem) {
             const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
             const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
-            const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich' };
+            const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich', biweekly: 'Alle 2 Wochen', monthly: 'Monatlich', yearly: 'Jährlich' };
             recFieldStem.setAttribute('data-value', curPattern);
-            recFieldStem.setAttribute('data-input-type', 'recurrence-stem');
+            // Informations can stop repeating right here ("Keine Wiederholung")
+            recFieldStem.setAttribute('data-input-type', isInfoSeries ? 'recurrence' : 'recurrence-stem');
             recFieldStem.setAttribute('data-editable', 'true');
             recFieldStem.style.display = '';
             recFieldStem.querySelector('.editor-field-value').textContent = patternLabels[curPattern] || curPattern;
@@ -442,7 +557,7 @@
 
               const stemObj = (schedule.fixedSchedule || []).find(s => s._uniqueId === train._templateId);
               const curPattern = stemObj?.recurrence?.pattern || 'weekdays';
-              const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich' };
+              const patternLabels = { weekdays: 'Werktage (Mo–Fr)', daily: 'Täglich', weekly: 'Wöchentlich', biweekly: 'Alle 2 Wochen', monthly: 'Monatlich', yearly: 'Jährlich' };
 
               // Configure the template recurrence field
               const recField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
@@ -455,10 +570,11 @@
               }
 
             } else if (isEditable) {
-              // Normal train: show the 'Wiederholung konfigurieren' badge in the Datum label
+              // Normal train: show the 'Wiederholung konfigurieren' badge in the
+              // Datum label; the recurrencePattern field stays hidden until clicked.
+              // Informations show the field right away, like every other field.
               const recConfigBadge = dateFieldEl.querySelector('.recurrence-config-badge');
-              if (recConfigBadge) recConfigBadge.style.display = 'inline';
-              // The recurrencePattern field (from template) stays hidden until clicked
+              if (recConfigBadge) recConfigBadge.style.display = isInformation ? 'none' : 'inline';
               const recField = panel.querySelector('.editor-field[data-field="recurrencePattern"]');
               if (recField) {
                 recField.setAttribute('data-value', 'none');
@@ -466,6 +582,7 @@
                 recField.setAttribute('data-editable', 'true');
                 recField.querySelector('.editor-field-value').style.opacity = '0.6';
                 recField.querySelector('.editor-field-value').textContent = 'Keine Wiederholung';
+                if (isInformation) recField.style.display = '';
               }
             }
           }
@@ -491,6 +608,11 @@
         panel.dataset.trainId  = train._uniqueId;
         panel.dataset.editMode = editMode;
         panel.dataset.isEditable = isEditable;
+        // Identifies this render: handlers left over from an earlier render
+        // (e.g. the blur of an input removed by a re-render) must not save
+        // their stale copy of the entry over the current state.
+        const renderToken = String(++editorRenderSeq);
+        panel.dataset.renderToken = renderToken;
         
         // Only add editing functionality for local trains
         if (!isEditable && !isLogEdit) {
@@ -557,6 +679,10 @@
       // Helper function to save all field changes and exit edit mode
       let saveAllFieldsInFlight = false;
       const saveAllFields = async () => {
+        if (panel.dataset.renderToken !== renderToken) {
+          console.log('⏸️ saveAllFields skipped - drawer was re-rendered since');
+          return;
+        }
         if (saveAllFieldsInFlight) {
           console.log('⏸️ saveAllFields skipped - already in progress');
           return;
@@ -608,6 +734,10 @@
                 train.delayReason = newValue || undefined;
               } else if (fieldName === 'projectId') {
                 train.projectId = newValue || undefined;
+              } else if (fieldName === 'hideDateRange') {
+                train.hideDateRange = newValue === 'hide' ? true : undefined;
+              } else if (fieldName === 'icon') {
+                train.icon = newValue && newValue !== 'information' ? newValue : undefined;
               } else if (fieldName === 'recurrencePattern') {
                 // Handled by the dedicated recurrence-change block below; skip generic assignment
               } else {
@@ -616,10 +746,27 @@
             }
           });
 
+          // "Kein Enddatum" tick box (lives in the Gültig bis label, outside
+          // the edit-mode inputs)
+          const openEndedBox = panel.querySelector('.info-open-ended-checkbox');
+          if (isInformationTrain(train) && openEndedBox && openEndedBox.checked !== !!train.openEnded) {
+            train.openEnded = openEndedBox.checked ? true : undefined;
+            hasChanges = true;
+          }
+
+          // Information "Gültig bis": a cleared field falls back to the
+          // default (the start date), a date before the start is moved up to
+          // it. "No end date" is the separate tick box above.
+          if (isInformationTrain(train) && train.date && train.dateEnd !== undefined
+              && (train.dateEnd === '' || train.dateEnd < train.date)) {
+            train.dateEnd = train.date;
+            hasChanges = true;
+          }
+
           // Smart project assignment: only fills in an EMPTY projectId, never
           // overwrites a manual choice — same "manual always wins" convention
           // as the delayReason auto-suggestions.
-          if (!train.projectId && typeof resolveAutoProjectId === 'function') {
+          if (!train.projectId && !isInformationTrain(train) && typeof resolveAutoProjectId === 'function') {
             const autoProjectId = resolveAutoProjectId(train.ziel);
             if (autoProjectId) {
               train.projectId = autoProjectId;
@@ -651,12 +798,16 @@
             const stem    = (schedule.fixedSchedule || []).find(s => s._uniqueId === stemId);
             if (stem) {
               // Write every edited field value directly onto the stem
+              let stemDateEnd = null; // information "Gültig bis" (null = field not edited)
               panel.querySelectorAll('.editor-field').forEach(field => {
                 const input = field.querySelector('input, textarea, select');
                 if (!input) return;
                 const fieldName = field.getAttribute('data-field');
                 const val = input.value;
-                if      (fieldName === 'linie')             stem.linie       = val;
+                if      (fieldName === 'dateEnd')           stemDateEnd      = val;
+                else if (fieldName === 'hideDateRange')     stem.hideDateRange = val === 'hide' ? true : undefined;
+                else if (fieldName === 'icon')              stem.icon        = val && val !== 'information' ? val : undefined;
+                else if (fieldName === 'linie')             stem.linie       = val;
                 else if (fieldName === 'ziel')              stem.ziel        = val;
                 else if (fieldName === 'type')              stem.type        = val === 'duration-only' ? 'duration-only' : undefined;
                 else if (fieldName === 'plan')            { stem.plan = val; stem.actual = val; }
@@ -667,25 +818,88 @@
                 else if (fieldName === 'recurrencePattern') stem.recurrence  = { ...stem.recurrence, pattern: val };
               });
 
+              const isInfoStem = isInformationTrain(stem);
+
+              // Information series: "Gültig bis" is where the recurrence stops
+              // (cleared/before the start -> the start date); the "Kein
+              // Enddatum" tick box makes it repeat forever instead.
+              if (isInfoStem) {
+                const box = panel.querySelector('.info-open-ended-checkbox');
+                if (box) stem.openEnded = box.checked ? true : undefined;
+                if (stemDateEnd !== null) {
+                  stem.endDate = stemDateEnd && stemDateEnd >= (stem.startDate || '') ? stemDateEnd : stem.startDate;
+                } else if (!stem.endDate) {
+                  // Unticked without a date to return to (older series): end at the start
+                  stem.endDate = stem.startDate;
+                }
+                delete stem.spanDays; // occurrences are single days now
+              }
+
               // Smart project assignment (see instance path above) — applies to
               // the stem too, so materialized recurring instances inherit it.
-              if (!stem.projectId && typeof resolveAutoProjectId === 'function') {
+              // Not for informations (a matching word must not attach a project).
+              if (!isInfoStem && !stem.projectId && typeof resolveAutoProjectId === 'function') {
                 const autoProjectId = resolveAutoProjectId(stem.ziel);
                 if (autoProjectId) stem.projectId = autoProjectId;
               }
 
-              if (stem.type === 'duration-only') {
+              if (stem.type === 'duration-only' || isInfoStem) {
                 stem.plan = '';
                 stem.actual = undefined;
               }
 
-              const todayStr = new Date().toISOString().split('T')[0];
+              const todayStr = toLocalDateStr();
               // Keep past skip records; clear future ones (they'll be re-evaluated fresh)
               stem.skippedDates = (stem.skippedDates || []).filter(d => d <= todayStr);
-              // Remove future children so rematerialization regenerates them cleanly
-              schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
-                t => t._templateId !== stemId || t.date <= todayStr
-              );
+              // Remove future children so rematerialization regenerates them
+              // cleanly (today's instance stays - a train may be checked in).
+              // An information series also drops today's occurrence once its
+              // end date moved before it.
+              const seriesEnd = isInfoStem && !stem.openEnded ? stem.endDate : null;
+              schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => {
+                if (t._templateId !== stemId) return true;
+                if (t.date > todayStr) return false;
+                return !(seriesEnd && t.date > seriesEnd);
+              });
+              // Today's information occurrence is updated in place, so an
+              // edited message appears right away. (Not deleted + regenerated:
+              // its date may be in skippedDates - the promoted original - and
+              // would then never come back.)
+              if (isInfoStem) {
+                schedule.spontaneousEntries.forEach(t => {
+                  if (t._templateId !== stemId || t.date !== todayStr) return;
+                  t.ziel = stem.ziel;
+                  t.hideDateRange = stem.hideDateRange || undefined;
+                  t.icon = stem.icon || undefined;
+                  t.dateEnd = undefined;
+                  t.openEnded = undefined;
+                });
+              }
+
+              // Information set to "Keine Wiederholung": the series ends here.
+              // Occurrences that already started stay as normal informations
+              // (future ones were removed above); the template goes away.
+              if (isInfoStem && (stem.recurrence || {}).pattern === 'none') {
+                schedule.fixedSchedule = schedule.fixedSchedule.filter(s => s._uniqueId !== stemId);
+                const kept = schedule.spontaneousEntries.filter(t => t._templateId === stemId);
+                kept.forEach(t => { delete t._templateId; });
+                refreshUIOnly();
+                saveSchedule();
+                // Keep editing the opened occurrence if it survived, else the
+                // one still showing; nothing left (all were future) -> close.
+                const reopen = kept.find(t => t._uniqueId === trainId)
+                  || kept.find(t => getInformationEndDate(t) >= todayStr);
+                const reopenTrain = reopen && processedTrainData.allTrains.find(t => t._uniqueId === reopen._uniqueId);
+                if (reopenTrain) {
+                  renderFocusMode(reopenTrain);
+                } else {
+                  desktopFocusedTrainId = null;
+                  panel.innerHTML = '';
+                  closeEditorDrawer();
+                }
+                return;
+              }
+
               // Rebuild from updated stem
               materializeFromStems();
               regenerateTrainsFromSchedule();
@@ -733,12 +947,29 @@
                 projectId:    train.projectId || undefined,
                 startDate:    entryDate,
                 recurrence:   { pattern: newPattern, days: [] },
-                skippedDates: [entryDate] // this instance already exists, don’t re-materialise
+                skippedDates: [entryDate], // this instance already exists, don’t re-materialise
+                // Information: its Gültig ab/bis (or "Kein Enddatum") becomes
+                // the range the series repeats in
+                ...(isInformationTrain(train) && {
+                  // endDate is kept even when "Kein Enddatum" is ticked, so
+                  // unticking later has a date to fall back to
+                  endDate: train.dateEnd && train.dateEnd > entryDate ? train.dateEnd : entryDate,
+                  openEnded: train.openEnded || undefined,
+                  hideDateRange: train.hideDateRange || undefined,
+                  icon: train.icon || undefined
+                })
               };
               schedule.fixedSchedule = schedule.fixedSchedule || [];
               schedule.fixedSchedule.push(newStem);
               scheduleTrain._templateId = stemId;
               train._templateId         = stemId;
+              // Occurrences are single days: the original becomes the first one.
+              if (isInformationTrain(train)) {
+                train.dateEnd = undefined;
+                train.openEnded = undefined;
+                scheduleTrain.dateEnd = undefined;
+                scheduleTrain.openEnded = undefined;
+              }
               hasChanges = true;
               materializeFromStems();
               console.log('↻ Promoted train to recurring, stem:', stemId);
@@ -882,6 +1113,7 @@
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
                 { value: 'weekly',   label: 'W\u00f6chentlich' },
+                { value: 'biweekly', label: 'Alle 2 Wochen' },
                 { value: 'monthly',  label: 'Monatlich' },
                 { value: 'yearly',   label: 'J\u00e4hrlich' }
               ].forEach(({ value, label }) => {
@@ -910,6 +1142,7 @@
                 { value: 'weekdays', label: 'Werktage (Mo\u2013Fr)' },
                 { value: 'daily',    label: 'T\u00e4glich' },
                 { value: 'weekly',   label: 'W\u00f6chentlich' },
+                { value: 'biweekly', label: 'Alle 2 Wochen' },
                 { value: 'monthly',  label: 'Monatlich' },
                 { value: 'yearly',   label: 'J\u00e4hrlich' }
               ].forEach(({ value, label }) => {
@@ -943,6 +1176,52 @@
                 input.appendChild(opt);
               });
               input.value = currentValue || 'train';
+            } else if (inputType === 'date-range-visibility') {
+              input = document.createElement('select');
+              input.classList.add('editor-select-dark');
+              input.style.width = '100%';
+              input.style.background = 'var(--color-bg-panel)';
+              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              input.style.borderRadius = '0';
+              input.style.padding = '0.5vh';
+              input.style.color = 'white';
+              input.style.fontFamily = 'inherit';
+              input.style.fontSize = '2vh';
+              input.style.outline = 'none';
+              input.style.cursor = 'pointer';
+              input.style.colorScheme = 'dark';
+              [
+                { value: 'show', label: 'Anzeigen' },
+                { value: 'hide', label: 'Ausblenden' }
+              ].forEach(({ value, label }) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                input.appendChild(opt);
+              });
+              input.value = currentValue || 'show';
+            } else if (inputType === 'info-icon') {
+              // Information symbol - same dropdown look as the others
+              input = document.createElement('select');
+              input.classList.add('editor-select-dark');
+              input.style.width = '100%';
+              input.style.background = 'var(--color-bg-panel)';
+              input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              input.style.borderRadius = '0';
+              input.style.padding = '0.5vh';
+              input.style.color = 'white';
+              input.style.fontFamily = 'inherit';
+              input.style.fontSize = '2vh';
+              input.style.outline = 'none';
+              input.style.cursor = 'pointer';
+              input.style.colorScheme = 'dark';
+              INFORMATION_ICONS.forEach(({ value, label }) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                input.appendChild(opt);
+              });
+              input.value = currentValue || 'information';
             } else if (inputType === 'delay-reason') {
               // Same formatting as the project dropdown ('select' branch below).
               input = document.createElement('select');
@@ -1009,11 +1288,11 @@
               input.type = inputType;
             }
             
-            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'delay-reason' && inputType !== 'textarea') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'date-range-visibility' && inputType !== 'info-icon' && inputType !== 'delay-reason' && inputType !== 'textarea') {
               input.type = inputType;
             }
 
-            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'delay-reason') {
+            if (inputType !== 'select' && inputType !== 'recurrence' && inputType !== 'recurrence-stem' && inputType !== 'train-type' && inputType !== 'date-range-visibility' && inputType !== 'info-icon' && inputType !== 'delay-reason') {
               input.value = currentValue;
               input.placeholder = placeholder;
               input.style.width = '100%';
@@ -1077,6 +1356,8 @@
                 } else if (isTodo) {
                   // Todos: Ziel → Datum → Zwischenhalte → repeat
                   tabOrder = ['ziel', 'date', 'zwischenhalte'];
+                } else if (isInformationTrain(train)) {
+                  tabOrder = ['ziel', 'date', 'dateEnd', 'icon', 'hideDateRange', 'recurrencePattern'];
                 } else if (isDurationOnlyTrain(train)) {
                   tabOrder = ['linie', 'ziel', 'date', 'dauer', 'zwischenhalte', 'projectId'];
                 } else {
@@ -1205,13 +1486,27 @@
         // Check if panel is open and has content
         if (panel && panel.classList.contains('is-open') && panel.innerHTML.trim() !== '') {
           // Clicking another train should only replace drawer content, not close/reopen.
-          if (e.target.closest('.train-entry, .belegungsplan-train-block, .vorlage-row')) {
+          if (e.target.closest('.train-entry, .belegungsplan-train-block, .vorlage-row, [data-info-id], .week-day-info-marker')) {
             return;
           }
 
           // Check if we're in edit mode
           const hasInputs = panel.querySelector('[data-editable="true"] input, [data-editable="true"] textarea, [data-editable="true"] select');
-          
+
+          // Same for rows in the project drawer. Their action controls (remove,
+          // todo checkbox) aren't a switch, so those still close the drawer below.
+          const projectRow = e.target.closest('.project-task-row:not(.project-task-add-row), .project-todo-row:not(.project-todo-add-row)');
+          if (projectRow && !e.target.closest('[data-task-action], [data-todo-action]')) {
+            if (hasInputs && typeof saveAllFields === 'function') {
+              // The save re-renders the project drawer, which can replace the row
+              // before its click fires, so open the clicked train from here.
+              const taskId = projectRow.getAttribute('data-task-id');
+              await saveAllFields();
+              openTaskEditor(currentProjectId, taskId);
+            }
+            return;
+          }
+
           console.log('👆 Click detected. Inside panel:', panel.contains(e.target), 'Has inputs:', !!hasInputs);
           
           // Don't close if clicking inside the panel
@@ -1241,6 +1536,13 @@
       // Use capture phase to handle click before other handlers
       document.addEventListener('pointerdown', editorDrawerClickOutHandler, true);
       
+      // "Kein Enddatum" tick box: saves immediately (together with any open
+      // edits, so nothing typed so far is lost).
+      const openEndedToggle = panel.querySelector('.info-open-ended-checkbox');
+      if (openEndedToggle && isInformationTrain(train)) {
+        openEndedToggle.addEventListener('change', () => { saveAllFields(); });
+      }
+
       // Add delay button event listeners - EXACTLY like legacy but with debounced save
       const delayButtonsContainer = panel.querySelector('.editor-delay-buttons');
       if (delayButtonsContainer) {
@@ -1397,7 +1699,7 @@
             if (action === 'cancel') {
               await toggleLogEntryCanceled(train);
             } else if (action === 'delete') {
-              if (confirm(`Log-Eintrag ${train.linie} nach ${train.ziel} am ${train.date} endgültig löschen?`)) {
+              if (confirm(`Log-Eintrag ${train.linie} nach ${train.ziel} am ${train.date} löschen?`)) {
                 await deleteLogEntry(train, panel);
               }
             }
@@ -1455,22 +1757,35 @@
                 const currentEditMode = panel.dataset.editMode || 'instance';
                 const stemId = train._templateId;
                 if (currentEditMode === 'stem') {
-                  // Delete the entire stem + all future children
-                  if (confirm(`Vorlage "${train.linie} → ${train.ziel}" und alle zukünftigen Züge löschen?`)) {
+                  // Delete the entire stem + all future children (for
+                  // informations also the occurrences still showing today)
+                  const isInfoStem = isInformationTrain(train);
+                  const stemPrompt = isInfoStem
+                    ? `Information „${train.ziel || ''}" mit allen Wiederholungen löschen?`
+                    : `Vorlage "${train.linie} → ${train.ziel}" und alle zukünftigen Züge löschen?`;
+                  if (confirm(stemPrompt)) {
+                    const todayStr = toLocalDateStr();
+                    const isRemovedChild = t => t._templateId === stemId &&
+                      (isInfoStem ? getInformationEndDate(t) >= todayStr : t.date > todayStr);
+                    const stemToDelete = schedule.fixedSchedule.find(s => s._uniqueId === stemId);
+                    if (stemToDelete) {
+                      trashTemplate(stemToDelete, schedule.spontaneousEntries.filter(isRemovedChild));
+                    }
                     schedule.fixedSchedule = schedule.fixedSchedule.filter(s => s._uniqueId !== stemId);
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
-                      t => t._templateId !== stemId || t.date <= todayStr
-                    );
+                    schedule.spontaneousEntries = schedule.spontaneousEntries.filter(t => !isRemovedChild(t));
                     refreshUIOnly();
                     desktopFocusedTrainId = null;
-                    panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Vorlage gelöscht</div>';
+                    panel.innerHTML = `<div style="color: white; padding: 2vh; text-align: center;">${isInfoStem ? 'Information gelöscht' : 'Vorlage gelöscht'}</div>`;
                     closeEditorDrawer();
                     saveSchedule();
                   }
                 } else {
                   // Delete only this instance — record date as skipped
-                  if (confirm(`Zug ${train.linie} nach ${train.ziel} am ${train.date} löschen?`)) {
+                  const instancePrompt = isInformationTrain(train)
+                    ? `Information „${train.ziel || ''}" am ${train.date} löschen?`
+                    : `Zug ${train.linie} nach ${train.ziel} am ${train.date} löschen?`;
+                  if (confirm(instancePrompt)) {
+                    trashScheduleEntry(scheduleTrain, null, { stemId, date: train.date });
                     schedule.spontaneousEntries = schedule.spontaneousEntries.filter(
                       t => t._uniqueId !== train._uniqueId
                     );
@@ -1481,14 +1796,19 @@
                     }
                     refreshUIOnly();
                     desktopFocusedTrainId = null;
-                    panel.innerHTML = '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
+                    const deletedLabel = isInformationTrain(train) ? 'Information gelöscht' : 'Zug gelöscht';
+                    panel.innerHTML = `<div style="color: white; padding: 2vh; text-align: center;">${deletedLabel}</div>`;
                     closeEditorDrawer();
                     saveSchedule();
                   }
                 }
               } else {
                 // Non-recurring delete (original logic)
-                if (confirm(`Zug ${train.linie} nach ${train.ziel} löschen?`)) {
+                const deletePrompt = isInformationTrain(train)
+                  ? `Information „${train.ziel || ''}" löschen?`
+                  : `Zug ${train.linie} nach ${train.ziel} löschen?`;
+                if (confirm(deletePrompt)) {
+                  trashScheduleEntry(scheduleTrain);
                   const index = sourceArray.indexOf(scheduleTrain);
                   if (index >= 0) {
                     sourceArray.splice(index, 1);
@@ -1501,9 +1821,8 @@
                   // 2. Clear focus panel
                   desktopFocusedTrainId = null;
                   const isNote = train.type === 'note';
-                  panel.innerHTML = isNote
-                    ? '<div style="color: white; padding: 2vh; text-align: center;">Notiz gelöscht</div>'
-                    : '<div style="color: white; padding: 2vh; text-align: center;">Zug gelöscht</div>';
+                  const deletedLabel = isNote ? 'Notiz gelöscht' : isInformationTrain(train) ? 'Information gelöscht' : 'Zug gelöscht';
+                  panel.innerHTML = `<div style="color: white; padding: 2vh; text-align: center;">${deletedLabel}</div>`;
                   closeEditorDrawer();
 
                   // 3. Refresh note panel if this was a note
@@ -1531,7 +1850,7 @@
         const modeBtn = e.target.closest('[data-focus-action="toggle-mode"]');
         if (modeBtn && isRecurring) {
           e.stopPropagation();
-          const todayStr = new Date().toISOString().split('T')[0];
+          const todayStr = toLocalDateStr();
           if (panel.dataset.editMode === 'instance') {
             panel.dataset.originalInstanceId = train._uniqueId;
             renderFocusMode(train, 'stem');
@@ -1555,6 +1874,20 @@
         }
       };
       panel.addEventListener('click', editorDrawerToggleHandler);
+
+      // Pressing one of these label links while a field is being edited must
+      // not take focus out of that field: the blur would save and re-render
+      // the drawer before the click arrives, hiding the recurrence field
+      // again - so it only opened on the second press.
+      if (editorDrawerBadgeMousedownHandler) {
+        panel.removeEventListener('mousedown', editorDrawerBadgeMousedownHandler);
+      }
+      editorDrawerBadgeMousedownHandler = (e) => {
+        if (e.target.closest('[data-focus-action="toggle-recurrence"], [data-focus-action="toggle-mode"]')) {
+          e.preventDefault();
+        }
+      };
+      panel.addEventListener('mousedown', editorDrawerBadgeMousedownHandler);
 
     } catch (error) {
       console.error('Error rendering focus mode:', error);

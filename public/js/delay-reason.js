@@ -127,7 +127,7 @@ function getNextDayArrivalReason(train, now) {
 // separately (force-cancelled in globals.js's applyCurfewRule), so this only
 // ever fires for trains that are still allowed to run.
 function crossesCurfewBoundary(train, now) {
-  if (train.canceled) return false;
+  if (train.canceled || train.source === 'db-api') return false;
   if (!window.AppSettings || !window.AppSettings.get('curfewEnabled')) return false;
   if (typeof window.isTimeInCurfewWindow !== 'function') return false;
 

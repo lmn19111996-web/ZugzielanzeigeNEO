@@ -135,6 +135,18 @@
 
 
   /* ============================================================
+     INFORMATION ENTRIES (type: 'information')
+     Inverted plate like FEX: white card, app-background navy text.
+     Used by the train-list info bar, the Belegungsplan markers
+     and the editor drawer edge.
+  ============================================================ */
+
+  --color-info-bg:      var(--color-fex-bg);      /* Plate / badge fill */
+  --color-info-text:    var(--color-bg-primary);  /* Message text + glyph */
+  --color-info-divider: var(--color-bg-primary);  /* Icon cell separator */
+
+
+  /* ============================================================
      NAVIGATION RAIL
      The left taskbar. Surfaces derive from the Bahnblau palette.
 

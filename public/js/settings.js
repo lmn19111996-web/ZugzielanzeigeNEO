@@ -23,6 +23,10 @@ const SETTINGS_DEFAULTS = {
   notificationLeadMin: 20,
   lookaheadWindowDays: 14,
   journalDayStartHour: 6,
+  // Past trains without a project or check-in are dropped from data.json once
+  // they're older than this (server.js pruneExpiredEntries). They stay in the
+  // weekly logs regardless.
+  pruneAgeMonths: 12,
   defaultWorkspace: 'auto',
   curfewEnabled: false,
   curfewLines: [],
@@ -578,6 +582,15 @@ function _buildLookaheadSection() {
   return section;
 }
 
+function _buildPruneSection() {
+  const section = _buildSettingsSection(
+    'Aufbewahrung',
+    'Wie lange vergangene Fahrten ohne Projekt und ohne Check-in in der App bleiben. Ältere werden beim Speichern entfernt, bleiben aber im Log erhalten. Fahrten mit Projekt oder Check-in werden nie entfernt.'
+  );
+  _buildNumberRow(section, 'Aufbewahrung (Monate, 1–120)', 'pruneAgeMonths', { min: 1, max: 120 });
+  return section;
+}
+
 // Print export of the timetable for a chosen range (see print-schedule.js).
 // The range isn't a setting, so it lives in local inputs instead of _settingsDraft.
 function _buildPrintSection() {
@@ -689,7 +702,7 @@ function _buildBackupSection(opts) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const stamp = new Date().toISOString().slice(0, 10);
+      const stamp = toLocalDateStr();
       a.download = `${opts.filenamePrefix}_${stamp}.json`;
       document.body.appendChild(a);
       a.click();
@@ -891,6 +904,7 @@ async function renderSettingsPage() {
   scroll.appendChild(_buildDefaultWorkspaceSection());
   scroll.appendChild(_buildJournalSection());
   scroll.appendChild(_buildLookaheadSection());
+  scroll.appendChild(_buildPruneSection());
   scroll.appendChild(_buildCurfewSection());
   scroll.appendChild(_buildPrintSection());
   scroll.appendChild(_buildDataBackupSection());

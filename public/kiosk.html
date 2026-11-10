@@ -37,6 +37,11 @@
     :root {
       /* Header content size, shared by both screens' black top bar */
       --kiosk-head-size: 8.5vh;
+      /* Smallest text on the kiosk (= "Vsl. erreichbar" status line).
+         Nothing should go below this, or it can't be read from across the room. */
+      --kiosk-min-font-size: 7vh;
+      /* Zwischenhalte, also used for announcement-style text */
+      --kiosk-stops-size: calc(var(--kiosk-head-size) * 1.15);
       --kiosk-ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -261,7 +266,7 @@
       overflow: hidden;
       box-sizing: border-box;
       padding: 6vh 6vh 5vh;
-      font-size: calc(var(--kiosk-head-size) * 1.15);
+      font-size: var(--kiosk-stops-size);
       line-height: 1.25;
       text-align: left;
       white-space: pre-line;
@@ -355,7 +360,7 @@
 
     /* A bit bigger than the header text; two lines fit under the destination */
     .kiosk-focus-stops {
-      font-size: calc(var(--kiosk-head-size) * 1.15);
+      font-size: var(--kiosk-stops-size);
       font-weight: 300;
       line-height: 1.25;
       opacity: 0.85;
@@ -777,6 +782,22 @@
       text-overflow: ellipsis;
     }
 
+    /* Disruption at this stop: small warning triangle after the name */
+    .board-disruption {
+      width: calc(var(--board-head-size) * 0.8);
+      height: calc(var(--board-head-size) * 0.8);
+      flex-shrink: 0;
+      fill: none;
+      stroke: #eab308; /* kiosk yellow (check-in) */
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      animation: board-disruption-in 0.7s ease;
+    }
+    @keyframes board-disruption-in {
+      from { opacity: 0; }
+    }
+
     .board-rows {
       flex: 1;
       display: flex;
@@ -813,6 +834,28 @@
       align-items: center;
       justify-content: space-between;
       gap: 3vh;
+    }
+
+    .board-line {
+      display: flex;
+      align-items: center;
+      gap: 2.5vh;
+      min-width: 0;
+    }
+    /* Last departure of the day: the main app's yellow "bestätigen?" pill
+       (.approve-box) plus the outline of a successful check-in, in yellow.
+       Radius and outline scaled from the app's 4vh pill. */
+    .board-last {
+      flex-shrink: 0;
+      font-size: var(--kiosk-min-font-size);
+      font-weight: 400;
+      line-height: 1;
+      white-space: nowrap;
+      padding: 0.15em 0.35em;
+      border-radius: 0.25em;
+      border: 0.4vh solid var(--checkin-pending-text-color, #eab308);
+      background: var(--checkin-pending-bg, rgba(234, 179, 8, 0.18));
+      color: var(--checkin-pending-text-color, #eab308);
     }
 
     .kiosk-line-icon { height: 10vh; width: auto; display: block; }
@@ -864,7 +907,7 @@
       display: flex;
       align-items: center;
       gap: 1.5vh;
-      font-size: 7vh;
+      font-size: var(--kiosk-min-font-size);
       font-weight: 400;
       transition: opacity 0.7s ease;
     }
@@ -897,6 +940,18 @@
       font-size: 6vh;
       font-weight: 300;
       opacity: 0.8;
+    }
+
+    /* Provider outage: same type as the announcement screen */
+    .board-empty--error {
+      display: block;
+      padding: 6vh 6vh 5vh;
+      font-size: var(--kiosk-stops-size);
+      font-weight: normal;
+      line-height: 1.25;
+      text-align: left;
+      overflow-wrap: break-word;
+      opacity: 1;
     }
   </style>
 </head>
@@ -1755,13 +1810,20 @@
   let kioskConfig = null;
   // Per side: live departures from /api/db-departures for the configured stop
   const boardData = [
-    { eva: null, trains: [], fetchedAt: 0, error: '' },
-    { eva: null, trains: [], fetchedAt: 0, error: '' }
+    { eva: null, trains: [], fetchedAt: 0, error: '', disrupted: false, cleanPolls: 0 },
+    { eva: null, trains: [], fetchedAt: 0, error: '', disrupted: false, cleanPolls: 0 }
   ];
+  // The disruption mark shows at once but only clears after this many
+  // clean polls in a row (BOARD_POLL_MS each), so it doesn't flicker
+  const DISRUPTION_CLEAR_POLLS = 3;
   const boardSignatures = [null, null];
   const boardHeadSignatures = [null, null];
 
   const BOARD_ARROW_SVG = '<svg class="board-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4M10 5l-7 7 7 7"/></svg>';
+  // Last departure of the day: yellow badge next to the line symbol
+  const BOARD_LAST_BADGE = '<span class="board-last">Letzte Fahrt</span>';
+  // Disruption mark: outlined warning triangle with "!" (no fill reads better from afar)
+  const BOARD_DISRUPTION_SVG = '<svg class="board-disruption" viewBox="0 0 24 24" role="img" aria-label="Störung"><path d="M12 3.5L21.5 20h-19zM12 9.5v4.5M12 17v.01"/></svg>';
   // Status marks, drawn in the status colour (currentColor)
   const BOARD_TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>';
   const BOARD_CROSS_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -1778,14 +1840,22 @@
     try {
       const res = await fetch(`/api/db-departures?eva=${encodeURIComponent(side.eva)}`);
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      Object.assign(data, { eva: side.eva, trains: json.trains || [], fetchedAt: Date.now(), error: '' });
+      if (!res.ok) throw Object.assign(new Error(json.error || `HTTP ${res.status}`), { reason: json.reason });
+      if (data.eva !== side.eva) Object.assign(data, { disrupted: false, cleanPolls: 0 });
+      Object.assign(data, { eva: side.eva, trains: json.trains || [], fetchedAt: Date.now(), error: '', errorReason: '' });
+      if (kioskSideDisrupted(data.trains, side, new Date())) {
+        Object.assign(data, { disrupted: true, cleanPolls: 0 });
+      } else if (data.disrupted && ++data.cleanPolls >= DISRUPTION_CLEAR_POLLS) {
+        Object.assign(data, { disrupted: false, cleanPolls: 0 });
+      }
     } catch (e) {
       // Keep the last good departures for the same stop; the times still count down
       if (data.eva !== side.eva) data.trains = [];
       data.eva = side.eva;
       data.fetchedAt = Date.now();
       data.error = e.message || 'Abfahrten nicht verfügbar';
+      // Server unreachable (fetch threw) counts as a connection problem too
+      data.errorReason = e.reason === 'provider' ? 'provider' : 'network';
     }
   }
 
@@ -1797,16 +1867,14 @@
   // Only fetch live departures if some setting can show the board
   function boardNeeded() {
     if (!kioskConfig) return false;
-    switch (kioskConfig.screenMode) {
-      case 'board': return true;
-      case 'alternate': return (kioskConfig.alternateScreens || []).includes('board');
-      case 'schedule': return Object.values(kioskConfig.schedule || {})
-        .some(list => list.some(w => (w.screen || 'board') === 'board'));
-      default: return false;
-    }
+    const usesBoard = (mode) => mode === 'board'
+      || (mode === 'alternate' && (kioskConfig.alternateScreens || []).includes('board'));
+    if (kioskConfig.screenMode !== 'schedule') return usesBoard(kioskConfig.screenMode);
+    return usesBoard(kioskConfig.scheduleDefault || 'abfahrten')
+      || Object.values(kioskConfig.schedule || {}).some(list => list.some(w => usesBoard(w.screen || 'board')));
   }
 
-  function buildBoardHeader(side) {
+  function buildBoardHeader(side, disrupted) {
     const icon = side && KIOSK_STATION_ICONS[side.icon];
     return `
       <div class="board-edge">
@@ -1818,6 +1886,7 @@
       <div class="board-station">
         ${icon && icon.src ? `<img class="board-station-icon" src="${icon.src}" alt="${icon.label}">` : ''}
         <span class="board-station-name">${kioskEscape(side ? side.name : 'Abfahrtstafel')}</span>
+        ${disrupted ? BOARD_DISRUPTION_SVG : ''}
       </div>`;
   }
 
@@ -1827,7 +1896,7 @@
     return !train.actual && Math.ceil((at - now) / 60000) >= 60;
   }
 
-  function buildBoardRow({ train, reachable, at }, now) {
+  function buildBoardRow({ train, reachable, at, last }, now) {
     // Countdown "in 5 Min": the minutes stand out, the words step back. The
     // countdown class sits inside the live-patched text, so a switch to
     // "… fährt ab" fades like any other text change instead of rebuilding.
@@ -1840,7 +1909,7 @@
     return `
       <div class="board-row${isErsatzverkehr(train) ? ' sev-row' : ''}" data-key="${key}">
         <div class="board-row-top">
-          ${kioskLineIconHTML(train)}
+          <span class="board-line">${kioskLineIconHTML(train)}${last ? BOARD_LAST_BADGE : ''}</span>
           <span class="board-time" data-live>${countdown}</span>
         </div>
         <div class="board-dest"><span class="zugziel-text" data-ziel-text="${ziel}">${ziel}</span></div>
@@ -1856,8 +1925,18 @@
     const data = boardData[i];
     if (!side) return '<div class="board-empty">Keine Haltestelle eingerichtet</div>';
     const next = kioskNextDepartures(data.trains, side, now, 2);
-    if (next.length) return next.map(d => buildBoardRow(d, now)).join('');
-    if (data.error) return '<div class="board-empty">Abfahrten zurzeit nicht verfügbar</div>';
+    if (next.length) {
+      return next.map(d => buildBoardRow({ ...d, last: kioskIsLastDeparture(d.train, data.trains) }, now)).join('');
+    }
+    if (data.error) {
+      // Name the provider only when it answered with an error; otherwise
+      // the connection itself is down
+      const provider = String(side.eva || '').startsWith('VVS_') ? 'VVS' : 'DB';
+      const heading = data.errorReason === 'provider' ? `Störung bei der ${provider}` : 'Keine Verbindung';
+      return `<div class="board-empty board-empty--error">` +
+        `<div class="announcement-heading">${heading}</div>` +
+        `<div class="announcement-text">Abfahrtsdaten sind zurzeit nicht verfügbar.</div></div>`;
+    }
     return data.fetchedAt ? '<div class="board-empty">Keine Abfahrten</div>' : '';
   }
 
@@ -1872,7 +1951,7 @@
       const headEl = document.querySelector(`#screen-board [data-head="${i}"]`);
       const rowsEl = document.querySelector(`#screen-board [data-side="${i}"]`);
 
-      const headHTML = buildBoardHeader(side);
+      const headHTML = buildBoardHeader(side, !!side && boardData[i].disrupted);
       if (headHTML !== boardHeadSignatures[i]) {
         boardHeadSignatures[i] = headHTML;
         headEl.innerHTML = headHTML;
@@ -1914,7 +1993,7 @@
     return h * 60 + m;
   }
 
-  // The schedule window open right now (board or FEX), if any. A window
+  // The schedule window open right now, if any. A window
   // ending before it starts runs past midnight, so yesterday's overnight
   // windows can still be open.
   function activeScheduleWindow(now) {
@@ -1975,24 +2054,24 @@
     // they have something to show
     const available = (s) => (s === 'announcement' ? !!announcementText()
       : !CYCLE_SCREENS[s] || CYCLE_SCREENS[s].list().length > 0);
-    switch (kioskConfig.screenMode) {
-      case 'board': return 'board';
-      case 'fex': return 'fex';
-      case 'buffet': return 'buffet';
-      case 'announcement': return 'announcement';
-      case 'alternate': {
-        const list = (kioskConfig.alternateScreens || ['abfahrten', 'board']).filter(available);
-        if (!list.length) return 'abfahrten';
-        const period = Math.floor(now.getTime() / 1000 / kioskConfig.alternateSeconds);
-        return list[period % list.length];
+    // A schedule window (or the time outside them) can use any mode but
+    // 'schedule' itself, including the 'alternate' rotation
+    const resolve = (mode, strict) => {
+      switch (mode) {
+        case 'board': case 'fex': case 'buffet': case 'announcement':
+          return strict && !available(mode) ? 'abfahrten' : mode;
+        case 'alternate': {
+          const list = (kioskConfig.alternateScreens || ['abfahrten', 'board']).filter(available);
+          if (!list.length) return 'abfahrten';
+          const period = Math.floor(now.getTime() / 1000 / kioskConfig.alternateSeconds);
+          return list[period % list.length];
+        }
+        default: return 'abfahrten';
       }
-      case 'schedule': {
-        const window = activeScheduleWindow(now);
-        const screen = window ? (window.screen || 'board') : 'abfahrten';
-        return available(screen) ? screen : 'abfahrten';
-      }
-      default: return 'abfahrten';
-    }
+    };
+    if (kioskConfig.screenMode !== 'schedule') return resolve(kioskConfig.screenMode, false);
+    const window = activeScheduleWindow(now);
+    return resolve(window ? (window.screen || 'board') : (kioskConfig.scheduleDefault || 'abfahrten'), true);
   }
 
   const SCREEN_FADE_MS = CYCLE_FADE_MS; // each way, like the trip change

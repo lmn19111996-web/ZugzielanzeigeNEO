@@ -6,7 +6,7 @@ window.getLogicalDate = function() {
   const startHour = window.AppSettings ? window.AppSettings.get('journalDayStartHour') : 6;
   const d = new Date();
   if (d.getHours() < startHour) d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
+  return toLocalDateStr(d);
 };
 
 // ══════════════════════════════════════════════════════════════

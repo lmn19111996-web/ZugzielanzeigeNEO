@@ -38,7 +38,7 @@
       setWorkspaceMode(defaultMode);
 
       // Open dashboard on startup (desktop only)
-      if (window.innerWidth > 768 && typeof window.openDashboardMode === 'function') window.openDashboardMode();
+      if (window.innerWidth > 768 && typeof window.openDashboardMode === 'function') window.openDashboardMode({ startup: true });
       
       // Add train button event listener (after DOM is ready)
       const addTrainBtn = document.getElementById('add-train-button');
@@ -139,7 +139,7 @@
             type: 'note',
             ziel: 'Neue Notiz',
             zwischenhalte: [],
-            date: new Date().toISOString().split('T')[0],
+            date: toLocalDateStr(),
             source: 'local',
             _uniqueId: 'note_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
           };
@@ -284,7 +284,7 @@
         dateSelector.addEventListener('click', () => {
           const input = document.createElement('input');
           input.type = 'date';
-          input.value = new Date().toISOString().split('T')[0];
+          input.value = toLocalDateStr();
           input.style.position = 'absolute';
           input.style.opacity = '0';
           input.style.pointerEvents = 'none';
@@ -395,7 +395,7 @@
         const dauer = departure.dataset.dauer ? Number(departure.dataset.dauer) : 0;
         
         // Clear all classes
-        dot.classList.remove('current', 'cancelled');
+        dot.classList.remove('current', 'cancelled', 'arriving-soon');
         
         if (canceled) {
           // Show X for cancelled trains
@@ -409,6 +409,11 @@
               // Current train - show solid dot
               dot.classList.add('current');
             }
+          }
+          // Not yet running but due within the notification lead time - blinking dot
+          if (!dot.classList.contains('current') &&
+              isArrivingSoon({ plan, actual, date: trainDate, canceled }, now)) {
+            dot.classList.add('arriving-soon');
           }
         }
       });

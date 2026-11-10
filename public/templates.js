@@ -19,10 +19,13 @@ const Templates = {
     
     // Determine indicator class
     let indicatorClass = 'indicator-dot';
+    const isSoon = !train.canceled && !isCurrent && !isDurationOnly && isArrivingSoon(train, now);
     if (train.canceled) {
       indicatorClass += ' cancelled';
     } else if (isCurrent) {
       indicatorClass += ' current';
+    } else if (isSoon) {
+      indicatorClass += ' arriving-soon';
     }
 
     // Same-departure-time connector bracket. It shares the indicator slot with
@@ -31,7 +34,7 @@ const Templates = {
     // grouped around that row (see assignConnectorFlags in render-trains.js) —
     // only this row's segment is suppressed. Never on the headline card, which
     // stands alone outside the list.
-    if (!isFirstTrain && !train.canceled && !isCurrent && train._connector) {
+    if (!isFirstTrain && !train.canceled && !isCurrent && !isSoon && train._connector) {
       indicatorClass += ` connector connector--${train._connector}`;
     }
     
@@ -160,8 +163,12 @@ const Templates = {
       && !isFirstTrain && !hasOpenCheckinSession && !isCheckedOut && tTime <= now
       && Number(train.dauer) > 0;
 
+    // Open check-ins carried over from earlier days (see globals.js) still need
+    // their check-out button — that's why they stay on the list.
+    const hasCarriedOverCheckin = !isToday && !isDurationOnly && !!train.checkedIn && !isCheckedOut;
+
     let checkinWidgetHTML = '';
-    if (!train._readOnly && isToday && !train.canceled && !isFirstTrain) {
+    if (!train._readOnly && (isToday || hasCarriedOverCheckin) && !train.canceled && !isFirstTrain) {
       // Show widget for all today's non-canceled tasks (including past tasks)
       // until they are checked out.
       if (isCheckedOutForWidget && !isDurationOnly) {
@@ -270,7 +277,7 @@ const Templates = {
                     <rect x="2" y="2" width="222" height="40" rx="11" ry="11"/>
                   </svg>
                 </div>
-                <button class="approve-box" type="button" data-approve-commit-uid="${uid}" aria-label="Geplante Zeit bestätigen">
+                <button class="approve-box" type="button" data-approve-commit-uid="${uid}" aria-label="Abfahrtszeit bestätigen">
                   <span class="approve-content">
                     <img class="ap-icon" src="res/checkin.svg" alt="">
                     <span class="approve-text">bestätigen?</span>
@@ -336,6 +343,36 @@ const Templates = {
         <span class="day-separator-date day-separator-date--clickable" data-jump-date="${trainDate}" title="Zu Datum springen">${dateText} <span class="day-separator-jump-icon">↗</span></span>
         ${bar}
         <div class="day-separator-line"></div>
+      </div>
+    `;
+  },
+
+  /**
+   * Square white badge with an information symbol (`icon`: a key from
+   * INFORMATION_ICONS, default the i). Glyphs come from res/ via CSS
+   * (.info-icon--<key>): single-color ones as a mask in the token color,
+   * Ersatzverkehr as its full-color pictogram.
+   */
+  informationBadge(icon = 'information') {
+    return `<span class="info-badge info-icon--${icon}" aria-hidden="true"><span class="info-glyph"></span></span>`;
+  },
+
+  /**
+   * Announcement bar: square icon cell, divider, message. The train-list
+   * version is clickable and scrolls; `inline` is the compact read-only
+   * variant used on the Belegungsplan day timeline.
+   */
+  informationBar(info, { inline = false } = {}) {
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const text = esc(formatInformationText(info));
+    const icon = getInformationIcon(info);
+    if (inline) {
+      return `<span class="info-bar info-bar--inline"><span class="info-bar-icon info-icon--${icon}"><span class="info-glyph"></span></span><span class="info-bar-text">${text}</span></span>`;
+    }
+    return `
+      <div class="info-bar" data-info-id="${esc(info._uniqueId || '')}" role="note" aria-label="Information">
+        <div class="info-bar-icon info-icon--${icon}"><span class="info-glyph"></span></div>
+        <div class="info-bar-text"><span class="cancel-notice-text" data-notice="${text}">${text}</span></div>
       </div>
     `;
   },
@@ -447,16 +484,17 @@ const Templates = {
   /**
    * Create a Belegungsplan date separator
    */
-  belegungsplanDateSeparator(markerTime, markerY) {
+  belegungsplanDateSeparator(markerTime, markerY, infos = []) {
     const dateObj = new Date(markerTime);
     const dateText = dateObj.toLocaleDateString('de-DE', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
     });
-    
+    const infoHTML = infos.map(i => this.informationBar(i, { inline: true })).join('');
+
     return `
-      <div class="belegungsplan-date-separator" style="top: ${markerY}vh;">${dateText}</div>
+      <div class="belegungsplan-date-separator${infos.length ? ' has-info' : ''}" data-date="${dateObj.toLocaleDateString('sv-SE')}" style="top: ${markerY}vh;">${dateText}${infoHTML}</div>
     `;
   },
 
@@ -470,24 +508,55 @@ const Templates = {
   /**
    * Unified header for the Belegungsplan (day/week toggle + date picker + nav)
    */
-  belegungsplanHeader(label, mode, dateInputValue, minDateStr, maxDateStr, lineFilter = null) {
+  belegungsplanHeader(label, mode, dateInputValue, minDateStr, maxDateStr, lineFilter = null, statsOpen = false, infos = []) {
     const toggleLabel = mode === 'week' ? 'Tag' : 'Woche';
     const minAttr = minDateStr ? ` min="${minDateStr}"` : '';
     const maxAttr = maxDateStr ? ` max="${maxDateStr}"` : '';
-    const lineFilterHTML = lineFilter ? this.belegungsplanLineFilter(lineFilter) : '';
+    // Week-only controls pinned to the far right: line filter + statistics toggle
+    const lineFilterHTML = lineFilter ? `
+      <div class="belegungsplan-header-right">
+        ${this.belegungsplanLineFilter(lineFilter)}
+        <button class="belegungsplan-stats-btn${statsOpen ? ' active' : ''}" id="belegungsplan-stats-btn" aria-pressed="${statsOpen}">Statistik</button>
+      </div>
+    ` : '';
+    // Day view: the shown day's informations sit in the sticky header itself
+    const infoHTML = this.belegungsplanHeaderInfo(infos);
+    const labelIcon = infos.length ? this.informationBadge(getInformationIcon(infos[0])) : '';
     return `
-      <div class="belegungsplan-page-header">
+      <div class="belegungsplan-page-header${infos.length ? ' has-info' : ''}">
         <button class="belegungsplan-nav-btn" id="belegungsplan-prev-btn" aria-label="Zur&uuml;ck">&#8249;</button>
         <div class="belegungsplan-date-label" id="belegungsplan-date-label">
-          <span>${label}</span>
+          ${labelIcon}<span>${label}</span>
           <input type="date" id="belegungsplan-date-input" class="belegungsplan-date-input" value="${dateInputValue}"${minAttr}${maxAttr}>
         </div>
         <button class="belegungsplan-nav-btn" id="belegungsplan-next-btn" aria-label="Weiter">&#8250;</button>
         <button class="belegungsplan-today-btn" id="belegungsplan-today-btn">Heute</button>
         <button class="belegungsplan-toggle-btn" id="belegungsplan-toggle-btn">${toggleLabel}</button>
         ${lineFilterHTML}
+        ${infoHTML}
       </div>
     `;
+  },
+
+  /**
+   * Information strip under the day view header (empty string when none).
+   * Also used by render-trains.js to swap it while scrolling through days.
+   */
+  belegungsplanHeaderInfo(infos = []) {
+    return infos.length
+      ? `<div class="belegungsplan-header-info">${infos.map(i => this.informationBar(i)).join('')}</div>`
+      : '';
+  },
+
+  /**
+   * Line icon for the week view's filter list and statistics panel, falling
+   * back to a text badge when the line has no icon (or it fails to load).
+   */
+  belegungsplanLineIcon(line) {
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const badge = `<span class="line-badge belegungsplan-line-legend-badge">${esc(line || '–')}</span>`;
+    if (!line || !hasLineIcon(line)) return badge;
+    return `<img class="belegungsplan-line-legend-icon" src="${getLineIconSrc(line)}" alt="${esc(line)}" title="${esc(line)}" onerror="this.outerHTML=this.dataset.fallback" data-fallback="${esc(badge)}">`;
   },
 
   /**
@@ -502,8 +571,7 @@ const Templates = {
       ? lines.map(line => `
           <label class="belegungsplan-line-filter-item">
             <input type="checkbox" value="${escapeAttr(line)}"${hidden.has(line) ? '' : ' checked'}>
-            <span class="belegungsplan-line-filter-swatch" style="background: ${getLineColor(line || 's1')}"></span>
-            <span>${escapeAttr(line || 'Ohne Linie')}</span>
+            ${line ? this.belegungsplanLineIcon(line) : '<span>Ohne Linie</span>'}
           </label>
         `).join('')
       : '<div class="belegungsplan-line-filter-empty">Keine Linien</div>';
@@ -522,15 +590,67 @@ const Templates = {
   },
 
   /**
+   * Weekly statistics side panel for the Belegungsplan week view.
+   * stats: [{ line, minutes, count }] sorted by minutes desc.
+   */
+  belegungsplanWeekStats(stats, weekLabel) {
+    const fmt = (min) => {
+      const h = Math.floor(min / 60);
+      const m = Math.round(min % 60);
+      return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`;
+    };
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const totalMinutes = stats.reduce((sum, s) => sum + s.minutes, 0);
+    const maxMinutes = stats.length ? stats[0].minutes : 0;
+    const rowsHTML = stats.length
+      ? stats.map(({ line, minutes, count }) => {
+          const color = getLineColor(line || 's1');
+          const pct = maxMinutes ? (minutes / maxMinutes) * 100 : 0;
+          return `
+            <div class="week-stats-row">
+              <div class="week-stats-row-head">
+                <span class="week-stats-line">${line ? this.belegungsplanLineIcon(line) : 'Ohne Linie'}</span>
+                <span class="week-stats-count">${count}×</span>
+                <span class="week-stats-time">${fmt(minutes)}</span>
+              </div>
+              <div class="week-stats-bar"><div style="width: ${pct}%; background: ${color}"></div></div>
+            </div>
+          `;
+        }).join('')
+      : '<div class="week-stats-empty">Keine Fahrten in dieser Woche.</div>';
+    return `
+      <div class="week-stats-title">Statistik</div>
+      <div class="week-stats-subtitle">${esc(weekLabel)}</div>
+      <div class="week-stats-list">${rowsHTML}</div>
+      <div class="week-stats-total">
+        <span>Gesamt</span>
+        <span>${fmt(totalMinutes)}</span>
+      </div>
+    `;
+  },
+
+  /**
    * Day column header (weekday name + date) for the Belegungsplan week view
    */
-  belegungsplanWeekDayHeader(dateObj, isToday) {
+  belegungsplanWeekDayHeader(dateObj, isToday, infos = []) {
     const weekdayText = dateObj.toLocaleDateString('de-DE', { weekday: 'short' });
     const dateText = dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    if (!infos.length) {
+      return `
+        <div class="week-day-header${isToday ? ' is-today' : ''}">
+          <span class="week-day-weekday">${weekdayText}</span>
+          <span class="week-day-date">${dateText}</span>
+        </div>
+      `;
+    }
+    // The marker toggles a slide-out with the messages (render-trains.js
+    // toggleWeekInfoPopout); clicking a message there opens the editor.
+    const dateStr = dateObj.toLocaleDateString('sv-SE');
     return `
-      <div class="week-day-header${isToday ? ' is-today' : ''}">
+      <div class="week-day-header has-info${isToday ? ' is-today' : ''}">
         <span class="week-day-weekday">${weekdayText}</span>
         <span class="week-day-date">${dateText}</span>
+        <span class="week-day-info-marker" role="button" tabindex="0" aria-expanded="false" aria-label="Information anzeigen" data-info-date="${dateStr}">${this.informationBadge(getInformationIcon(infos[0]))}${infos.length > 1 ? `<span class="week-day-info-count">${infos.length}</span>` : ''}</span>
       </div>
     `;
   },

@@ -1,0 +1,6 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Information "i": round dot, left flag serif on top, slab foot on both sides.
+     Single-color glyph - consumed as a CSS mask (.info-glyph) and tinted via tokens. -->
+<circle cx="12" cy="4.6" r="2.6" fill="#000000"/>
+<path d="M7 9.2H14.2V18.4H17.4V21.6H6.6V18.4H9.8V12.4H7V9.2Z" fill="#000000"/>
+</svg>

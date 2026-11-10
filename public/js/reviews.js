@@ -138,6 +138,9 @@
       page.appendChild(list);
 
       trainListEl.appendChild(page);
+      // The fresh page starts at the top - hide a back-to-top button left
+      // over from before this async re-render.
+      if (typeof updateBackToTopButton === 'function') updateBackToTopButton();
     }
 
     function buildReviewCard(r, onRefresh) {

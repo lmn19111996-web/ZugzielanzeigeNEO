@@ -561,7 +561,18 @@ function lmPresetsAdd(name, delta) {
 }
 
 function lmPresetsDelete(id) {
-  var presets = lmPresetsLoad().filter(function(p) { return p.id !== id; });
+  var all     = lmPresetsLoad();
+  var removed = all.find(function(p) { return p.id === id; });
+  if (removed && window.ItemBins) {
+    window.ItemBins.trash([{
+      kind: 'lovemeter-preset',
+      typeLabel: 'Lovemeter-Vorlage',
+      label: removed.name || 'Vorlage',
+      detail: (removed.delta > 0 ? '+' : '') + removed.delta,
+      payload: removed
+    }]);
+  }
+  var presets = all.filter(function(p) { return p.id !== id; });
   lmPresetsSave(presets);
   return presets;
 }

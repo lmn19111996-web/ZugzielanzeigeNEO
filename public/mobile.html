@@ -248,6 +248,29 @@
         <div class="editor-field-value" data-focus="date"></div>
       </div>
 
+      <div class="editor-field" data-field="dateEnd" data-input-type="date" style="display:none;">
+        <div class="editor-field-label">Gültig bis</div>
+        <div class="editor-field-value" data-focus="date-end"></div>
+      </div>
+
+      <!-- Deliberately not an .editor-field: the editor treats any input inside
+           a field as that field's edit-mode value -->
+      <label class="info-open-ended-toggle" style="display:none;">
+        <input type="checkbox" class="info-open-ended-checkbox">
+        <span class="info-tick" aria-hidden="true"></span>
+        <span class="info-open-ended-text">Kein Enddatum</span>
+      </label>
+
+      <div class="editor-field" data-field="icon" data-input-type="info-icon" style="display:none;">
+        <div class="editor-field-label">Symbol</div>
+        <div class="editor-field-value" data-focus="info-icon"></div>
+      </div>
+
+      <div class="editor-field" data-field="hideDateRange" data-input-type="date-range-visibility" style="display:none;">
+        <div class="editor-field-label">Zeitraum in Nachricht</div>
+        <div class="editor-field-value" data-focus="date-range-visibility"></div>
+      </div>
+
       <div class="editor-field" data-field="recurrencePattern" style="display:none;">
         <div class="editor-field-label">
           Wiederholung
@@ -576,7 +599,7 @@
             <!-- Search bar (shown in search mode instead of first-train-container) -->
             <div id="train-search-bar" class="train-search-bar">
               <svg class="train-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-              <input type="text" id="train-search-input" class="train-search-input" placeholder="Linie, Ziel, Beschreibung …" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              <input type="text" id="train-search-input" class="train-search-input" placeholder="Linie, Ziel, Halt, Projekt …" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
               <button id="train-search-close" class="train-search-close" aria-label="Suche schließen">✕</button>
             </div>
           </div>
@@ -733,6 +756,10 @@
               </span>
               <span class="task-icon-label">Rezensionen</span>
             </button>
+            <button class="task-icon-button nav-only" data-mode="recycle-bin" data-nav="recycle-bin">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3.5 6.5 20.5 6.5"/><path d="M9 6.5V4.6A1.6 1.6 0 0 1 10.6 3h2.8A1.6 1.6 0 0 1 15 4.6v1.9"/><path d="M18.4 6.5l-.9 12.6a2.2 2.2 0 0 1-2.2 2H8.7a2.2 2.2 0 0 1-2.2-2L5.6 6.5"/><line x1="10" y1="11" x2="10" y2="16.5"/><line x1="14" y1="11" x2="14" y2="16.5"/></svg>
+              <span class="task-icon-label">Papierkorb</span>
+            </button>
             <button class="task-icon-button mobile-only" id="lm-quick-log-btn">
               <svg class="nav-icon nav-icon--heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4S3.6 15.1 3.6 9.4a4.6 4.6 0 0 1 8.4-2.6 4.6 4.6 0 0 1 8.4 2.6c0 5.7-8.4 11-8.4 11Z"/></svg>
               <span class="task-icon-label">Lovemeter</span>
@@ -884,6 +911,7 @@
       <button class="mode-drawer-item" data-mode="projects">Projekte</button>
       <button class="mode-drawer-item" data-mode="vorlagen">Vorlagen</button>
       <button class="mode-drawer-item" data-mode="reviews">Rezensionen</button>
+      <button class="mode-drawer-item" data-mode="recycle-bin">Papierkorb</button>
     </div>
   </div>
   <div class="mode-drawer-scrim" id="mode-drawer-scrim" aria-hidden="true"></div>
@@ -975,6 +1003,7 @@
 <script src="js/editor.js"></script>
 <script src="js/projects.js"></script>
 <script src="js/reviews.js"></script>
+<script src="js/item-bins.js"></script>
 <script src="js/swipe.js"></script>
 <script src="js/station.js"></script>
 <script src="js/clock.js"></script>
@@ -988,6 +1017,7 @@
 <script src="js/print-schedule.js"></script>
 <script src="js/init.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/welcome-ribbon.js"></script>
 <script src="js/shortcut-hints.js"></script>
 
 <script>
@@ -1083,9 +1113,192 @@
 
   var topRibbonEl = document.querySelector('.top-ribbon');
 
+  // ── Search filters ──────────────────────────────────────────────────────
+  // Line / project / date / status filters plus sort order, shown in a sticky
+  // panel at the top of the result list. The panel element is built once and
+  // re-prepended after every render (the renderer clears #train-list), so its
+  // listeners and state survive. Filters reset each time the search opens,
+  // like the query does.
+  function defaultSearchFilters() {
+    return { lines: [], project: '', date: 'all', from: '', to: '', status: 'all', sort: 'asc' };
+  }
+  var searchFilters = defaultSearchFilters();
+  var searchFilterPanel = null;
+  var lineChipsKey = '';
+
+  function hasActiveSearchFilters() {
+    return searchFilters.lines.length > 0 || !!searchFilters.project ||
+      searchFilters.date !== 'all' || searchFilters.status !== 'all';
+  }
+
+  function escapeSearchHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function buildSearchFilterPanel() {
+    var panel = document.createElement('div');
+    panel.className = 'search-filter-panel';
+    panel.id = 'search-filter-panel';
+    panel.innerHTML =
+      '<div class="sfp-row">' +
+        '<label class="sfp-field"><span class="sfp-label">Zeitraum</span>' +
+          '<select class="sfp-select" data-sf="date">' +
+            '<option value="all">Alle</option>' +
+            '<option value="today">Heute</option>' +
+            '<option value="upcoming">Ab heute</option>' +
+            '<option value="next7">Nächste 7 Tage</option>' +
+            '<option value="past">Vergangen</option>' +
+            '<option value="last30">Letzte 30 Tage</option>' +
+            '<option value="range">Eigener Zeitraum …</option>' +
+          '</select></label>' +
+        '<label class="sfp-field"><span class="sfp-label">Projekt</span>' +
+          '<select class="sfp-select" data-sf="project"><option value="">Alle</option></select></label>' +
+        '<label class="sfp-field"><span class="sfp-label">Status</span>' +
+          '<select class="sfp-select" data-sf="status">' +
+            '<option value="all">Alle</option>' +
+            '<option value="ontime">Pünktlich</option>' +
+            '<option value="delayed">Verspätet</option>' +
+            '<option value="canceled">Ausgefallen</option>' +
+          '</select></label>' +
+        '<label class="sfp-field"><span class="sfp-label">Sortierung</span>' +
+          '<select class="sfp-select" data-sf="sort">' +
+            '<option value="asc">Älteste zuerst</option>' +
+            '<option value="desc">Neueste zuerst</option>' +
+          '</select></label>' +
+        '<button type="button" class="sfp-reset" data-sf-reset hidden>Filter zurücksetzen</button>' +
+      '</div>' +
+      '<div class="sfp-range" hidden>' +
+        '<label class="sfp-field"><span class="sfp-label">Von</span><input type="date" class="sfp-select" data-sf="from"></label>' +
+        '<label class="sfp-field"><span class="sfp-label">Bis</span><input type="date" class="sfp-select" data-sf="to"></label>' +
+      '</div>' +
+      '<div class="sfp-lines" role="group" aria-label="Nach Linie filtern"></div>' +
+      '<div class="sfp-summary" aria-live="polite"></div>';
+
+    panel.querySelectorAll('[data-sf]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        searchFilters[el.getAttribute('data-sf')] = el.value;
+        rerenderSearchNow();
+      });
+    });
+    panel.querySelector('[data-sf-reset]').addEventListener('click', function () {
+      var sort = searchFilters.sort;
+      searchFilters = defaultSearchFilters();
+      searchFilters.sort = sort;
+      rerenderSearchNow();
+    });
+    panel.querySelector('.sfp-lines').addEventListener('click', function (e) {
+      var chip = e.target.closest('[data-line]');
+      if (!chip) return;
+      var line = chip.getAttribute('data-line');
+      var i = searchFilters.lines.indexOf(line);
+      if (i >= 0) searchFilters.lines.splice(i, 1); else searchFilters.lines.push(line);
+      rerenderSearchNow();
+    });
+    return panel;
+  }
+
+  function syncSearchFilterPanel(pool, resultCount, isIdle) {
+    if (!searchFilterPanel) searchFilterPanel = buildSearchFilterPanel();
+    var panel = searchFilterPanel;
+    var f = searchFilters;
+
+    // Project options: all projects by name, plus "Ohne Projekt".
+    var projects = ((typeof schedule !== 'undefined' && schedule && schedule.projects) || [])
+      .slice()
+      .sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); });
+    if (f.project && f.project !== '__none__' &&
+        !projects.some(function (p) { return p._uniqueId === f.project; })) {
+      f.project = '';
+    }
+    var projectSelect = panel.querySelector('[data-sf="project"]');
+    projectSelect.innerHTML = '<option value="">Alle</option><option value="__none__">Ohne Projekt</option>' +
+      projects.map(function (p) {
+        return '<option value="' + escapeSearchHtml(p._uniqueId) + '">' +
+          escapeSearchHtml(p.name || 'Unbenanntes Projekt') + '</option>';
+      }).join('');
+
+    panel.querySelector('[data-sf="date"]').value = f.date;
+    projectSelect.value = f.project;
+    panel.querySelector('[data-sf="status"]').value = f.status;
+    panel.querySelector('[data-sf="sort"]').value = f.sort;
+    panel.querySelector('[data-sf="from"]').value = f.from;
+    panel.querySelector('[data-sf="to"]').value = f.to;
+    panel.querySelector('.sfp-range').hidden = f.date !== 'range';
+    panel.querySelector('[data-sf-reset]').hidden = !hasActiveSearchFilters();
+
+    // Line chips: every line in the searchable pool, natural order. Only
+    // rebuilt when that set changes so the chip row keeps its scroll position.
+    var seen = {};
+    pool.forEach(function (t) { if (t && t.linie) seen[t.linie] = true; });
+    f.lines.forEach(function (l) { seen[l] = true; });
+    var lines = Object.keys(seen).sort(function (a, b) {
+      return a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' });
+    });
+    var linesEl = panel.querySelector('.sfp-lines');
+    var key = lines.join('|');
+    if (key !== lineChipsKey) {
+      lineChipsKey = key;
+      linesEl.innerHTML = lines.map(function (l) {
+        var src = typeof getTrainSVG === 'function' ? getTrainSVG(l) : '';
+        return '<button type="button" class="sfp-line-chip" data-line="' + escapeSearchHtml(l) + '" aria-pressed="false" title="' + escapeSearchHtml(l) + '">' +
+          (src ? '<img src="' + escapeSearchHtml(src) + '" alt="' + escapeSearchHtml(l) + '" draggable="false">' : '') +
+          '<span class="sfp-line-text"' + (src ? ' hidden' : '') + '>' + escapeSearchHtml(l) + '</span>' +
+        '</button>';
+      }).join('');
+      // Lines without an icon file fall back to their name as text.
+      linesEl.querySelectorAll('img').forEach(function (img) {
+        img.addEventListener('error', function () {
+          var txt = img.nextElementSibling;
+          if (txt) txt.hidden = false;
+          img.remove();
+        }, { once: true });
+      });
+    }
+    linesEl.hidden = lines.length === 0;
+    linesEl.querySelectorAll('[data-line]').forEach(function (chip) {
+      var on = f.lines.indexOf(chip.getAttribute('data-line')) >= 0;
+      chip.classList.toggle('is-active', on);
+      chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    linesEl.classList.toggle('has-selection', f.lines.length > 0);
+
+    panel.querySelector('.sfp-summary').textContent = isIdle
+      ? 'Suchbegriff eingeben oder Filter wählen'
+      : (resultCount === 0 ? 'Keine Treffer' : resultCount === 1 ? '1 Treffer' : resultCount + ' Treffer');
+
+    if (trainListEl && trainListEl.firstChild !== panel) trainListEl.insertBefore(panel, trainListEl.firstChild);
+  }
+
+  function rerenderSearchNow() {
+    cancelScheduledSearch();
+    if (isSearchMode) renderSearchResults(searchInput ? searchInput.value : '');
+  }
+
+  function searchDateBounds() {
+    var f = searchFilters;
+    var now = new Date();
+    function key(offsetDays) {
+      return getLocalDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays));
+    }
+    switch (f.date) {
+      case 'today':    return { from: key(0),   to: key(0) };
+      case 'upcoming': return { from: key(0),   to: '' };
+      case 'next7':    return { from: key(0),   to: key(6) };
+      case 'past':     return { from: '',       to: key(-1) };
+      case 'last30':   return { from: key(-30), to: key(-1) };
+      case 'range':
+        // Swapped bounds are treated as the range they obviously meant.
+        if (f.from && f.to && f.from > f.to) return { from: f.to, to: f.from };
+        return { from: f.from || '', to: f.to || '' };
+      default:         return { from: '', to: '' };
+    }
+  }
+
   function openSearch() {
     if (isSearchMode) return;
     isSearchMode = true;
+    searchFilters = defaultSearchFilters();
     if (topRibbonEl)  topRibbonEl.classList.add('search-active');
     if (trainListEl)  trainListEl.classList.add('search-mode');
     if (searchInput) {
@@ -1093,11 +1306,13 @@
       searchInput.focus();
     }
     renderSearchResults('');
+    if (trainListEl) trainListEl.scrollTop = 0;
   }
 
   function closeSearch() {
     if (!isSearchMode) return;
     isSearchMode = false;
+    cancelScheduledSearch();
     if (topRibbonEl)  topRibbonEl.classList.remove('search-active');
     if (trainListEl)  trainListEl.classList.remove('search-mode');
     if (typeof renderCurrentWorkspaceView === 'function') {
@@ -1118,36 +1333,62 @@
         .replace(/ß/g, 'ss')
         .replace(/Ä/g, 'ae').replace(/Ö/g, 'oe').replace(/Ü/g, 'ue');
     }
-    var q = normalizeUmlauts(query.trim());
-
-    // Empty query: show nothing rather than the whole schedule. Cleared
-    // directly instead of rendering an empty result set, because
-    // renderTrainListWithEntries() always prepends processedTrainData.currentTrain
-    // and would leave that one row behind.
-    if (!q) {
-      trainListEl.innerHTML = '';
-      trainListEl.classList.add('search-mode');
-      return;
-    }
+    // Every whitespace-separated word must match somewhere (AND), so
+    // "s1 vaihingen" finds S1 trains to/via Vaihingen.
+    var terms = normalizeUmlauts(query.trim()).split(/\s+/).filter(Boolean);
 
     // Use scheduledTrains (timed) + durationOnlyTrains as the full searchable pool
     var pd = window.processedTrainData || processedTrainData;
     var timed    = (pd && pd.scheduledTrains)    || [];
     var durOnly  = (pd && pd.durationOnlyTrains) || [];
+    var pool     = timed.concat(durOnly);
+
+    // Nothing typed and no filter set: show nothing rather than the whole
+    // schedule. Cleared directly instead of rendering an empty result set,
+    // because renderTrainListWithEntries() always prepends
+    // processedTrainData.currentTrain and would leave that one row behind.
+    if (!terms.length && !hasActiveSearchFilters()) {
+      trainListEl.innerHTML = '';
+      trainListEl.classList.add('search-mode');
+      syncSearchFilterPanel(pool, 0, true);
+      return;
+    }
+
+    var projectNames = {};
+    ((typeof schedule !== 'undefined' && schedule && schedule.projects) || []).forEach(function (p) {
+      if (p && p._uniqueId) projectNames[p._uniqueId] = p.name || '';
+    });
+
+    var f = searchFilters;
+    var bounds = searchDateBounds();
+    var lineSet = {};
+    f.lines.forEach(function (l) { lineSet[l] = true; });
 
     function matches(t) {
       if (!t) return false;
-      return (
-        normalizeUmlauts(t.linie        || '').includes(q) ||
-        normalizeUmlauts(t.ziel         || '').includes(q) ||
-        normalizeUmlauts(t.beschreibung || '').includes(q)
-      );
+      if (f.lines.length && !lineSet[t.linie]) return false;
+      if (f.project === '__none__' ? !!t.projectId : (f.project && t.projectId !== f.project)) return false;
+      if (bounds.from && (!t.date || t.date < bounds.from)) return false;
+      if (bounds.to   && (!t.date || t.date > bounds.to))   return false;
+      if (f.status !== 'all') {
+        var delayed = !t.canceled && !!t.actual && t.actual !== t.plan;
+        if (f.status === 'canceled' && !t.canceled) return false;
+        if (f.status === 'delayed'  && !delayed)    return false;
+        if (f.status === 'ontime'   && (t.canceled || delayed)) return false;
+      }
+      if (!terms.length) return true;
+      var stops = Array.isArray(t.zwischenhalte) ? t.zwischenhalte.join(' ') : String(t.zwischenhalte || '');
+      var haystack = normalizeUmlauts([
+        t.linie, t.ziel, t.beschreibung, t.delayReason, stops, projectNames[t.projectId]
+      ].join(' \u0001 '));
+      return terms.every(function (term) { return haystack.indexOf(term) !== -1; });
     }
 
     var matchedTimed   = timed.filter(matches);
     var matchedDurOnly = durOnly.filter(matches);
 
-    // Sort chronologically
+    // Within a day entries are always chronological; the sort option flips
+    // the order of the day sections (renderer's dateOrder).
     function chronoSort(a, b) {
       var da = (a.date || '') + (a.plan || a.actual || '');
       var db = (b.date || '') + (b.plan || b.actual || '');
@@ -1162,9 +1403,11 @@
       enableSwipe:    false,
       enableDateJump: false,
       append:         false,
-      durationOnlyEntries: matchedDurOnly
+      durationOnlyEntries: matchedDurOnly,
+      dateOrder:      f.sort === 'desc' ? 'desc' : 'asc'
     });
     trainListEl.classList.add('search-mode');
+    syncSearchFilterPanel(pool, matchedTimed.length + matchedDurOnly.length, false);
   }
 
   if (menuSearch) {
@@ -1179,10 +1422,29 @@
       closeSearch();
     });
   }
+  // Rendering the results can take a while on a big schedule. Running it
+  // inside the 'input' event blocked the browser from painting the typed
+  // letter until the results were ready. So the search is scheduled instead:
+  // the field updates immediately, and the results follow once typing pauses
+  // (SEARCH_DEBOUNCE_MS) - only for the latest text, never per keystroke.
+  var SEARCH_DEBOUNCE_MS = 500;
+  var searchRenderTimer = null;
+
+  function cancelScheduledSearch() {
+    if (searchRenderTimer) clearTimeout(searchRenderTimer);
+    searchRenderTimer = null;
+  }
+
+  function scheduleSearchResults() {
+    cancelScheduledSearch();
+    searchRenderTimer = setTimeout(function () {
+      searchRenderTimer = null;
+      if (isSearchMode) renderSearchResults(searchInput.value);
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
   if (searchInput) {
-    searchInput.addEventListener('input', function () {
-      renderSearchResults(searchInput.value);
-    });
+    searchInput.addEventListener('input', scheduleSearchResults);
     searchInput.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeSearch();
     });
@@ -1191,6 +1453,7 @@
   // Ctrl+F to open search. Inside the log viewer this toggles a local search
   // over the loaded log entries instead of the global train search, since the
   // global search would replace the log viewer page with unrelated results.
+  // In the reviews workspace Ctrl+F is passed through to the browser's find.
   // Esc exits search mode even when the search input no longer has focus
   // (e.g. after clicking a result). Escape inside some other text field is
   // left alone so it can cancel that field's edit instead.
@@ -1203,6 +1466,8 @@
       return;
     }
     if (e.ctrlKey && (e.key === 'f' || e.key === 'F')) {
+      // In the reviews workspace leave Ctrl+F to the browser's native find-in-page.
+      if (typeof currentWorkspaceMode !== 'undefined' && currentWorkspaceMode === 'reviews') return;
       e.preventDefault();
       if (typeof currentWorkspaceMode !== 'undefined' && currentWorkspaceMode === 'log-viewer'
           && typeof toggleLogViewerSearch === 'function') {

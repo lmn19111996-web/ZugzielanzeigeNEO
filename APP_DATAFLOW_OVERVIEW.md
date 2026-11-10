@@ -47,6 +47,8 @@ Important train categories:
 - Materialized trains: generated working entries derived from the schedule.
 - Notes: objects with `type: note`; they behave like notes, not normal trains.
 - Duration-only entries: objects with `type: duration-only`; they carry duration without a departure time.
+- Information entries: objects with `type: information` (created with Ctrl+I). `ziel` holds the message, valid from `date` through `dateEnd` (inclusive; defaults to the start date, missing = just that day), or every day from `date` on when `openEnded` ("Kein Enddatum" tick box). No line, time or duration — identified by type, never by a placeholder line; collected into `processedTrainData.informationTrains`, shown as a bar under each covered day's separator and marked in the Belegungsplan headers. Never logged; the server prunes them only after `dateEnd` (never when `openEnded`).
+  - Recurring: set via the always-visible Wiederholung field in the information editor (no separate Vorlage page; info templates are not listed in the Vorlagen workspace). The template in `fixedSchedule` repeats single-day occurrences from `startDate` through `endDate` (the editor's "Gültig bis"); `openEnded` — or no `endDate` — repeats forever. "Keine Wiederholung" ends the series: started occurrences stay as plain informations. Use `getInformationsForDay()` for per-day lists (each series at most once per day).
 
 Important rule for duration-only entries:
 

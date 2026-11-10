@@ -340,7 +340,7 @@
         </label>
         <label class="mode-option">
           <input type="radio" name="screenMode" value="schedule">
-          <div><strong>Nach Zeitplan</strong><span>Abfahrtstafel oder FEX in festen Zeitfenstern, sonst Nächste Abfahrten</span></div>
+          <div><strong>Nach Zeitplan</strong><span>Je Zeitfenster eine eigene Ansicht, außerhalb eine Standardansicht</span></div>
         </label>
       </div>
 
@@ -390,8 +390,12 @@
       </div>
 
       <div class="mode-extra" id="extra-schedule" hidden>
+        <div class="inline-field" style="margin-bottom: 12px;">
+          <label for="schedule-default">Außerhalb der Zeitfenster</label>
+          <select id="schedule-default"></select>
+        </div>
         <div id="schedule-days"></div>
-        <p class="hint">Je Zeitfenster Abfahrtstafel oder FEX wählen; außerhalb der Zeitfenster (und in FEX-Fenstern ohne geplante FEX-Fahrt) zeigt der Kiosk die Nächsten Abfahrten. Ein Fenster über Mitternacht (z. B. 22:00–01:00) gilt ab dem eingetragenen Tag.</p>
+        <p class="hint">Je Zeitfenster eine Ansicht wählen, außerhalb gilt die Standardansicht oben. „Abwechselnd“ nutzt die Ansichten und den Takt der Abwechselnd-Einstellungen. FEX, Buffet und Durchsage ohne Inhalt zeigen stattdessen die Nächsten Abfahrten. Ein Fenster über Mitternacht (z. B. 22:00–01:00) gilt ab dem eingetragenen Tag.</p>
       </div>
     </section>
 
@@ -528,10 +532,35 @@
   }
 
   // ── Rendering ──
+  // Views a schedule window (or the time outside them) can show
+  const SCHEDULE_SCREENS = [
+    ['abfahrten', 'Nächste Abfahrten'],
+    ['board', 'Abfahrtstafel'],
+    ['fex', 'FEX'],
+    ['buffet', 'Buffet'],
+    ['announcement', 'Durchsage'],
+    ['alternate', 'Abwechselnd']
+  ];
+
+  function scheduleOptionsHTML(selected) {
+    return SCHEDULE_SCREENS.map(([value, label]) =>
+      `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`).join('');
+  }
+
+  // The rotation settings matter in 'alternate' mode, and in 'schedule'
+  // mode as soon as a window or the default uses it
+  function updateAlternateExtra() {
+    const scheduleUsesIt = config.screenMode === 'schedule'
+      && ((config.scheduleDefault || 'abfahrten') === 'alternate'
+        || Object.values(config.schedule).some(list => list.some(w => w.screen === 'alternate')));
+    document.getElementById('extra-alternate').hidden = config.screenMode !== 'alternate' && !scheduleUsesIt;
+  }
+
   function renderMode() {
     document.querySelectorAll('input[name="screenMode"]').forEach(r => { r.checked = r.value === config.screenMode; });
-    document.getElementById('extra-alternate').hidden = config.screenMode !== 'alternate';
     document.getElementById('extra-schedule').hidden = config.screenMode !== 'schedule';
+    document.getElementById('schedule-default').innerHTML = scheduleOptionsHTML(config.scheduleDefault || 'abfahrten');
+    updateAlternateExtra();
     document.getElementById('alternate-seconds').value = config.alternateSeconds;
     document.querySelectorAll('#alternate-screens input').forEach(cb => {
       cb.checked = (config.alternateScreens || []).includes(cb.value);
@@ -560,10 +589,7 @@
                 –
                 <input type="time" value="${w.to}" data-day="${day}" data-idx="${idx}" data-field="to" aria-label="${label} bis">
                 <select data-day="${day}" data-idx="${idx}" data-field="screen" aria-label="${label} Ansicht">
-                  <option value="board" ${(w.screen || 'board') === 'board' ? 'selected' : ''}>Abfahrtstafel</option>
-                  <option value="fex" ${w.screen === 'fex' ? 'selected' : ''}>FEX</option>
-                  <option value="buffet" ${w.screen === 'buffet' ? 'selected' : ''}>Buffet</option>
-                  <option value="announcement" ${w.screen === 'announcement' ? 'selected' : ''}>Durchsage</option>
+                  ${scheduleOptionsHTML(w.screen || 'board')}
                 </select>
                 <button type="button" class="small" data-remove-day="${day}" data-idx="${idx}" aria-label="Zeitfenster entfernen">✕</button>
               </span>`).join('')}
@@ -839,6 +865,13 @@
       if (!field || !e.target.value) return;
       config.schedule[day][Number(idx)][field] = e.target.value;
       markDirty();
+      if (field === 'screen') updateAlternateExtra();
+    });
+
+    document.getElementById('schedule-default').addEventListener('change', (e) => {
+      config.scheduleDefault = e.target.value;
+      markDirty();
+      updateAlternateExtra();
     });
     days.addEventListener('click', (e) => {
       const t = e.target;
@@ -858,6 +891,7 @@
       }
       markDirty();
       renderSchedule();
+      updateAlternateExtra();
     });
   }
 

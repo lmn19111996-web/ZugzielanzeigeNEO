@@ -1055,6 +1055,7 @@ html, body {
     .belegungsplan-nav-btn,
     .belegungsplan-today-btn,
     .belegungsplan-line-filter-btn,
+    .belegungsplan-stats-btn,
     .belegungsplan-toggle-btn {
       background: var(--color-bg-button);
       border: none;
@@ -1068,17 +1069,34 @@ html, body {
 
     .belegungsplan-nav-btn:hover,
     .belegungsplan-today-btn:hover,
-    .belegungsplan-line-filter-btn:hover {
+    .belegungsplan-line-filter-btn:hover,
+    .belegungsplan-stats-btn:hover {
       background: rgba(255, 255, 255, 0.16);
     }
 
     /* Week view line filter dropdown */
-    /* Pinned to the far right of the header, outside the centered controls */
-    .belegungsplan-line-filter {
+    /* Week-only controls pinned to the far right of the header, outside the
+       centered controls */
+    .belegungsplan-header-right {
       position: absolute;
       right: 1vw;
       top: 50%;
       transform: translateY(-50%);
+      display: flex;
+      gap: 1vw;
+    }
+
+    .belegungsplan-line-filter {
+      position: relative;
+    }
+
+    .belegungsplan-stats-btn.active {
+      background: #122171;
+      color: #fff;
+    }
+
+    .belegungsplan-stats-btn.active:hover {
+      background: #2c3a89;
     }
 
     .belegungsplan-line-filter-btn.is-filtered {
@@ -1141,11 +1159,19 @@ html, body {
       cursor: pointer;
     }
 
-    .belegungsplan-line-filter-swatch {
-      width: 1.2vh;
-      height: 1.2vh;
-      border-radius: 2px;
+    /* Line icons in the week view's filter list and statistics panel */
+    .belegungsplan-line-legend-icon {
+      height: 1.5vh;
+      width: auto;
+      display: block;
       flex-shrink: 0;
+    }
+
+    .belegungsplan-line-legend-badge {
+      height: 1.5vh;
+      min-width: 2.25vh;
+      font-size: 1vh;
+      padding: 0 0.3vh;
     }
 
     .belegungsplan-line-filter-empty {
@@ -1374,6 +1400,92 @@ html, body {
 
     .week-day-body .belegungsplan-destination {
       font-size: 1.4vh;
+    }
+
+    /* Weekly statistics side panel (right of the day columns) */
+    .week-stats-panel {
+      width: 18vw;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin-left: 2px;
+      padding: 1vh 0.8vw;
+      box-sizing: border-box;
+      background: var(--color-bg-panel);
+      border-left: 1px solid var(--color-border-subtle);
+    }
+
+    .week-stats-title {
+      font-size: 1.8vh;
+      font-weight: 700;
+    }
+
+    .week-stats-subtitle {
+      font-size: 1.3vh;
+      color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+      margin-bottom: 1vh;
+    }
+
+    .week-stats-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9vh;
+    }
+
+    .week-stats-row-head {
+      display: flex;
+      align-items: center;
+      gap: 0.4vw;
+      font-size: 1.5vh;
+    }
+
+    .week-stats-line {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .week-stats-count {
+      font-size: 1.3vh;
+      color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+    }
+
+    .week-stats-time {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .week-stats-bar {
+      height: 0.5vh;
+      margin-top: 0.3vh;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .week-stats-bar > div {
+      height: 100%;
+    }
+
+    .week-stats-empty {
+      font-size: 1.4vh;
+      color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+    }
+
+    .week-stats-total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1vh;
+      padding-top: 0.8vh;
+      border-top: 1px solid var(--color-border-subtle);
+      font-size: 1.6vh;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
 
     .week-day-body .belegungsplan-current-time-line {
@@ -1722,6 +1834,21 @@ html, body {
       background: var(--indicator-color);
     }
 
+    /* Blinking dot for trains due within the notification lead time
+       (Einstellungen → Vorlaufzeit; same look as .current) */
+    .indicator-dot.arriving-soon {
+      border-radius: 50%;
+      background: var(--indicator-color);
+      animation: indicatorBlink 1.2s steps(1, end) infinite;
+    }
+    /* The dot takes the slot — hide a connector segment on the same row */
+    .indicator-dot.arriving-soon.connector::before { display: none; }
+
+    @keyframes indicatorBlink {
+      0%   { opacity: 1; }
+      50%  { opacity: 0; }
+    }
+
     /* X symbol for cancelled train */
     .indicator-dot.cancelled::before {
       content: '✕';
@@ -1824,7 +1951,11 @@ html, body {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      width: 60%;
+      /* Same length on every row, whatever the destination column's width
+         (carriage, check-in and headline all change it). Only shrinks when the
+         column is too narrow to hold it, e.g. with a drawer open. */
+      width: min(50vw, calc(100% - 1.2vw));
+      box-sizing: border-box;
       border-bottom: 1.5px solid rgba(255, 255, 255, 1);
       border-right: 1.5px solid rgba(255, 255, 255, 1);
       margin-left: 1.2vw;
@@ -2870,6 +3001,67 @@ html, body {
       opacity: 0.85;
     }
 
+    /* ── Back to top (train list) ─────────────────────────────────────────
+       Round floating action in the nav rail CTA's design language (.nav-cta):
+       live accent fill (follows the current train's line), white glyph,
+       same shadow, brighter on hover, pressed scale on click.
+       right/bottom are set by JS to the list's corner; the margin insets it.
+       Shown/hidden with opacity + transform only (compositor, no layout). */
+    .back-to-top-btn {
+      position: absolute;
+      z-index: 5;
+      width: 5.2vh;
+      height: 5.2vh;
+      margin: 0 1.5vw 2vh 0;
+      padding: 1.3vh;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-nav-accent);
+      color: var(--color-nav-accent-text);
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(1.5vh);
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease, background 0.2s ease, filter 0.15s ease;
+    }
+
+    .back-to-top-btn.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .back-to-top-btn:hover {
+      filter: brightness(1.18);
+    }
+
+    .back-to-top-btn.is-visible:active {
+      filter: brightness(1.18);
+      transform: scale(0.97);
+    }
+
+    .back-to-top-btn svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .back-to-top-btn {
+        width: 6vh;
+        height: 6vh;
+        padding: 1.5vh;
+        margin: 0 4vw 2vh 0;
+      }
+    }
+
     /* ── Date jump popup ────────────────────────────────────────────────── */
     .date-jump-popup {
       position: fixed;
@@ -3022,6 +3214,325 @@ html, body {
 @media (max-width: 768px) {
   .day-stack-label { display: none; }
 }
+
+    /* ==================== INFORMATION ENTRIES ====================
+       type: 'information' - inverted plate (like FEX): --color-info-bg
+       card, --color-info-text message, square icon cell split off by a
+       1.5px divider (same weight as the cancel-notice tag). Flat, square
+       corners. Glyph = res/information.svg used as a mask, so it always
+       takes the surrounding text color. */
+    .info-glyph {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: currentColor;
+      -webkit-mask: url('res/information.svg') center / contain no-repeat;
+      mask: url('res/information.svg') center / contain no-repeat;
+    }
+
+    /* Symbol variants (`icon` of an information; .info-icon--<key> sits on
+       the bar's icon cell or the badge). Störung is single-color like the i
+       (mask, token color - the "!" is cut out to the plate). */
+    .info-icon--stoerung .info-glyph {
+      -webkit-mask-image: url('res/stoerung.svg');
+      mask-image: url('res/stoerung.svg');
+    }
+
+    /* Ersatzverkehr is the full-color SEV pictogram with its own magenta
+       plate and frame, so it fills the whole cell/badge instead of sitting
+       on the white plate. */
+    .info-icon--ersatzverkehr {
+      padding: 0 !important;
+    }
+
+    .info-icon--ersatzverkehr .info-glyph {
+      -webkit-mask: none;
+      mask: none;
+      background: url('res/ersatzverkehr.svg') center / cover no-repeat;
+    }
+
+    /* Standalone badge: white square cell with the glyph */
+    .info-badge {
+      display: inline-flex;
+      flex-shrink: 0;
+      width: 2.6vh;
+      height: 2.6vh;
+      padding: 0.2vh;
+      box-sizing: border-box;
+      background: var(--color-info-bg);
+      color: var(--color-info-text);
+    }
+
+    /* Train list bar - full width under the day's stacked bar, same
+       height as .day-stack-bar; the separator line is dropped on those
+       days so the chart and the info bar read as one block. */
+    .day-separator.has-info .day-separator-line {
+      display: none;
+    }
+
+    .info-bar {
+      display: flex;
+      align-items: stretch;
+      height: 2.5vh;
+      margin: 0 1.5vw 0.8vh;
+      background: var(--color-info-bg);
+      color: var(--color-info-text);
+      font-family: var(--font-family-ui);
+      font-stretch: var(--font-stretch-ui);
+      cursor: pointer;
+      overflow: hidden;
+      user-select: none;
+      transition: opacity 0.15s;
+    }
+
+    .info-bar:hover {
+      opacity: 0.9;
+    }
+
+    .info-bar-icon {
+      flex: 0 0 auto;
+      aspect-ratio: 1 / 1;
+      height: 100%;
+      padding: 0.1vh;
+      box-sizing: border-box;
+      border-right: 1.5px solid var(--color-info-divider);
+    }
+
+    .info-bar-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 0.8vw;
+      overflow: hidden;
+      /* Same type as the chart's segment labels (.day-stack-label) */
+      font-size: 2vh;
+      font-weight: 300;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .info-bar-text .cancel-notice-text {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    /* "Kein Enddatum" tick: a row in the editor-field language (same
+       padding, separator and hover as .editor-field, value-size text) with a
+       flat square box in the information colours - outlined when off, the
+       white information plate with a navy tick when on (like the i badge).
+       The native checkbox stays for keyboard/screen readers, visually hidden. */
+    .info-open-ended-toggle {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.8vw;
+      padding: 1.5vh 1vw;
+      margin: 0 1vw;
+      border-bottom: 1px solid var(--color-border-faint);
+      font-size: 2vh;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s ease;
+    }
+
+    .info-open-ended-toggle:hover {
+      background: var(--color-surface-1);
+    }
+
+    .info-open-ended-toggle input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .info-tick {
+      position: relative;
+      flex-shrink: 0;
+      width: 2vh;
+      height: 2vh;
+      box-sizing: border-box;
+      border: 1.5px solid var(--color-text-label);
+      transition: background 0.1s ease, border-color 0.1s ease;
+    }
+
+    .info-open-ended-toggle input:checked + .info-tick {
+      background: var(--color-info-bg);
+      border-color: var(--color-info-bg);
+    }
+
+    .info-open-ended-toggle input:checked + .info-tick::after {
+      content: '';
+      position: absolute;
+      left: 34%;
+      top: 12%;
+      width: 26%;
+      height: 52%;
+      border: solid var(--color-info-text);
+      border-width: 0 0.3vh 0.3vh 0;
+      transform: rotate(45deg);
+    }
+
+    .info-open-ended-toggle input:focus-visible + .info-tick {
+      outline: 1.5px solid var(--color-info-bg);
+      outline-offset: 2px;
+    }
+
+    .info-open-ended-toggle:has(input:disabled) {
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .info-open-ended-toggle:has(input:disabled):hover {
+      background: none;
+    }
+
+    /* Compact read-only variant (Belegungsplan day timeline) */
+    .info-bar--inline {
+      display: inline-flex;
+      height: 2.9vh;
+      margin: 0;
+      min-width: 0;
+      max-width: 70%;
+      cursor: default;
+    }
+
+    .info-bar--inline:hover {
+      opacity: 1;
+    }
+
+    .info-bar--inline .info-bar-icon {
+      padding: 0.25vh;
+    }
+
+    .info-bar--inline .info-bar-text {
+      display: block;
+      line-height: 2.9vh;
+      font-size: 2.1vh;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 900px) {
+      .info-bar-text {
+        padding: 0 2vw;
+      }
+    }
+
+    /* Belegungsplan day view: the shown day's infos hang under the sticky
+       header as an overlay. Absolutely positioned (the sticky header is its
+       containing block) so swapping it while scrolling through days never
+       changes the header's height - that would shift the timeline under the
+       reading line and could flip the detected day back and forth. Its width
+       is pinned by left/right, so it also can't grow with the marquee's
+       copies (that feedback loop once made the scroll restart every ~150ms). */
+    .belegungsplan-header-info {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4vh;
+      padding: 0.4vh 0 0.6vh;
+      background: var(--color-bg-panel);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .belegungsplan-header-info .info-bar {
+      margin: 0 1.5vw;
+    }
+
+    .belegungsplan-date-label .info-badge {
+      vertical-align: -0.3vh;
+      margin-right: 0.6vw;
+    }
+
+    /* Day timeline date separator carrying infos */
+    .belegungsplan-date-separator.has-info {
+      display: flex;
+      align-items: center;
+      gap: 0.8vw;
+      white-space: nowrap;
+    }
+
+    /* Week view column header: badge top-right + white underline */
+    .week-day-header.has-info {
+      position: relative;
+      border-bottom: 0.4vh solid var(--color-info-bg);
+    }
+
+    .week-day-info-marker {
+      position: absolute;
+      top: 0.4vh;
+      right: 0.4vw;
+      display: inline-flex;
+      align-items: stretch;
+      cursor: pointer;
+      outline: none;
+      transition: opacity 0.15s;
+    }
+
+    .week-day-info-marker:hover {
+      opacity: 0.85;
+    }
+
+    /* Slide-out with the day's messages, emerging from the marker towards
+       the screen centre. Height matches the marker so it reads as the
+       badge unrolling; clicking a message opens the editor. */
+    .week-info-popout {
+      position: fixed;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3vh;
+      width: max-content;
+      max-width: 30vw;
+      transition: clip-path 0.24s ease;
+    }
+
+    .week-info-popout.from-left  { clip-path: inset(0 100% 0 0); }
+    .week-info-popout.from-right { clip-path: inset(0 0 0 100%); }
+    .week-info-popout.is-open    { clip-path: inset(0 0 0 0); }
+    .week-info-popout.no-anim    { transition: none; }
+
+    .week-info-popout .info-bar {
+      height: 2.2vh;
+      margin: 0;
+    }
+
+    .week-info-popout .info-bar-icon {
+      display: none; /* the marker itself is the icon */
+    }
+
+    .week-info-popout .info-bar-text {
+      font-size: 1.6vh;
+      padding: 0 0.6vw;
+    }
+
+    .week-info-popout.from-left .info-bar  { border-left: 1.5px solid var(--color-info-divider); }
+    .week-info-popout.from-right .info-bar { border-right: 1.5px solid var(--color-info-divider); }
+
+    .week-day-info-marker .info-badge {
+      width: 2.2vh;
+      height: 2.2vh;
+      padding: 0.15vh;
+    }
+
+    /* Count shares the white plate, split off by the same navy divider */
+    .week-day-info-count {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 0.3vw;
+      background: var(--color-info-bg);
+      color: var(--color-info-text);
+      border-left: 1.5px solid var(--color-info-divider);
+      font-size: 1.5vh;
+      font-weight: 700;
+    }
 
     /* Focus mode template styles - from focus.html */
     .focus-container {
@@ -5391,6 +5902,148 @@ html, body {
 /* Arrival label styling - slightly darker than departure */
 .arrival-label {
   opacity: 0.5;
+}
+
+/* ===== Papierkorb (item-bins.js) ===== */
+.bin-page {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 3vh 2vw;
+  box-sizing: border-box;
+}
+.bin-page::-webkit-scrollbar { display: none; }
+
+.bin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  padding-bottom: 2vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bin-title {
+  font-size: 4vh;
+  font-weight: 500;
+  margin: 0;
+  color: white;
+}
+
+.bin-sub {
+  font-size: 1.8vh;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 1.2vh 0 2vh;
+}
+
+.bin-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 0.5vh;
+  padding: 0.7vh 1.2vw;
+  font-family: inherit;
+  font-stretch: condensed;
+  font-size: 1.9vh;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.bin-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+.bin-btn--danger {
+  background: rgba(255, 80, 60, 0.1);
+  border-color: rgba(255, 100, 80, 0.35);
+  color: rgba(255, 110, 90, 0.95);
+}
+.bin-btn--danger:hover { background: rgba(255, 80, 60, 0.22); color: #ff8070; }
+.bin-btn--ghost { background: transparent; border-color: transparent; }
+.bin-btn--icon { padding: 0.7vh 0.9vw; }
+
+.bin-bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8vw;
+  padding: 1vh 1vw;
+  margin-bottom: 1.5vh;
+  background: #1a2060;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.6vh;
+}
+.bin-bulk-count { font-size: 1.9vh; margin-right: auto; color: rgba(255, 255, 255, 0.8); }
+
+.bin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.bin-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+  padding: 1.4vh 1.2vw;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid transparent;
+  border-radius: 0.8vh;
+  transition: background 0.15s;
+}
+.bin-row:hover { background: rgba(255, 255, 255, 0.1); }
+.bin-row.is-selected { border-color: rgba(255, 204, 0, 0.5); background: rgba(255, 204, 0, 0.06); }
+
+.bin-check {
+  width: 2.2vh;
+  height: 2.2vh;
+  flex-shrink: 0;
+  accent-color: #ffcc00;
+  cursor: pointer;
+}
+
+.bin-row-body { flex: 1; min-width: 0; }
+.bin-row-top { display: flex; align-items: baseline; gap: 0.8vw; min-width: 0; }
+
+.bin-type {
+  flex-shrink: 0;
+  font-size: 1.5vh;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2vh 0.6vw;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.bin-label {
+  font-size: 2.2vh;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bin-detail {
+  font-size: 1.8vh;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.4vh;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bin-meta { font-size: 1.6vh; color: rgba(255, 255, 255, 0.4); margin-top: 0.4vh; }
+
+.bin-row-actions { display: flex; gap: 0.5vw; flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .bin-page { padding: 2vh 4vw; }
+  .bin-row { flex-wrap: wrap; gap: 2vw; padding: 1.4vh 3vw; }
+  .bin-row-body { flex-basis: calc(100% - 8vw); }
+  .bin-row-actions { width: 100%; justify-content: flex-end; gap: 2vw; }
+  .bin-btn { padding: 1vh 3vw; font-size: 2vh; }
+  .bin-bulk-bar { gap: 2vw; padding: 1vh 3vw; }
 }
 
 /* ===== Vorlagen (Recurring Trains Dashboard) ===== */
@@ -7839,6 +8492,133 @@ body.review-write-drawer-open .left-column {
   .train-search-input { font-size: 4.5vw; }
 }
 
+/* ── Search filter panel (sticky at the top of the result list) ─────────── */
+.search-filter-panel {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  margin: 0 0 1vh;
+  padding: 1.2vh 1vw 1vh;
+  background: var(--color-bg-panel);
+  border-bottom: 0.5px solid var(--color-border-subtle);
+}
+.sfp-row,
+.sfp-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.8vh 0.8vw;
+}
+.sfp-range[hidden],
+.sfp-lines[hidden],
+.sfp-reset[hidden] { display: none; }
+.sfp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+  min-width: 0;
+}
+.sfp-label {
+  font-size: 1.3vh;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-label);
+}
+.sfp-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  border: 0.5px solid var(--color-border-subtle);
+  border-radius: 0.8vh;
+  padding: 0.6vh 0.8vw;
+  font-family: inherit;
+  font-size: 1.7vh;
+  line-height: 1.2;
+  cursor: pointer;
+  color-scheme: dark;
+}
+select.sfp-select {
+  padding-right: 2.2vw;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-opacity='.6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6vw center;
+  background-size: 1.4vh;
+}
+.sfp-select option { background: var(--color-bg-panel); color: #fff; }
+.sfp-select:hover { border-color: rgba(255, 255, 255, 0.4); }
+.sfp-select:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.6); outline-offset: 1px; }
+.sfp-reset {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 1.5vh;
+  text-decoration: underline;
+  text-underline-offset: 0.3vh;
+  cursor: pointer;
+  padding: 0.6vh 0.2vw;
+}
+.sfp-reset:hover { color: #fff; }
+.sfp-lines {
+  display: flex;
+  gap: 0.5vw;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0.2vh 0;
+}
+.sfp-lines::-webkit-scrollbar { display: none; }
+.sfp-line-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 3.4vh;
+  min-width: 3.4vh;
+  padding: 0.3vh;
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 0.8vh;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.sfp-line-chip img { height: 100%; width: auto; display: block; pointer-events: none; }
+.sfp-line-text {
+  color: #fff;
+  font-size: 1.5vh;
+  font-weight: 600;
+  padding: 0 0.4vw;
+}
+.sfp-line-chip:hover { border-color: rgba(255, 255, 255, 0.3); }
+/* Once any line is picked, unpicked ones recede so the selection reads at a glance */
+.sfp-lines.has-selection .sfp-line-chip:not(.is-active) { opacity: 0.35; }
+.sfp-line-chip.is-active { border-color: rgba(255, 255, 255, 0.85); opacity: 1; }
+.sfp-line-chip:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.6); outline-offset: 1px; }
+.sfp-summary {
+  font-size: 1.4vh;
+  color: var(--color-text-placeholder);
+}
+
+@media (max-width: 768px) {
+  .search-filter-panel { padding: 1.2vh 3vw 1vh; }
+  .sfp-row,
+  .sfp-range { gap: 1vh 2vw; }
+  .sfp-row .sfp-field { flex: 1 1 calc(50% - 1vw); }
+  .sfp-range .sfp-field { flex: 1 1 calc(50% - 1vw); }
+  .sfp-select { font-size: 3.6vw; padding: 1vh 2.5vw; }
+  select.sfp-select { padding-right: 7vw; background-position: right 2vw center; background-size: 3.5vw; }
+  .sfp-label { font-size: 2.8vw; }
+  .sfp-reset { font-size: 3.4vw; margin-left: 0; }
+  .sfp-lines { gap: 1.5vw; }
+  .sfp-line-chip { height: 4vh; min-width: 4vh; }
+  .sfp-line-text { font-size: 3.4vw; }
+  .sfp-summary { font-size: 3.2vw; }
+}
+
 /* Search mode: dim day separators slightly */
 #train-list.search-mode .day-separator { opacity: 0.55; }
 #train-list.search-mode .day-separator-line { display: none; }
@@ -8963,4 +9743,142 @@ body.lm-drawer-open .lm-overlay {
     grid-template-columns: repeat(3, 1fr);
     width: 90vw;
   }
+}
+
+/* ==================== DRAWER PERFORMANCE (desktop) ====================
+   Opening a drawer used to animate .left-column's `width` and the drawer's
+   `right` - both layout properties, so the whole (long) train list was laid
+   out again on every frame. Now:
+   - the list width changes in one step (one layout instead of one per frame);
+     the sliding drawer covers that edge while it moves in;
+   - drawers slide with `transform`, which the compositor animates without
+     layout. They rest at their open `right` (0, or the offset next to another
+     open drawer - those rules still apply) and are pushed off-screen by
+     translateX while closed; +12px keeps the box-shadow out of view too.
+   Open state is `transform: none` (not translateX(0)) so a drawer doesn't
+   become the containing block for position:fixed popups inside it.
+   `right` stays in the transition for the stacked-drawer offset changes.
+   Kept at the end of the file so it outranks the base drawer rules declared
+   further up. Mobile is untouched: drawers there already use transform and
+   the list never shrinks. */
+@media screen and (min-width: 769px) {
+  .left-column {
+    transition: none;
+  }
+
+  .right-panel,
+  .right-panel-top,
+  .project-drawer,
+  .review-write-drawer {
+    right: 0;
+    transform: translateX(calc(100% + 12px));
+    transition: transform 0.2s ease, right 0.2s ease, box-shadow 0.2s ease, visibility 0.2s ease;
+  }
+
+  /* Editor drawer keeps its snappier timing */
+  .right-panel-top {
+    transition: transform 0.1s ease, right 0.1s ease, box-shadow 0.1s ease, visibility 0.2s ease;
+  }
+
+  .right-panel.is-open,
+  .right-panel-top.is-open,
+  .project-drawer.is-open,
+  .review-write-drawer.is-open {
+    transform: none;
+  }
+}
+
+/* ==================== WELCOME RIBBON ====================
+   One-shot "Willkommen zurück!" banner after the startup Abfahrtstafel closes
+   (js/welcome-ribbon.js). Full width, accent bar underneath like the project
+   drawer header. Purely decorative: pointer-events off so it never blocks the
+   UI below. Transform/opacity only. Timings mirror the T_* constants in JS. */
+.welcome-ribbon {
+  position: fixed;
+  top: 0;
+  left: var(--nav-rail-width, 0); /* leave the left nav rail uncovered */
+  right: 0;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+  box-shadow: 0 0.6vh 2.4vh rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  transform: translateY(calc(-100% - 3vh));
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.welcome-ribbon.is-in  { transform: translateY(0); }
+.welcome-ribbon.is-out {
+  transform: translateY(calc(-100% - 3vh));
+  transition-timing-function: cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+
+.welcome-ribbon-stage {
+  position: relative;
+  height: 9vh;
+  overflow: hidden;
+}
+
+.welcome-ribbon-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5vw;
+  box-sizing: border-box;
+  transition: transform 500ms cubic-bezier(0.65, 0, 0.35, 1), opacity 500ms ease;
+}
+
+.welcome-ribbon-greeting {
+  font-family: var(--font-family-ui);
+  font-stretch: var(--font-stretch-ui, condensed);
+  font-size: 5vh;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcome-ribbon-train { transform: translateY(100%); opacity: 0; }
+.welcome-ribbon.show-train .welcome-ribbon-greeting { transform: translateY(-100%); opacity: 0; }
+.welcome-ribbon.show-train .welcome-ribbon-train    { transform: translateY(0); opacity: 1; }
+
+/* Accent bar sweeps in from the left once the ribbon has landed */
+.welcome-ribbon-bar {
+  height: 1.2vh;
+  flex-shrink: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1) 250ms;
+}
+.welcome-ribbon.is-in .welcome-ribbon-bar,
+.welcome-ribbon.is-out .welcome-ribbon-bar { transform: scaleX(1); }
+
+/* Cloned headline train: mirrors the desktop #first-train-container sizing */
+.welcome-ribbon-train .train-entry { width: 100%; max-width: 100%; padding-right: 0; }
+.welcome-ribbon-train .train-symbol { width: 7.5vh; height: 7.5vh; }
+.welcome-ribbon-train .symbol-slot { width: auto; min-width: 7.5vh; }
+.welcome-ribbon-train .line-badge { font-size: 3vh; }
+.welcome-ribbon-train .zugziel { font-size: 4.2vh; }
+.welcome-ribbon-train .departure { font-size: 3.75vh; }
+.welcome-ribbon-train .carriage-slot { display: none; }
+.welcome-ribbon-train .countdown-label { color: rgba(255, 255, 255, 0.695); }
+.welcome-ribbon-train .countdown-laufend-label { color: var(--energy-yellow, #eab308); }
+.welcome-ribbon-train .train-entry.fex-entry .countdown-label { color: rgba(0, 0, 50, 0.5); }
+.welcome-ribbon-train .train-entry.fex-entry .countdown-time { color: var(--color-bg-primary); }
+.welcome-ribbon-train .countdown-prefix { display: none; }
+.welcome-ribbon-train .mobile-info-btn { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-ribbon,
+  .welcome-ribbon.is-out { transform: none; opacity: 0; transition: opacity 300ms ease; }
+  .welcome-ribbon.is-in { opacity: 1; }
+  .welcome-ribbon-slide,
+  .welcome-ribbon-bar { transition: opacity 300ms ease; }
+  .welcome-ribbon-bar { transform: none; }
+  .welcome-ribbon-train,
+  .welcome-ribbon.show-train .welcome-ribbon-greeting { transform: none; }
 }
