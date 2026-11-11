@@ -13,3 +13,5 @@ bin_trash.json
 bin_archive.json
 vvs_platform_memory.json
 node_modules/
+sandbox_data/
+day_logs/

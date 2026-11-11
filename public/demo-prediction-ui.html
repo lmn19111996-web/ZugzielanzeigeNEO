@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prognose-UI Demo</title>
+<!-- Static design demo of the prediction UI in the train list. Generated from
+     the app's own row template (templates.js) and decorated like the sandbox
+     (sandbox/sandbox-app.js). Not linked from the app. -->
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="sandbox/sandbox.css">
+<style>
+  html, body { height: auto; min-height: 100%; overflow: auto; }
+  .demo-wrap { max-width: 1500px; margin: 0 auto; padding: 3vh 2vw 8vh; }
+  .demo-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2vh 2vw; justify-content: space-between; margin-bottom: 2vh; }
+  .demo-h1 { margin: 0; font-size: 4vh; font-weight: 600; }
+  .demo-sub { margin: 0.5vh 0 0; opacity: 0.65; font-size: 2vh; }
+  .demo-controls { display: flex; gap: 1vw; align-items: center; flex-wrap: wrap; }
+  .demo-switch { display: inline-flex; align-items: center; gap: 0.8vw; cursor: pointer; font-size: 2.2vh; user-select: none; }
+  .demo-switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .demo-switch .track { width: 5.2vh; height: 2.8vh; border-radius: 1.4vh; background: rgba(255,255,255,0.25); position: relative; transition: background 0.2s; }
+  .demo-switch .track::after { content: ''; position: absolute; top: 0.3vh; left: 0.3vh; width: 2.2vh; height: 2.2vh; border-radius: 50%; background: white; transition: transform 0.2s; }
+  .demo-switch input:checked + .track { background: var(--color-sbx-yellow); }
+  .demo-switch input:checked + .track::after { transform: translateX(2.4vh); }
+  .demo-switch input:focus-visible + .track { outline: 2px solid white; outline-offset: 2px; }
+  .demo-controls .sbx-btn { flex: 0 0 auto; }
+  .demo-section { margin-top: 4vh; }
+  .demo-h2 { margin: 0; font-size: 2.8vh; font-weight: 600; }
+  .demo-lead { margin: 0.6vh 0 1.2vh; opacity: 0.7; font-size: 2vh; max-width: 120ch; }
+  .demo-panel.left-panel { height: auto; overflow: visible; margin: 0; width: 100%; padding: 1vh 0; }
+  .demo-item + .demo-item { border-top: 0.5px solid var(--color-divider); }
+  .demo-note { padding: 0 1.5vw 1.2vh calc(1.5vw + 9vh); font-size: 1.8vh; opacity: 0.6; }
+  .train-entry .zugziel-scroll { overflow: hidden; }
+  /* proposed variants (section "Vorschläge für die App-Integration") */
+  .train-entry .delayed.sbx-predicted.demo-soft { box-shadow: inset 0 0 0 1px var(--color-sbx-yellow); padding: 0.15vh 0.45vh; }
+
+  /* Every prognosis: yellow text, no fill */
+  .train-entry .delayed.sbx-predicted,
+  .train-entry.fex-entry .delayed.sbx-predicted,
+  .train-entry .delayed.sbx-predicted:hover {
+    background: transparent;
+    color: var(--color-sbx-yellow);
+    padding-left: 0; padding-right: 0;
+    font-weight: inherit; /* same thin weight as the departure time */
+  }
+  .train-entry .sbx-predicted:hover { opacity: 0.75; }
+  /* "vsl. nicht umsetzbar" keeps the yellow highlight */
+  .train-entry .delayed.sbx-predicted.sbx-predicted--cancel:not(.demo-soft) {
+    background: var(--color-sbx-yellow);
+    color: var(--color-sbx-yellow-text);
+    padding: 0.15vh 0.45vh;
+  }
+
+  /* "Nach hinten verlegt": solid down arrow */
+  .sbx-hop { height: 0.8em; width: auto; vertical-align: -0.04em; margin-right: 0.18em; }
+
+  /* "vsl. nicht umsetzbar": infinite marquee in a time-sized window */
+  .sbx-marquee {
+    display: inline-block; vertical-align: bottom; width: 4.6em; overflow: hidden;
+  }
+  .sbx-marquee-track { display: inline-flex; white-space: nowrap; animation: sbx-marquee 7s linear infinite; }
+  .sbx-marquee-track > span { white-space: pre; }
+  @keyframes sbx-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .sbx-marquee-track { animation: none; }
+    .sbx-marquee-track > span + span { display: none; }
+    .sbx-marquee-sep { display: none; }
+  }
+
+  /* Suggested duration change, right of the carriage symbol — same size and
+     weight as the departure time */
+  .carriage-slot .sbx-dauer-pred {
+    margin-left: 0.6vw; white-space: nowrap; font-size: 3vh; line-height: 1; font-weight: inherit;
+    font-variant-numeric: tabular-nums; flex-shrink: 0; cursor: pointer;
+    color: var(--color-sbx-yellow);
+  }
+  /* switch "Prognose anzeigen" off: suggestions hidden, plan time plain */
+  body.demo-predictions-off .sbx-predicted { display: none; }
+  body.demo-predictions-off .sbx-plan-time { border-bottom: none; cursor: default; }
+</style>
+</head>
+<body>
+<div class="demo-wrap">
+  <header class="demo-head">
+    <div>
+      <h1 class="demo-h1">Prognose in der Zugliste — UI-Demo</h1>
+      <p class="demo-sub">Statische Demo aller Elemente aus der Sandbox, Stand 30.11.2026, 07:00 (alle Zeiten in der Zukunft). Pillen und Zeiten sind antippbar.</p>
+    </div>
+    <div class="demo-controls">
+      <label class="demo-switch"><input type="checkbox" id="demo-toggle" checked><span class="track" aria-hidden="true"></span>Prognose anzeigen</label>
+      <button class="sbx-btn" type="button" id="demo-accept-all">Alle Vorschläge übernehmen</button>
+      <button class="sbx-btn" type="button" id="demo-reset">Zurücksetzen</button>
+    </div>
+  </header>
+
+  <section class="demo-section" id="reference">
+    <h2 class="demo-h2">Referenz: so sieht die Liste heute aus</h2>
+    <p class="demo-lead">Ohne Prognose. Diese Zustände gibt es schon in der App; die Prognose-Elemente unten bauen auf ihnen auf.</p>
+    <div class="left-panel demo-panel">
+      <div class="demo-item"><div class="train-entry" data-linie="S6" data-ziel="Thermodynamik" data-plan="11:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo1">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s6.svg" alt="S6" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S6</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Thermodynamik">Thermodynamik</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="11:30" data-actual="11:30" data-dauer="90" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text">11:30</span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Pünktlich: nur die geplante Zeit.</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S7" data-ziel="Selbststudium Thermodynamik" data-plan="14:00" data-date="2026-11-30" data-train-type="train" data-unique-id="demo2">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s7.svg" alt="S7" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S7</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Selbststudium Thermodynamik">Selbststudium Thermodynamik</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="14:00" data-actual="14:20" data-dauer="120" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span>14:00</span> <span class="delayed">14:20</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Verspätet (von dir eingetragen): geplante Zeit + weiße Pille mit der neuen Zeit.</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S11" data-ziel="Zug fällt aus" data-plan="21:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo3">
+        <div class="train-info">
+          <div class="indicator-dot cancelled"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s11.svg" alt="S11" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S11</div>'">
+          </div>
+          <div class="zugziel"><div class="canceled-ziel-toggle"><div class="canceled-ziel-ausfall"><span>Zug fällt aus</span></div><div class="canceled-ziel-original"><span class="zugziel-text" data-ziel-text="Circe" style="text-decoration: line-through;">Circe</span></div></div></div>
+        </div>
+        <div class="carriage-slot">
+          
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="21:30" data-actual="21:30" data-dauer="30" data-date="2026-11-30" data-canceled="true" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text">21:30</span>
+              
+            </div>
+          </div>
+        </div>
+        
+      </div><div class="demo-note">Ausgefallen (von dir eingetragen).</div></div>
+    </div>
+  </section>
+
+  <section class="demo-section" id="disruption">
+    <h2 class="demo-h2">Störung (der Auslöser)</h2>
+    <p class="demo-lead">Der Zug, der den Tag durcheinanderbringt. In der Sandbox gelb hinterlegt; in der App wäre das die echte Verspätung, die du einträgst.</p>
+    <div class="left-panel demo-panel">
+      <div class="demo-item"><div class="train-entry sbx-disrupted fex-entry" data-linie="S7" data-ziel="Selbststudium TM3" data-plan="17:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo4">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s7.svg" alt="S7" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S7</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Selbststudium TM3">Selbststudium TM3</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23e7efbe%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="17:30" data-actual="20:00" data-dauer="120" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span>17:30</span> <span class="delayed">20:00</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Gestört: beginnt 150 min später (gelbe Karte, invertierte Pille).</div></div>
+      <div class="demo-item"><div class="train-entry sbx-disrupted fex-entry" data-linie="S6" data-ziel="Höhere Mathematik III" data-plan="09:45" data-date="2026-11-30" data-train-type="train" data-unique-id="demo5">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s6.svg" alt="S6" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S6</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Höhere Mathematik III">Höhere Mathematik III</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3C%2Fsvg%3E" alt="">
+        <span class="delayed sbx-dauer-delta" title="Dauer verkürzt: 90 → 70 min (fester Termin, Ende bleibt 11:15)">−20</span></div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="09:45" data-actual="10:05" data-dauer="70" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span>09:45</span> <span class="delayed">10:05</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Fester Termin, 20 min zu spät: Beginn später, Ende bleibt — die Dauer-Plakette zeigt −20.</div></div>
+      <div class="demo-item"><div class="train-entry sbx-disrupted fex-entry" data-linie="S51" data-ziel="Commercial Dance" data-plan="15:00" data-date="2026-11-30" data-train-type="train" data-unique-id="demo6">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s51.svg" alt="S51" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S51</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Commercial Dance">Commercial Dance</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23fbdbb3%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23fbdbb3%22%2F%3E%3C%2Fsvg%3E" alt="">
+        <span class="delayed sbx-dauer-delta" title="Dauer verlängert: 90 → 130 min">+40</span></div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="15:00" data-actual="15:00" data-dauer="130" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text">15:00</span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Gestört durch längere Dauer: Plakette +40 neben dem Wagensymbol.</div></div>
+    </div>
+  </section>
+
+  <section class="demo-section" id="prediction">
+    <h2 class="demo-h2">Prognose: Vorschläge des Modells</h2>
+    <p class="demo-lead">Gelbe Schrift = Vorschlag (antippen = übernehmen); nur ein vorgeschlagener Ausfall ist gelb hinterlegt. Gestrichelt unterstrichene Zeit daneben = antippen, um den Zug so zu lassen.</p>
+    <div class="left-panel demo-panel">
+      <div class="demo-item"><div class="train-entry" data-linie="S2" data-ziel="Abend!" data-plan="19:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo7">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s2.svg" alt="S2" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S2</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Abend!">Abend!</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="19:30" data-actual="19:30" data-dauer="120" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">19:30</span> <span class="delayed sbx-predicted" data-demo-accept="20:10" title="Vorschlag 20:10 — tippen zum Übernehmen">20:10</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Neue Zeit vorgeschlagen.</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S11" data-ziel="Circe" data-plan="21:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo8">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s11.svg" alt="S11" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S11</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Circe">Circe</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="21:30" data-actual="21:30" data-dauer="30" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">21:30</span> <span class="delayed sbx-predicted sbx-predicted--cancel" data-demo-accept="cancel" title="Vorschlag: voraussichtlich nicht umsetzbar — tippen, um ihn ausfallen zu lassen"><span class="sbx-marquee"><span class="sbx-marquee-track"><span>vsl. nicht umsetzbar<span class="sbx-marquee-sep" aria-hidden="true">&nbsp;+++&nbsp;</span></span><span aria-hidden="true">vsl. nicht umsetzbar<span class="sbx-marquee-sep">&nbsp;+++&nbsp;</span></span></span></span></span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Ausfall vorgeschlagen: „vsl. nicht umsetzbar“ läuft als Laufschrift im Platz einer Uhrzeit durch.</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S4" data-ziel="The Greatest Showman" data-plan="15:55" data-date="2026-11-30" data-train-type="train" data-unique-id="demo9">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s4.svg" alt="S4" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S4</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="The Greatest Showman">The Greatest Showman</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23e0bfc8%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23e0bfc8%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="15:55" data-actual="15:55" data-dauer="120" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">15:55</span> <span class="delayed sbx-predicted" data-demo-accept="20:30" title="Vorschlag 20:30 (nach hinten verlegt, hinter Abend) — tippen zum Übernehmen"><svg class="sbx-hop" viewBox="0 0 16 20" aria-label="nach hinten verlegt" role="img"><path d="M6.6 0.5 H9.4 V11.5 H13.6 L8 19.5 L2.4 11.5 H6.6 Z" fill="currentColor"/></svg>20:30</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Nach hinten verlegt (hinter einen späteren Zug): fetter Pfeil nach unten vor der Zeit.</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S21" data-ziel="Samstagkoch!" data-plan="11:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo10">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s21.svg" alt="S21" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S21</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Samstagkoch!">Samstagkoch!</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3C%2Fsvg%3E" alt="">
+        <span class="sbx-predicted sbx-dauer-pred" data-demo-accept="dauer:120:150" title="Vorschlag: 120 min statt 150 — tippen zum Übernehmen">−30</span>
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="11:30" data-actual="11:30" data-dauer="150" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">11:30</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Nur kürzer vorgeschlagen (gleiche Zeit): Dauer-Änderung gelb rechts vom Wagensymbol (−30 = 30 min kürzer, +15 = länger).</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S6" data-ziel="Thermodynamik" data-plan="11:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo11">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s6.svg" alt="S6" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S6</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Thermodynamik">Thermodynamik</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3cae2%22%2F%3E%3C%2Fsvg%3E" alt="">
+        <span class="sbx-predicted sbx-dauer-pred" data-demo-accept="dauer:70:90" title="Vorschlag: 70 min statt 90 (Ende bleibt) — tippen zum Übernehmen">−20</span>
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="11:30" data-actual="11:30" data-dauer="90" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">11:30</span> <span class="delayed sbx-predicted" data-demo-accept="11:50" title="Vorschlag 11:50, 70 min (20 min zu spät, Ende bleibt) — tippen zum Übernehmen">11:50</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Fester Termin: später beitreten, Ende bleibt — neue Zeit an der Uhrzeit, Dauer-Änderung am Wagensymbol.</div></div>
+    </div>
+  </section>
+
+  <section class="demo-section" id="decided">
+    <h2 class="demo-h2">Nach deiner Entscheidung</h2>
+    <p class="demo-lead">Was übrig bleibt, wenn du einen Vorschlag annimmst, verwirfst oder einen Konflikt stehen lässt.</p>
+    <div class="left-panel demo-panel">
+      <div class="demo-item"><div class="train-entry" data-linie="S2" data-ziel="Abend!" data-plan="19:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo12">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s2.svg" alt="S2" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S2</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Abend!">Abend!</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="19:30" data-actual="20:10" data-dauer="120" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span>19:30</span> <span class="delayed">20:10</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Vorschlag übernommen: ganz normale Verspätung, keine gelbe Pille mehr.</div></div>
+      <div class="demo-item"><div class="train-entry sbx-confirmed" data-linie="S17" data-ziel="Journaling" data-plan="22:00" data-date="2026-11-30" data-train-type="train" data-unique-id="demo13">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s17.svg" alt="S17" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S17</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Journaling">Journaling</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23c8ddeb%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23c8ddeb%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23c8ddeb%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23c8ddeb%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23c8ddeb%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="22:00" data-actual="22:00" data-dauer="15" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text">22:00</span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">So gelassen (Zeit angetippt): grüner Balken links, das Modell plant um diesen Zug herum.</div></div>
+      <div class="demo-item"><div class="train-entry sbx-unresolved" data-linie="S62" data-ziel="TM3 Tutorium" data-plan="16:00" data-date="2026-11-30" data-train-type="train" data-unique-id="demo14">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s62.svg" alt="S62" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S62</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="TM3 Tutorium">TM3 Tutorium</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23ecd7c3%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23ecd7c3%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23ecd7c3%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23ecd7c3%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23ecd7c3%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23ecd7c3%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23ecd7c3%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="16:00" data-actual="16:00" data-dauer="90" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text">16:00</span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Überschneidet sich noch mit einem früheren Zug: rote Umrandung (vor „Fertig“).</div></div>
+    </div>
+  </section>
+
+  <section class="demo-section" id="proposals">
+    <h2 class="demo-h2">Vorschläge für die App-Integration (neu, noch nicht gebaut)</h2>
+    <p class="demo-lead">Varianten aus dem Bericht: Ausfälle sanfter zeigen, Unsicherheit andeuten.</p>
+    <div class="left-panel demo-panel">
+      <div class="demo-item"><div class="train-entry" data-linie="S11" data-ziel="Circe" data-plan="21:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo15">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s11.svg" alt="S11" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S11</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Circe">Circe</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23d0e6ca%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="21:30" data-actual="21:30" data-dauer="30" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">21:30</span> <span class="delayed sbx-predicted sbx-predicted--cancel demo-soft" data-demo-accept="cancel" title="Könnte entfallen — tippen, um ihn ausfallen zu lassen">könnte entfallen</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Sanfter Ausfall: nur umrandet, „könnte entfallen“ statt „vsl. nicht umsetzbar“ — der Planer drängt nicht zum Absagen.</div></div>
+      <div class="demo-item"><div class="train-entry" data-linie="S2" data-ziel="Abend!" data-plan="19:30" data-date="2026-11-30" data-train-type="train" data-unique-id="demo16">
+        <div class="train-info">
+          <div class="indicator-dot"></div>
+          <button class="mobile-info-btn">Fahrtinformationen</button>
+          <div class="symbol-slot">
+            <img class="train-symbol" src="./res/s2.svg" alt="S2" onerror="this.outerHTML='<div class=\'line-badge line-badge--pill\'>S2</div>'">
+          </div>
+          <div class="zugziel"><div class="zugziel-scroll"><span class="zugziel-text" data-ziel-text="Abend!">Abend!</span></div></div>
+        </div>
+        <div class="carriage-slot">
+          <img class="carriage-img" src="data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%202140%20383%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolygon%20points%3D%2269%2C274%2069%2C243%20215%2C78%20702%2C78%20702%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%22724%2C274%20724%2C243%20870%2C78%201257%2C78%201257%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221283%2C274%201283%2C243%201429%2C78%201716%2C78%201716%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Cpolygon%20points%3D%221740%2C274%201740%2C243%201889%2C78%202073%2C78%202073%2C274%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%22284%22%20width%3D%22633%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%22724%22%20y%3D%22284%22%20width%3D%22533%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221283%22%20y%3D%22284%22%20width%3D%22433%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3Crect%20x%3D%221740%22%20y%3D%22284%22%20width%3D%22333%22%20height%3D%2231%22%20fill%3D%22%23b3d7c4%22%2F%3E%3C%2Fsvg%3E" alt="">
+        </div>
+        <div class="right-block">
+          
+          <div class="departure-slot">
+            <div class="departure" data-departure="1" data-plan="19:30" data-actual="19:30" data-dauer="120" data-date="2026-11-30" data-canceled="false" data-checked-in="false" data-checked-out="false">
+              <span class="departure-text"><span class="sbx-plan-time" data-demo-confirm="" title="Antippen: so lassen, wie er ist — Vorschlag verwerfen">19:30</span> <span class="delayed sbx-predicted demo-approx" data-demo-accept="20:10" title="Voraussichtlich 20:10">≈ 20:10</span></span>
+              
+            </div>
+          </div>
+        </div>
+        
+            
+      </div><div class="demo-note">Geschätzte Zeit mit ≈ — macht klar, dass es eine Prognose ist.</div></div>
+    
+    </div>
+  </section>
+</div>
+<script>
+(function () {
+  'use strict';
+  var initial = document.querySelector('.demo-wrap').innerHTML;
+  function plain(text) { var s = document.createElement('span'); s.textContent = text; return s; }
+  // Take over a suggestion: the row becomes an ordinary delay / cancellation / shortening.
+  // A time suggestion and its duration suggestion (at the carriage) are one
+  // proposal: tapping either takes over both.
+  function accept(pill) {
+    if (!pill.isConnected) return;
+    var entry = pill.closest('.train-entry');
+    var dep = entry.querySelector('.departure-text');
+    var v = pill.getAttribute('data-demo-accept') || '';
+    var planEl = dep.querySelector('.sbx-plan-time');
+    var plan = planEl ? planEl.textContent : dep.textContent;
+    var timePred = dep.querySelector('[data-demo-accept]');
+    if (v.indexOf('dauer:') === 0 && timePred) { accept(timePred); return; }
+    var dauerPred = entry.querySelector('.sbx-dauer-pred');
+    if (dauerPred && dauerPred !== pill) { var dv = dauerPred.getAttribute('data-demo-accept'); dauerPred.remove(); acceptDauer(entry, dv); }
+    if (pill === dauerPred) pill.remove();
+    if (v === 'cancel') {
+      var ziel = entry.querySelector('.zugziel');
+      if (ziel) ziel.innerHTML = '<div class="canceled-ziel-toggle"><div class="canceled-ziel-ausfall"><span>Zug fällt aus</span></div></div>';
+      var img = entry.querySelector('.carriage-img'); if (img) img.remove();
+      var dot = entry.querySelector('.indicator-dot'); if (dot) dot.classList.add('cancelled');
+      dep.textContent = plan;
+    } else if (v.indexOf('dauer:') === 0) {
+      dep.textContent = plan;
+      acceptDauer(entry, v);
+    } else {
+      dep.textContent = '';
+      var d = document.createElement('span'); d.className = 'delayed'; d.textContent = v;
+      dep.append(plain(plan), ' ', d);
+    }
+  }
+  function acceptDauer(entry, v) {
+    var parts = v.split(':'), now = Number(parts[1]), was = Number(parts[2]);
+    var b = document.createElement('span'); b.className = 'delayed sbx-dauer-delta';
+    b.textContent = (now < was ? '−' : '+') + Math.abs(was - now);
+    b.title = 'Dauer ' + (now < was ? 'verkürzt' : 'verlängert') + ': ' + was + ' → ' + now + ' min';
+    entry.querySelector('.carriage-slot').appendChild(b);
+  }
+  // Leave the train as it is: green bar, suggestion gone.
+  function confirm(planEl) {
+    var entry = planEl.closest('.train-entry');
+    var dep = planEl.closest('.departure-text');
+    entry.classList.add('sbx-confirmed');
+    entry.querySelectorAll('.sbx-dauer-pred').forEach(function (n) { n.remove(); });
+    dep.textContent = planEl.textContent;
+  }
+  document.addEventListener('click', function (e) {
+    var pill = e.target.closest('[data-demo-accept]');
+    if (pill) { if (!document.body.classList.contains('demo-predictions-off')) accept(pill); return; }
+    var planEl = e.target.closest('[data-demo-confirm]');
+    if (planEl && !document.body.classList.contains('demo-predictions-off')) confirm(planEl);
+  });
+  document.getElementById('demo-toggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('demo-predictions-off', !e.target.checked);
+  });
+  document.getElementById('demo-accept-all').addEventListener('click', function () {
+    document.querySelectorAll('[data-demo-accept]').forEach(accept);
+  });
+  document.getElementById('demo-reset').addEventListener('click', function () {
+    location.reload();
+  });
+})();
+</script>
+</body>
+</html>

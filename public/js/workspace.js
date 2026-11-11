@@ -47,7 +47,8 @@
         const nav = btn.dataset.nav;
         // Drawer items are handled in CSS — leave them alone here.
         if (nav === 'announcements' || nav === 'notes') return;
-        btn.classList.toggle('is-active', nav === currentWorkspaceMode);
+        const activeNav = currentWorkspaceMode === 'prediction-settings' ? 'settings' : currentWorkspaceMode;
+        btn.classList.toggle('is-active', nav === activeNav);
       });
     }
     window.syncTaskbarActiveState = syncTaskbarActiveState;
@@ -154,6 +155,22 @@
             window._preSettingsWorkspaceMode = currentWorkspaceMode;
           }
           currentWorkspaceMode = 'settings';
+          closeAnnouncementsDrawer();
+          closeNoteDrawer();
+          closeEditorDrawer();
+          closeProjectDrawer();
+          if (typeof window.closeReviewWriteDrawer === 'function') window.closeReviewWriteDrawer();
+          hideWorkspacePlaceholder();
+          renderCurrentWorkspaceView();
+          break;
+        case 'prediction-settings':
+          // Sub-page of Einstellungen: keeps _preSettingsWorkspaceMode as-is,
+          // so Einstellungen' own Apply/Discard still return to where the
+          // user originally came from.
+          if (currentWorkspaceMode !== 'prediction-settings' && typeof window.resetPredictionSettingsDraft === 'function') {
+            window.resetPredictionSettingsDraft();
+          }
+          currentWorkspaceMode = 'prediction-settings';
           closeAnnouncementsDrawer();
           closeNoteDrawer();
           closeEditorDrawer();

@@ -15,6 +15,8 @@ const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
 const webPush = require('web-push');
 const itemBins = require('./item-bins');
+const { createSandbox } = require('./sandbox-server');
+const { createDayRecorder } = require('./day-recorder');
 
 // --- Config ---
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -443,6 +445,11 @@ function buildLogRecordV3(train, sourceType, additionalInfo = {}) {
 
   if (wasCheckedIn) record.checkedIn = true;
   if (wasCheckedOut) record.checkedOut = true;
+  // Planned duration frozen at check-out (dauer then holds the measured one).
+  // Absent on records that were never checked out — there dauer is the plan.
+  if (train && train.plannedDauer != null && Number.isFinite(Number(train.plannedDauer))) {
+    record.plannedDauer = Number(train.plannedDauer);
+  }
 
   return record;
 }
@@ -1468,6 +1475,23 @@ async function loadVvsDepartures(evaStr) {
 // --- Express app ---
 const app = express();
 
+// Delay-prediction sandbox (sandbox-server.js): /sandbox.html is built from
+// mobile.html on the fly; all of its data lives in sandbox_data/, never in
+// data.json or train_logs. Registered before static so the route wins.
+// readLatestLoggedTrains is a hoisted function declaration further down.
+const sandbox = createSandbox({ rootDir: __dirname, publicDir: PUBLIC_DIR, readLatestLoggedTrains });
+// Day recorder (day-recorder.js): daily plan snapshots + timestamped change
+// log in day_logs/, the raw material for training on real days. Additive and
+// error-isolated; readScheduleFile is a hoisted function declaration below.
+const dayRecorder = createDayRecorder({
+  rootDir: __dirname,
+  getSchedule: async () => scheduleCache || readScheduleFile(),
+});
+
+app.get('/sandbox.html', sandbox.servePage);
+app.get('/sandbox', sandbox.servePage);
+app.use('/api/sandbox', sandbox.router);
+
 // Serve static files
 app.use(express.static(PUBLIC_DIR));
 // Parse JSON bodies for local schedule save
@@ -1990,6 +2014,7 @@ app.post('/api/train-history/restore', async (req, res) => {
       };
       if (r.checkedIn) entry.checkedIn = true;
       if (r.checkedOut) entry.checkedOut = true;
+      if (r.plannedDauer != null) entry.plannedDauer = Number(r.plannedDauer) || 0;
       if (r._templateId) entry._templateId = r._templateId;
       if (r.projectId) entry.projectId = r.projectId;
       if (r.type) entry.type = r.type;
@@ -2147,12 +2172,27 @@ app.post('/api/schedule', async (req, res) => {
       projects: projectsArr,
     };
 
+    // State before this save, for the day recorder's change log.
+    let previousEntries = scheduleCache && Array.isArray(scheduleCache.spontaneousEntries) ? scheduleCache.spontaneousEntries : null;
+    let previousTemplates = scheduleCache && Array.isArray(scheduleCache.fixedSchedule) ? scheduleCache.fixedSchedule : null;
+    if (!previousEntries || !previousTemplates) {
+      try {
+        const onDisk = await readScheduleFile();
+        previousEntries = previousEntries || onDisk.spontaneousEntries || [];
+        previousTemplates = previousTemplates || onDisk.fixedSchedule || [];
+      } catch (e) { previousEntries = previousEntries || []; }
+    }
+
     const filePath = path.join(PUBLIC_DIR, 'data.json');
     await fsPromises.writeFile(filePath, JSON.stringify(toSave, null, 2), 'utf8');
 
     // Cache the pruned version so next GET doesn't re-inflate it
     scheduleCache = toSave;
     scheduleCacheTime = Date.now();
+
+    // Record what changed and when (fire-and-forget, never throws)
+    dayRecorder.recordSave(previousEntries, prunedSpontaneous);
+    dayRecorder.recordTemplates(previousTemplates, fixedArr);
 
     // Schedule push notifications sent by the client
     if (Array.isArray(body.pushEvents)) {
@@ -2859,6 +2899,7 @@ async function periodicRefresh() {
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server listening on http://0.0.0.0:${PORT}`);
+  dayRecorder.startDailySnapshots();
   console.log('📊 Daily batch train logging enabled - writes once every 24 hours');
   console.log(`📁 Log directory: ${TRAIN_LOG_DIR}`);
   console.log(`📅 Current week: ${getWeekIdentifier()}`);

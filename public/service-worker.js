@@ -43,6 +43,7 @@ const SHELL_URLS = [
   '/js/projects.js',
   '/js/reviews.js',
   '/js/item-bins.js',
+  '/js/prediction-settings.js',
   '/js/swipe.js',
   '/js/station.js',
   '/js/clock.js',

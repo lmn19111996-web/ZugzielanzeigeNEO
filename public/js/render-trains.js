@@ -479,6 +479,8 @@
         plan: (entry && (entry.plan || entry.actual)) || '',
         actual: (entry && (entry.actual || entry.plan)) || '',
         dauer: Number(entry && entry.dauer) || 0,
+        // Frozen planned duration (only on records checked out since it exists)
+        ...(entry && entry.plannedDauer != null ? { plannedDauer: Number(entry.plannedDauer) || 0 } : {}),
         date: (entry && (entry.date || entry.plannedDate)) || '',
         type: (entry && entry.type) || 'normal',
         projectId: (entry && entry.projectId) || null,
@@ -851,6 +853,17 @@
             renderHeadlineTrain();
           }
           renderSettingsPage();
+          if (includeAnnouncements) {
+            renderComprehensiveAnnouncementPanel();
+          }
+          break;
+
+        case 'prediction-settings':
+          // Prognosemodell sub-page of Einstellungen (prediction-settings.js)
+          if (includeHeadline) {
+            renderHeadlineTrain();
+          }
+          renderPredictionSettingsPage();
           if (includeAnnouncements) {
             renderComprehensiveAnnouncementPanel();
           }

@@ -7697,6 +7697,162 @@ select.settings-input option {
   margin-bottom: 1.2vh;
 }
 
+/* ── Prognosemodell: line importance ranking table ── */
+.pm-rank-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.2vh;
+  font-size: 1.7vh;
+}
+
+.pm-rank-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 1.4vh;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0.6vh 0.8vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pm-rank-table td {
+  padding: 0.8vh 0.8vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.pm-col-rank {
+  width: 4.5em;
+}
+
+.pm-rank-label {
+  font-size: 2.2vh;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-rank-label--muted {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.pm-col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.pm-action + .pm-action {
+  margin-left: 0.3vw;
+}
+
+.pm-action:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.pm-lines {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6vh 0.6vw;
+  min-height: 3.6vh;
+  transition: background 0.15s;
+}
+
+.pm-lines.is-drop-target,
+.settings-add-reason.is-drop-target {
+  background: rgba(63, 81, 181, 0.25);
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+}
+
+.pm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3vw;
+  padding: 0.3vh 0.4vw;
+  background: var(--color-bg-input);
+  cursor: grab;
+  user-select: none;
+}
+
+.pm-chip.is-dragging {
+  opacity: 0.4;
+}
+
+.pm-chip-icon {
+  height: 2.6vh;
+  width: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.pm-chip-text {
+  font-weight: 700;
+  padding: 0 0.3vw;
+}
+
+.pm-chip-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 0 0.2vw;
+  font-size: 1.4vh;
+}
+
+.pm-chip-remove:hover {
+  color: #fff;
+}
+
+.pm-add-select {
+  min-width: 0;
+  font-size: 1.5vh;
+  padding: 0.4vh 0.6vw;
+}
+
+.pm-empty {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  font-size: 1.5vh;
+}
+
+.pm-pool-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.4vh;
+  margin-right: 0.4vw;
+}
+
+/* Task families (Prognosemodell → Aufgabenfamilien) */
+.pm-family-name {
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 1.6vh;
+}
+
+.pm-family-singles {
+  margin-top: 1vh;
+}
+
+.pm-family-singles > summary {
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.5vh;
+  padding: 0.6vh 0;
+}
+
+@media (max-width: 768px) {
+  .pm-rank-table td,
+  .pm-rank-table th {
+    padding: 0.8vh 4px;
+  }
+  .pm-chip-icon {
+    height: 22px;
+  }
+  .pm-chip-remove {
+    font-size: 14px;
+    padding: 0 4px;
+  }
+}
+
 /* Native date/time picker icons render dark-on-dark without this. */
 .settings-input[type="datetime-local"] {
   color-scheme: dark;

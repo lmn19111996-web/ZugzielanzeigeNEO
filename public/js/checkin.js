@@ -2,6 +2,7 @@
 // Handles check-in/check-out for today's tasks.
 // Check-in  → sets train.actual = now, train.checkedIn = true
 // Check-out → sets train.dauer  = (checkout - train.actual) minutes, train.checkedOut = true
+//             and freezes the previous (planned) dauer into train.plannedDauer once
 // train.actual is editable via the editor between check-in and check-out (e.g.
 // correcting a late check-in to the real departure time) — checkedIn/checkedOut
 // are plain state flags only, never a source of time data; no real-world
@@ -61,6 +62,10 @@ function _ciApplyCheckoutState(uid, dur) {
         t.actual = undefined;
         t._checkinEpochMs = undefined;
       } else {
+        // Freeze the planned duration before the measured one replaces it.
+        // Set once, never overwritten — later edits of dauer correct the
+        // measurement, not the plan.
+        if (t.plannedDauer == null) t.plannedDauer = Number(t.dauer) || 0;
         t.dauer = dur;
       }
       t.checkedOut = true;
@@ -149,6 +154,7 @@ function _ciCommitApprove(uid) {
   train.checkedIn = true;
   train.checkedOut = true;
   train.dauer = dur;
+  if (train.plannedDauer == null) train.plannedDauer = dur; // approved = ran as planned
 
   if (typeof invalidateStressmeterCache === 'function') invalidateStressmeterCache();
 

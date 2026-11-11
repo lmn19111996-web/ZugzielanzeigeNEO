@@ -36,7 +36,12 @@ const SETTINGS_DEFAULTS = {
   // ziel contains `match` (case-insensitive) and no project is already set,
   // it's auto-assigned `projectId`. Projects are user-created, so this can't
   // be hardcoded — see _buildProjectRulesEditor below.
-  projectRules: []
+  projectRules: [],
+  // Prediction engine parameters, edited on the Prognosemodell page
+  // (prediction-settings.js). lineImportance: ranks of line names, #1 first.
+  // familyOverrides / dayStartFamilies / appointmentFamilies: task families,
+  // day start and fixed appointments (see prediction-settings.js).
+  predictionModel: { lineImportance: [], familyOverrides: {}, dayStartFamilies: [], appointmentFamilies: [] }
 };
 
 let _settingsCache = Object.assign({}, SETTINGS_DEFAULTS);
@@ -835,6 +840,33 @@ function _buildSettingsBackupSection() {
   });
 }
 
+function _buildPredictionModelSection() {
+  const section = _buildSettingsSection(
+    'Prognosemodell',
+    'Parameter der Verspätungs- und Ausfallprognose, z. B. die Wichtigkeit der Linien. Eigene Seite mit eigenem Speichern — noch nicht angewendete Änderungen auf dieser Seite gehen beim Wechsel verloren.'
+  );
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'settings-add-reason';
+  btn.textContent = 'Parameter konfigurieren →';
+  btn.addEventListener('click', function () {
+    _settingsDraft = null;
+    if (typeof window.setWorkspaceMode === 'function') window.setWorkspaceMode('prediction-settings');
+  });
+  section.appendChild(btn);
+
+  // Delay-prediction sandbox: separate page with its own data (sandbox-server.js)
+  const sandboxBtn = document.createElement('button');
+  sandboxBtn.type = 'button';
+  sandboxBtn.className = 'settings-add-reason';
+  sandboxBtn.style.marginLeft = '1vw';
+  sandboxBtn.textContent = 'Sandbox öffnen ↗';
+  sandboxBtn.title = 'Hypothetische Tage mit Störungen durchspielen und das Prognosemodell trainieren — getrennt von den Live-Daten';
+  sandboxBtn.addEventListener('click', function () { window.open('/sandbox.html', '_blank'); });
+  section.appendChild(sandboxBtn);
+  return section;
+}
+
 function _returnToPreviousWorkspace() {
   const target = window._preSettingsWorkspaceMode || 'list';
   if (typeof window.setWorkspaceMode === 'function') window.setWorkspaceMode(target);
@@ -906,6 +938,7 @@ async function renderSettingsPage() {
   scroll.appendChild(_buildLookaheadSection());
   scroll.appendChild(_buildPruneSection());
   scroll.appendChild(_buildCurfewSection());
+  scroll.appendChild(_buildPredictionModelSection());
   scroll.appendChild(_buildPrintSection());
   scroll.appendChild(_buildDataBackupSection());
   scroll.appendChild(_buildJournalBackupSection());

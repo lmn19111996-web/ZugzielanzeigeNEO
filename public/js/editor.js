@@ -237,7 +237,11 @@
         
         // Populate Arrival (Plan)
         const arrivalPlanValue = clone.querySelector('[data-focus="arrival-plan"]');
-        const planDuration = Number(train.dauer) || 0;
+        // Planned duration: frozen at check-out or at the first duration edit
+        // (plannedDauer); before that, dauer still is the plan. The actual
+        // arrival uses the current dauer.
+        const planDuration = Number(train.plannedDauer != null ? train.plannedDauer : train.dauer) || 0;
+        const actualDuration = Number(train.dauer) || 0;
         const planArrival = calculateArrivalTime(train.plan, planDuration, train.date);
         if (train.plan && planArrival) {
           arrivalPlanValue.textContent = `${train.plan} - ${planArrival}`;
@@ -253,7 +257,7 @@
         // Populate Arrival (Actual)
         const arrivalActualValue = clone.querySelector('[data-focus="arrival-actual"]');
         const hasDelay = train.actual && train.actual !== train.plan;
-        const actualArrival = train.actual ? calculateArrivalTime(train.actual, planDuration, train.date) : null;
+        const actualArrival = train.actual ? calculateArrivalTime(train.actual, actualDuration, train.date) : null;
         if (hasDelay) {
           if (actualArrival) {
             arrivalActualValue.textContent = `${train.actual} - ${actualArrival}`;
@@ -725,6 +729,10 @@
                   train.actual = undefined;
                 }
               } else if (fieldName === 'dauer') {
+                // First change of a timed train's duration: freeze the old
+                // value as the plan (same rule as check-out), so "Planmäßige
+                // Abfahrt - Ankunft" keeps the planned end.
+                if (train.plannedDauer == null && !isDurationOnlyTrain(train)) train.plannedDauer = Number(train.dauer) || 0;
                 train.dauer = Number(newValue) || 0;
               } else if (fieldName === 'zwischenhalte') {
                 train.zwischenhalte = newValue.split('\n');
